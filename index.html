@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#ECEFF1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-Jamii</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <head>
+  <!-- Other meta tags -->
+  <link rel="stylesheet" href="css/posts.css">
+  <link rel="stylesheet" href="css/suggestions.css">
+   <!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<!-- Swiper -->
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+
+<!-- Your dynamic posts system -->
+<script src="js/posts.js"></script>
+</head>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background-color: #ECEFF1;
+            min-height: 100vh;
+            transition: background-color 0.3s;
+            touch-action: pan-y;
+        }
+
+        body.dark-mode {
+            background-color: #18191a;
+            color: #e4e6eb;
+        }
+
+        /* Logo Preloader (from welcome.html) */
+        .logo-preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .logo-preloader img {
+            height: 150px;
+            width: auto;
+            filter: brightness(0) invert(1);
+        }
+
+        /* Spinner Preloader */
+        .spinner-preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ECEFF1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9998;
+            display: none;
+        }
+        
+        .spinner-preloader .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 176, 255, 0.2);
+            border-top-color: #00B0FF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .dark-mode .spinner-preloader {
+            background-color: #18191a;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Pull to Refresh Styles */
+        #refresh-container {
+            position: fixed;
+            top: 56px; /* Starts below header */
+            left: 0;
+            width: 100%;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .refresh-spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(0, 176, 255, 0.2);
+            border-top-color: #00B0FF;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .dark-mode .refresh-spinner {
+            border-top-color: #00B0FF;
+        }
+
+        .refreshing .refresh-spinner {
+            animation: spin 0.6s linear infinite;
+            opacity: 1;
+        }
+
+        /* Header Styles */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 56px;
+        }
+
+        .dark-mode header {
+            background-color: #242526;
+            color: #e4e6eb;
+        }
+
+        .logo-container {
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            height: 60px;
+            filter: brightness(0);
+            transition: filter 0.3s;
+            cursor: pointer;
+        }
+
+        .dark-mode .logo {
+            filter: brightness(0) invert(1);
+        }
+
+        .header-icons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            color: #555;
+            cursor: pointer;
+            position: relative;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f2f5;
+        }
+
+        .dark-mode .nav-icon {
+            color: #b0b3b8;
+            background-color: #3a3b3c;
+        }
+
+        .nav-icon.active {
+            color: #00B0FF;
+            background-color: #e1f5fe;
+        }
+
+        .dark-mode .nav-icon.active {
+            background-color: #2d88ff22;
+        }
+
+        .nav-icon .badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background-color: #ff0000;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-toggle {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+        }
+
+        .menu-line {
+            width: 18px;
+            height: 2px;
+            background-color: #000;
+            transition: all 0.3s ease;
+        }
+
+        .dark-mode .menu-line {
+            background-color: #e4e6eb;
+        }
+
+        /* Search Bar */
+        .search-container {
+            display: flex;
+            align-items: center;
+            background-color: #f0f2f5;
+            border-radius: 20px;
+            padding: 8px 12px;
+            width: 200px;
+            cursor: pointer;
+        }
+
+        .dark-mode .search-container {
+            background-color: #3a3b3c;
+        }
+
+        .search-container input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            margin-left: 8px;
+            pointer-events: none;
+        }
+
+        .dark-mode .search-container input {
+            color: #e4e6eb;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 56px;
+            width: 100%;
+        }
+
+        /* Menu Page Styles */
+        .menu-page {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: white;
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .dark-mode .menu-page {
+            background-color: #242526;
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            background-color: #ECEFF1;
+            z-index: 10;
+        }
+
+        .dark-mode .menu-header {
+            border-bottom-color: #3e4042;
+            background-color: #242526;
+        }
+
+        .menu-back-btn {
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .menu-title {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .menu-search-btn {
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Verification Badge */
+        .verified-badge {
+            color: #1DA1F2;
+            font-size: 14px;
+            background-color: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+        }
+
+        .verified-badge i {
+            font-size: 10px;
+        }
+
+        /* Settings Section */
+        .settings-section {
+            padding: 16px;
+            border-bottom: 1px solid #ddd;
+            background-color: #ECEFF1;
+        }
+
+        .dark-mode .settings-section {
+            border-bottom-color: #3e4042;
+            background-color: #242526;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            cursor: pointer;
+        }
+
+        .setting-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+
+        .dark-mode .setting-icon {
+            background-color: #3a3b3c;
+        }
+
+        .setting-text {
+            flex-grow: 1;
+            font-size: 16px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #00B0FF;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Menu Options */
+        .menu-options {
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .menu-option {
+            background-color: #f0f2f5;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dark-mode .menu-option {
+            background-color: #3a3b3c;
+        }
+
+        .menu-option:hover {
+            background-color: #e4e6e9;
+        }
+
+        .dark-mode .menu-option:hover {
+            background-color: #4e4f50;
+        }
+
+        .menu-option-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            color: white;
+            font-size: 16px;
+        }
+
+        .menu-option-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Logout Button */
+        .logout-section {
+            padding: 16px;
+            margin-top: 16px;
+            border-top: 1px solid #ddd;
+            background-color: #ECEFF1;
+        }
+
+        .dark-mode .logout-section {
+            border-top-color: #3e4042;
+            background-color: #242526;
+        }
+
+        .logout-btn {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+
+        .dark-mode .logout-btn:hover {
+            background-color: rgba(255, 0, 0, 0.2);
+        }
+
+        /* Create Post Button */
+        .create-post-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 35px;
+            height: 90px;
+            border-radius: 25px;
+            background-color: #000000;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            z-index: 100;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .dark-mode .create-post-btn {
+            background-color: white;
+            color: black;
+        }
+        
+        .create-post-btn:hover {
+            background-color: #222222;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .dark-mode .create-post-btn:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .create-post-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Notifications Page */
+        .notifications-page {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: white;
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .dark-mode .notifications-page {
+            background-color: #242526;
+        }
+
+        .notifications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 10;
+        }
+
+        .dark-mode .notifications-header {
+            border-bottom-color: #3e4042;
+            background-color: #242526;
+        }
+
+        .notifications-back-btn {
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .notifications-title {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .notifications-search-btn {
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .notification-container {
+            padding: 20px;
+            width: 100%;
+        }
+
+        .no-notifications {
+            text-align: center;
+            padding: 50px 20px;
+            color: #777;
+            font-size: 16px;
+        }
+
+        /* Skeleton Preloader for Notifications */
+        .notifications-skeleton {
+            display: none;
+            padding: 20px;
+            height: calc(100vh - 56px); /* Full height minus header */
+            background-color: white;
+        }
+
+        .dark-mode .notifications-skeleton {
+            background-color: #242526;
+        }
+
+        .notification-skeleton-item {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dark-mode .notification-skeleton-item {
+            border-bottom-color: #3e4042;
+        }
+
+        .skeleton-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: #f0f2f5;
+            margin-right: 12px;
+        }
+
+        .dark-mode .skeleton-avatar {
+            background-color: #3a3b3c;
+        }
+
+        .skeleton-content {
+            flex: 1;
+        }
+
+        .skeleton-line {
+            height: 12px;
+            background-color: #f0f2f5;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .dark-mode .skeleton-line {
+            background-color: #3a3b3c;
+        }
+
+        .skeleton-line.short {
+            width: 60%;
+        }
+
+        .skeleton-line.medium {
+            width: 80%;
+        }
+
+        .skeleton-line.long {
+            width: 100%;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            header {
+                padding: 10px 24px;
+            }
+
+            .main-content {
+                max-width: 600px;
+                margin: 56px auto 0;
+            }
+
+            .search-container {
+                width: 240px;
+            }
+
+            .menu-page, .notifications-page {
+                max-width: 500px;
+                right: 0;
+                left: auto;
+                border-left: 1px solid #ddd;
+            }
+
+            .dark-mode .menu-page, .dark-mode .notifications-page {
+                border-left-color: #3e4042;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            body {
+                display: grid;
+                grid-template-columns: 280px 600px 1fr;
+                gap: 20px;
+            }
+
+            .main-content {
+                grid-column: 2;
+                margin: 56px 0 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Logo Preloader (from welcome.html) -->
+    <div class="logo-preloader" id="logoPreloader">
+        <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png'/>
+    </div>
+
+    <!-- Spinner Preloader -->
+    <div class="spinner-preloader" id="spinnerPreloader">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Pull to Refresh Container -->
+    <div id="refresh-container">
+        <div class="refresh-spinner"></div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-container" onclick="window.location.href='index.html'">
+            <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png' class="logo"/>
+        </div>
+    
+        <div class="header-icons">
+            <div class="search-container" onclick="window.location.href='search.html'">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search X-Jamii">
+            </div>
+            <div class="nav-icon" title="Profile" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="nav-icon" title="Notifications" onclick="showNotifications()">
+                <i class="fas fa-bell"></i>
+                <span class="badge">3</span>
+            </div>
+            <div class="nav-icon menu-toggle" title="Menu" onclick="toggleMenu()">
+                <div class="menu-line"></div>
+                <div class="menu-line"></div>
+                <div class="menu-line"></div>
+            </div>
+        </div>
+    </header>
+
+<!-- Update your suggestions section to this: -->
+<section id="followSuggestionsContainer" class="suggestions-container">
+    <div class="suggestions-header">
+        <div class="suggestions-title">Suggestions For You</div>
+    </div>
+    <div class="suggestions-scroll-container">
+        <div class="suggestions-scroll" id="suggestionsScroll">
+            <!-- Suggestions will be injected here by JavaScript -->
+        </div>
+    </div>
+</section>
+
+<!-- Add this in your index.html body where posts should appear -->
+<section id="posts-container">
+    <!-- Posts will be dynamically inserted here -->
+</section>
+
+<!-- Comments Popup (keep your existing structure, just ensure these IDs match) -->
+<div id="comments-popup" class="comment-popup">
+    <div class="drag-handle"></div>
+    <div class="comment-popup-header">
+        <h3>Comments</h3>
+        <div class="comment-count">0 comments</div>
+    </div>
+    <div class="comment-popup-content">
+        <!-- Comments will be loaded here -->
+    </div>
+    <div class="comment-input-container">
+        <input type="text" class="comment-input" placeholder="Add a comment...">
+        <div class="comment-post-btn">Post</div>
+    </div>
+</div>
+
+<!-- Likes Popup -->
+<div id="likes-popup" class="likes-popup">
+    <div class="drag-handle"></div>
+    <div class="likes-popup-header">
+        <h3>Likes</h3>
+        <div class="likes-count">0 likes</div>
+    </div>
+    <div class="likes-popup-content">
+        <!-- Likes will be loaded here -->
+    </div>
+</div>
+
+<!-- Comment Likes Popup -->
+<div id="comment-likes-popup" class="comment-likes-popup">
+    <div class="drag-handle"></div>
+    <div class="comment-likes-popup-header">
+        <h3>Likes</h3>
+        <div class="comment-likes-count">0 likes</div>
+    </div>
+    <div class="comment-likes-popup-content">
+        <!-- Comment likes will be loaded here -->
+    </div>
+</div>
+
+<!-- Reply Likes Popup -->
+<div id="reply-likes-popup" class="reply-likes-popup">
+    <div class="drag-handle"></div>
+    <div class="reply-likes-popup-header">
+        <h3>Likes</h3>
+        <div class="reply-likes-count">0 likes</div>
+    </div>
+    <div class="reply-likes-popup-content">
+        <!-- Reply likes will be loaded here -->
+    </div>
+</div>
+
+<!-- Share Popup (keep your existing structure) -->
+<div id="share-popup" class="share-popup">
+    <div class="share-popup-header">
+        <h3>Share Post</h3>
+        <div class="share-popup-close"><i class="fas fa-times"></i></div>
+    </div>
+    <div class="share-options">
+        <!-- Your existing share options -->
+    </div>
+</div>
+
+<!-- Loading Spinner (for initial load) -->
+<div id="posts-loading" class="loading-spinner" style="display: none;">
+    <div class="spinner"></div>
+</div>
+
+<!-- No Posts Message (hidden by default) -->
+<div id="no-posts" class="no-posts" style="display: none;">
+    <p>No posts yet. Be the first to post!</p>
+</div>
+
+<!-- Error Message (hidden by default) -->
+<div id="posts-error" class="error-message" style="display: none;">
+    <p>Error loading posts. Please try again.</p>
+</div>
+
+    <!-- Menu Page -->
+    <div class="menu-page" id="menuPage">
+        <div class="menu-header">
+            <div class="menu-back-btn" onclick="toggleMenu()">
+                <i class="fas fa-arrow-left"></i>
+                <span class="menu-title">Menu</span>
+            </div>
+            <div class="menu-search-btn" onclick="window.location.href='search.html'">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="settings-section">
+            <div class="setting-item" onclick="window.location.href='manage-account.html'">
+                <div class="setting-icon">
+                    <i class="fas fa-user-cog"></i>
+                </div>
+                <div class="setting-text">Manage Account</div>
+                <i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="setting-item">
+                <div class="setting-icon">
+                    <i class="fas fa-moon"></i>
+                </div>
+                <div class="setting-text">Dark Mode</div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <div class="setting-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="setting-text">Data Saver</div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="dataSaverToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Menu Options -->
+        <div class="menu-options">
+            <div class="menu-option" onclick="window.location.href='help.html'">
+                <div class="menu-option-icon" style="background-color: #4CAF50;">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="menu-option-text">Help & Support</div>
+            </div>
+            <div class="menu-option" onclick="window.location.href='privacy.html'">
+                <div class="menu-option-icon" style="background-color: #2196F3;">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="menu-option-text">Privacy</div>
+            </div>
+            <div class="menu-option" onclick="window.location.href='about.html'">
+                <div class="menu-option-icon" style="background-color: #FF9800;">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="menu-option-text">About</div>
+            </div>
+            <div class="menu-option" onclick="window.location.href='cookies.html'">
+                <div class="menu-option-icon" style="background-color: #9C27B0;">
+                    <i class="fas fa-cookie"></i>
+                </div>
+                <div class="menu-option-text">Cookies</div>
+            </div>
+            <div class="menu-option" onclick="window.location.href='community.html'">
+                <div class="menu-option-icon" style="background-color: #E91E63;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="menu-option-text">Community Standards</div>
+            </div>
+            <div class="menu-option" onclick="window.location.href='terms.html'">
+                <div class="menu-option-icon" style="background-color: #607D8B;">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="menu-option-text">Terms</div>
+            </div>
+            <div class="menu-option" onclick="window.location.href='verification.html'">
+                <div class="menu-option-icon" style="background-color: #1DA1F2;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="menu-option-text">Request Verification</div>
+            </div>
+            <div class="menu-option" onclick="window.location.href='blocking.html'">
+                <div class="menu-option-icon" style="background-color: #F44336;">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <div class="menu-option-text">Blocking</div>
+            </div>
+            <div class="menu-option" onclick="window.location.href='report.html'">
+                <div class="menu-option-icon" style="background-color: #795548;">
+                    <i class="fas fa-flag"></i>
+                </div>
+                <div class="menu-option-text">Report an Issue</div>
+            </div>
+        </div>
+
+        <!-- Logout Section -->
+        <div class="logout-section">
+            <div class="logout-btn" onclick="window.location.href='welcome.html'">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Log Out</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Page -->
+    <div class="notifications-page" id="notificationsPage">
+        <div class="notifications-header">
+            <div class="notifications-back-btn" onclick="hideNotifications()">
+                <i class="fas fa-arrow-left"></i>
+                <span class="notifications-title">Notifications</span>
+            </div>
+            <div class="notifications-search-btn" onclick="window.location.href='search.html'">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+
+        <!-- Notifications Skeleton Preloader -->
+        <div class="notifications-skeleton" id="notificationsSkeleton">
+            <div class="notification-skeleton-item">
+                <div class="skeleton-avatar"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton-line medium"></div>
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line long" style="width: 40%; margin-top: 8px;"></div>
+                </div>
+            </div>
+            <div class="notification-skeleton-item">
+                <div class="skeleton-avatar"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton-line medium"></div>
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line long" style="width: 40%; margin-top: 8px;"></div>
+                </div>
+            </div>
+            <div class="notification-skeleton-item">
+                <div class="skeleton-avatar"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton-line medium"></div>
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line long" style="width: 40%; margin-top: 8px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notification-container" id="notificationsContainer" style="display: none;">
+            <div class="no-notifications">
+                <i class="fas fa-bell-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                <p>No notifications yet</p>
+                <p style="font-size: 14px; margin-top: 5px;">When you get notifications, they'll show up here</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Content will be here -->
+    </div>
+
+    <!-- Create Post Button -->
+    <div class="create-post-btn" onclick="window.location.href='create-post.html'">
+        <i class="fas fa-plus"></i>
+    </div>
+
+    <script>
+        // Preloader functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show logo preloader for 3 seconds
+            setTimeout(function() {
+                document.getElementById('logoPreloader').style.display = 'none';
+                
+                // Show spinner preloader for 10 seconds
+                document.getElementById('spinnerPreloader').style.display = 'flex';
+                
+                setTimeout(function() {
+                    document.getElementById('spinnerPreloader').style.display = 'none';
+                }, 10000);
+            }, 3000);
+        });
+
+        // Toggle Menu
+        function toggleMenu() {
+            const menuPage = document.getElementById('menuPage');
+            menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Show Notifications
+        function showNotifications() {
+            const notificationsPage = document.getElementById('notificationsPage');
+            notificationsPage.style.display = 'block';
+            
+            // Show skeleton preloader and hide content
+            document.getElementById('notificationsSkeleton').style.display = 'block';
+            document.getElementById('notificationsContainer').style.display = 'none';
+            
+            // Hide skeleton and show content after 3 seconds (simulating loading)
+            setTimeout(function() {
+                document.getElementById('notificationsSkeleton').style.display = 'none';
+                document.getElementById('notificationsContainer').style.display = 'block';
+            }, 3000);
+        }
+
+        // Hide Notifications
+        function hideNotifications() {
+            document.getElementById('notificationsPage').style.display = 'none';
+        }
+
+        // Dark Mode Toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        darkModeToggle.addEventListener('change', function() {
+            document.body.classList.toggle('dark-mode', this.checked);
+            // Save preference to localStorage
+            localStorage.setItem('darkMode', this.checked);
+        });
+
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            darkModeToggle.checked = true;
+        }
+
+        // Data Saver Toggle
+        const dataSaverToggle = document.getElementById('dataSaverToggle');
+        dataSaverToggle.addEventListener('change', function() {
+            // Implement data saver functionality here
+            console.log('Data Saver:', this.checked);
+            localStorage.setItem('dataSaver', this.checked);
+        });
+
+        // Check for saved data saver preference
+        if (localStorage.getItem('dataSaver') === 'true') {
+            dataSaverToggle.checked = true;
+        }
+
+        // Pull to Refresh Functionality
+        const refreshContainer = document.getElementById('refresh-container');
+        const refreshSpinner = document.querySelector('.refresh-spinner');
+        let startY = 0;
+        let isRefreshing = false;
+        
+        // Minimum pull distance to activate refresh (in pixels)
+        const REFRESH_THRESHOLD = 80;
+
+        document.addEventListener('touchstart', e => {
+            if ((window.scrollY <= 0 || document.getElementById('notificationsPage').style.display === 'block') && !isRefreshing) {
+                startY = e.touches[0].pageY;
+            }
+        });
+
+        document.addEventListener('touchmove', e => {
+            if ((window.scrollY <= 0 || document.getElementById('notificationsPage').style.display === 'block') && startY > 0 && !isRefreshing) {
+                const pullDistance = e.touches[0].pageY - startY;
+                
+                if (pullDistance > 0) {
+                    e.preventDefault();
+                    
+                    // Move spinner with pull
+                    refreshContainer.style.top = `${Math.min(50, pullDistance/2) + 6}px`; // Adjusted to start below header
+                    
+                    // Show spinner when threshold passed
+                    if (pullDistance > REFRESH_THRESHOLD) {
+                        refreshSpinner.style.opacity = '1';
+                    } else {
+                        refreshSpinner.style.opacity = '0';
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('touchend', e => {
+            if (startY > 0 && !isRefreshing) {
+                const pullDistance = e.changedTouches[0].pageY - startY;
+                
+                if (pullDistance > REFRESH_THRESHOLD) {
+                    // Start refresh
+                    startRefresh();
+                } else {
+                    // Reset if not pulled far enough
+                    resetSpinner();
+                }
+            }
+            startY = 0;
+        });
+
+        function startRefresh() {
+            isRefreshing = true;
+            refreshContainer.style.top = '56px'; // Position below header
+            refreshContainer.classList.add('refreshing');
+            
+            // Simulate refresh
+            setTimeout(() => {
+                isRefreshing = false;
+                refreshContainer.classList.remove('refreshing');
+                resetSpinner();
+                
+                // If on notifications page, show skeleton loader again
+                if (document.getElementById('notificationsPage').style.display === 'block') {
+                    document.getElementById('notificationsSkeleton').style.display = 'block';
+                    document.getElementById('notificationsContainer').style.display = 'none';
+                    setTimeout(function() {
+                        document.getElementById('notificationsSkeleton').style.display = 'none';
+                        document.getElementById('notificationsContainer').style.display = 'block';
+                    }, 2000);
+                }
+            }, 1500);
+        }
+
+        function resetSpinner() {
+            refreshContainer.style.top = '56px';
+            refreshSpinner.style.opacity = '0';
+        }
+    </script>
+<script src="js/suggestions.js" defer></script>
+<script src="js/posts.js"></script>
+</body>
+</html>
