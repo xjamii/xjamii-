@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#ECEFF1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Post | X-Jamii</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+   <link rel="stylesheet" href="css/posts.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding-bottom: 80px; /* Space for bottom button */
+        }
+
+        /* Header Styles */
+        .create-post-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            z-index: 100;
+        }
+
+        .back-button {
+            color: #000;
+            font-size: 20px;
+            text-decoration: none;
+        }
+
+        .logo-container {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .logo {
+            height: 30px;
+        }
+
+        .post-button {
+            background-color: #000;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .post-button:hover {
+            background-color: #333;
+        }
+
+        .post-button.loading {
+            background-color: #333;
+            pointer-events: none;
+        }
+
+        .post-button.loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Main Content */
+        .create-post-container {
+            margin-top: 70px;
+            padding: 0;
+            width: 100%;
+            min-height: calc(100vh - 150px); /* Adjust based on header/footer */
+        }
+
+        .post-input-container {
+            background-color: white;
+            padding: 20px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            background-image: url('https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png');
+            background-size: 70%;
+            background-position: center;
+            background-repeat: no-repeat;
+            border: 1px solid #eee;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .user-username {
+            color: #777;
+            font-size: 14px;
+        }
+
+        .verified-badge {
+            color: #00B0FF;
+            font-size: 14px;
+        }
+
+        .post-input {
+            width: 100%;
+            min-height: 150px;
+            border: none;
+            resize: none;
+            font-size: 16px;
+            padding: 10px;
+            margin-bottom: 15px;
+            outline: none;
+        }
+
+        .post-input::placeholder {
+            color: #999;
+        }
+
+        /* Post Options */
+        .post-options {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        .option-button {
+            background: none;
+            border: none;
+            color: #00B0FF;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-button:hover {
+            background-color: #e3f2fd;
+        }
+
+        .option-button i {
+            margin-right: 6px;
+            font-size: 16px;
+        }
+
+        /* Media Preview */
+        .media-preview-container {
+            display: none;
+            margin-top: 15px;
+            margin-bottom: 80px; /* Extra space for bottom button */
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .media-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 150px;
+        }
+
+        .media-item img, .media-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-media {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 0, 0, 0.8);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .media-item:hover .remove-media {
+            opacity: 1;
+        }
+
+        /* Bottom Post Button */
+        .bottom-post-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #000;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 90;
+            width: calc(100% - 40px);
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .bottom-post-button:hover {
+            background-color: #333;
+        }
+
+        /* Error Message */
+        .error-message {
+            display: none;
+            text-align: center;
+            color: #ff4444;
+            padding: 15px;
+            margin: 15px 0;
+            background-color: #ffeeee;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        /* Animations */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* File Input (hidden) */
+        #media-upload {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+<header class="create-post-header">
+    <a href="index.html" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    
+    <div class="logo-container">
+        <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png' class="logo"/>
+    </div>
+    
+    <button class="post-button" id="submit-post">
+        Post
+    </button>
+</header>
+
+<!-- Main Content -->
+<div class="create-post-container">
+    <div class="post-input-container">
+        <div class="user-info" id="user-info-container">
+            <!-- This will be populated by JavaScript -->
+            <div class="user-avatar" id="user-avatar">
+                <!-- Default avatar will be replaced -->
+                <span id="avatar-fallback">X</span>
+            </div>
+            <div class="user-details">
+                <div class="user-name" id="user-display-name">
+                    Loading...
+                </div>
+                <div class="user-username" id="user-username">
+                    @loading
+                </div>
+            </div>
+        </div>
+        
+        <textarea class="post-input" placeholder="What's on your mind?"></textarea>
+        
+        <!-- Error Message -->
+        <div class="error-message" id="error-message"></div>
+        
+        <!-- Media Preview (hidden by default) -->
+        <div class="media-preview-container" id="media-preview">
+            <div class="media-grid" id="media-grid"></div>
+        </div>
+        
+        <div class="post-options">
+            <button class="option-button" id="media-button">
+                <i class="fas fa-image"></i> Media
+            </button>
+            <input type="file" id="media-upload" accept="image/*,video/*" multiple>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Post Button -->
+<button class="bottom-post-button" id="bottom-post-button">
+    <i class="fas fa-paper-plane"></i> Post
+</button>
+    <script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+  authDomain: "x-jamii.firebaseapp.com",
+  projectId: "x-jamii",
+  storageBucket: "x-jamii.firebasestorage.app",    // <- DIFFERENT
+  messagingSenderId: "927548667044",
+  appId: "1:927548667044:web:835e597909f51a2e4da231",
+  measurementId: "G-9S45DQ04HZ"
+};
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // Cloudinary setup
+    const cloudinaryUrl = 'https://api.cloudinary.com/v1_1/dwwhpznwb/upload';
+    const uploadPreset = 'web_unsigned_upload';
+
+    // DOM Elements
+    const postButton = document.getElementById('submit-post');
+    const bottomPostButton = document.getElementById('bottom-post-button');
+    const mediaButton = document.getElementById('media-button');
+    const mediaPreview = document.getElementById('media-preview');
+    const mediaGrid = document.getElementById('media-grid');
+    const mediaUpload = document.getElementById('media-upload');
+    const postInput = document.querySelector('.post-input');
+    const createPostContainer = document.querySelector('.create-post-container');
+    const errorMessage = document.getElementById('error-message');
+
+    // Variables to track media counts
+    let uploadedFiles = [];
+    let videoCount = 0;
+
+    // Fetch and display user profile
+    function loadUserProfile() {
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            console.log("No user logged in");
+            return;
+        }
+
+        // Reference to the user's document in Firestore
+        const userRef = firebase.firestore().collection('users').doc(user.uid);
+
+        userRef.get().then((doc) => {
+            if (doc.exists) {
+                const userData = doc.data();
+                
+                // Update the DOM with user data
+                const displayNameElement = document.getElementById('user-display-name');
+                const usernameElement = document.getElementById('user-username');
+                const avatarElement = document.getElementById('user-avatar');
+                
+                // Set display name
+                displayNameElement.textContent = userData.displayName || 'User';
+                
+                // Add verification badge if verified
+                if (userData.verified) {
+                    displayNameElement.innerHTML += '<i class="fas fa-check-circle verified-badge"></i>';
+                }
+                
+                // Set username
+                usernameElement.textContent = `@${userData.username || 'user'}`;
+                
+                // Set avatar (photoURL)
+                if (userData.photoURL) {
+                    avatarElement.innerHTML = `<img src="${userData.photoURL}" alt="${userData.displayName}">`;
+                } else {
+                    // Use first letter of display name as fallback
+                    const fallbackLetter = (userData.displayName || 'U').charAt(0).toUpperCase();
+                    document.getElementById('avatar-fallback').textContent = fallbackLetter;
+                }
+            } else {
+                console.log("No user data found");
+            }
+        }).catch((error) => {
+            console.log("Error getting user data:", error);
+        });
+    }
+
+    // Call this when auth state changes
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            loadUserProfile();
+        } else {
+            // Redirect to login if not authenticated
+            window.location.href = 'login.html';
+        }
+    });
+
+    // Handle media upload
+    mediaButton.addEventListener('click', function() {
+        mediaUpload.click();
+    });
+
+    mediaUpload.addEventListener('change', function(e) {
+        errorMessage.style.display = 'none';
+        
+        if (e.target.files.length > 0) {
+            const newFiles = Array.from(e.target.files);
+            let hasError = false;
+            
+            // Check total files count
+            if (uploadedFiles.length + newFiles.length > 5) {
+                showError('Maximum 5 files allowed (including existing files)');
+                return;
+            }
+            
+            // Process each file
+            for (const file of newFiles) {
+                // Check if file is video
+                const isVideo = file.type.startsWith('video/');
+                
+                // Check video count
+                if (isVideo) {
+                    if (videoCount >= 1) {
+                        showError('Only 1 video allowed per post');
+                        hasError = true;
+                        break;
+                    }
+                    
+                    // Check video size (100MB)
+                    if (file.size > 100 * 1024 * 1024) {
+                        showError('Video size must be less than 100MB');
+                        hasError = true;
+                        break;
+                    }
+                    
+                    videoCount++;
+                } else {
+                    // Check image size (10MB)
+                    if (file.size > 10 * 1024 * 1024) {
+                        showError('Image size must be less than 10MB');
+                        hasError = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!hasError) {
+                uploadedFiles = [...uploadedFiles, ...newFiles];
+                displayMediaPreview();
+                mediaPreview.style.display = 'block';
+                adjustContainerHeight();
+            }
+        }
+    });
+
+    // Display media preview
+    function displayMediaPreview() {
+        mediaGrid.innerHTML = '';
+        
+        uploadedFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                const mediaItem = document.createElement('div');
+                mediaItem.className = 'media-item';
+                
+                if (file.type.startsWith('video/')) {
+                    mediaItem.innerHTML = `
+                        <video controls>
+                            <source src="${event.target.result}" type="${file.type}">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="remove-media" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </div>
+                    `;
+                } else {
+                    mediaItem.innerHTML = `
+                        <img src="${event.target.result}" alt="Preview">
+                        <div class="remove-media" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </div>
+                    `;
+                }
+                
+                mediaGrid.appendChild(mediaItem);
+                
+                // Add event listener to remove button
+                mediaItem.querySelector('.remove-media').addEventListener('click', function() {
+                    removeMediaItem(index);
+                });
+            }
+            
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Remove media item
+    function removeMediaItem(index) {
+        const removedFile = uploadedFiles[index];
+        
+        // Update video count if removed file was a video
+        if (removedFile.type.startsWith('video/')) {
+            videoCount--;
+        }
+        
+        uploadedFiles.splice(index, 1);
+        
+        if (uploadedFiles.length > 0) {
+            displayMediaPreview();
+        } else {
+            mediaPreview.style.display = 'none';
+        }
+        
+        adjustContainerHeight();
+    }
+
+    // Show error message
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        adjustContainerHeight();
+    }
+
+    // Adjust container height based on content
+    function adjustContainerHeight() {
+        const contentHeight = document.querySelector('.post-input-container').offsetHeight;
+        const windowHeight = window.innerHeight;
+        const headerHeight = 70;
+        const buttonHeight = 80;
+        
+        if (contentHeight > (windowHeight - headerHeight - buttonHeight)) {
+            createPostContainer.style.minHeight = `${contentHeight + 20}px`;
+        } else {
+            createPostContainer.style.minHeight = `calc(100vh - 150px)`;
+        }
+    }
+
+    // Post button functionality
+    async function handlePost() {
+        if (postInput.value.trim() === '' && uploadedFiles.length === 0) {
+            showError('Please add some content to your post');
+            return;
+        }
+
+        // Show loading state on both buttons
+        postButton.classList.add('loading');
+        postButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        bottomPostButton.classList.add('loading');
+        bottomPostButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
+
+        try {
+            // 1. Upload media to Cloudinary
+            const mediaUrls = [];
+            for (const file of uploadedFiles) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', uploadPreset);
+                
+                const response = await fetch(cloudinaryUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Media upload failed');
+                }
+                
+                const data = await response.json();
+                mediaUrls.push({
+                    url: data.secure_url,
+                    type: file.type.startsWith('video/') ? 'video' : 'image'
+                });
+            }
+
+            // 2. Save post to Firebase
+            const user = auth.currentUser;
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+
+            await db.collection('posts').add({
+                content: postInput.value.trim(),
+                media: mediaUrls,
+                userId: user.uid,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                likeCount: 0,
+                commentCount: 0,
+                shares: 0
+            });
+            
+            // 3. Redirect to home feed
+            window.location.href = 'index.html';
+            
+        } catch (error) {
+            console.error("Posting error:", error);
+            
+            // Reset buttons
+            postButton.classList.remove('loading');
+            postButton.innerHTML = 'Post';
+            
+            bottomPostButton.classList.remove('loading');
+            bottomPostButton.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
+            
+            // Show appropriate error
+            if (error.message === 'User not authenticated') {
+                showError('Please sign in to post');
+            } else if (error.message.includes('Media upload')) {
+                showError('Media upload failed. Please try again.');
+            } else if (!navigator.onLine) {
+                showError('No network connection. Please check your internet and try again.');
+            } else {
+                showError('An error occurred while posting. Please try again.');
+            }
+        }
+    }
+
+    // Add event listeners to both post buttons
+    postButton.addEventListener('click', handlePost);
+    bottomPostButton.addEventListener('click', handlePost);
+
+    // Initial adjustment
+    window.addEventListener('load', adjustContainerHeight);
+    window.addEventListener('resize', adjustContainerHeight);
+    <script src="js/posts.js"></script>
+</script>
+</body>
+</html>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+     <meta name="theme-color" content="#ECEFF1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - X-Aviation</title>
+    <!-- Firebase v8 SDKs -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+       <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #ECEFF1;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Preloader Styles */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ECEFF1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .preloader-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            position: relative;
+        }
+
+        .preloader-spinner-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #000;
+            animation: spinner-bounce 1.4s infinite ease-in-out both;
+        }
+
+        .preloader-spinner-dot:nth-child(1) {
+            top: 0;
+            left: 16px;
+            animation-delay: -0.32s;
+        }
+
+        .preloader-spinner-dot:nth-child(2) {
+            top: 16px;
+            left: 0;
+            animation-delay: -0.16s;
+        }
+
+        .preloader-spinner-dot:nth-child(3) {
+            top: 16px;
+            left: 32px;
+        }
+
+        .preloader-spinner-dot:nth-child(4) {
+            top: 32px;
+            left: 16px;
+            animation-delay: -0.48s;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            display: none;
+            flex: 1;
+            padding: 40px 30px 80px;
+            box-sizing: border-box;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            height: 60px;
+            width: auto;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 0 40px;
+            color: #000;
+            text-align: left;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .input-container {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 18px 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 18px;
+            box-sizing: border-box;
+            background-color: #ECEFF1;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #000;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: -15px;
+            margin-bottom: 10px;
+        }
+
+        .forgot-password a {
+            color: #666;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        /* Button Footer */
+        .button-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            background-color: #ECEFF1;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        .action-button {
+            width: 48%;
+            height: 50px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .back-button {
+            background-color: #ECEFF1;
+            color: #000;
+            border: 2px solid #000;
+        }
+
+        .login-button {
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #000;
+        }
+
+        .back-button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .login-button:hover {
+            background-color: #333;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            position: relative;
+        }
+
+        .spinner-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: spinner-bounce 1.4s infinite ease-in-out both;
+        }
+
+        .spinner-dot:nth-child(1) {
+            top: 0;
+            left: 9px;
+            animation-delay: -0.32s;
+        }
+
+        .spinner-dot:nth-child(2) {
+            top: 9px;
+            left: 0;
+            animation-delay: -0.16s;
+        }
+
+        .spinner-dot:nth-child(3) {
+            top: 9px;
+            left: 18px;
+        }
+
+        .spinner-dot:nth-child(4) {
+            top: 18px;
+            left: 9px;
+            animation-delay: -0.48s;
+        }
+
+        @keyframes spinner-bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Show/hide password */
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 45px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        /* Error message */
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin: 10px 0;
+            display: none;
+            text-align: center;
+        }
+
+        .main-error {
+            margin: 20px 0;
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+</head>
+<body>
+    <!-- Preloader -->
+    <div class="preloader">
+        <div class="preloader-spinner">
+            <div class="preloader-spinner-dot"></div>
+            <div class="preloader-spinner-dot"></div>
+            <div class="preloader-spinner-dot"></div>
+            <div class="preloader-spinner-dot"></div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="logo-container">
+            <img 
+                src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" 
+                alt="X-Aviation Logo" 
+                class="logo" 
+                loading="eager"
+                width="60"
+                onerror="this.style.display='none'"
+            >
+        </div>
+        
+        <div class="form-container">
+            <h1 class="title">Log in</h1>
+            
+            <div class="input-container">
+                <label for="email" class="input-label">Email</label>
+                <input type="email" class="text-input" id="email" placeholder="Enter your email">
+                <div class="error-message" id="email-error"></div>
+            </div>
+            
+            <div class="input-container">
+                <label for="password" class="input-label">Password</label>
+                <input type="password" class="text-input" id="password" placeholder="Enter your password">
+                <button class="password-toggle" id="toggle-password">Show</button>
+                <div class="error-message" id="password-error"></div>
+            </div>
+            
+            <div class="forgot-password">
+                <a href="forgot-password.html">Forgot password?</a>
+            </div>
+            
+            <div class="error-message main-error" id="main-error"></div>
+        </div>
+    </div>
+
+    <!-- Button Footer -->
+    <div class="button-footer">
+        <button class="action-button back-button" id="back-btn">
+            <span class="btn-text">Back</span>
+            <span class="spinner" style="display: none;">
+                <span class="spinner-dot" style="color: #000;"></span>
+                <span class="spinner-dot" style="color: #000;"></span>
+                <span class="spinner-dot" style="color: #000;"></span>
+                <span class="spinner-dot" style="color: #000;"></span>
+            </span>
+        </button>
+        <button class="action-button login-button" id="login-btn">
+            <span class="btn-text">Log in</span>
+            <span class="spinner" style="display: none;">
+                <span class="spinner-dot" style="color: #fff;"></span>
+                <span class="spinner-dot" style="color: #fff;"></span>
+                <span class="spinner-dot" style="color: #fff;"></span>
+                <span class="spinner-dot" style="color: #fff;"></span>
+            </span>
+        </button>
+    </div>
+
+    <script>
+   const firebaseConfig = {
+  apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+  authDomain: "x-jamii.firebaseapp.com",
+  projectId: "x-jamii",
+  storageBucket: "x-jamii.firebasestorage.app",    // <- DIFFERENT
+  messagingSenderId: "927548667044",
+  appId: "1:927548667044:web:835e597909f51a2e4da231",
+  measurementId: "G-9S45DQ04HZ"
+};
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // Hide preloader and show main content after 5 seconds
+    setTimeout(() => {
+        document.querySelector('.preloader').style.display = 'none';
+        document.querySelector('.main-content').style.display = 'block';
+    }, 5000);
+
+    // Ensure back button resets when page is loaded (first time or from cache)
+    function resetBackButton() {
+        const backBtn = document.getElementById('back-btn');
+        if (backBtn) {
+            const spinner = backBtn.querySelector('.spinner');
+            const btnText = backBtn.querySelector('.btn-text');
+            spinner.style.display = 'none';
+            btnText.style.display = 'inline';
+            backBtn.disabled = false;
+        }
+    }
+
+    // Reset on DOM ready
+    window.addEventListener('DOMContentLoaded', resetBackButton);
+
+    // Also reset when returning from history (important for back nav)
+    window.addEventListener('pageshow', resetBackButton);
+
+    // Back button click handler
+    document.getElementById('back-btn').addEventListener('click', function () {
+        const btn = this;
+        const spinner = btn.querySelector('.spinner');
+        const btnText = btn.querySelector('.btn-text');
+
+        btnText.style.display = 'none';
+        spinner.style.display = 'block';
+        btn.disabled = true;
+
+        setTimeout(() => {
+            window.location.href = 'welcome.html';
+        }, 300);
+    });
+
+    // Hide error message on input
+    document.getElementById('email').addEventListener('input', () => {
+        document.getElementById('email-error').style.display = 'none';
+        document.getElementById('main-error').style.display = 'none';
+    });
+
+    document.getElementById('password').addEventListener('input', () => {
+        document.getElementById('password-error').style.display = 'none';
+        document.getElementById('main-error').style.display = 'none';
+    });
+
+    // Login button handler
+    document.getElementById('login-btn').addEventListener('click', function () {
+        const btn = this;
+        const spinner = btn.querySelector('.spinner');
+        const btnText = btn.querySelector('.btn-text');
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const emailError = document.getElementById('email-error');
+        const passwordError = document.getElementById('password-error');
+        const mainError = document.getElementById('main-error');
+
+        // Reset errors
+        emailError.style.display = 'none';
+        passwordError.style.display = 'none';
+        mainError.style.display = 'none';
+
+        let isValid = true;
+
+        if (!email) {
+            emailError.textContent = 'Email is required';
+            emailError.style.display = 'block';
+            isValid = false;
+        } else if (!/\S+@\S+\.\S+/.test(email)) {
+            emailError.textContent = 'Email is invalid';
+            emailError.style.display = 'block';
+            isValid = false;
+        }
+
+        if (!password) {
+            passwordError.textContent = 'Password is required';
+            passwordError.style.display = 'block';
+            isValid = false;
+        } else if (password.length < 6) {
+            passwordError.textContent = 'Password must be at least 6 characters';
+            passwordError.style.display = 'block';
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        btnText.style.display = 'none';
+        spinner.style.display = 'block';
+        btn.disabled = true;
+
+        auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                window.location.href = 'index.html';
+            })
+            .catch((error) => {
+                btnText.style.display = 'inline';
+                spinner.style.display = 'none';
+                btn.disabled = false;
+
+                switch (error.code) {
+                    case 'auth/wrong-password':
+                        mainError.textContent = 'Incorrect password. Please try again.';
+                        break;
+                    case 'auth/user-not-found':
+                        mainError.textContent = 'No account found with this email.';
+                        break;
+                    case 'auth/invalid-email':
+                        mainError.textContent = 'Invalid email address.';
+                        break;
+                    case 'auth/network-request-failed':
+                        mainError.textContent = 'Network error. Please check your internet connection.';
+                        break;
+                    case 'auth/too-many-requests':
+                        mainError.textContent = 'Too many attempts. Please try again later.';
+                        break;
+                    default:
+                        mainError.textContent = 'Login failed. Please try again.';
+                }
+
+                mainError.style.display = 'block';
+            });
+    });
+
+    // Toggle password visibility
+    document.getElementById('toggle-password').addEventListener('click', function (e) {
+        e.preventDefault();
+        const passwordInput = document.getElementById('password');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            this.textContent = 'Hide';
+        } else {
+            passwordInput.type = 'password';
+            this.textContent = 'Show';
+        }
+    });
+</script>
+</body>
+</html>

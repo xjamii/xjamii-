@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#ECEFF1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications | X-Aviation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+        }
+
+        /* Header Styles */
+        .notification-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-button {
+            color: #000;
+            font-size: 20px;
+            text-decoration: none;
+        }
+
+        .header-title {
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .search-button {
+            color: #000;
+            font-size: 20px;
+            text-decoration: none;
+        }
+
+        /* Main Content */
+        .notification-container {
+            margin-top: 70px;
+            padding: 20px;
+            width: 100%;
+        }
+
+        /* No notifications message */
+        .no-notifications {
+            text-align: center;
+            padding: 50px 20px;
+            color: #777;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with proper order: Back → Title → Search -->
+    <header class="notification-header">
+        <div class="header-left">
+            <a href="index.html" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="header-title">Notifications</div>
+        </div>
+        
+        <a href="search.html" class="search-button">
+            <i class="fas fa-search"></i>
+        </a>
+    </header>
+
+    <!-- Main Content -->
+    <div class="notification-container">
+        <div class="no-notifications">
+            <i class="fas fa-bell-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+            <p>No notifications yet</p>
+            <p style="font-size: 14px; margin-top: 5px;">When you get notifications, they'll show up here</p>
+        </div>
+    </div>
+</body>
+</html>

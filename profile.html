@@ -1,0 +1,2620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#ECEFF1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | X-Aviation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Add this at the top of your existing styles */
+        .skeleton-preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ECEFF1;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            padding: 56px 16px 0;
+            align-items: center;
+        }
+        
+        .skeleton-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-direction: column;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .skeleton-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            margin: 0 auto 20px;
+        }
+        
+        .skeleton-line {
+            height: 12px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .skeleton-line.short {
+            width: 50%;
+            margin: 0 auto 10px;
+        }
+        
+        .skeleton-line.medium {
+            width: 70%;
+            margin: 0 auto 15px;
+        }
+        
+        .skeleton-line.long {
+            width: 90%;
+        }
+        
+        .skeleton-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .skeleton-stat {
+            text-align: center;
+        }
+        
+        .skeleton-stat-line {
+            height: 20px;
+            width: 50px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin: 0 auto 5px;
+        }
+        
+        .skeleton-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        .skeleton-button {
+            width: 100px;
+            height: 40px;
+            border-radius: 20px;
+            background-color: #e0e0e0;
+        }
+        
+        .skeleton-button.small {
+            width: 40px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        /* Followers/Following Page */
+        .follow-page {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            z-index: 2000;
+            overflow-y: auto;
+            padding-top: 56px;
+        }
+        
+        .follow-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            z-index: 10;
+        }
+        
+        .follow-back {
+            font-size: 20px;
+            color: #000;
+            text-decoration: none;
+        }
+        
+        .follow-title {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .follow-tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            position: sticky;
+            background-color: white;
+            z-index: 5;
+        }
+        
+        .follow-tab {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            font-weight: bold;
+            color: #777;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .follow-tab.active {
+            color: #00B0FF;
+        }
+        
+        .follow-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #00B0FF;
+        }
+        
+        .follow-content {
+            padding: 16px;
+        }
+        
+        .follow-list {
+            display: none;
+        }
+        
+        .follow-list.active {
+            display: block;
+        }
+        
+        .follow-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .follow-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #f0f2f5;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .follow-info {
+            flex-grow: 1;
+        }
+        
+        .follow-name {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .follow-username {
+            color: #777;
+            font-size: 14px;
+        }
+        
+        .follow-action {
+            margin-left: 12px;
+        }
+        
+        .follow-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+        }
+        
+        .follow-btn.follow {
+            background-color: #000;
+            color: white;
+        }
+        
+        .follow-btn.following {
+            background-color: #f0f2f5;
+            color: #000;
+            border: 1px solid #ddd;
+        }
+        
+        /* Message Page */
+        .message-page {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            z-index: 2000;
+        }
+        
+        .message-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            z-index: 10;
+        }
+        
+        .message-back {
+            font-size: 20px;
+            color: #000;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        
+        .message-user {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message-name {
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .message-status {
+            color: #777;
+            font-size: 12px;
+        }
+        
+        .message-content {
+            padding: 76px 16px 70px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .message-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            text-align: center;
+            color: #777;
+        }
+        
+        .message-empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .message-input-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            padding: 10px 16px;
+            border-top: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        
+        .message-input {
+            flex-grow: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .message-send {
+            margin-left: 10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #00B0FF;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+        }
+        
+        /* Loading state for create post button */
+        .create-post-btn.loading {
+            pointer-events: none;
+        }
+        
+        .create-post-btn.loading i {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Rest of your existing styles remain the same */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background-color: #ECEFF1;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 56px;
+        }
+
+        .back-btn {
+            font-size: 20px;
+            color: #000;
+            margin-right: 15px;
+            text-decoration: none;
+        }
+
+        .logo-container {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .logo {
+            height: 50px;
+        }
+
+        .header-icons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            color: #555;
+            cursor: pointer;
+            position: relative;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f2f5;
+            text-decoration: none;
+        }
+
+        .edit-profile-btn {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background-color: #000;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 56px;
+            width: 100%;
+        }
+
+        /* Profile Header */
+        .profile-header {
+            background-color: white;
+            padding: 24px 16px;
+            position: relative;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .profile-avatar-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: white;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 48px;
+            border: 4px solid white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background-image: url('https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png');
+            background-size: 70%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .profile-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .profile-username {
+            color: #777;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .profile-bio {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .profile-link {
+            color: #00B0FF;
+            text-decoration: none;
+            font-size: 15px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .profile-link:hover {
+            text-decoration: underline;
+        }
+
+        .profile-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .profile-stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: #777;
+            font-size: 14px;
+        }
+
+        .profile-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .profile-btn {
+            padding: 10px 24px;
+            border-radius: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-size: 15px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .profile-btn.primary {
+            background-color: #000;
+            color: white;
+        }
+
+        .profile-btn.primary:hover {
+            background-color: #333;
+        }
+
+        .profile-btn.secondary {
+            background-color: #f0f2f5;
+            color: #000;
+        }
+
+        .profile-btn.secondary:hover {
+            background-color: #e0e2e5;
+        }
+
+        .profile-btn i {
+            margin-right: 8px;
+        }
+
+        /* Profile Tabs */
+        .profile-tabs {
+            display: flex;
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            position: sticky;
+            top: 56px;
+            z-index: 100;
+        }
+
+        .profile-tab {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            font-weight: bold;
+            color: #777;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .profile-tab:hover {
+            color: #00B0FF;
+            background-color: #f5f5f5;
+        }
+
+        .profile-tab.active {
+            color: #00B0FF;
+        }
+
+        .profile-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #00B0FF;
+        }
+
+        /* Empty State */
+        .empty-state {
+            background-color: white;
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            color: #777;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+            color: #777;
+            margin-bottom: 16px;
+        }
+
+        /* Posts Section */
+        .profile-posts {
+            padding: 16px;
+        }
+
+        /* More Menu */
+        .more-menu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .more-menu.show {
+            transform: translateY(0);
+        }
+
+        .more-menu-option {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .more-menu-option i {
+            width: 24px;
+            text-align: center;
+        }
+
+        .more-menu-option:last-child {
+            border-bottom: none;
+        }
+
+        .more-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .more-menu-overlay.show {
+            display: block;
+        }
+
+        /* Verification Badge */
+        .verified-badge {
+            color: #00B0FF;
+            font-size: 14px;
+        }
+
+        /* Create Post Button */
+        .create-post-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: #00B0FF;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 100;
+            text-decoration: none;
+        }
+
+        /* Desktop Suggestions */
+        .suggestions-sidebar {
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            body {
+                display: grid;
+                grid-template-columns: 280px 1fr;
+                gap: 20px;
+            }
+
+            .main-content {
+                grid-column: 2;
+                margin: 56px 0 0;
+                max-width: 800px;
+            }
+
+            .suggestions-sidebar {
+                display: block;
+                grid-column: 1;
+                margin-top: 76px;
+                padding: 0 16px;
+                position: sticky;
+                top: 76px;
+                height: calc(100vh - 76px);
+                overflow-y: auto;
+            }
+
+            .suggestions-container {
+                background-color: white;
+                padding: 16px;
+                border-radius: 8px;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+                margin-bottom: 16px;
+            }
+
+            .suggestions-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 16px;
+            }
+
+            .suggestions-title {
+                font-weight: bold;
+                color: #555;
+                font-size: 16px;
+            }
+
+            .see-all {
+                color: #00B0FF;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                white-space: nowrap;
+                padding: 8px 12px;
+                border-radius: 20px;
+                background: rgba(0, 176, 255, 0.1);
+                text-decoration: none;
+            }
+
+            .see-all:hover {
+                background: rgba(0, 176, 255, 0.2);
+                text-decoration: underline;
+            }
+
+            .suggestions-scroll {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .suggestion-item {
+                display: flex;
+                align-items: center;
+                padding: 8px;
+                border-radius: 8px;
+                transition: background-color 0.2s;
+                justify-content: space-between;
+            }
+
+            .suggestion-item:hover {
+                background-color: #f5f5f5;
+            }
+
+            .suggestion-content {
+                display: flex;
+                align-items: center;
+                flex-grow: 1;
+                min-width: 0;
+            }
+
+            .suggestion-avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background-color: #00B0FF;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                margin-right: 12px;
+                flex-shrink: 0;
+            }
+
+            .suggestion-info {
+                flex-grow: 1;
+                min-width: 0;
+            }
+
+            .suggestion-name {
+                font-weight: bold;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .suggestion-username {
+                color: #777;
+                font-size: 12px;
+                margin-top: 2px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .suggestion-follow {
+                background-color: #000;
+                color: white;
+                border: none;
+                border-radius: 20px;
+                padding: 8px 16px;
+                font-size: 14px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: all 0.3s;
+                min-width: 80px;
+                flex-shrink: 0;
+                margin-left: 12px;
+            }
+
+            .suggestion-follow:hover {
+                background-color: #333;
+            }
+
+            .suggestion-follow.following {
+                background-color: #fff;
+                color: #000;
+                border: 1px solid #ddd;
+            }
+
+            .suggestion-follow.following:hover {
+                background-color: #f0f0f0;
+                border-color: #ccc;
+            }
+        }
+
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            header {
+                padding: 10px 24px;
+            }
+
+            .profile-header {
+                padding: 30px 24px;
+            }
+
+            .profile-avatar {
+                width: 150px;
+                height: 150px;
+                font-size: 60px;
+            }
+
+            .profile-name {
+                font-size: 28px;
+            }
+
+            .profile-username {
+                font-size: 18px;
+            }
+
+            .profile-bio {
+                font-size: 17px;
+            }
+
+            .profile-link {
+                font-size: 16px;
+            }
+
+            .stat-number {
+                font-size: 22px;
+            }
+
+            .stat-label {
+                font-size: 15px;
+            }
+        }
+
+              /* Create Post Button */
+    .create-post-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 35px;
+        height: 90px;
+        border-radius: 25px; /* Creates pill shape with rounded ends */
+        background-color: #000000;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        cursor: pointer;
+        z-index: 100;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    .create-post-btn:hover {
+        background-color: #222222;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    .create-post-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Edit Profile Page Styles */
+        .edit-profile-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            z-index: 2000;
+            overflow-y: auto;
+            padding-top: 56px;
+        }
+        
+        .edit-profile-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            z-index: 10;
+        }
+        
+        .edit-profile-back {
+            font-size: 20px;
+            color: #000;
+            text-decoration: none;
+        }
+        
+        .edit-profile-title {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .edit-profile-save {
+            background: none;
+            border: none;
+            color: #00B0FF;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .edit-profile-save.loading {
+            color: #ccc;
+            pointer-events: none;
+        }
+        
+        .edit-profile-save.loading i {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .edit-profile-content {
+            padding: 20px 16px;
+        }
+        
+        .edit-profile-avatar-container {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .edit-profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: white;
+            border: 4px solid white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background-image: url('https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png');
+            background-size: 70%;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin: 0 auto;
+        }
+        
+        .edit-profile-avatar-change {
+            position: absolute;
+            bottom: 0;
+            right: calc(50% - 60px);
+            background-color: #00B0FF;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+        
+        .edit-profile-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .edit-profile-field {
+            margin-bottom: 20px;
+        }
+        
+        .edit-profile-label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        
+        .edit-profile-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .edit-profile-input:focus {
+            border-color: #00B0FF;
+            outline: none;
+        }
+        
+        .edit-profile-bio {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+           /* Profile Link Section */
+    .profile-link-display {
+        display: flex;
+        align-items: center;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px 12px;
+        border: 1px solid #e0e2e5;
+        position: relative;
+    }
+    
+    .profile-link-url {
+        flex-grow: 1;
+        font-family: 'Roboto Mono', monospace;
+        color: #333;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 14px;
+    }
+    
+    .profile-link-copy-btn {
+        margin-left: 10px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        background-color: #f0f2f5;
+        color: #000;
+        border: none;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    
+    .profile-link-copy-btn:hover {
+        background-color: #e4e6e9;
+    }
+    
+    .profile-link-copy-btn i {
+        font-size: 12px;
+    }
+    
+    .profile-link-note {
+        color: #777;
+        font-size: 13px;
+        margin-top: 8px;
+    }
+    
+    .copy-feedback {
+        position: absolute;
+        right: 10px;
+        background-color: #00B0FF;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        display: none;
+    }
+    
+
+      /* Remove desktop suggestions sidebar */
+    .suggestions-sidebar {
+        display: none !important;
+    }
+
+    /* Make profile page full-width on desktop */
+    @media (min-width: 1024px) {
+        body {
+            display: block !important;
+            grid-template-columns: 1fr !important;
+        }
+
+        .main-content {
+            grid-column: 1 !important;
+            margin: 56px auto 0 !important;
+            max-width: 100% !important;
+            padding: 0 20px !important;
+        }
+
+        .profile-header {
+            max-width: 800px;
+            margin: 0 auto 16px !important;
+        }
+
+        .profile-tabs {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .profile-posts {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    }
+
+    /* Adjust create post button position on desktop */
+    @media (min-width: 768px) {
+        .create-post-btn {
+            right: 40px;
+            bottom: 40px;
+        }
+    }
+    @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(5px); }
+        20% { opacity: 1; transform: translateY(0); }
+        80% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(5px); }
+    }
+
+   /* ===== Core Message Styles ===== */
+.message-container {
+  height: calc(100vh - 120px); /* Full height minus header/input */
+  padding: 16px;
+  overflow-y: auto;
+  background-color: #ECEFF1; /* Match your theme */
+}
+
+/* Individual message bubbles */
+.message-bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.4;
+  position: relative;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Sent messages (align right) */
+.message-sent {
+  background-color: #00B0FF; /* Your blue accent */
+  color: white;
+  margin-left: auto;
+  border-bottom-right-radius: 4px;
+}
+
+/* Received messages (align left) */
+.message-received {
+  background-color: white;
+  color: #333;
+  margin-right: auto;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Message metadata */
+.message-meta {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Input area */
+.message-input-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  background-color: white;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+}
+
+.message-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 24px;
+  font-size: 15px;
+  outline: none;
+}
+
+.send-button {
+  margin-left: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #00B0FF;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 480px) {
+  .message-bubble {
+    max-width: 80%; /* More space for text */
+  }
+  
+  .message-input {
+    padding: 10px 14px; /* Smaller on mobile */
+  }
+}
+
+/* ===== Username Validation Styles ===== */
+.username-validation-container {
+    margin-top: 8px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.username-validation-message {
+    margin-left: 8px;
+    font-weight: 500;
+}
+
+.username-valid {
+    color: #00C851; /* Green */
+}
+
+.username-invalid {
+    color: #ff4444; /* Red */
+}
+
+.username-checking {
+    color: #ffbb33; /* Yellow */
+}
+
+/* Loading spinner for username check */
+.username-check-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0,0,0,0.1);
+    border-radius: 50%;
+    border-top-color: #00B0FF;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 8px;
+}
+
+/* ===== Enhanced Profile Action Buttons ===== */
+.profile-btn {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-btn.loading {
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.profile-btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255,255,255,0.3), 
+        transparent);
+    animation: loadingShimmer 1.5s infinite;
+}
+
+/* Block/Report Button States */
+.block-btn {
+    background-color: #ff4444 !important;
+    color: white !important;
+}
+
+.block-btn:hover {
+    background-color: #cc0000 !important;
+}
+
+.report-btn {
+    background-color: #ffbb33 !important;
+    color: #000 !important;
+}
+
+.report-btn:hover {
+    background-color: #ff8800 !important;
+}
+
+.report-sent {
+    background-color: #00C851 !important;
+    color: white !important;
+    pointer-events: none;
+}
+
+/* ===== Follow/Following Button States ===== */
+.follow-btn {
+    transition: all 0.3s ease;
+}
+
+.follow-btn.following {
+    background-color: #f0f2f5 !important;
+    color: #000 !important;
+    border: 1px solid #ddd !important;
+}
+
+.follow-btn.following:hover {
+    background-color: #e4e6e9 !important;
+    border-color: #ccc !important;
+}
+
+.follow-btn.pending {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* ===== Enhanced More Menu Styles ===== */
+.more-menu-option {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.more-menu-option:hover {
+    background-color: #f5f5f5;
+}
+
+.more-menu-option.destructive {
+    color: #ff4444;
+}
+
+.more-menu-option i {
+    width: 24px;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.more-menu-option:hover i {
+    transform: scale(1.1);
+}
+
+/* Loading state for menu options */
+.more-menu-option.loading {
+    pointer-events: none;
+}
+
+.more-menu-option.loading span {
+    visibility: hidden;
+}
+
+.more-menu-option.loading::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid rgba(0,0,0,0.1);
+    border-top-color: #00B0FF;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* ===== Profile Link Display ===== */
+.profile-link-display {
+    display: flex;
+    align-items: center;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid #e0e2e5;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.profile-link-display:hover {
+    background-color: #f0f2f5;
+}
+
+.profile-link-url {
+    flex-grow: 1;
+    font-family: 'Roboto Mono', monospace;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.profile-link-copy-btn {
+    margin-left: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background-color: #f0f2f5;
+    color: #000;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.profile-link-copy-btn:hover {
+    background-color: #e4e6e9;
+}
+
+.profile-link-copy-btn i {
+    font-size: 12px;
+}
+
+.profile-link-note {
+    color: #777;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.copy-feedback {
+    position: absolute;
+    right: 10px;
+    background-color: #00B0FF;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: none;
+    animation: fadeInOut 2s ease forwards;
+}
+
+/* ===== Edit Profile Specific Styles ===== */
+.edit-profile-field {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.edit-profile-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #555;
+    font-size: 14px;
+}
+
+.edit-profile-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.edit-profile-input:focus {
+    border-color: #00B0FF;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 176, 255, 0.2);
+}
+
+.edit-profile-input.invalid {
+    border-color: #ff4444;
+}
+
+.edit-profile-input.valid {
+    border-color: #00C851;
+}
+
+.edit-profile-bio {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Character counter */
+.char-counter {
+    font-size: 12px;
+    color: #777;
+    text-align: right;
+    margin-top: 4px;
+}
+
+.char-counter.near-limit {
+    color: #ffbb33;
+}
+
+.char-counter.over-limit {
+    color: #ff4444;
+}
+
+/* ===== Animations ===== */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes loadingShimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(5px); }
+    20% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(5px); }
+}
+
+/* ===== Responsive Adjustments ===== */
+
+    
+    .username-validation-message {
+        font-size: 12px;
+    }
+}
+
+/* Load More Spinner */
+.load-more-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #777;
+}
+
+.load-more-spinner .spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(0, 176, 255, 0.2);
+    border-radius: 50%;
+    border-top-color: #00B0FF;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+    </style>
+</head>
+<body>
+    <!-- Skeleton Preloader -->
+    <div class="skeleton-preloader">
+        <div class="skeleton-header">
+            <div class="skeleton-line long" style="height: 16px; width: 80%; margin-bottom: 20px;"></div>
+            <div class="skeleton-line long" style="height: 16px; width: 60%; margin-bottom: 30px;"></div>
+            <div class="skeleton-avatar"></div>
+        </div>
+        
+        <div class="skeleton-line short" style="height: 28px; width: 180px;"></div>
+        <div class="skeleton-line medium" style="height: 16px; width: 120px;"></div>
+        
+        <div class="skeleton-stats">
+            <div class="skeleton-stat">
+                <div class="skeleton-stat-line"></div>
+                <div class="skeleton-line short" style="height: 14px; width: 60px;"></div>
+            </div>
+            <div class="skeleton-stat">
+                <div class="skeleton-stat-line"></div>
+                <div class="skeleton-line short" style="height: 14px; width: 60px;"></div>
+            </div>
+            <div class="skeleton-stat">
+                <div class="skeleton-stat-line"></div>
+                <div class="skeleton-line short" style="height: 14px; width: 60px;"></div>
+            </div>
+        </div>
+        
+        <div class="skeleton-buttons">
+            <div class="skeleton-button"></div>
+            <div class="skeleton-button"></div>
+            <div class="skeleton-button small"></div>
+        </div>
+    </div>
+
+    <!-- Followers/Following Page -->
+    <div class="follow-page">
+        <div class="follow-header">
+            <a href="#" class="follow-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="follow-title">Followers</div>
+            <div style="width: 20px;"></div> <!-- Spacer for alignment -->
+        </div>
+        
+        <div class="follow-tabs">
+            <div class="follow-tab active" data-tab="followers">Followers</div>
+            <div class="follow-tab" data-tab="following">Following</div>
+        </div>
+        
+        <div class="follow-content">
+            <div class="follow-list active" id="followers-list">
+                <!-- Followers will be shown here -->
+                <div class="follow-item">
+                    <div class="follow-avatar">AP</div>
+                    <div class="follow-info">
+                        <div class="follow-name">
+                            Airport Pro <i class="fas fa-check-circle verified-badge"></i>
+                        </div>
+                        <div class="follow-username">@airportpro</div>
+                    </div>
+                    <div class="follow-action">
+                        <button class="follow-btn following">Following</button>
+                    </div>
+                </div>
+                
+                <div class="follow-item">
+                    <div class="follow-avatar">FP</div>
+                    <div class="follow-info">
+                        <div class="follow-name">Flight Pilot International</div>
+                        <div class="follow-username">@flightpilot</div>
+                    </div>
+                    <div class="follow-action">
+                        <button class="follow-btn follow">Follow</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="follow-list" id="following-list">
+                <!-- Following will be shown here -->
+                <div class="follow-item">
+                    <div class="follow-avatar">AC</div>
+                    <div class="follow-info">
+                        <div class="follow-name">
+                            Aircraft Club <i class="fas fa-check-circle verified-badge"></i>
+                        </div>
+                        <div class="follow-username">@aircraftclub</div>
+                    </div>
+                    <div class="follow-action">
+                        <button class="follow-btn following">Following</button>
+                    </div>
+                </div>
+                
+                <div class="follow-item">
+                    <div class="follow-avatar">PP</div>
+                    <div class="follow-info">
+                        <div class="follow-name">Private Pilot Network</div>
+                        <div class="follow-username">@privatepilot</div>
+                    </div>
+                    <div class="follow-action">
+                        <button class="follow-btn following">Following</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Page -->
+<div class="message-page" style="display: none;">
+    <div class="message-header">
+        <a href="#" class="message-back">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="message-user">
+            <div class="message-name">
+                X-Aviation <i class="fas fa-check-circle verified-badge"></i>
+            </div>
+            <div class="message-username">@xaviation</div>
+            <div class="message-status">Active now</div>
+        </div>
+    </div>
+    
+    <div class="message-content">
+        <!-- Skeleton Loading State (shown while loading initial messages) -->
+        <div class="skeleton-loading" style="display: none;">
+            <div class="skeleton-header">
+                <div class="skeleton-avatar"></div>
+                <div class="skeleton-name"></div>
+            </div>
+            <div class="skeleton-message"></div>
+            <div class="skeleton-message"></div>
+            <div class="skeleton-message"></div>
+        </div>
+        
+        <!-- Loading Spinner for Infinite Scroll (shown when loading older messages) -->
+        <div class="scroll-loading" style="display: none;">
+            <div class="spinner"></div>
+        </div>
+        
+        <!-- Empty State (shown when no messages exist) -->
+        <div class="message-empty">
+            <div class="message-empty-icon">
+                <i class="far fa-comment-dots"></i>
+            </div>
+            <div>No messages yet</div>
+            <div style="font-size: 14px; margin-top: 8px;">Send your first message to start the conversation</div>
+        </div>
+        
+        <!-- Message bubbles will be inserted here by JavaScript -->
+    </div>
+    
+    <div class="message-input-container">
+        <input type="text" class="message-input" placeholder="Write a message...">
+        <button class="message-send">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+   <!-- Edit Profile Page (hidden by default) -->
+<div class="edit-profile-container">
+    <div class="edit-profile-header">
+        <a href="#" class="edit-profile-back">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="edit-profile-title">Edit Profile</div>
+        <button class="edit-profile-save">Save</button>
+    </div>
+    
+    <div class="edit-profile-content">
+        <div class="edit-profile-avatar-container">
+            <div class="edit-profile-avatar"></div>
+            <div class="edit-profile-avatar-change">
+                <i class="fas fa-camera"></i>
+            </div>
+        </div>
+        
+        <div class="edit-profile-form">
+            <!-- Name Field -->
+            <div class="edit-profile-field">
+                <label class="edit-profile-label">Name</label>
+                <input type="text" class="edit-profile-input" value="X-Aviation" placeholder="Enter your name">
+            </div>
+            
+            <!-- Username Field -->
+            <div class="edit-profile-field">
+                <label class="edit-profile-label">Username</label>
+                <input type="text" class="edit-profile-input" value="xaviation" placeholder="Enter your username">
+            </div>
+            
+            <!-- Bio Field -->
+            <div class="edit-profile-field">
+                <label class="edit-profile-label">Bio</label>
+                <textarea class="edit-profile-input edit-profile-bio" placeholder="Tell about yourself">The ultimate aviation community for pilots, enthusiasts, and professionals. Connecting the aviation world one flight at a time. ✈️</textarea>
+            </div>
+            
+            <!-- Website Field -->
+            <div class="edit-profile-field">
+                <label class="edit-profile-label">Website</label>
+                <input type="url" class="edit-profile-input" value="https://x-aviation.com" placeholder="https://example.com">
+            </div>
+            
+            <!-- Profile Link Field (New) -->
+            <div class="edit-profile-field">
+                <label class="edit-profile-label">Profile Link</label>
+                <div class="profile-link-display">
+                    <span class="profile-link-url">xaviation.co/@xaviation</span>
+                    <button class="profile-link-copy-btn" onclick="copyProfileLink()">
+                        <i class="fas fa-copy"></i>
+                        <span class="btn-text">Copy</span>
+                    </button>
+                    <span class="copy-feedback">Copied!</span>
+                </div>
+                <p class="profile-link-note">This is your permanent profile URL that others can use to find you.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Header -->
+    <header>
+        <a href="index.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        
+        <div class="logo-container">
+            <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png' class="logo"/>
+        </div>
+        
+        <div class="header-icons">
+            <a href="search.html" class="nav-icon" title="Search">
+                <i class="fas fa-search"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <!-- Edit button (will be shown/hidden based on auth) -->
+            <div class="edit-profile-btn" id="edit-profile-btn">
+                <i class="fas fa-pen"></i>
+            </div>
+            
+            <div class="profile-avatar-container">
+                <div class="profile-avatar" id="profile-avatar">
+                    <!-- Will be populated by JS -->
+                </div>
+            </div>
+            
+            <div class="profile-info">
+                <h1 class="profile-name" id="profile-name">
+                    <!-- Will be populated by JS -->
+                </h1>
+                <div class="profile-username" id="profile-username">
+                    <!-- Will be populated by JS -->
+                </div>
+                <div class="profile-bio" id="profile-bio">
+                    <!-- Will be populated by JS -->
+                </div>
+                <a href="#" class="profile-link" id="profile-website" target="_blank">
+                    <!-- Will be populated by JS -->
+                </a>
+            </div>
+            
+            <div class="profile-stats">
+                <div class="profile-stat" id="posts-count">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Posts</div>
+                </div>
+                <div class="profile-stat" id="followers-count">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Followers</div>
+                </div>
+                <div class="profile-stat" id="following-count">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Following</div>
+                </div>
+            </div>
+            
+            <div class="profile-actions" id="profile-actions">
+    <!-- Buttons will be shown/hidden based on auth -->
+    <a href="#" class="profile-btn primary message-btn" id="message-btn"
+       data-user='{"uid":"${profileUser.uid}","displayName":"${profileUser.displayName}","username":"${profileUser.username}","verified":${profileUser.verified || false}}'>
+        <i class="fas fa-paper-plane"></i> Message
+    </a>
+</div>
+                <button class="profile-btn secondary follow-btn" id="follow-btn">
+                    <i class="fas fa-user-plus"></i> Follow
+                </button>
+                <button class="profile-btn secondary more-btn" id="more-btn">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Profile Tabs -->
+        <div class="profile-tabs">
+            <div class="profile-tab active">
+                <i class="fas fa-th-large"></i> Posts
+            </div>
+        </div>
+        
+        <!-- Posts Container -->
+        <div class="profile-posts" id="profile-posts">
+    <!-- Posts will be loaded here -->
+    <div class="load-more-spinner" id="load-more-spinner" style="display: none;">
+        <div class="spinner"></div>
+        <span>Loading more posts...</span>
+    </div>
+</div>
+
+    <!-- More Menu (hidden by default) -->
+<div class="more-menu">
+    <div class="more-menu-option" id="block-option">
+        <i class="fas fa-ban"></i>
+        <span>Block</span>
+    </div>
+    <div class="more-menu-option destructive" id="report-option">
+        <i class="fas fa-flag"></i>
+        <span>Report</span>
+    </div>
+</div>
+
+<!-- Overlay for More Menu -->
+<div class="more-menu-overlay"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script>
+   <script>
+  // Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+    authDomain: "x-jamii.firebaseapp.com",
+    projectId: "x-jamii",
+    storageBucket: "x-jamii.appspot.com",
+    messagingSenderId: "927548667044",
+    appId: "1:927548667044:web:835e597909f51a2e4da231",
+    measurementId: "G-9S45DQ04HZ"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+// Global Variables
+let currentUser = null;
+let profileUser = null;
+let isFollowing = false;
+let isBlocked = false;
+let lastPost = null;
+let loadingMore = false;
+let allPostsLoaded = false;
+
+// DOM Elements
+const skeletonPreloader = document.querySelector('.skeleton-preloader');
+const profileAvatar = document.getElementById('profile-avatar');
+const profileName = document.getElementById('profile-name');
+const profileUsername = document.getElementById('profile-username');
+const profileBio = document.getElementById('profile-bio');
+const profileWebsite = document.getElementById('profile-website');
+const postsCount = document.getElementById('posts-count').querySelector('.stat-number');
+const followersCount = document.getElementById('followers-count').querySelector('.stat-number');
+const followingCount = document.getElementById('following-count').querySelector('.stat-number');
+const editProfileBtn = document.getElementById('edit-profile-btn');
+const messageBtn = document.getElementById('message-btn');
+const followBtn = document.getElementById('follow-btn');
+const moreBtn = document.getElementById('more-btn');
+const profilePosts = document.getElementById('profile-posts');
+
+// Initialize the page
+function init() {
+    // Get profile user from URL
+    const username = window.location.pathname.split('/').pop();
+    
+    auth.onAuthStateChanged(async user => {
+        if (!user) {
+            // Not logged in - redirect to login page
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        currentUser = user;
+        
+        if (!username || username === 'profile.html') {
+            // Viewing own profile
+            profileUser = user;
+            await loadProfile(user.uid);
+            setupUIForOwner();
+        } else {
+            // Viewing someone else's profile
+            await loadProfileByUsername(username);
+            setupUIForVisitor();
+        }
+    });
+
+    // Add scroll event listener for infinite scroll
+    window.addEventListener('scroll', () => {
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+            if (profileUser && !loadingMore && !allPostsLoaded) {
+                loadUserPosts(profileUser.uid, true);
+            }
+        }
+    });
+}
+
+// Load profile data
+async function loadProfile(uid) {
+    try {
+        // Reset pagination variables when loading a new profile
+        lastPost = null;
+        loadingMore = false;
+        allPostsLoaded = false;
+
+        const [userDoc, totalPosts] = await Promise.all([
+            db.collection('users').doc(uid).get(),
+            db.collection('posts').where('userId', '==', uid).get().then(snap => snap.size)
+        ]);
+
+        if (userDoc.exists) {
+            profileUser = { uid, ...userDoc.data() };
+            renderProfile();
+            
+            // Set total post count
+            postsCount.textContent = totalPosts;
+            
+            // Load initial data in parallel
+            await Promise.all([
+                loadUserPosts(uid),
+                loadFollowStats(uid),
+                currentUser && currentUser.uid !== uid ? checkFollowStatus() : Promise.resolve(),
+                currentUser && currentUser.uid !== uid ? checkBlockStatus() : Promise.resolve()
+            ]);
+        } else {
+            console.log("No such user!");
+            showErrorState();
+        }
+    } catch (error) {
+        console.error("Error loading profile:", error);
+        showErrorState();
+    } finally {
+        hideSkeleton();
+    }
+}
+
+// Load profile by username
+async function loadProfileByUsername(username) {
+    try {
+        // Reset pagination variables when loading a new profile
+        lastPost = null;
+        loadingMore = false;
+        allPostsLoaded = false;
+
+        const usersSnapshot = await db.collection('users')
+            .where('username', '==', username.toLowerCase())
+            .limit(1)
+            .get();
+        
+        if (!usersSnapshot.empty) {
+            const userDoc = usersSnapshot.docs[0];
+            profileUser = { uid: userDoc.id, ...userDoc.data() };
+            renderProfile();
+            
+            // Load all data in parallel
+            const [totalPosts] = await Promise.all([
+                db.collection('posts').where('userId', '==', userDoc.id).get().then(snap => snap.size),
+                loadUserPosts(userDoc.id),
+                loadFollowStats(userDoc.id),
+                currentUser && currentUser.uid !== userDoc.id ? checkFollowStatus() : Promise.resolve(),
+                currentUser && currentUser.uid !== userDoc.id ? checkBlockStatus() : Promise.resolve()
+            ]);
+            
+            // Set total post count
+            postsCount.textContent = totalPosts;
+        } else {
+            console.log("No user found with that username");
+            showErrorState();
+        }
+    } catch (error) {
+        console.error("Error loading profile by username:", error);
+        showErrorState();
+    } finally {
+        hideSkeleton();
+    }
+}
+
+// Hide skeleton loader with fade-out effect
+function hideSkeleton() {
+    skeletonPreloader.style.opacity = '0';
+    setTimeout(() => {
+        skeletonPreloader.style.display = 'none';
+    }, 300);
+}
+
+// Show error state
+function showErrorState() {
+    profilePosts.innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="empty-state-text">
+                Error loading profile. Please try again later.
+            </div>
+        </div>
+    `;
+}
+
+// Render profile data
+function renderProfile() {
+    // Avatar
+    if (profileUser.photoURL) {
+        profileAvatar.innerHTML = `<img src="${profileUser.photoURL}" alt="${profileUser.displayName}">`;
+    } else {
+        const initial = profileUser.displayName?.charAt(0).toUpperCase() || 'U';
+        profileAvatar.textContent = initial;
+    }
+    
+    // Name and verification
+    profileName.innerHTML = profileUser.displayName || 'User';
+    if (profileUser.verified) {
+        profileName.innerHTML += '<i class="fas fa-check-circle verified-badge"></i>';
+    }
+    
+    // Username
+    profileUsername.textContent = `@${profileUser.username || 'user'}`;
+    
+    // Bio
+    profileBio.textContent = profileUser.bio || '';
+    
+    // Website
+    if (profileUser.website) {
+        profileWebsite.innerHTML = `<i class="fas fa-link"></i> ${profileUser.website.replace(/^https?:\/\//, '')}`;
+        profileWebsite.href = profileUser.website.startsWith('http') ? profileUser.website : `https://${profileUser.website}`;
+        profileWebsite.style.display = 'inline-block';
+    } else {
+        profileWebsite.style.display = 'none';
+    }
+
+    // Set message button data attributes
+    if (messageBtn && profileUser) {
+        messageBtn.dataset.user = JSON.stringify({
+            uid: profileUser.uid,
+            displayName: profileUser.displayName || 'User',
+            username: profileUser.username || 'user',
+            verified: profileUser.verified || false,
+            photoURL: profileUser.photoURL || ''
+        });
+    }
+}
+
+// Load user posts with pagination
+async function loadUserPosts(uid, loadMore = false) {
+    if (loadingMore || allPostsLoaded) return;
+    loadingMore = true;
+    
+    try {
+        // Show spinner when loading more
+        if (loadMore) {
+            document.getElementById('load-more-spinner').style.display = 'flex';
+        }
+
+        let query = db.collection('posts')
+            .where('userId', '==', uid)
+            .orderBy('timestamp', 'desc')
+            .limit(5);
+
+        if (loadMore && lastPost) {
+            query = query.startAfter(lastPost);
+        }
+
+        const postsSnapshot = await query.get();
+        
+        // Update last post for pagination
+        if (!postsSnapshot.empty) {
+            lastPost = postsSnapshot.docs[postsSnapshot.docs.length - 1];
+        } else if (loadMore) {
+            allPostsLoaded = true;
+            document.getElementById('load-more-spinner').style.display = 'none';
+            loadingMore = false;
+            return;
+        }
+
+        // Only clear posts on initial load
+        if (!loadMore) {
+            profilePosts.innerHTML = '';
+            
+            if (postsSnapshot.empty) {
+                profilePosts.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="far fa-newspaper"></i>
+                        </div>
+                        <div class="empty-state-text">
+                            There are no posts to show yet.
+                        </div>
+                    </div>
+                `;
+                loadingMore = false;
+                return;
+            }
+        }
+
+        // Process posts
+        const posts = postsSnapshot.docs.map(doc => {
+            const post = doc.data();
+            post.id = doc.id;
+            post.user = profileUser;
+            return post;
+        });
+        
+        // Render posts
+        posts.forEach(post => {
+            const postEl = document.createElement('div');
+            postEl.className = 'post';
+            postEl.innerHTML = `
+                <div class="post-header">
+                    <div class="post-avatar" onclick="navigateToProfile('${post.user.username}')">
+                        ${post.user.photoURL ? `<img src="${post.user.photoURL}">` : post.user.displayName.charAt(0)}
+                    </div>
+                    <div class="post-user-info">
+                        <div class="post-user" onclick="navigateToProfile('${post.user.username}')">
+                            ${post.user.displayName}
+                            ${post.user.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+                        </div>
+                        <div class="post-username" onclick="navigateToProfile('${post.user.username}')">
+                            @${post.user.username}
+                        </div>
+                    </div>
+                </div>
+                <div class="post-content">${formatPostContent(post.content)}</div>
+                ${post.media && post.media.length ? createMediaContent(post.media) : ''}
+                <div class="post-time">${formatTime(post.timestamp?.toDate())}</div>
+            `;
+            profilePosts.appendChild(postEl);
+        });
+
+        document.getElementById('load-more-spinner').style.display = 'none';
+        
+    } catch (error) {
+        console.error("Error loading user posts:", error);
+        document.getElementById('load-more-spinner').style.display = 'none';
+        
+        if (!loadMore) {
+            profilePosts.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="empty-state-text">
+                        Error loading posts. Please try again later.
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    loadingMore = false;
+}
+
+// Format post content
+function formatPostContent(text) {
+    if (!text) return '';
+    
+    text = text.replace(/(https?:\/\/[^\s]+)/g, url => {
+        return `<a href="${url}" target="_blank">${url}</a>`;
+    });
+    
+    text = text.replace(/#(\w+)/g, '<a href="/hashtag/$1" class="hashtag">#$1</a>');
+    text = text.replace(/@(\w+)/g, '<a href="/profile/$1" class="mention">@$1</a>');
+    
+    return text;
+}
+
+// Format time
+function formatTime(date) {
+    if (!date) return '';
+    const now = new Date();
+    const diff = now - date;
+    
+    const minute = 60 * 1000;
+    const hour = minute * 60;
+    const day = hour * 24;
+    
+    if (diff < minute) return 'Just now';
+    if (diff < hour) return `${Math.floor(diff / minute)}m`;
+    if (diff < day) return `${Math.floor(diff / hour)}h`;
+    if (diff < day * 7) return `${Math.floor(diff / day)}d`;
+    return date.toLocaleDateString();
+}
+
+// Create media content
+function createMediaContent(media) {
+    if (!media || !media.length) return '';
+    
+    if (media[0].type === 'video') {
+        return `
+            <div class="video-container">
+                <video controls>
+                    <source src="${media[0].url}" type="video/mp4">
+                </video>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="single-image-container">
+            <img src="${media[0].url}" loading="lazy">
+        </div>
+    `;
+}
+
+// Load follow stats
+async function loadFollowStats(uid) {
+    try {
+        const [followersSnapshot, followingSnapshot] = await Promise.all([
+            db.collection('users').doc(uid).collection('followers').get(),
+            db.collection('users').doc(uid).collection('following').get()
+        ]);
+        
+        followersCount.textContent = followersSnapshot.size;
+        followingCount.textContent = followingSnapshot.size;
+        
+    } catch (error) {
+        console.error("Error loading follow stats:", error);
+    }
+}
+
+// Check follow status
+async function checkFollowStatus() {
+    if (!currentUser || !profileUser) return;
+    
+    try {
+        const followDoc = await db.collection('users')
+            .doc(currentUser.uid)
+            .collection('following')
+            .doc(profileUser.uid)
+            .get();
+        
+        isFollowing = followDoc.exists;
+        updateFollowButton();
+    } catch (error) {
+        console.error("Error checking follow status:", error);
+    }
+}
+
+// Update follow button UI
+function updateFollowButton() {
+    if (isFollowing) {
+        followBtn.innerHTML = '<i class="fas fa-check"></i> Following';
+        followBtn.classList.add('following');
+    } else {
+        followBtn.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
+        followBtn.classList.remove('following');
+    }
+}
+
+// Check block status
+async function checkBlockStatus() {
+    if (!currentUser || !profileUser) return;
+    
+    try {
+        const blockDoc = await db.collection('users')
+            .doc(currentUser.uid)
+            .collection('blocked')
+            .doc(profileUser.uid)
+            .get();
+        
+        isBlocked = blockDoc.exists;
+        updateBlockButton();
+    } catch (error) {
+        console.error("Error checking block status:", error);
+    }
+}
+
+// Update block button UI
+function updateBlockButton() {
+    const blockOption = document.querySelector('.more-menu-option:first-child');
+    if (isBlocked) {
+        blockOption.innerHTML = '<i class="fas fa-ban"></i> <span>Unblock</span>';
+    } else {
+        blockOption.innerHTML = '<i class="fas fa-ban"></i> <span>Block</span>';
+    }
+}
+
+// Setup UI for profile owner
+function setupUIForOwner() {
+    editProfileBtn.style.display = 'flex';
+    if (messageBtn) messageBtn.style.display = 'none';
+    followBtn.style.display = 'none';
+    moreBtn.style.display = 'none';
+}
+
+// Setup UI for visitor
+function setupUIForVisitor() {
+    editProfileBtn.style.display = 'none';
+    if (messageBtn) messageBtn.style.display = 'inline-block';
+    followBtn.style.display = 'inline-block';
+    moreBtn.style.display = 'inline-block';
+}
+
+// Follow button handler
+followBtn.addEventListener('click', async () => {
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        if (isFollowing) {
+            await Promise.all([
+                db.collection('users')
+                    .doc(currentUser.uid)
+                    .collection('following')
+                    .doc(profileUser.uid)
+                    .delete(),
+                db.collection('users')
+                    .doc(profileUser.uid)
+                    .collection('followers')
+                    .doc(currentUser.uid)
+                    .delete()
+            ]);
+            
+            isFollowing = false;
+        } else {
+            await Promise.all([
+                db.collection('users')
+                    .doc(currentUser.uid)
+                    .collection('following')
+                    .doc(profileUser.uid)
+                    .set({
+                        followedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }),
+                db.collection('users')
+                    .doc(profileUser.uid)
+                    .collection('followers')
+                    .doc(currentUser.uid)
+                    .set({
+                        followedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    })
+            ]);
+            
+            isFollowing = true;
+        }
+        
+        updateFollowButton();
+        loadFollowStats(profileUser.uid);
+    } catch (error) {
+        console.error("Error toggling follow:", error);
+        alert('Failed to update follow status');
+    }
+});
+
+// Block button handler
+document.querySelector('.more-menu-option:first-child').addEventListener('click', async () => {
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        if (isBlocked) {
+            await db.collection('users')
+                .doc(currentUser.uid)
+                .collection('blocked')
+                .doc(profileUser.uid)
+                .delete();
+            
+            isBlocked = false;
+        } else {
+            await db.collection('users')
+                .doc(currentUser.uid)
+                .collection('blocked')
+                .doc(profileUser.uid)
+                .set({
+                    blockedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            
+            isBlocked = true;
+        }
+        
+        updateBlockButton();
+        
+        if (isBlocked) {
+            document.querySelector('.more-menu').classList.remove('show');
+            document.querySelector('.more-menu-overlay').classList.remove('show');
+            
+            alert(`You've blocked @${profileUser.username}. You won't see their content.`);
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+        }
+    } catch (error) {
+        console.error("Error toggling block:", error);
+        alert('Failed to update block status');
+    }
+});
+
+// Report button handler
+document.querySelector('.more-menu-option:last-child').addEventListener('click', async () => {
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    const reportOption = document.querySelector('.more-menu-option:last-child span');
+    reportOption.textContent = 'Report Sent';
+    
+    setTimeout(() => {
+        document.querySelector('.more-menu').classList.remove('show');
+        document.querySelector('.more-menu-overlay').classList.remove('show');
+        reportOption.textContent = 'Report';
+    }, 1500);
+    
+    try {
+        await db.collection('reports').add({
+            reporterId: currentUser.uid,
+            reportedUserId: profileUser.uid,
+            reportedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'pending'
+        });
+    } catch (error) {
+        console.error("Error sending report:", error);
+    }
+});
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', init);
+
+// Navigation function
+window.navigateToProfile = function(username) {
+    window.location.href = `/profile/${username}`;
+};
+
+// More button click handler
+moreBtn.addEventListener('click', (e) => {
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    e.stopPropagation();
+    document.querySelector('.more-menu').classList.add('show');
+    document.querySelector('.more-menu-overlay').classList.add('show');
+});
+
+// Close menu when clicking overlay
+document.querySelector('.more-menu-overlay').addEventListener('click', () => {
+    document.querySelector('.more-menu').classList.remove('show');
+    document.querySelector('.more-menu-overlay').classList.remove('show');
+});
+
+// Close menu when clicking anywhere else
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.more-menu') && !e.target.closest('.more-btn')) {
+        document.querySelector('.more-menu').classList.remove('show');
+        document.querySelector('.more-menu-overlay').classList.remove('show');
+    }
+});
+</script>
+<script src="message.js"></script>
+</body>
+</html>

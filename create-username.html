@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#ECEFF1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Username - X-Aviation</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #ECEFF1;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px 30px;
+            box-sizing: border-box;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin: 30px 0 20px;
+        }
+
+        .logo {
+            height: 60px;
+            width: auto;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 0 30px;
+            color: #000;
+            text-align: center;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .input-container {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background-color: #ECEFF1;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #000;
+        }
+
+        .button-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 20px;
+            background-color: #ECEFF1;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        .continue-button {
+            width: 100%;
+            max-width: 500px;
+            height: 50px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #000;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success-message {
+            color: #2ecc71;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="logo-container">
+            <img src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" alt="X-Aviation Logo" class="logo">
+        </div>
+        
+        <div class="form-container">
+            <h1 class="title">Create your username</h1>
+            
+            <div class="input-container">
+                <label for="username" class="input-label">Username</label>
+                <input type="text" class="text-input" id="username" placeholder="Enter your username" autocapitalize="off" autocorrect="off">
+                <div class="error-message" id="username-error"></div>
+                <div class="success-message" id="username-success"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="button-footer">
+        <button class="continue-button" id="continue-btn">Continue</button>
+    </div>
+
+<script>
+   const firebaseConfig = {
+  apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+  authDomain: "x-jamii.firebaseapp.com",
+  projectId: "x-jamii",
+  storageBucket: "x-jamii.firebasestorage.app",    // <- DIFFERENT
+  messagingSenderId: "927548667044",
+  appId: "1:927548667044:web:835e597909f51a2e4da231",
+  measurementId: "G-9S45DQ04HZ"
+};
+
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
+    const db = firebase.firestore();
+
+    // Generate and check username on page load
+    window.onload = generateAndCheckUsername;
+
+    async function generateAndCheckUsername() {
+        let username;
+        let isTaken = true;
+
+        while (isTaken) {
+            username = generateRandomUsername();
+            isTaken = !(await checkUsernameAvailability(username, false));
+        }
+
+        document.getElementById('username').value = username;
+    }
+
+    function generateRandomUsername() {
+        const adjectives = ['happy', 'sunny', 'quick', 'bright', 'clever', 'lucky'];
+        const nouns = ['pilot', 'flyer', 'aviator', 'wing', 'sky', 'cloud'];
+        const randomNum = Math.floor(Math.random() * 1000);
+        const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const noun = nouns[Math.floor(Math.random() * nouns.length)];
+        return `${adjective}_${noun}${randomNum}`.toLowerCase();
+    }
+
+    async function checkUsernameAvailability(username, showMessages = true) {
+        const errorElement = document.getElementById('username-error');
+        const successElement = document.getElementById('username-success');
+
+        if (showMessages) {
+            errorElement.style.display = 'none';
+            successElement.style.display = 'none';
+        }
+
+        if (!/^[a-z0-9_]+$/.test(username)) {
+            if (showMessages) {
+                errorElement.textContent = 'Only lowercase letters, numbers, and underscores allowed';
+                errorElement.style.display = 'block';
+            }
+            return false;
+        }
+
+        if (username.length < 3) {
+            if (showMessages) {
+                errorElement.textContent = 'Must be at least 3 characters';
+                errorElement.style.display = 'block';
+            }
+            return false;
+        }
+
+        try {
+            const snapshot = await db.collection('users').where('username', '==', username).get();
+            if (!snapshot.empty) {
+                if (showMessages) {
+                    errorElement.textContent = 'Username not available';
+                    errorElement.style.display = 'block';
+                }
+                return false;
+            } else {
+                if (showMessages) {
+                    successElement.textContent = 'Username available';
+                    successElement.style.display = 'block';
+                }
+                return true;
+            }
+        } catch (error) {
+            if (showMessages) {
+                errorElement.textContent = 'Error checking username. Try again.';
+                errorElement.style.display = 'block';
+            }
+            return false;
+        }
+    }
+
+    document.getElementById('username').addEventListener('input', function (e) {
+        let value = e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        if (value !== e.target.value) {
+            e.target.value = value;
+        }
+
+        if (value.length >= 3) {
+            checkUsernameAvailability(value);
+        } else {
+            document.getElementById('username-error').style.display = 'none';
+            document.getElementById('username-success').style.display = 'none';
+        }
+    });
+
+    document.getElementById('continue-btn').addEventListener('click', async function () {
+        const username = document.getElementById('username').value.trim();
+        const errorElement = document.getElementById('username-error');
+        errorElement.style.display = 'none';
+
+        if (!username) {
+            errorElement.textContent = 'Username is required';
+            errorElement.style.display = 'block';
+            return;
+        }
+
+        const isAvailable = await checkUsernameAvailability(username);
+        if (!isAvailable) return;
+
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            errorElement.textContent = 'No authenticated user found.';
+            errorElement.style.display = 'block';
+            return;
+        }
+
+        try {
+            await db.collection('users').doc(user.uid).update({ username });
+            window.location.href = 'index.html';
+        } catch (err) {
+            errorElement.textContent = 'Failed to save username. Try again.';
+            errorElement.style.display = 'block';
+        }
+    });
+</script>
+</body>
+</html>
