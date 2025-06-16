@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="theme-color" content="#ECEFF1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Username - X-Jamii</title>
-    <script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-analytics-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-storage-compat.js"></script>
+    <title>Create Username - X-Aviation</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
         body {
@@ -143,42 +141,25 @@
     </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-        authDomain: "x-jamii.firebaseapp.com",
-        projectId: "x-jamii",
-        storageBucket: "x-jamii.firebasestorage.app",
-        messagingSenderId: "927548667044",
-        appId: "1:927548667044:web:835e597909f51a2e4da231",
-        measurementId: "G-9S45DQ04HZ"
-    };
+   const firebaseConfig = {
+  apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+  authDomain: "x-jamii.firebaseapp.com",
+  projectId: "x-jamii",
+  storageBucket: "x-jamii.firebasestorage.app",    // <- DIFFERENT
+  messagingSenderId: "927548667044",
+  appId: "1:927548667044:web:835e597909f51a2e4da231",
+  measurementId: "G-9S45DQ04HZ"
+};
 
+    // Initialize Firebase
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
 
     const db = firebase.firestore();
 
-    // Check sign-in and referrer
-    firebase.auth().onAuthStateChanged(async (user) => {
-        const allowedReferrers = ['welcome.html', 'password.html'];
-        const referrer = document.referrer;
-        const cameFromAllowedPage = allowedReferrers.some(page => referrer.includes(page));
-
-        if (!user || !cameFromAllowedPage) {
-            window.location.href = "login.html";
-            return;
-        }
-
-        // Optional: Check if username already set
-        const doc = await db.collection('users').doc(user.uid).get();
-        if (doc.exists && doc.data().username) {
-            window.location.href = "index.html";
-            return;
-        }
-
-        generateAndCheckUsername();
-    });
+    // Generate and check username on page load
+    window.onload = generateAndCheckUsername;
 
     async function generateAndCheckUsername() {
         let username;
@@ -287,7 +268,7 @@
 
         try {
             await db.collection('users').doc(user.uid).update({ username });
-            window.location.href = 'profile.html';
+            window.location.href = 'index.html';
         } catch (err) {
             errorElement.textContent = 'Failed to save username. Try again.';
             errorElement.style.display = 'block';
