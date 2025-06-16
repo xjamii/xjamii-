@@ -287,7 +287,7 @@
 
         try {
             await db.collection('users').doc(user.uid).update({ username });
-            window.location.href = 'index.html';
+            window.location.href = 'profile.html';
         } catch (err) {
             errorElement.textContent = 'Failed to save username. Try again.';
             errorElement.style.display = 'block';
