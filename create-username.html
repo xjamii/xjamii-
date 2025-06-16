@@ -140,142 +140,210 @@
         <button class="continue-button" id="continue-btn">Continue</button>
     </div>
 
-<script>
+
                
 <script>
    const firebaseConfig = {
   apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
   authDomain: "x-jamii.firebaseapp.com",
   projectId: "x-jamii",
-  storageBucket: "x-jamii.firebasestorage.app",    // <- DIFFERENT
+  storageBucket: "x-jamii.appspot.com",
   messagingSenderId: "927548667044",
   appId: "1:927548667044:web:835e597909f51a2e4da231",
   measurementId: "G-9S45DQ04HZ"
 };
 
-    // Initialize Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+// Initialize Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Check authentication state when page loads
+auth.onAuthStateChanged((user) => {
+  if (!user) {
+    // Redirect to sign-in if not authenticated
+    window.location.href = 'signin.html';
+    return;
+  }
+  
+  // User is authenticated, generate username
+  generateAndCheckUsername();
+});
+
+// Generate and check username
+async function generateAndCheckUsername() {
+  let username;
+  let isTaken = true;
+  let attempts = 0;
+  const maxAttempts = 5;
+
+  while (isTaken && attempts < maxAttempts) {
+    username = generateRandomUsername();
+    isTaken = !(await checkUsernameAvailability(username, false));
+    attempts++;
+  }
+
+  if (attempts >= maxAttempts && isTaken) {
+    console.error("Failed to generate available username after multiple attempts");
+    document.getElementById('username-error').textContent = "Couldn't generate a username. Please try manually.";
+    document.getElementById('username-error').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('username').value = username;
+  await checkUsernameAvailability(username);
+}
+
+function generateRandomUsername() {
+  const adjectives = ['happy', 'sunny', 'quick', 'bright', 'clever', 'lucky', 'soaring', 'flying', 'cloud', 'jet'];
+  const nouns = ['pilot', 'flyer', 'aviator', 'wing', 'sky', 'cloud', 'captain', 'jet', 'aircraft', 'wings'];
+  const randomNum = Math.floor(Math.random() * 1000);
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  return `${adjective}_${noun}${randomNum}`.toLowerCase();
+}
+
+async function checkUsernameAvailability(username, showMessages = true) {
+  const errorElement = document.getElementById('username-error');
+  const successElement = document.getElementById('username-success');
+
+  if (showMessages) {
+    errorElement.style.display = 'none';
+    successElement.style.display = 'none';
+  }
+
+  // Validation checks
+  if (!username) {
+    if (showMessages) {
+      errorElement.textContent = 'Username is required';
+      errorElement.style.display = 'block';
     }
+    return false;
+  }
 
-    const db = firebase.firestore();
-
-    // Generate and check username on page load
-    window.onload = generateAndCheckUsername;
-
-    async function generateAndCheckUsername() {
-        let username;
-        let isTaken = true;
-
-        while (isTaken) {
-            username = generateRandomUsername();
-            isTaken = !(await checkUsernameAvailability(username, false));
-        }
-
-        document.getElementById('username').value = username;
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    if (showMessages) {
+      errorElement.textContent = 'Only lowercase letters, numbers, and underscores allowed';
+      errorElement.style.display = 'block';
     }
+    return false;
+  }
 
-    function generateRandomUsername() {
-        const adjectives = ['happy', 'sunny', 'quick', 'bright', 'clever', 'lucky'];
-        const nouns = ['pilot', 'flyer', 'aviator', 'wing', 'sky', 'cloud'];
-        const randomNum = Math.floor(Math.random() * 1000);
-        const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-        const noun = nouns[Math.floor(Math.random() * nouns.length)];
-        return `${adjective}_${noun}${randomNum}`.toLowerCase();
+  if (username.length < 3) {
+    if (showMessages) {
+      errorElement.textContent = 'Must be at least 3 characters';
+      errorElement.style.display = 'block';
     }
+    return false;
+  }
 
-    async function checkUsernameAvailability(username, showMessages = true) {
-        const errorElement = document.getElementById('username-error');
-        const successElement = document.getElementById('username-success');
-
-        if (showMessages) {
-            errorElement.style.display = 'none';
-            successElement.style.display = 'none';
-        }
-
-        if (!/^[a-z0-9_]+$/.test(username)) {
-            if (showMessages) {
-                errorElement.textContent = 'Only lowercase letters, numbers, and underscores allowed';
-                errorElement.style.display = 'block';
-            }
-            return false;
-        }
-
-        if (username.length < 3) {
-            if (showMessages) {
-                errorElement.textContent = 'Must be at least 3 characters';
-                errorElement.style.display = 'block';
-            }
-            return false;
-        }
-
-        try {
-            const snapshot = await db.collection('users').where('username', '==', username).get();
-            if (!snapshot.empty) {
-                if (showMessages) {
-                    errorElement.textContent = 'Username not available';
-                    errorElement.style.display = 'block';
-                }
-                return false;
-            } else {
-                if (showMessages) {
-                    successElement.textContent = 'Username available';
-                    successElement.style.display = 'block';
-                }
-                return true;
-            }
-        } catch (error) {
-            if (showMessages) {
-                errorElement.textContent = 'Error checking username. Try again.';
-                errorElement.style.display = 'block';
-            }
-            return false;
-        }
+  if (username.length > 20) {
+    if (showMessages) {
+      errorElement.textContent = 'Must be less than 20 characters';
+      errorElement.style.display = 'block';
     }
+    return false;
+  }
 
-    document.getElementById('username').addEventListener('input', function (e) {
-        let value = e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        if (value !== e.target.value) {
-            e.target.value = value;
-        }
+  try {
+    const snapshot = await db.collection('users').where('username', '==', username).get();
+    if (!snapshot.empty) {
+      if (showMessages) {
+        errorElement.textContent = 'Username not available';
+        errorElement.style.display = 'block';
+      }
+      return false;
+    } else {
+      if (showMessages) {
+        successElement.textContent = 'Username available';
+        successElement.style.display = 'block';
+      }
+      return true;
+    }
+  } catch (error) {
+    console.error("Error checking username:", error);
+    if (showMessages) {
+      errorElement.textContent = 'Error checking username. Try again.';
+      errorElement.style.display = 'block';
+    }
+    return false;
+  }
+}
 
-        if (value.length >= 3) {
-            checkUsernameAvailability(value);
-        } else {
-            document.getElementById('username-error').style.display = 'none';
-            document.getElementById('username-success').style.display = 'none';
-        }
+// Username input event listener
+document.getElementById('username').addEventListener('input', function (e) {
+  let value = e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  if (value !== e.target.value) {
+    e.target.value = value;
+  }
+
+  if (value.length >= 3) {
+    checkUsernameAvailability(value);
+  } else {
+    document.getElementById('username-error').style.display = 'none';
+    document.getElementById('username-success').style.display = 'none';
+  }
+});
+
+// Continue button event listener
+document.getElementById('continue-btn').addEventListener('click', async function () {
+  const username = document.getElementById('username').value.trim();
+  const errorElement = document.getElementById('username-error');
+  const successElement = document.getElementById('username-success');
+  const button = this;
+
+  errorElement.style.display = 'none';
+  successElement.style.display = 'none';
+
+  // Show loading state
+  button.disabled = true;
+  button.textContent = 'Saving...';
+
+  // Validate username
+  const isAvailable = await checkUsernameAvailability(username);
+  if (!isAvailable) {
+    button.disabled = false;
+    button.textContent = 'Continue';
+    return;
+  }
+
+  const user = auth.currentUser;
+  if (!user) {
+    errorElement.textContent = 'No authenticated user found. Please sign in again.';
+    errorElement.style.display = 'block';
+    button.disabled = false;
+    button.textContent = 'Continue';
+    window.location.href = 'signin.html';
+    return;
+  }
+
+  try {
+    // Save username to Firestore
+    await db.collection('users').doc(user.uid).set({
+      username: username,
+      email: user.email,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    // Optional: Update user profile
+    await user.updateProfile({
+      displayName: username
     });
 
-    document.getElementById('continue-btn').addEventListener('click', async function () {
-        const username = document.getElementById('username').value.trim();
-        const errorElement = document.getElementById('username-error');
-        errorElement.style.display = 'none';
-
-        if (!username) {
-            errorElement.textContent = 'Username is required';
-            errorElement.style.display = 'block';
-            return;
-        }
-
-        const isAvailable = await checkUsernameAvailability(username);
-        if (!isAvailable) return;
-
-        const user = firebase.auth().currentUser;
-        if (!user) {
-            errorElement.textContent = 'No authenticated user found.';
-            errorElement.style.display = 'block';
-            return;
-        }
-
-        try {
-            await db.collection('users').doc(user.uid).update({ username });
-            window.location.href = 'index.html';
-        } catch (err) {
-            errorElement.textContent = 'Failed to save username. Try again.';
-            errorElement.style.display = 'block';
-        }
-    });
+    // Redirect on success
+    window.location.href = 'index.html';
+  } catch (err) {
+    console.error("Error saving username:", err);
+    errorElement.textContent = 'Failed to save username: ' + (err.message || 'Please try again.');
+    errorElement.style.display = 'block';
+    button.disabled = false;
+    button.textContent = 'Continue';
+  }
+});
 </script>
 </body>
 </html>
