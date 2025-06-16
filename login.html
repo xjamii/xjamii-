@@ -6,10 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - X-Aviation</title>
     <!-- Firebase v8 SDKs -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-       <style>
+ <link rel="stylesheet" href="style.css" />
+<!-- Firebase v11 Compat SDKs -->
+<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-storage-compat.js"></script>
+<style>
+    
         body {
             margin: 0;
             padding: 0;
@@ -341,160 +346,138 @@
         </button>
     </div>
 
-    <script>
-   const firebaseConfig = {
-  apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-  authDomain: "x-jamii.firebaseapp.com",
-  projectId: "x-jamii",
-  storageBucket: "x-jamii.firebasestorage.app",    // <- DIFFERENT
-  messagingSenderId: "927548667044",
-  appId: "1:927548667044:web:835e597909f51a2e4da231",
-  measurementId: "G-9S45DQ04HZ"
-};
+            
+                        <script>
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+    authDomain: "x-jamii.firebaseapp.com",
+    projectId: "x-jamii",
+    storageBucket: "x-jamii.appspot.com",
+    messagingSenderId: "927548667044",
+    appId: "1:927548667044:web:835e597909f51a2e4da231",
+    measurementId: "G-9S45DQ04HZ"
+  };
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
 
-    // Hide preloader and show main content after 5 seconds
-    setTimeout(() => {
-        document.querySelector('.preloader').style.display = 'none';
-        document.querySelector('.main-content').style.display = 'block';
-    }, 5000);
+  // Preloader delay
+  setTimeout(() => {
+    document.querySelector('.preloader').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'block';
+  }, 5000);
 
-    // Ensure back button resets when page is loaded (first time or from cache)
-    function resetBackButton() {
-        const backBtn = document.getElementById('back-btn');
-        if (backBtn) {
-            const spinner = backBtn.querySelector('.spinner');
-            const btnText = backBtn.querySelector('.btn-text');
-            spinner.style.display = 'none';
-            btnText.style.display = 'inline';
-            backBtn.disabled = false;
-        }
+  // Reset Back Button
+  function resetBackButton() {
+    const btn = document.getElementById('back-btn');
+    if (btn) {
+      btn.querySelector('.spinner').style.display = 'none';
+      btn.querySelector('.btn-text').style.display = 'inline';
+      btn.disabled = false;
+    }
+  }
+  window.addEventListener('DOMContentLoaded', resetBackButton);
+  window.addEventListener('pageshow', resetBackButton);
+
+  // Back Button
+  document.getElementById('back-btn').addEventListener('click', function () {
+    const btn = this;
+    btn.querySelector('.btn-text').style.display = 'none';
+    btn.querySelector('.spinner').style.display = 'block';
+    btn.disabled = true;
+    setTimeout(() => window.location.href = 'welcome.html', 300);
+  });
+
+  // Hide input errors on change
+  ['email', 'password'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      document.getElementById(`${id}-error`).style.display = 'none';
+      document.getElementById('main-error').style.display = 'none';
+    });
+  });
+
+  // Login handler
+  document.getElementById('login-btn').addEventListener('click', function () {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const emailError = document.getElementById('email-error');
+    const passwordError = document.getElementById('password-error');
+    const mainError = document.getElementById('main-error');
+    const btn = this;
+    const spinner = btn.querySelector('.spinner');
+    const btnText = btn.querySelector('.btn-text');
+
+    emailError.style.display = passwordError.style.display = mainError.style.display = 'none';
+
+    let valid = true;
+
+    if (!email) {
+      emailError.textContent = 'Email is required';
+      emailError.style.display = 'block';
+      valid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      emailError.textContent = 'Email is invalid';
+      emailError.style.display = 'block';
+      valid = false;
     }
 
-    // Reset on DOM ready
-    window.addEventListener('DOMContentLoaded', resetBackButton);
+    if (!password) {
+      passwordError.textContent = 'Password is required';
+      passwordError.style.display = 'block';
+      valid = false;
+    } else if (password.length < 6) {
+      passwordError.textContent = 'Password must be at least 6 characters';
+      passwordError.style.display = 'block';
+      valid = false;
+    }
 
-    // Also reset when returning from history (important for back nav)
-    window.addEventListener('pageshow', resetBackButton);
+    if (!valid) return;
 
-    // Back button click handler
-    document.getElementById('back-btn').addEventListener('click', function () {
-        const btn = this;
-        const spinner = btn.querySelector('.spinner');
-        const btnText = btn.querySelector('.btn-text');
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+    btn.disabled = true;
 
-        btnText.style.display = 'none';
-        spinner.style.display = 'block';
-        btn.disabled = true;
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => window.location.href = 'index.html')
+      .catch((error) => {
+        btnText.style.display = 'inline';
+        spinner.style.display = 'none';
+        btn.disabled = false;
 
-        setTimeout(() => {
-            window.location.href = 'welcome.html';
-        }, 300);
-    });
-
-    // Hide error message on input
-    document.getElementById('email').addEventListener('input', () => {
-        document.getElementById('email-error').style.display = 'none';
-        document.getElementById('main-error').style.display = 'none';
-    });
-
-    document.getElementById('password').addEventListener('input', () => {
-        document.getElementById('password-error').style.display = 'none';
-        document.getElementById('main-error').style.display = 'none';
-    });
-
-    // Login button handler
-    document.getElementById('login-btn').addEventListener('click', function () {
-        const btn = this;
-        const spinner = btn.querySelector('.spinner');
-        const btnText = btn.querySelector('.btn-text');
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value.trim();
-        const emailError = document.getElementById('email-error');
-        const passwordError = document.getElementById('password-error');
-        const mainError = document.getElementById('main-error');
-
-        // Reset errors
-        emailError.style.display = 'none';
-        passwordError.style.display = 'none';
-        mainError.style.display = 'none';
-
-        let isValid = true;
-
-        if (!email) {
-            emailError.textContent = 'Email is required';
-            emailError.style.display = 'block';
-            isValid = false;
-        } else if (!/\S+@\S+\.\S+/.test(email)) {
-            emailError.textContent = 'Email is invalid';
-            emailError.style.display = 'block';
-            isValid = false;
+        switch (error.code) {
+          case 'auth/wrong-password':
+            mainError.textContent = 'Incorrect password. Please try again.';
+            break;
+          case 'auth/user-not-found':
+            mainError.textContent = 'No account found with this email.';
+            break;
+          case 'auth/invalid-email':
+            mainError.textContent = 'Invalid email address.';
+            break;
+          case 'auth/network-request-failed':
+            mainError.textContent = 'Network error. Please check your internet.';
+            break;
+          case 'auth/too-many-requests':
+            mainError.textContent = 'Too many attempts. Try again later.';
+            break;
+          default:
+            mainError.textContent = 'Login failed. Please try again.';
         }
 
-        if (!password) {
-            passwordError.textContent = 'Password is required';
-            passwordError.style.display = 'block';
-            isValid = false;
-        } else if (password.length < 6) {
-            passwordError.textContent = 'Password must be at least 6 characters';
-            passwordError.style.display = 'block';
-            isValid = false;
-        }
+        mainError.style.display = 'block';
+      });
+  });
 
-        if (!isValid) return;
-
-        btnText.style.display = 'none';
-        spinner.style.display = 'block';
-        btn.disabled = true;
-
-        auth.signInWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                window.location.href = 'index.html';
-            })
-            .catch((error) => {
-                btnText.style.display = 'inline';
-                spinner.style.display = 'none';
-                btn.disabled = false;
-
-                switch (error.code) {
-                    case 'auth/wrong-password':
-                        mainError.textContent = 'Incorrect password. Please try again.';
-                        break;
-                    case 'auth/user-not-found':
-                        mainError.textContent = 'No account found with this email.';
-                        break;
-                    case 'auth/invalid-email':
-                        mainError.textContent = 'Invalid email address.';
-                        break;
-                    case 'auth/network-request-failed':
-                        mainError.textContent = 'Network error. Please check your internet connection.';
-                        break;
-                    case 'auth/too-many-requests':
-                        mainError.textContent = 'Too many attempts. Please try again later.';
-                        break;
-                    default:
-                        mainError.textContent = 'Login failed. Please try again.';
-                }
-
-                mainError.style.display = 'block';
-            });
-    });
-
-    // Toggle password visibility
-    document.getElementById('toggle-password').addEventListener('click', function (e) {
-        e.preventDefault();
-        const passwordInput = document.getElementById('password');
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            this.textContent = 'Hide';
-        } else {
-            passwordInput.type = 'password';
-            this.textContent = 'Show';
-        }
-    });
+  // Toggle password visibility
+  document.getElementById('toggle-password').addEventListener('click', function (e) {
+    e.preventDefault();
+    const input = document.getElementById('password');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    this.textContent = isHidden ? 'Hide' : 'Show';
+  });
 </script>
 </body>
 </html>
