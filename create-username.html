@@ -198,26 +198,44 @@
 .suggestion-pill:hover {
     background: #BDBDBD;
 }
+
+        .status-indicator {
+    margin-top: 5px;
+    font-size: 14px;
+}
+.available {
+    color: green;
+}
+.unavailable {
+    color: red;
+}
+.suggestion-pill.available {
+    border-color: green;
+}
+.suggestion-pill.unavailable {
+    border-color: red;
+}
     </style>
 </head>
 <body>
     <div class="main-content">
-        <div class="logo-container">
-            <img src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" alt="X-Aviation Logo" class="logo">
-        </div>
+    <div class="logo-container">
+        <img src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" alt="X-Aviation Logo" class="logo">
+    </div>
+    
+    <div class="form-container">
+        <h1 class="title">Create your username</h1>
         
-        <div class="form-container">
-            <h1 class="title">Create your username</h1>
-            
-            <div class="input-container">
-                <label for="username" class="input-label">Username</label>
-                <input type="text" class="text-input" id="username" placeholder="Enter your username" autocapitalize="off" autocorrect="off">
-                <div class="error-message" id="username-error"></div>
-                <div class="success-message" id="username-success"></div>
-                <div class="suggestions-container" id="suggestions-container"></div>
-            </div>
+        <div class="input-container">
+            <label for="username" class="input-label">Username</label>
+            <input type="text" class="text-input" id="username" placeholder="Enter your username" autocapitalize="off" autocorrect="off">
+            <div id="username-status" class="status-indicator"></div>
+            <div class="error-message" id="username-error"></div>
+            <div class="success-message" id="username-success"></div>
+            <div class="suggestions-container" id="suggestions-container"></div>
         </div>
     </div>
+</div>
 
     <div class="button-footer">
         <button class="continue-button" id="continue-btn">Continue</button>
@@ -226,10 +244,9 @@
 <script>
                             
 
-                                        
 
 
-// Firebase config - KEEP EXISTING
+            // Firebase config - KEEP EXISTING
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -251,7 +268,7 @@ const db = firebase.firestore();
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const suggestionsContainer = document.getElementById('suggestions-container');
-const usernameError = document.getElementById('username-error');
+const usernameStatus = document.getElementById('username-status'); // Add this element in your HTML
 
 // Check auth state - KEEP EXISTING
 auth.onAuthStateChanged(async (user) => {
@@ -268,7 +285,7 @@ auth.onAuthStateChanged(async (user) => {
     generateSuggestions(cleanBase);
 });
 
-// Generate username suggestions - KEEP EXISTING
+// Generate username suggestions - MODIFIED for real-time checking
 function generateSuggestions(base) {
     suggestionsContainer.innerHTML = '';
     
@@ -281,10 +298,7 @@ function generateSuggestions(base) {
     suggestions.forEach(suggestion => {
         const pill = document.createElement('div');
         pill.className = 'suggestion-pill';
-        pill.innerHTML = `
-            ${suggestion}
-            <span class="availability-badge checking"></span>
-        `;
+        pill.innerHTML = `${suggestion}`;
         pill.addEventListener('click', () => {
             usernameInput.value = suggestion;
             checkAvailability(suggestion);
@@ -299,19 +313,13 @@ function generateSuggestions(base) {
     }
 }
 
-// Check username availability - MODIFIED (removed error handling)
+// Check username availability - SIMPLIFIED
 async function checkAvailability(username, pillElement = null) {
     if (!validateUsername(username)) {
-        if (pillElement) {
-            pillElement.querySelector('.availability-badge').className = 'availability-badge unavailable';
-        }
-        usernameError.textContent = 'Invalid username format';
-        usernameError.style.display = 'block';
+        if (pillElement) pillElement.classList.add('unavailable');
+        usernameStatus.textContent = 'Invalid format';
+        usernameStatus.className = 'unavailable';
         return false;
-    }
-
-    if (pillElement) {
-        pillElement.querySelector('.availability-badge').className = 'availability-badge checking';
     }
 
     const snapshot = await db.collection('users')
@@ -322,11 +330,13 @@ async function checkAvailability(username, pillElement = null) {
     const isAvailable = snapshot.empty;
     
     if (pillElement) {
-        pillElement.querySelector('.availability-badge').className = 
-            `availability-badge ${isAvailable ? 'available' : 'unavailable'}`;
+        pillElement.classList.toggle('available', isAvailable);
+        pillElement.classList.toggle('unavailable', !isAvailable);
     }
     
-    usernameError.style.display = isAvailable ? 'none' : 'block';
+    usernameStatus.textContent = isAvailable ? 'Available' : 'Unavailable';
+    usernameStatus.className = isAvailable ? 'available' : 'unavailable';
+    
     return isAvailable;
 }
 
@@ -344,7 +354,8 @@ function generateRandomUsername() {
     return `${parts[Math.floor(Math.random()*parts.length)]}_${parts[Math.floor(Math.random()*parts.length)]}${Math.floor(Math.random()*100)}`;
 }
 
-// Input field handler - KEEP EXISTING
+// Input field handler - MODIFIED for real-time checking
+let checkTimeout;
 usernameInput.addEventListener('input', function(e) {
     const username = e.target.value.toLowerCase()
         .replace(/\s+/g, '_')
@@ -354,8 +365,10 @@ usernameInput.addEventListener('input', function(e) {
         e.target.value = username;
     }
     
-    // Clear error when typing
-    usernameError.style.display = 'none';
+    clearTimeout(checkTimeout);
+    checkTimeout = setTimeout(() => {
+        checkAvailability(username);
+    }, 300);
 });
 
 // Continue button handler - KEEP EXISTING
@@ -369,16 +382,16 @@ continueBtn.addEventListener('click', async function(e) {
     
     // Validate username
     if (!validateUsername(username)) {
-        usernameError.textContent = 'Username must be 3-20 chars (letters, numbers, _)';
-        usernameError.style.display = 'block';
+        usernameStatus.textContent = 'Invalid format';
+        usernameStatus.className = 'unavailable';
         return;
     }
     
     // Check availability
     const isAvailable = await checkAvailability(username);
     if (!isAvailable) {
-        usernameError.textContent = 'Username is taken';
-        usernameError.style.display = 'block';
+        usernameStatus.textContent = 'Unavailable';
+        usernameStatus.className = 'unavailable';
         return;
     }
     
@@ -406,9 +419,6 @@ continueBtn.addEventListener('click', async function(e) {
         btnText.style.display = 'block';
         spinner.style.display = 'none';
         btn.disabled = false;
-        
-        usernameError.textContent = 'Error saving username. Try again.';
-        usernameError.style.display = 'block';
     }
 });
 
