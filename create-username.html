@@ -151,6 +151,53 @@
     opacity: 0.7;
     pointer-events: none;
 }
+
+            .availability-badge {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-left: 6px;
+    position: relative;
+}
+
+.availability-badge.checking {
+    background: #FFC107;
+    animation: pulse 1.5s infinite;
+}
+
+.availability-badge.available {
+    background: #4CAF50;
+}
+
+.availability-badge.unavailable {
+    background: #F44336;
+}
+
+.availability-badge.error {
+    background: #9E9E9E;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.suggestion-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    margin: 4px;
+    background: #E0E0E0;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.suggestion-pill:hover {
+    background: #BDBDBD;
+}
     </style>
 </head>
 <body>
@@ -177,7 +224,9 @@
     </div>
 
 <script>
-                    const firebaseConfig = {
+                            
+
+    const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
     projectId: "x-jamii",
@@ -194,10 +243,10 @@ if (!firebase.apps.length) {
 
 const auth = firebase.auth();
 const db = firebase.firestore();
-const usernameCache = {}; // Cache for username availability checks
-let checkTimeout; // Timer for delayed username checks
+const usernameCache = {};
+let checkTimeout;
 
-// Check authentication state when page loads
+// Authentication check
 auth.onAuthStateChanged((user) => {
     if (!user) {
         window.location.href = 'signin.html';
@@ -206,249 +255,184 @@ auth.onAuthStateChanged((user) => {
     generateUsernameSuggestions(user);
 });
 
-// Generate username suggestions based on user's email or display name
+// Generate username suggestions
 async function generateUsernameSuggestions(user) {
     const suggestionsContainer = document.getElementById('suggestions-container');
-    suggestionsContainer.innerHTML = '<div style="color:#666; font-size:14px;">Generating suggestions...</div>';
+    suggestionsContainer.innerHTML = '';
     
-    let baseName = '';
-    if (user.displayName) {
-        baseName = user.displayName.split(' ')[0].toLowerCase();
-    } else if (user.email) {
-        baseName = user.email.split('@')[0].toLowerCase();
-    }
-    
-    // Clean the base name (keep only letters and numbers)
+    let baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
+                  user.email?.split('@')[0]?.toLowerCase() || '';
     baseName = baseName.replace(/[^a-z0-9]/g, '');
     
-    // Generate 3 suggestions
-    const suggestions = [];
-    const randomNum = Math.floor(Math.random() * 100);
-    
-    if (baseName.length >= 3) {
-        suggestions.push(`${baseName}${randomNum}`);
-        suggestions.push(`${baseName}_${randomNum}`);
-    }
-    
-    // Add generic suggestions if needed
-    while (suggestions.length < 3) {
-        suggestions.push(generateRandomUsername());
-    }
-    
-    // Display suggestions
-    suggestionsContainer.innerHTML = '';
+    const suggestions = [
+        `${baseName}${Math.floor(Math.random() * 100)}`,
+        `${baseName}_${Math.floor(Math.random() * 100)}`,
+        generateRandomUsername()
+    ].filter(Boolean);
+
     suggestions.forEach(suggestion => {
         const pill = document.createElement('div');
         pill.className = 'suggestion-pill';
-        pill.textContent = suggestion;
-        pill.addEventListener('click', async () => {
+        pill.innerHTML = `
+            ${suggestion}
+            <span class="availability-badge checking"></span>
+        `;
+        pill.addEventListener('click', () => {
             document.getElementById('username').value = suggestion;
-            await checkUsernameAvailability(suggestion);
+            checkUsernameAvailability(suggestion);
         });
         suggestionsContainer.appendChild(pill);
+        checkSuggestionAvailability(suggestion, pill);
     });
-    
-    // Set first suggestion and check its availability
+
     document.getElementById('username').value = suggestions[0];
-    await checkUsernameAvailability(suggestions[0]);
+    checkUsernameAvailability(suggestions[0]);
 }
 
-// Generate random username (fallback)
-function generateRandomUsername() {
-    const adjectives = ['sky', 'fly', 'air', 'jet', 'wing', 'cloud'];
-    const nouns = ['pilot', 'flyer', 'aviator', 'captain', 'bird', 'wings'];
-    const randomNum = Math.floor(Math.random() * 1000);
-    const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const noun = nouns[Math.floor(Math.random() * nouns.length)];
-    return `${adjective}_${noun}${randomNum}`.toLowerCase();
-}
-
-// Check if username is available with caching
-async function checkUsernameAvailability(username, showMessages = true) {
-    const errorElement = document.getElementById('username-error');
-    const successElement = document.getElementById('username-success');
-    const button = document.getElementById('continue-btn');
-
-    // Reset UI state
-    if (showMessages) {
-        errorElement.style.display = 'none';
-        successElement.style.display = 'none';
-        button.disabled = true;
-        button.textContent = 'Checking...';
+// Check suggestion availability with visual feedback
+async function checkSuggestionAvailability(username, pillElement) {
+    const badge = pillElement.querySelector('.availability-badge');
+    badge.className = 'availability-badge checking';
+    
+    try {
+        const isAvailable = await checkUsername(username);
+        badge.className = `availability-badge ${isAvailable ? 'available' : 'unavailable'}`;
+        badge.title = isAvailable ? 'Available' : 'Taken';
+    } catch (error) {
+        badge.className = 'availability-badge error';
+        badge.title = 'Error checking';
     }
+}
 
-    // Check cache first
+// Core username availability check
+async function checkUsername(username) {
     if (usernameCache[username] !== undefined) {
-        updateAvailabilityUI(usernameCache[username], showMessages);
         return usernameCache[username];
     }
 
-    // Validate format first (don't hit database if invalid)
-    if (!validateUsernameFormat(username, showMessages)) {
-        if (showMessages) {
-            button.disabled = true;
-            button.textContent = 'Continue';
-        }
+    if (!validateUsernameFormat(username, false)) {
         return false;
     }
 
     try {
-        const snapshot = await db.collection('users').where('username', '==', username).get();
-        const isAvailable = snapshot.empty;
-        usernameCache[username] = isAvailable; // Cache result
+        const snapshot = await db.collection('users')
+            .where('username', '==', username)
+            .limit(1)
+            .get();
         
-        if (showMessages) {
-            updateAvailabilityUI(isAvailable, showMessages);
-        }
+        const isAvailable = snapshot.empty;
+        usernameCache[username] = isAvailable;
         return isAvailable;
     } catch (error) {
-        console.error("Error checking username:", error);
-        if (showMessages) {
-            errorElement.textContent = 'Error checking username. Try again.';
-            errorElement.style.display = 'block';
-            button.disabled = false;
-            button.textContent = 'Continue';
-        }
-        return false;
+        console.error("Check username error:", error);
+        throw error;
     }
 }
 
-// Validate username format (without database check)
-function validateUsernameFormat(username, showMessages = true) {
-    const errorElement = document.getElementById('username-error');
+// Real-time input handling
+document.getElementById('username').addEventListener('input', function(e) {
+    clearTimeout(checkTimeout);
+    const username = e.target.value.toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_]/g, '');
     
-    if (!username) {
-        if (showMessages) {
-            errorElement.textContent = 'Username is required';
-            errorElement.style.display = 'block';
-        }
-        return false;
+    if (username !== e.target.value) {
+        e.target.value = username;
     }
 
-    if (!/^[a-z0-9_]+$/.test(username)) {
-        if (showMessages) {
-            errorElement.textContent = 'Only lowercase letters, numbers, and underscores allowed';
-            errorElement.style.display = 'block';
-        }
-        return false;
+    if (username.length >= 3) {
+        checkTimeout = setTimeout(() => {
+            checkUsernameAvailability(username);
+        }, 300);
+    } else {
+        updateAvailabilityUI(null);
     }
+});
 
-    if (username.length < 3) {
-        if (showMessages) {
-            errorElement.textContent = 'Must be at least 3 characters';
-            errorElement.style.display = 'block';
-        }
-        return false;
-    }
-
-    if (username.length > 20) {
-        if (showMessages) {
-            errorElement.textContent = 'Must be less than 20 characters';
-            errorElement.style.display = 'block';
-        }
-        return false;
-    }
-
-    return true;
-}
-
-// Update UI based on availability check result
-function updateAvailabilityUI(isAvailable, showMessages) {
+// Update UI based on availability
+function updateAvailabilityUI(isAvailable) {
     const errorElement = document.getElementById('username-error');
     const successElement = document.getElementById('username-success');
     const button = document.getElementById('continue-btn');
 
-    if (showMessages) {
-        if (isAvailable) {
-            successElement.textContent = 'Username available';
-            successElement.style.display = 'block';
-            errorElement.style.display = 'none';
-            button.disabled = false;
-        } else {
-            errorElement.textContent = 'Username not available';
-            errorElement.style.display = 'block';
-            successElement.style.display = 'none';
-            button.disabled = true;
-        }
-        button.textContent = 'Continue';
+    errorElement.style.display = 'none';
+    successElement.style.display = 'none';
+
+    if (isAvailable === true) {
+        successElement.textContent = '✓ Username available';
+        successElement.style.display = 'block';
+        button.disabled = false;
+    } 
+    else if (isAvailable === false) {
+        errorElement.textContent = '✗ Username taken';
+        errorElement.style.display = 'block';
+        button.disabled = true;
+    }
+    else {
+        button.disabled = true;
     }
 }
 
-// Username input event listener with debounce
-document.getElementById('username').addEventListener('input', function(e) {
-    clearTimeout(checkTimeout);
-    
-    // Clean input (lowercase, replace spaces with underscores, remove special chars)
-    let value = e.target.value.toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '');
-    
-    if (value !== e.target.value) {
-        e.target.value = value;
+// Main availability check with UI updates
+async function checkUsernameAvailability(username) {
+    const button = document.getElementById('continue-btn');
+    button.disabled = true;
+    button.textContent = 'Checking...';
+
+    try {
+        const isAvailable = await checkUsername(username);
+        updateAvailabilityUI(isAvailable);
+    } catch (error) {
+        updateAvailabilityUI(null);
+        document.getElementById('username-error').textContent = 'Connection error - try again';
+        document.getElementById('username-error').style.display = 'block';
     }
 
-    // Only check if at least 3 characters
-    if (value.length >= 3) {
-        checkTimeout = setTimeout(() => {
-            checkUsernameAvailability(value);
-        }, 500);
-    } else {
-        document.getElementById('username-error').style.display = 'none';
-        document.getElementById('username-success').style.display = 'none';
-        document.getElementById('continue-btn').disabled = true;
-    }
-});
+    button.textContent = 'Continue';
+}
 
-// Continue button event listener
+// Continue button handler
 document.getElementById('continue-btn').addEventListener('click', async function() {
     const username = document.getElementById('username').value.trim();
-    const errorElement = document.getElementById('username-error');
     const button = this;
-
-    // Show loading state
+    
     button.disabled = true;
     button.textContent = 'Saving...';
 
-    // Final validation check
-    const isAvailable = await checkUsernameAvailability(username);
-    if (!isAvailable) {
-        button.disabled = false;
-        button.textContent = 'Continue';
-        return;
-    }
-
-    const user = auth.currentUser;
-    if (!user) {
-        errorElement.textContent = 'Session expired. Please sign in again.';
-        errorElement.style.display = 'block';
-        button.disabled = false;
-        button.textContent = 'Continue';
-        window.location.href = 'signin.html';
-        return;
-    }
-
     try {
-        // Save username to Firestore
-        await db.collection('users').doc(user.uid).set({
+        const isAvailable = await checkUsername(username);
+        if (!isAvailable) {
+            throw new Error('Username taken');
+        }
+
+        await db.collection('users').doc(auth.currentUser.uid).set({
             username: username,
-            email: user.email,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            email: auth.currentUser.email,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        // Update user profile
-        await user.updateProfile({ displayName: username });
-
-        // Redirect on success
         window.location.href = 'index.html';
-    } catch (err) {
-        console.error("Error saving username:", err);
-        errorElement.textContent = 'Failed to save username. Please try again.';
-        errorElement.style.display = 'block';
+    } catch (error) {
         button.disabled = false;
         button.textContent = 'Continue';
+        document.getElementById('username-error').textContent = 
+            error.message === 'Username taken' ? 'Username was just taken' : 'Save failed - try again';
+        document.getElementById('username-error').style.display = 'block';
     }
 });
+
+// Helper functions
+function validateUsernameFormat(username, showErrors = true) {
+    if (!username) return false;
+    if (!/^[a-z0-9_]+$/.test(username)) return false;
+    if (username.length < 3 || username.length > 20) return false;
+    return true;
+}
+
+function generateRandomUsername() {
+    const parts = ['sky', 'fly', 'wing', 'air', 'jet', 'cloud', 'pilot', 'aviator'];
+    return `${parts[Math.floor(Math.random()*parts.length)]}_${parts[Math.floor(Math.random()*parts.length)]}${Math.floor(Math.random()*100)}`;
+}
 </script>
 </body>
 </html>
