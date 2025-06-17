@@ -528,35 +528,29 @@ body {
     <!-- Main Content -->
     <div class="create-post-container">
         <div class="post-input-container">
-            <!-- Replace your existing user-info-container div with this updated version -->
-<div class="user-info" id="user-info-container">
-    <!-- Skeleton Loader (shown while loading) -->
-    <div class="skeleton-loader">
-        <div class="skeleton-avatar"></div>
-        <div class="skeleton-details">
-            <div class="skeleton-name"></div>
-            <div class="skeleton-username"></div>
-        </div>
-    </div>
-    
-    <!-- Actual User Info (hidden initially) -->
-    <div class="loaded-user-info" style="display: none;">
-        <div class="user-avatar" id="dynamic-avatar">
-            <!-- Will be populated by JavaScript -->
-        </div>
-        <div class="user-details">
-            <div class="user-name">
-                <span id="display-name">Loading...</span>
-                <span id="verified-badge" style="display: none;">
-                    <i class="fas fa-check-circle verified-badge"></i>
-                </span>
+            <div class="user-info" id="user-info-container">
+                <!-- Skeleton loader will be shown initially -->
+                <div class="skeleton-loader">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-details">
+                        <div class="skeleton-name"></div>
+                        <div class="skeleton-username"></div>
+                    </div>
+                </div>
+                
+                <!-- Actual user info will be loaded here -->
+                <div class="user-avatar" id="dynamic-avatar">
+                    <!-- Will contain either profile image or initial -->
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="user-display-name">
+                        <!-- Name will be loaded here -->
+                    </div>
+                    <div class="user-username" id="user-username">
+                        <!-- Username will be loaded here -->
+                    </div>
+                </div>
             </div>
-            <div class="user-username" id="username-display">
-                @loading
-            </div>
-        </div>
-    </div>
-</div>
             
             <textarea class="post-input" placeholder="What's on your mind?"></textarea>
             
@@ -583,7 +577,8 @@ body {
     <script>
      
 
-    // Initialize Firebase
+
+// Initialize Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -612,7 +607,7 @@ const mediaPreview = document.getElementById('media-preview');
 const mediaGrid = document.getElementById('media-grid');
 const body = document.body;
 
-// Check for dark mode preference
+// Check for dark mode preference from localStorage
 if (localStorage.getItem('darkMode') === 'true') {
     body.classList.add('dark-mode');
 }
@@ -621,97 +616,104 @@ if (localStorage.getItem('darkMode') === 'true') {
 let uploadedFiles = [];
 let videoCount = 0;
 
-// 1. Show skeleton loader immediately
-showSkeletonLoader();
-
-// 2. Load user profile when auth state changes
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        await loadUserProfile(user);
-    } else {
-        window.location.href = 'login.html';
-    }
-});
-
-// ======================
-// PROFILE LOADING FUNCTIONS
-// ======================
-
-function showSkeletonLoader() {
-    userInfoContainer.innerHTML = `
-        <div class="skeleton-loader">
-            <div class="skeleton-avatar"></div>
-            <div class="skeleton-details">
-                <div class="skeleton-name"></div>
-                <div class="skeleton-username"></div>
-            </div>
+// Show skeleton loader immediately
+userInfoContainer.innerHTML = `
+    <div class="skeleton-loader">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-details">
+            <div class="skeleton-name"></div>
+            <div class="skeleton-username"></div>
         </div>
-    `;
-}
+    </div>
+`;
 
-async function loadUserProfile(user) {
+// Load user profile data
+async function loadUserProfile() {
     try {
-        // Get data from both Auth and Firestore
-        const [authData, firestoreData] = await Promise.all([
-            getAuthData(user),
-            getFirestoreData(user.uid)
-        ]);
+        const user = auth.currentUser;
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
 
-        // Merge all user data
-        const userData = {
-            displayName: authData.displayName,
-            username: firestoreData?.username,
-            verified: firestoreData?.verified,
-            photoURL: authData.photoURL || firestoreData?.photoURL
-        };
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        
+        if (!userDoc.exists) {
+            throw new Error("User document not found");
+        }
 
-        // Display the merged data
+        const userData = userDoc.data();
         displayUserProfile(userData);
-
+        
     } catch (error) {
-        console.error("Error loading profile:", error);
+        console.error("Profile load error:", error);
         displayDefaultProfile();
     }
 }
 
-async function getAuthData(user) {
-    return {
-        displayName: user.displayName,
-        photoURL: user.photoURL
-    };
-}
-
-async function getFirestoreData(uid) {
-    const doc = await db.collection('users').doc(uid).get();
-    return doc.exists ? doc.data() : null;
-}
-
+// Display user profile with actual data
 function displayUserProfile(userData) {
-    // Hide skeleton and show loaded content
+    const displayName = userData.displayName || 'User';
+    const username = userData.username || 'user';
+    const isVerified = userData.verified || false;
+    const photoURL = userData.photoURL || null;
+    
     userInfoContainer.innerHTML = `
-        <div class="loaded-user-info">
-            <div class="user-avatar">
-                ${getAvatarContent(userData.photoURL, userData.displayName)}
+        <div class="user-avatar" id="dynamic-avatar">
+            ${getAvatarContent(photoURL, displayName)}
+        </div>
+        <div class="user-details">
+            <div class="user-name">
+                ${displayName}
+                ${isVerified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
             </div>
-            <div class="user-details">
-                <div class="user-name">
-                    <span id="display-name">${userData.displayName || 'User'}</span>
-                    ${userData.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-                </div>
-                <div class="user-username">@${userData.username || generateFallbackUsername()}</div>
-            </div>
+            <div class="user-username">@${username}</div>
+        </div>
+    `;
+    
+    // Ensure avatar is properly set up
+    setupAvatarFallback();
+}
+
+// Display default profile if loading fails
+function displayDefaultProfile() {
+    userInfoContainer.innerHTML = `
+        <div class="user-avatar">
+            ${createInitialAvatar('User')}
+        </div>
+        <div class="user-details">
+            <div class="user-name">User</div>
+            <div class="user-username">@user</div>
         </div>
     `;
 }
 
+// Get appropriate avatar content
 function getAvatarContent(photoURL, displayName) {
-    const name = displayName || 'User';
     if (photoURL) {
-        return `<img src="${photoURL}" alt="${name}" onerror="this.replaceWith(createInitialAvatar('${name}'))">`;
+        return `<img src="${photoURL}" alt="${displayName}" onerror="handleAvatarError(this)">`;
     }
-    return createInitialAvatar(name);
+    return createInitialAvatar(displayName);
 }
 
+// Handle avatar image loading errors
+function handleAvatarError(imgElement) {
+    const displayName = imgElement.alt || 'User';
+    imgElement.replaceWith(createInitialAvatar(displayName));
+}
+
+// Setup avatar fallback after DOM is loaded
+function setupAvatarFallback() {
+    const avatarContainer = document.getElementById('dynamic-avatar');
+    if (avatarContainer && avatarContainer.querySelector('img')) {
+        avatarContainer.querySelector('img').onerror = function() {
+            const displayName = this.alt || 'User';
+            this.replaceWith(createInitialAvatar(displayName));
+        };
+    }
+}
+
+// Create initial avatar with colored background
 function createInitialAvatar(name) {
     const initial = name.charAt(0).toUpperCase();
     const colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3'];
@@ -724,28 +726,7 @@ function createInitialAvatar(name) {
     `;
 }
 
-function generateFallbackUsername() {
-    return 'user' + Math.floor(Math.random() * 1000);
-}
-
-function displayDefaultProfile() {
-    userInfoContainer.innerHTML = `
-        <div class="loaded-user-info">
-            <div class="user-avatar">
-                ${createInitialAvatar('User')}
-            </div>
-            <div class="user-details">
-                <div class="user-name">User</div>
-                <div class="user-username">@${generateFallbackUsername()}</div>
-            </div>
-        </div>
-    `;
-}
-
-// ======================
-// POST CREATION FUNCTIONS
-// ======================
-
+// Media handling functions
 mediaButton.addEventListener('click', () => mediaUpload.click());
 mediaUpload.addEventListener('change', handleMediaUpload);
 
@@ -753,13 +734,19 @@ function handleMediaUpload(e) {
     const newFiles = Array.from(e.target.files);
     
     // Validate files
-    if (uploadedFiles.length + newFiles.length > 5) return;
+    if (uploadedFiles.length + newFiles.length > 5) {
+        return;
+    }
     
     newFiles.forEach(file => {
         if (file.type.startsWith('video/')) {
-            if (videoCount >= 1 || file.size > 100 * 1024 * 1024) return;
+            if (videoCount >= 1 || file.size > 100 * 1024 * 1024) {
+                return;
+            }
             videoCount++;
-        } else if (file.size > 10 * 1024 * 1024) return;
+        } else if (file.size > 10 * 1024 * 1024) {
+            return;
+        }
         
         uploadedFiles.push(file);
     });
@@ -777,13 +764,23 @@ function displayMediaPreview() {
             const mediaItem = document.createElement('div');
             mediaItem.className = 'media-item';
             
-            mediaItem.innerHTML = file.type.startsWith('video/') ? `
-                <video controls><source src="${event.target.result}" type="${file.type}"></video>
-                <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
-            ` : `
-                <img src="${event.target.result}" alt="Preview">
-                <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
-            `;
+            if (file.type.startsWith('video/')) {
+                mediaItem.innerHTML = `
+                    <video controls>
+                        <source src="${event.target.result}" type="${file.type}">
+                    </video>
+                    <div class="remove-media" data-index="${index}">
+                        <i class="fas fa-trash"></i>
+                    </div>
+                `;
+            } else {
+                mediaItem.innerHTML = `
+                    <img src="${event.target.result}" alt="Preview">
+                    <div class="remove-media" data-index="${index}">
+                        <i class="fas fa-trash"></i>
+                    </div>
+                `;
+            }
             
             mediaGrid.appendChild(mediaItem);
             mediaItem.querySelector('.remove-media').addEventListener('click', () => removeMediaItem(index));
@@ -796,11 +793,14 @@ function displayMediaPreview() {
 }
 
 function removeMediaItem(index) {
-    if (uploadedFiles[index].type.startsWith('video/')) videoCount--;
+    if (uploadedFiles[index].type.startsWith('video/')) {
+        videoCount--;
+    }
     uploadedFiles.splice(index, 1);
     displayMediaPreview();
 }
 
+// Post submission
 async function handlePost() {
     if (!postInput.value.trim() && !uploadedFiles.length) return;
     
@@ -815,9 +815,9 @@ async function handlePost() {
         const user = auth.currentUser;
         if (!user) throw new Error("Not authenticated");
         
-        // Upload media (simplified - replace with actual upload logic)
+        // In a real app, you would upload files to Cloudinary/Firebase Storage here
         const mediaUrls = uploadedFiles.map(file => ({
-            url: URL.createObjectURL(file), // Replace with actual upload URL
+            url: URL.createObjectURL(file), // Placeholder - replace with actual upload
             type: file.type.startsWith('video/') ? 'video' : 'image'
         }));
         
@@ -835,20 +835,25 @@ async function handlePost() {
         
     } catch (error) {
         console.error("Post error:", error);
-        resetPostButton();
+        postButton.innerHTML = 'Post';
+        bottomPostButton.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
+        postButton.disabled = false;
+        bottomPostButton.disabled = false;
     }
-}
-
-function resetPostButton() {
-    postButton.innerHTML = 'Post';
-    bottomPostButton.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
-    postButton.disabled = false;
-    bottomPostButton.disabled = false;
 }
 
 // Event listeners
 postButton.addEventListener('click', handlePost);
 bottomPostButton.addEventListener('click', handlePost);
+
+// Initialize
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        loadUserProfile();
+    } else {
+        window.location.href = 'login.html';
+    }
+});
 </script>
 </body>
 </html>
