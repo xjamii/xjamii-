@@ -226,7 +226,8 @@
 <script>
                             
 
-            const firebaseConfig = {
+                        // Firebase config - KEEP EXISTING
+const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
     projectId: "x-jamii",
@@ -236,35 +237,41 @@
     measurementId: "G-9S45DQ04HZ"
 };
 
-// Initialize Firebase
+// Initialize Firebase - KEEP EXISTING
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
-
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Check auth state
-auth.onAuthStateChanged((user) => {
+// DOM Elements - KEEP EXISTING STRUCTURE
+const usernameInput = document.getElementById('username');
+const continueBtn = document.getElementById('continue-btn');
+const suggestionsContainer = document.getElementById('suggestions-container');
+const usernameError = document.getElementById('username-error');
+
+// Check auth state - IMPROVED
+auth.onAuthStateChanged(async (user) => {
     if (!user) {
         window.location.href = 'signin.html';
         return;
     }
-    generateUsernameSuggestions(user);
+    
+    // Generate suggestions using either displayName or email
+    const baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
+                    user.email?.split('@')[0]?.toLowerCase() || '';
+    const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
+    
+    generateSuggestions(cleanBase);
 });
 
-// Generate username suggestions
-async function generateUsernameSuggestions(user) {
-    const suggestionsContainer = document.getElementById('suggestions-container');
+// Generate username suggestions - IMPROVED
+function generateSuggestions(base) {
     suggestionsContainer.innerHTML = '';
     
-    let baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
-                  user.email?.split('@')[0]?.toLowerCase() || '';
-    baseName = baseName.replace(/[^a-z0-9]/g, '');
-    
     const suggestions = [
-        `${baseName}${Math.floor(Math.random() * 100)}`,
-        `${baseName}_${Math.floor(Math.random() * 100)}`,
+        base && `${base}${Math.floor(Math.random() * 100)}`,
+        base && `${base}_${Math.floor(Math.random() * 100)}`,
         generateRandomUsername()
     ].filter(Boolean);
 
@@ -276,23 +283,27 @@ async function generateUsernameSuggestions(user) {
             <span class="availability-badge checking"></span>
         `;
         pill.addEventListener('click', () => {
-            document.getElementById('username').value = suggestion;
-            checkAvailability(suggestion, pill);
+            usernameInput.value = suggestion;
+            checkAvailability(suggestion);
         });
         suggestionsContainer.appendChild(pill);
         checkAvailability(suggestion, pill);
     });
 
-    document.getElementById('username').value = suggestions[0];
-    checkAvailability(suggestions[0]);
+    if (suggestions.length > 0) {
+        usernameInput.value = suggestions[0];
+        checkAvailability(suggestions[0]);
+    }
 }
 
-// Check username availability
+// Check username availability - IMPROVED
 async function checkAvailability(username, pillElement = null) {
-    if (!validateUsernameFormat(username)) {
+    if (!validateUsername(username)) {
         if (pillElement) {
             pillElement.querySelector('.availability-badge').className = 'availability-badge unavailable';
         }
+        usernameError.textContent = 'Invalid username format';
+        usernameError.style.display = 'block';
         return false;
     }
 
@@ -302,7 +313,7 @@ async function checkAvailability(username, pillElement = null) {
 
     try {
         const snapshot = await db.collection('users')
-            .where('username', '==', username)
+            .where('username', '==', username.toLowerCase())
             .limit(1)
             .get();
         
@@ -313,17 +324,35 @@ async function checkAvailability(username, pillElement = null) {
                 `availability-badge ${isAvailable ? 'available' : 'unavailable'}`;
         }
         
+        usernameError.style.display = isAvailable ? 'none' : 'block';
         return isAvailable;
     } catch (error) {
+        console.error("Availability check error:", error);
         if (pillElement) {
             pillElement.querySelector('.availability-badge').className = 'availability-badge unavailable';
         }
+        usernameError.textContent = 'Error checking availability';
+        usernameError.style.display = 'block';
         return false;
     }
 }
 
-// Input field handler
-document.getElementById('username').addEventListener('input', function(e) {
+// Validate username format - IMPROVED
+function validateUsername(username) {
+    if (!username) return false;
+    if (username.length < 3 || username.length > 20) return false;
+    if (!/^[a-z0-9_]+$/.test(username)) return false;
+    return true;
+}
+
+// Generate random username - KEEP EXISTING
+function generateRandomUsername() {
+    const parts = ['sky', 'fly', 'wing', 'air', 'jet', 'cloud', 'pilot', 'aviator'];
+    return `${parts[Math.floor(Math.random()*parts.length)]}_${parts[Math.floor(Math.random()*parts.length)]}${Math.floor(Math.random()*100)}`;
+}
+
+// Input field handler - IMPROVED
+usernameInput.addEventListener('input', function(e) {
     const username = e.target.value.toLowerCase()
         .replace(/\s+/g, '_')
         .replace(/[^a-z0-9_]/g, '');
@@ -331,42 +360,91 @@ document.getElementById('username').addEventListener('input', function(e) {
     if (username !== e.target.value) {
         e.target.value = username;
     }
+    
+    // Clear error when typing
+    usernameError.style.display = 'none';
 });
 
-// Save button handler - simple and direct
-document.getElementById('continue-btn').addEventListener('click', async function() {
-    const username = document.getElementById('username').value.trim();
-    const button = this;
+// Continue button handler - IMPROVED
+continueBtn.addEventListener('click', async function(e) {
+    e.preventDefault();
     
-    button.disabled = true;
-    button.textContent = 'Saving...';
-
+    const username = usernameInput.value.trim();
+    const btn = this;
+    const spinner = btn.querySelector('.spinner');
+    const btnText = btn.querySelector('.btn-text');
+    
+    // Validate username
+    if (!validateUsername(username)) {
+        usernameError.textContent = 'Username must be 3-20 chars (letters, numbers, _)';
+        usernameError.style.display = 'block';
+        return;
+    }
+    
+    // Check availability
+    const isAvailable = await checkAvailability(username);
+    if (!isAvailable) {
+        usernameError.textContent = 'Username is taken';
+        usernameError.style.display = 'block';
+        return;
+    }
+    
+    // UI loading state
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+    btn.disabled = true;
+    
     try {
-        await db.collection('users').doc(auth.currentUser.uid).set({
-            username: username,
-            email: auth.currentUser.email,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
+        const user = auth.currentUser;
+        if (!user) throw new Error('No authenticated user');
+        
+        // Update Firestore with username and mark complete
+        await db.collection('users').doc(user.uid).update({
+            username: username.toLowerCase(),
+            accountComplete: true,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Redirect to main app
         window.location.href = 'index.html';
+        
     } catch (error) {
-        button.disabled = false;
-        button.textContent = 'Continue';
+        console.error("Username save error:", error);
+        btnText.style.display = 'block';
+        spinner.style.display = 'none';
+        btn.disabled = false;
+        
+        usernameError.textContent = 'Error saving username. Try again.';
+        usernameError.style.display = 'block';
     }
 });
 
-// Helper functions
-function validateUsernameFormat(username) {
-    if (!username) return false;
-    if (!/^[a-z0-9_]+$/.test(username)) return false;
-    if (username.length < 3 || username.length > 20) return false;
-    return true;
-}
+// Preloader logic - KEEP EXISTING
+window.addEventListener('load', function() {
+    const navType = performance.getEntriesByType("navigation")[0].type;
+    if (navType === 'back_forward') {
+        document.querySelector('.preloader').style.display = 'none';
+        document.querySelector('.main-content').style.display = 'block';
+    } else {
+        setTimeout(function() {
+            document.querySelector('.preloader').style.display = 'none';
+            document.querySelector('.main-content').style.display = 'block';
+        }, 2000);
+    }
+});
 
-function generateRandomUsername() {
-    const parts = ['sky', 'fly', 'wing', 'air', 'jet', 'cloud', 'pilot', 'aviator'];
-    return `${parts[Math.floor(Math.random()*parts.length)]}_${parts[Math.floor(Math.random()*parts.length)]}${Math.floor(Math.random()*100)}`;
-}
+// Back button - KEEP EXISTING
+document.getElementById('back-btn').addEventListener('click', function() {
+    const btn = this;
+    const spinner = btn.querySelector('.spinner');
+    const btnText = btn.querySelector('.btn-text');
+
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+    btn.disabled = true;
+
+    window.location.href = 'password.html';
+});
 </script>
 </body>
 </html>
