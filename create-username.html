@@ -226,7 +226,7 @@
 <script>
                             
 
-    const firebaseConfig = {
+            const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
     projectId: "x-jamii",
@@ -243,10 +243,8 @@ if (!firebase.apps.length) {
 
 const auth = firebase.auth();
 const db = firebase.firestore();
-const usernameCache = {};
-let checkTimeout;
 
-// Authentication check
+// Check auth state
 auth.onAuthStateChanged((user) => {
     if (!user) {
         window.location.href = 'signin.html';
@@ -279,39 +277,27 @@ async function generateUsernameSuggestions(user) {
         `;
         pill.addEventListener('click', () => {
             document.getElementById('username').value = suggestion;
-            checkUsernameAvailability(suggestion);
+            checkAvailability(suggestion, pill);
         });
         suggestionsContainer.appendChild(pill);
-        checkSuggestionAvailability(suggestion, pill);
+        checkAvailability(suggestion, pill);
     });
 
     document.getElementById('username').value = suggestions[0];
-    checkUsernameAvailability(suggestions[0]);
+    checkAvailability(suggestions[0]);
 }
 
-// Check suggestion availability with visual feedback
-async function checkSuggestionAvailability(username, pillElement) {
-    const badge = pillElement.querySelector('.availability-badge');
-    badge.className = 'availability-badge checking';
-    
-    try {
-        const isAvailable = await checkUsername(username);
-        badge.className = `availability-badge ${isAvailable ? 'available' : 'unavailable'}`;
-        badge.title = isAvailable ? 'Available' : 'Taken';
-    } catch (error) {
-        badge.className = 'availability-badge error';
-        badge.title = 'Error checking';
-    }
-}
-
-// Core username availability check
-async function checkUsername(username) {
-    if (usernameCache[username] !== undefined) {
-        return usernameCache[username];
-    }
-
-    if (!validateUsernameFormat(username, false)) {
+// Check username availability
+async function checkAvailability(username, pillElement = null) {
+    if (!validateUsernameFormat(username)) {
+        if (pillElement) {
+            pillElement.querySelector('.availability-badge').className = 'availability-badge unavailable';
+        }
         return false;
+    }
+
+    if (pillElement) {
+        pillElement.querySelector('.availability-badge').className = 'availability-badge checking';
     }
 
     try {
@@ -321,17 +307,23 @@ async function checkUsername(username) {
             .get();
         
         const isAvailable = snapshot.empty;
-        usernameCache[username] = isAvailable;
+        
+        if (pillElement) {
+            pillElement.querySelector('.availability-badge').className = 
+                `availability-badge ${isAvailable ? 'available' : 'unavailable'}`;
+        }
+        
         return isAvailable;
     } catch (error) {
-        console.error("Check username error:", error);
-        throw error;
+        if (pillElement) {
+            pillElement.querySelector('.availability-badge').className = 'availability-badge unavailable';
+        }
+        return false;
     }
 }
 
-// Real-time input handling
+// Input field handler
 document.getElementById('username').addEventListener('input', function(e) {
-    clearTimeout(checkTimeout);
     const username = e.target.value.toLowerCase()
         .replace(/\s+/g, '_')
         .replace(/[^a-z0-9_]/g, '');
@@ -339,59 +331,9 @@ document.getElementById('username').addEventListener('input', function(e) {
     if (username !== e.target.value) {
         e.target.value = username;
     }
-
-    if (username.length >= 3) {
-        checkTimeout = setTimeout(() => {
-            checkUsernameAvailability(username);
-        }, 300);
-    } else {
-        updateAvailabilityUI(null);
-    }
 });
 
-// Update UI based on availability
-function updateAvailabilityUI(isAvailable) {
-    const errorElement = document.getElementById('username-error');
-    const successElement = document.getElementById('username-success');
-    const button = document.getElementById('continue-btn');
-
-    errorElement.style.display = 'none';
-    successElement.style.display = 'none';
-
-    if (isAvailable === true) {
-        successElement.textContent = '✓ Username available';
-        successElement.style.display = 'block';
-        button.disabled = false;
-    } 
-    else if (isAvailable === false) {
-        errorElement.textContent = '✗ Username taken';
-        errorElement.style.display = 'block';
-        button.disabled = true;
-    }
-    else {
-        button.disabled = true;
-    }
-}
-
-// Main availability check with UI updates
-async function checkUsernameAvailability(username) {
-    const button = document.getElementById('continue-btn');
-    button.disabled = true;
-    button.textContent = 'Checking...';
-
-    try {
-        const isAvailable = await checkUsername(username);
-        updateAvailabilityUI(isAvailable);
-    } catch (error) {
-        updateAvailabilityUI(null);
-        document.getElementById('username-error').textContent = 'Connection error - try again';
-        document.getElementById('username-error').style.display = 'block';
-    }
-
-    button.textContent = 'Continue';
-}
-
-// Continue button handler
+// Save button handler - simple and direct
 document.getElementById('continue-btn').addEventListener('click', async function() {
     const username = document.getElementById('username').value.trim();
     const button = this;
@@ -400,11 +342,6 @@ document.getElementById('continue-btn').addEventListener('click', async function
     button.textContent = 'Saving...';
 
     try {
-        const isAvailable = await checkUsername(username);
-        if (!isAvailable) {
-            throw new Error('Username taken');
-        }
-
         await db.collection('users').doc(auth.currentUser.uid).set({
             username: username,
             email: auth.currentUser.email,
@@ -415,14 +352,11 @@ document.getElementById('continue-btn').addEventListener('click', async function
     } catch (error) {
         button.disabled = false;
         button.textContent = 'Continue';
-        document.getElementById('username-error').textContent = 
-            error.message === 'Username taken' ? 'Username was just taken' : 'Save failed - try again';
-        document.getElementById('username-error').style.display = 'block';
     }
 });
 
 // Helper functions
-function validateUsernameFormat(username, showErrors = true) {
+function validateUsernameFormat(username) {
     if (!username) return false;
     if (!/^[a-z0-9_]+$/.test(username)) return false;
     if (username.length < 3 || username.length > 20) return false;
