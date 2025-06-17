@@ -356,7 +356,26 @@ body {
     display: none;
 }        
                     
+.logo-container {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px; /* Add this line */
+    height: 30px; /* Add this line */
+    display: flex; /* Add this line */
+    justify-content: center; /* Add this line */
+}
 
+.logo {
+    height: 30px;
+    filter: brightness(0);
+    width: 100%; /* Add this line */
+    object-fit: contain; /* Add this line */
+}
+
+.dark-mode .logo {
+    filter: brightness(0) invert(1);
+}
     </style>
 </head>
 <body>
