@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <head>
   <!-- Other meta tags -->
-  <link rel="stylesheet" href="/posts.css">
-  <link rel="stylesheet" href="/suggestions.css">
+  <link rel="stylesheet" href="css/posts.css">
+  <link rel="stylesheet" href="css/suggestions.css">
    <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -19,7 +19,7 @@
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
 <!-- Your dynamic posts system -->
-<script src="/posts.js"></script>
+<script src="js/posts.js"></script>
 </head>
     <style>
         * {
@@ -1019,10 +1019,63 @@
         <i class="fas fa-plus"></i>
     </div>
 
-    <script>
-        // Preloader functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            // Show logo preloader for 3 seconds
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+        authDomain: "x-jamii.firebaseapp.com",
+        projectId: "x-jamii",
+        storageBucket: "x-jamii.appspot.com",
+        messagingSenderId: "927548667044",
+        appId: "1:927548667044:web:835e597909f51a2e4da231",
+        measurementId: "G-9S45DQ04HZ"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // Preloader functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if user is logged in but doesn't have a username
+        checkUsername();
+        
+        // Get the referring page
+        const referrer = document.referrer;
+        const excludedPages = [
+            'login.html',
+            'create-username.html',
+            'profile.html',
+            'search.html',
+            'notifications.html',
+            'create-post.html'
+        ];
+        
+        // Check if coming from an excluded page
+        const fromExcludedPage = excludedPages.some(page => referrer.includes(page));
+        
+        if (fromExcludedPage) {
+            // Coming from excluded page - show only spinner preloader
+            document.getElementById('logoPreloader').style.display = 'none';
+            document.getElementById('spinnerPreloader').style.display = 'flex';
+            
+            // Load all necessary data
+            loadEssentialData().then(() => {
+                // All data loaded successfully
+                document.getElementById('spinnerPreloader').style.display = 'none';
+            }).catch(error => {
+                // Show error feedback
+                console.error('Loading error:', error);
+                document.getElementById('spinnerPreloader').innerHTML = `
+                    <div class="error-feedback">
+                        <p>Failed to load data. Please try again.</p>
+                        <button onclick="window.location.reload()">Retry</button>
+                    </div>
+                `;
+            });
+        } else {
+            // Normal visit or refresh - show both preloaders
             setTimeout(function() {
                 document.getElementById('logoPreloader').style.display = 'none';
                 
@@ -1033,140 +1086,176 @@
                     document.getElementById('spinnerPreloader').style.display = 'none';
                 }, 10000);
             }, 3000);
+        }
+    });
+
+    // Function to load all essential data
+    function loadEssentialData() {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Add all your essential data loading here
+                // Example: await db.collection('posts').get();
+                
+                // For now just simulate loading
+                setTimeout(resolve, 2000);
+            } catch (error) {
+                reject(error);
+            }
         });
+    }
 
-        // Toggle Menu
-        function toggleMenu() {
-            const menuPage = document.getElementById('menuPage');
-            menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
-        }
-
-        // Show Notifications
-        function showNotifications() {
-            const notificationsPage = document.getElementById('notificationsPage');
-            notificationsPage.style.display = 'block';
-            
-            // Show skeleton preloader and hide content
-            document.getElementById('notificationsSkeleton').style.display = 'block';
-            document.getElementById('notificationsContainer').style.display = 'none';
-            
-            // Hide skeleton and show content after 3 seconds (simulating loading)
-            setTimeout(function() {
-                document.getElementById('notificationsSkeleton').style.display = 'none';
-                document.getElementById('notificationsContainer').style.display = 'block';
-            }, 3000);
-        }
-
-        // Hide Notifications
-        function hideNotifications() {
-            document.getElementById('notificationsPage').style.display = 'none';
-        }
-
-        // Dark Mode Toggle
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        darkModeToggle.addEventListener('change', function() {
-            document.body.classList.toggle('dark-mode', this.checked);
-            // Save preference to localStorage
-            localStorage.setItem('darkMode', this.checked);
+    // Function to check if user needs to set a username
+    function checkUsername() {
+        // Check authentication status
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // User is logged in, check if they have a username
+                db.collection('users').doc(user.uid).get()
+                    .then(doc => {
+                        if (!doc.exists || !doc.data().username) {
+                            // Redirect to create username page
+                            window.location.href = 'create-username.html';
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error checking username:", error);
+                    });
+            }
         });
+    }
 
-        // Check for saved dark mode preference
-        if (localStorage.getItem('darkMode') === 'true') {
-            document.body.classList.add('dark-mode');
-            darkModeToggle.checked = true;
-        }
+    // Toggle Menu
+    function toggleMenu() {
+        const menuPage = document.getElementById('menuPage');
+        menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
+    }
 
-        // Data Saver Toggle
-        const dataSaverToggle = document.getElementById('dataSaverToggle');
-        dataSaverToggle.addEventListener('change', function() {
-            // Implement data saver functionality here
-            console.log('Data Saver:', this.checked);
-            localStorage.setItem('dataSaver', this.checked);
-        });
-
-        // Check for saved data saver preference
-        if (localStorage.getItem('dataSaver') === 'true') {
-            dataSaverToggle.checked = true;
-        }
-
-        // Pull to Refresh Functionality
-        const refreshContainer = document.getElementById('refresh-container');
-        const refreshSpinner = document.querySelector('.refresh-spinner');
-        let startY = 0;
-        let isRefreshing = false;
+    // Show Notifications
+    function showNotifications() {
+        const notificationsPage = document.getElementById('notificationsPage');
+        notificationsPage.style.display = 'block';
         
-        // Minimum pull distance to activate refresh (in pixels)
-        const REFRESH_THRESHOLD = 80;
+        // Show skeleton preloader and hide content
+        document.getElementById('notificationsSkeleton').style.display = 'block';
+        document.getElementById('notificationsContainer').style.display = 'none';
+        
+        // Hide skeleton and show content after 3 seconds (simulating loading)
+        setTimeout(function() {
+            document.getElementById('notificationsSkeleton').style.display = 'none';
+            document.getElementById('notificationsContainer').style.display = 'block';
+        }, 3000);
+    }
 
-        document.addEventListener('touchstart', e => {
-            if ((window.scrollY <= 0 || document.getElementById('notificationsPage').style.display === 'block') && !isRefreshing) {
-                startY = e.touches[0].pageY;
-            }
-        });
+    // Hide Notifications
+    function hideNotifications() {
+        document.getElementById('notificationsPage').style.display = 'none';
+    }
 
-        document.addEventListener('touchmove', e => {
-            if ((window.scrollY <= 0 || document.getElementById('notificationsPage').style.display === 'block') && startY > 0 && !isRefreshing) {
-                const pullDistance = e.touches[0].pageY - startY;
-                
-                if (pullDistance > 0) {
-                    e.preventDefault();
-                    
-                    // Move spinner with pull
-                    refreshContainer.style.top = `${Math.min(50, pullDistance/2) + 6}px`; // Adjusted to start below header
-                    
-                    // Show spinner when threshold passed
-                    if (pullDistance > REFRESH_THRESHOLD) {
-                        refreshSpinner.style.opacity = '1';
-                    } else {
-                        refreshSpinner.style.opacity = '0';
-                    }
-                }
-            }
-        });
+    // Dark Mode Toggle
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    darkModeToggle.addEventListener('change', function() {
+        document.body.classList.toggle('dark-mode', this.checked);
+        // Save preference to localStorage
+        localStorage.setItem('darkMode', this.checked);
+    });
 
-        document.addEventListener('touchend', e => {
-            if (startY > 0 && !isRefreshing) {
-                const pullDistance = e.changedTouches[0].pageY - startY;
-                
-                if (pullDistance > REFRESH_THRESHOLD) {
-                    // Start refresh
-                    startRefresh();
-                } else {
-                    // Reset if not pulled far enough
-                    resetSpinner();
-                }
-            }
-            startY = 0;
-        });
+    // Check for saved dark mode preference
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+        darkModeToggle.checked = true;
+    }
 
-        function startRefresh() {
-            isRefreshing = true;
-            refreshContainer.style.top = '56px'; // Position below header
-            refreshContainer.classList.add('refreshing');
+    // Data Saver Toggle
+    const dataSaverToggle = document.getElementById('dataSaverToggle');
+    dataSaverToggle.addEventListener('change', function() {
+        // Implement data saver functionality here
+        console.log('Data Saver:', this.checked);
+        localStorage.setItem('dataSaver', this.checked);
+    });
+
+    // Check for saved data saver preference
+    if (localStorage.getItem('dataSaver') === 'true') {
+        dataSaverToggle.checked = true;
+    }
+
+    // Pull to Refresh Functionality
+    const refreshContainer = document.getElementById('refresh-container');
+    const refreshSpinner = document.querySelector('.refresh-spinner');
+    let startY = 0;
+    let isRefreshing = false;
+    
+    // Minimum pull distance to activate refresh (in pixels)
+    const REFRESH_THRESHOLD = 80;
+
+    document.addEventListener('touchstart', e => {
+        if ((window.scrollY <= 0 || document.getElementById('notificationsPage').style.display === 'block') && !isRefreshing) {
+            startY = e.touches[0].pageY;
+        }
+    });
+
+    document.addEventListener('touchmove', e => {
+        if ((window.scrollY <= 0 || document.getElementById('notificationsPage').style.display === 'block') && startY > 0 && !isRefreshing) {
+            const pullDistance = e.touches[0].pageY - startY;
             
-            // Simulate refresh
-            setTimeout(() => {
-                isRefreshing = false;
-                refreshContainer.classList.remove('refreshing');
-                resetSpinner();
+            if (pullDistance > 0) {
+                e.preventDefault();
                 
-                // If on notifications page, show skeleton loader again
-                if (document.getElementById('notificationsPage').style.display === 'block') {
-                    document.getElementById('notificationsSkeleton').style.display = 'block';
-                    document.getElementById('notificationsContainer').style.display = 'none';
-                    setTimeout(function() {
-                        document.getElementById('notificationsSkeleton').style.display = 'none';
-                        document.getElementById('notificationsContainer').style.display = 'block';
-                    }, 2000);
+                // Move spinner with pull
+                refreshContainer.style.top = `${Math.min(50, pullDistance/2) + 6}px`; // Adjusted to start below header
+                
+                // Show spinner when threshold passed
+                if (pullDistance > REFRESH_THRESHOLD) {
+                    refreshSpinner.style.opacity = '1';
+                } else {
+                    refreshSpinner.style.opacity = '0';
                 }
-            }, 1500);
+            }
         }
+    });
 
-        function resetSpinner() {
-            refreshContainer.style.top = '56px';
-            refreshSpinner.style.opacity = '0';
+    document.addEventListener('touchend', e => {
+        if (startY > 0 && !isRefreshing) {
+            const pullDistance = e.changedTouches[0].pageY - startY;
+            
+            if (pullDistance > REFRESH_THRESHOLD) {
+                // Start refresh
+                startRefresh();
+            } else {
+                // Reset if not pulled far enough
+                resetSpinner();
+            }
         }
-    </script>
+        startY = 0;
+    });
+
+    function startRefresh() {
+        isRefreshing = true;
+        refreshContainer.style.top = '56px'; // Position below header
+        refreshContainer.classList.add('refreshing');
+        
+        // Simulate refresh
+        setTimeout(() => {
+            isRefreshing = false;
+            refreshContainer.classList.remove('refreshing');
+            resetSpinner();
+            
+            // If on notifications page, show skeleton loader again
+            if (document.getElementById('notificationsPage').style.display === 'block') {
+                document.getElementById('notificationsSkeleton').style.display = 'block';
+                document.getElementById('notificationsContainer').style.display = 'none';
+                setTimeout(function() {
+                    document.getElementById('notificationsSkeleton').style.display = 'none';
+                    document.getElementById('notificationsContainer').style.display = 'block';
+                }, 2000);
+            }
+        }, 1500);
+    }
+
+    function resetSpinner() {
+        refreshContainer.style.top = '56px';
+        refreshSpinner.style.opacity = '0';
+    }
+</script>
 <script src="js/suggestions.js" defer></script>
 <script src="js/posts.js"></script>
 </body>
