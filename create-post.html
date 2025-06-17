@@ -530,29 +530,20 @@ body {
         <div class="post-input-container">
             <!-- Replace your existing user-info-container div with this updated version -->
 <div class="user-info" id="user-info-container">
-    <!-- Skeleton Loader (shown while loading) -->
-    <div class="skeleton-loader">
-        <div class="skeleton-avatar"></div>
-        <div class="skeleton-details">
-            <div class="skeleton-name"></div>
-            <div class="skeleton-username"></div>
-        </div>
-    </div>
-    
-    <!-- Actual User Info (hidden initially) -->
-    <div class="loaded-user-info" style="display: none;">
+    <!-- Skeleton loader will be replaced -->
+    <div class="loaded-user-info">
         <div class="user-avatar" id="dynamic-avatar">
-            <!-- Will be populated by JavaScript -->
+            <!-- Will be populated by JS -->
         </div>
         <div class="user-details">
             <div class="user-name">
-                <span id="display-name">Loading...</span>
-                <span id="verified-badge" style="display: none;">
+                <span id="display-name">Loading name...</span>
+                <span id="verified-badge" style="display:none;">
                     <i class="fas fa-check-circle verified-badge"></i>
                 </span>
             </div>
             <div class="user-username" id="username-display">
-                @loading
+                @loadingusername
             </div>
         </div>
     </div>
@@ -582,8 +573,7 @@ body {
 
     <script>
      
-
-    // Initialize Firebase
+// Initialize Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -621,22 +611,11 @@ if (localStorage.getItem('darkMode') === 'true') {
 let uploadedFiles = [];
 let videoCount = 0;
 
-// 1. Show skeleton loader immediately
-showSkeletonLoader();
-
-// 2. Load user profile when auth state changes
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        await loadUserProfile(user);
-    } else {
-        window.location.href = 'login.html';
-    }
-});
-
 // ======================
-// PROFILE LOADING FUNCTIONS
+// USER PROFILE FUNCTIONS
 // ======================
 
+// Show skeleton loader immediately
 function showSkeletonLoader() {
     userInfoContainer.innerHTML = `
         <div class="skeleton-loader">
@@ -649,24 +628,40 @@ function showSkeletonLoader() {
     `;
 }
 
-async function loadUserProfile(user) {
+// Load user profile data
+async function loadUserProfile() {
+    showSkeletonLoader();
+    
     try {
+        const user = auth.currentUser;
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+
         // Get data from both Auth and Firestore
-        const [authData, firestoreData] = await Promise.all([
-            getAuthData(user),
-            getFirestoreData(user.uid)
-        ]);
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        const userData = userDoc.exists ? userDoc.data() : {};
 
-        // Merge all user data
-        const userData = {
-            displayName: authData.displayName,
-            username: firestoreData?.username,
-            verified: firestoreData?.verified,
-            photoURL: authData.photoURL || firestoreData?.photoURL
-        };
+        // Determine display name (priority: Auth > Firestore > fallback)
+        const displayName = user.displayName || userData.displayName || 'User';
+        
+        // Determine username (Firestore or generated fallback)
+        const username = userData.username || generateUsernameFallback(user.email || user.uid);
+        
+        // Get verification status
+        const verified = userData.verified || false;
+        
+        // Get photo URL (priority: Auth > Firestore > fallback to initial)
+        const photoURL = user.photoURL || userData.photoURL;
 
-        // Display the merged data
-        displayUserProfile(userData);
+        // Display the user profile
+        displayUserProfile({
+            displayName,
+            username,
+            verified,
+            photoURL
+        });
 
     } catch (error) {
         console.error("Error loading profile:", error);
@@ -674,44 +669,48 @@ async function loadUserProfile(user) {
     }
 }
 
-async function getAuthData(user) {
-    return {
-        displayName: user.displayName,
-        photoURL: user.photoURL
-    };
-}
-
-async function getFirestoreData(uid) {
-    const doc = await db.collection('users').doc(uid).get();
-    return doc.exists ? doc.data() : null;
-}
-
-function displayUserProfile(userData) {
-    // Hide skeleton and show loaded content
+// Display user profile with actual data
+function displayUserProfile({ displayName, username, verified, photoURL }) {
     userInfoContainer.innerHTML = `
         <div class="loaded-user-info">
             <div class="user-avatar">
-                ${getAvatarContent(userData.photoURL, userData.displayName)}
+                ${getAvatarContent(photoURL, displayName)}
             </div>
             <div class="user-details">
                 <div class="user-name">
-                    <span id="display-name">${userData.displayName || 'User'}</span>
-                    ${userData.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+                    ${displayName}
+                    ${verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
                 </div>
-                <div class="user-username">@${userData.username || generateFallbackUsername()}</div>
+                <div class="user-username">@${username}</div>
             </div>
         </div>
     `;
 }
 
-function getAvatarContent(photoURL, displayName) {
-    const name = displayName || 'User';
-    if (photoURL) {
-        return `<img src="${photoURL}" alt="${name}" onerror="this.replaceWith(createInitialAvatar('${name}'))">`;
+// Generate fallback username from email or UID
+function generateUsernameFallback(emailOrUid) {
+    if (emailOrUid) {
+        const base = emailOrUid.split('@')[0] || emailOrUid.substring(0, 8);
+        return base.toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 100);
     }
-    return createInitialAvatar(name);
+    return 'user' + Math.floor(Math.random() * 1000);
 }
 
+// Get appropriate avatar content
+function getAvatarContent(photoURL, displayName) {
+    if (photoURL) {
+        return `<img src="${photoURL}" alt="${displayName}" onerror="handleAvatarError(this)">`;
+    }
+    return createInitialAvatar(displayName);
+}
+
+// Handle avatar image loading errors
+function handleAvatarError(imgElement) {
+    const displayName = imgElement.alt || 'User';
+    imgElement.replaceWith(createInitialAvatar(displayName));
+}
+
+// Create initial avatar with colored background
 function createInitialAvatar(name) {
     const initial = name.charAt(0).toUpperCase();
     const colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3'];
@@ -724,10 +723,7 @@ function createInitialAvatar(name) {
     `;
 }
 
-function generateFallbackUsername() {
-    return 'user' + Math.floor(Math.random() * 1000);
-}
-
+// Display default profile if loading fails
 function displayDefaultProfile() {
     userInfoContainer.innerHTML = `
         <div class="loaded-user-info">
@@ -736,7 +732,7 @@ function displayDefaultProfile() {
             </div>
             <div class="user-details">
                 <div class="user-name">User</div>
-                <div class="user-username">@${generateFallbackUsername()}</div>
+                <div class="user-username">@${generateUsernameFallback()}</div>
             </div>
         </div>
     `;
@@ -845,6 +841,19 @@ function resetPostButton() {
     postButton.disabled = false;
     bottomPostButton.disabled = false;
 }
+
+// ======================
+// INITIALIZATION
+// ======================
+
+// Start loading profile when auth state changes
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        loadUserProfile();
+    } else {
+        window.location.href = 'login.html';
+    }
+});
 
 // Event listeners
 postButton.addEventListener('click', handlePost);
