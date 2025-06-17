@@ -15,13 +15,17 @@
 
   <!-- Your custom styles (optional) -->
   <link rel="stylesheet" href="style.css" />
-<!-- Firebase v11 Compat SDKs -->
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-analytics-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-storage-compat.js"></script>
-<style>
+
+  <!-- Firebase v8 SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+
+  <!-- Optional Firebase products (uncomment if needed) -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script> -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script> -->
+
+  <style>
     /* You can include your custom styles here */
   
         body {
@@ -349,140 +353,154 @@
     </div>
 
     <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-    authDomain: "x-jamii.firebaseapp.com",
-    projectId: "x-jamii",
-    storageBucket: "x-jamii.appspot.com", // ✅ Fixed
-    messagingSenderId: "927548667044",
-    appId: "1:927548667044:web:835e597909f51a2e4da231",
-    measurementId: "G-9S45DQ04HZ"
-  };
+   const firebaseConfig = {
+  apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+  authDomain: "x-jamii.firebaseapp.com",
+  projectId: "x-jamii",
+  storageBucket: "x-jamii.firebasestorage.app",
+  messagingSenderId: "927548667044",
+  appId: "1:927548667044:web:835e597909f51a2e4da231",
+  measurementId: "G-9S45DQ04HZ"
+};
 
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const provider = new firebase.auth.GoogleAuthProvider();
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const provider = new firebase.auth.GoogleAuthProvider();
 
-  setTimeout(function () {
-    document.querySelector('.preloader').style.display = 'none';
-    document.querySelector('.main-content').style.display = 'block';
-  }, 10000);
+    // Hide preloader and show main content after 10 seconds
+    setTimeout(function () {
+        document.querySelector('.preloader').style.display = 'none';
+        document.querySelector('.main-content').style.display = 'block';
+    }, 10000);
 
-  window.addEventListener('pageshow', function () {
-    resetButton('signup-btn');
-    resetButton('login-btn');
-    resetButton('google-btn', true);
-  });
-
-  function resetButton(id, isGoogle = false) {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-
-    btn.disabled = false;
-
-    const spinner = btn.querySelector('.spinner');
-    const btnText = btn.querySelector('.btn-text');
-
-    if (spinner) spinner.style.display = 'none';
-    if (btnText) btnText.style.display = 'inline';
-
-    if (isGoogle) {
-      btn.innerHTML = '<i class="fab fa-google google-icon"></i> Sign in with Google';
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    const logos = document.querySelectorAll('.preloader-logo, .main-logo');
-    logos.forEach(logo => {
-      logo.onload = function () {
-        const aspectRatio = logo.naturalWidth / logo.naturalHeight;
-        logo.style.width = (parseInt(logo.height) * aspectRatio) + 'px';
-      };
-      if (logo.complete) logo.onload();
+    // Reset buttons on browser back/forward navigation
+    window.addEventListener('pageshow', function () {
+        resetButton('signup-btn');
+        resetButton('login-btn');
+        resetButton('google-btn', true);
     });
 
-    document.getElementById('google-btn').addEventListener('click', function () {
-      const btn = this;
-      const errorElement = document.getElementById('google-error');
-      const originalText = btn.innerHTML;
+    // Function to reset buttons
+    function resetButton(id, isGoogle = false) {
+        const btn = document.getElementById(id);
+        if (!btn) return;
 
-      btn.innerHTML = '<i class="fab fa-google google-icon"></i> Loading...';
-      btn.disabled = true;
-      errorElement.style.display = 'none';
+        btn.disabled = false;
 
-      auth.signInWithPopup(provider)
-        .then(async (result) => {
-          const user = result.user;
-          console.log('Google sign-in successful', user);
+        const spinner = btn.querySelector('.spinner');
+        const btnText = btn.querySelector('.btn-text');
 
-          const db = firebase.firestore();
-          const userDoc = await db.collection('users').doc(user.uid).get();
+        if (spinner) spinner.style.display = 'none';
+        if (btnText) btnText.style.display = 'inline';
 
-          if (userDoc.exists && userDoc.data().username) {
+        // Reset Google button text if needed
+        if (isGoogle) {
+            btn.innerHTML = '<i class="fab fa-google google-icon"></i> Sign in with Google';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const logos = document.querySelectorAll('.preloader-logo, .main-logo');
+
+        logos.forEach(logo => {
+            logo.onload = function () {
+                const aspectRatio = logo.naturalWidth / logo.naturalHeight;
+                logo.style.width = (parseInt(logo.height) * aspectRatio) + 'px';
+            };
+            if (logo.complete) {
+                logo.onload();
+            }
+        });
+
+        // Google sign-in button
+        document.getElementById('google-btn').addEventListener('click', function () {
+            const btn = this;
+            const errorElement = document.getElementById('google-error');
+            const originalText = btn.innerHTML;
+
+            btn.innerHTML = '<i class="fab fa-google google-icon"></i> Loading...';
+            btn.disabled = true;
+            errorElement.style.display = 'none';
+
+            auth.signInWithPopup(provider)
+    .then(async (result) => {
+        const user = result.user;
+        console.log('Google sign-in successful', user);
+
+        const db = firebase.firestore();
+        const userDoc = await db.collection('users').doc(user.uid).get();
+
+        if (userDoc.exists && userDoc.data().username) {
+            // ✅ Existing user with username
             window.location.href = 'index.html';
-          } else {
+        } else {
+            // 🆕 New user or missing username
+            // Optionally create basic user profile in Firestore if it doesn't exist
             if (!userDoc.exists) {
-              await db.collection('users').doc(user.uid).set({
-                email: user.email,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-              });
+                await db.collection('users').doc(user.uid).set({
+                    email: user.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                });
             }
             window.location.href = 'create-username.html';
-          }
-        })
-        .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          console.error('Google sign-in error', errorCode, errorMessage);
+        }
+    })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    console.error('Google sign-in error', errorCode, errorMessage);
 
-          errorElement.textContent = getFriendlyErrorMessage(errorCode);
-          errorElement.style.display = 'block';
+                    errorElement.textContent = getFriendlyErrorMessage(errorCode);
+                    errorElement.style.display = 'block';
 
-          btn.innerHTML = originalText;
-          btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        });
+
+        // Signup button
+        document.getElementById('signup-btn').addEventListener('click', function () {
+            const btn = this;
+            const spinner = btn.querySelector('.spinner');
+            const btnText = btn.querySelector('.btn-text');
+
+            if (btnText) btnText.style.display = 'none';
+            if (spinner) spinner.style.display = 'block';
+            btn.disabled = true;
+
+            window.location.href = 'signup.html';
+        });
+
+        // Login button
+        document.getElementById('login-btn').addEventListener('click', function () {
+            const btn = this;
+            const spinner = btn.querySelector('.spinner');
+            const btnText = btn.querySelector('.btn-text');
+
+            if (btnText) btnText.style.display = 'none';
+            if (spinner) spinner.style.display = 'block';
+            btn.disabled = true;
+
+            window.location.href = 'login.html';
         });
     });
 
-    document.getElementById('signup-btn').addEventListener('click', function () {
-      const btn = this;
-      const spinner = btn.querySelector('.spinner');
-      const btnText = btn.querySelector('.btn-text');
-
-      if (btnText) btnText.style.display = 'none';
-      if (spinner) spinner.style.display = 'block';
-      btn.disabled = true;
-
-      window.location.href = 'signup.html';
-    });
-
-    document.getElementById('login-btn').addEventListener('click', function () {
-      const btn = this;
-      const spinner = btn.querySelector('.spinner');
-      const btnText = btn.querySelector('.btn-text');
-
-      if (btnText) btnText.style.display = 'none';
-      if (spinner) spinner.style.display = 'block';
-      btn.disabled = true;
-
-      window.location.href = 'login.html';
-    });
-  });
-
-  function getFriendlyErrorMessage(errorCode) {
-    switch (errorCode) {
-      case 'auth/network-request-failed':
-        return 'Network error. Please check your internet connection and try again.';
-      case 'auth/popup-closed-by-user':
-        return 'Sign in window was closed. Please try again.';
-      case 'auth/cancelled-popup-request':
-        return 'Sign in process cancelled. Please try again.';
-      case 'auth/popup-blocked':
-        return 'Popup blocked. Please allow popups for this site and try again.';
-      default:
-        return 'Failed to sign in with Google. Please try again.';
+    // Firebase error code handler
+    function getFriendlyErrorMessage(errorCode) {
+        switch (errorCode) {
+            case 'auth/network-request-failed':
+                return 'Network error. Please check your internet connection and try again.';
+            case 'auth/popup-closed-by-user':
+                return 'Sign in window was closed. Please try again.';
+            case 'auth/cancelled-popup-request':
+                return 'Sign in process cancelled. Please try again.';
+            case 'auth/popup-blocked':
+                return 'Popup blocked. Please allow popups for this site and try again.';
+            default:
+                return 'Failed to sign in with Google. Please try again.';
+        }
     }
-  }
 </script>
 </body>
 </html>
