@@ -529,21 +529,31 @@ body {
     <div class="create-post-container">
         <div class="post-input-container">
             <!-- Replace your existing user-info-container div with this updated version -->
+<!-- Replace your existing user-info-container div with this updated version -->
 <div class="user-info" id="user-info-container">
-    <!-- Skeleton loader will be replaced -->
-    <div class="loaded-user-info">
+    <!-- Skeleton Loader (shown while loading) -->
+    <div class="skeleton-loader">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-details">
+            <div class="skeleton-name"></div>
+            <div class="skeleton-username"></div>
+        </div>
+    </div>
+    
+    <!-- Actual User Info (hidden initially) -->
+    <div class="loaded-user-info" style="display: none;">
         <div class="user-avatar" id="dynamic-avatar">
-            <!-- Will be populated by JS -->
+            <!-- Will be populated by JavaScript -->
         </div>
         <div class="user-details">
             <div class="user-name">
-                <span id="display-name">Loading name...</span>
-                <span id="verified-badge" style="display:none;">
+                <span id="display-name">Loading...</span>
+                <span id="verified-badge" style="display: none;">
                     <i class="fas fa-check-circle verified-badge"></i>
                 </span>
             </div>
             <div class="user-username" id="username-display">
-                @loadingusername
+                @loading
             </div>
         </div>
     </div>
