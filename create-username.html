@@ -453,184 +453,212 @@
     </div>
 
 <script>
+        
+    <script>
     // Firebase Configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-    authDomain: "x-jamii.firebaseapp.com",
-    projectId: "x-jamii",
-    storageBucket: "x-jamii.appspot.com",
-    messagingSenderId: "927548667044",
-    appId: "1:927548667044:web:835e597909f51a2e4da231",
-    measurementId: "G-9S45DQ04HZ"
-};
+    const firebaseConfig = {
+        apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+        authDomain: "x-jamii.firebaseapp.com",
+        projectId: "x-jamii",
+        storageBucket: "x-jamii.appspot.com",
+        messagingSenderId: "927548667044",
+        appId: "1:927548667044:web:835e597909f51a2e4da231",
+        measurementId: "G-9S45DQ04HZ"
+    };
 
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-// DOM Elements
-const usernameInput = document.getElementById('username');
-const continueBtn = document.getElementById('continue-btn');
-const usernameStatus = document.getElementById('username-status');
-const preloader = document.querySelector('.preloader');
-const mainContent = document.querySelector('.main-content');
-
-// State Management
-let currentUsername = '';
-let isUsernameAvailable = false;
-let currentUser = null;
-let usernameCheckTimeout;
-
-// Preloader Control
-window.addEventListener('load', function() {
-    setTimeout(() => {
-        preloader.style.display = 'none';
-        mainContent.style.display = 'block';
-    }, 1500);
-});
-
-// Auth State Observer
-auth.onAuthStateChanged(async (user) => {
-    if (!user) {
-        window.location.href = 'signin.html';
-        return;
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
-    currentUser = user;
-    generateInitialUsername(user);
-});
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-// Username Generation
-function generateInitialUsername(user) {
-    const baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
-                     user.email?.split('@')[0]?.toLowerCase() || '';
-    const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
-    const suggestion = cleanBase ? 
-        `${cleanBase}${Math.floor(100 + Math.random() * 900)}` : 
-        generateRandomUsername();
-    
-    usernameInput.value = suggestion;
-    currentUsername = suggestion;
-    checkUsernameAvailability(suggestion);
-}
+    // DOM Elements
+    const usernameInput = document.getElementById('username');
+    const continueBtn = document.getElementById('continue-btn');
+    const usernameStatus = document.getElementById('username-status');
+    const preloader = document.querySelector('.preloader');
+    const mainContent = document.querySelector('.main-content');
 
-// Username Validation
-function validateUsername(username) {
-    if (!username) return false;
-    if (username.length < 3 || username.length > 20) return false;
-    return /^[a-z0-9_]+$/.test(username);
-}
+    // State
+    let currentUsername = '';
+    let isUsernameAvailable = false;
+    let currentUser = null;
+    let usernameCheckTimeout;
 
-// Username Availability Check
-async function checkUsernameAvailability(username) {
-    if (!validateUsername(username)) {
-        showInvalidUsername();
-        return false;
+    // Preloader
+    window.addEventListener('load', function () {
+        setTimeout(() => {
+            preloader.style.display = 'none';
+            mainContent.style.display = 'block';
+        }, 1500);
+    });
+
+    // Auth Observer
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'signin.html';
+            return;
+        }
+        currentUser = user;
+        generateInitialUsername(user);
+    });
+
+    // Generate Initial Username
+    function generateInitialUsername(user) {
+        const baseName = user.displayName?.split(' ')[0]?.toLowerCase() ||
+            user.email?.split('@')[0]?.toLowerCase() || '';
+        const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
+        const suggestion = cleanBase ?
+            `${cleanBase}${Math.floor(100 + Math.random() * 900)}` :
+            generateRandomUsername();
+
+        usernameInput.value = suggestion;
+        currentUsername = suggestion;
+        checkUsernameAvailability(suggestion);
     }
-    
-    const snapshot = await db.collection('usernames').doc(username.toLowerCase()).get();
-    isUsernameAvailable = !snapshot.exists;
-    updateUIAfterCheck(isUsernameAvailable);
-    return isUsernameAvailable;
-}
 
-// UI Updates
-function showInvalidUsername() {
-    if (currentUsername.length > 0) {
+    // Username Validation
+    function validateUsername(username) {
+        if (!username) return false;
+        if (username.length < 3 || username.length > 20) return false;
+        return /^[a-z0-9_]+$/.test(username);
+    }
+
+    // Check Availability
+    async function checkUsernameAvailability(username) {
+        if (!validateUsername(username)) {
+            showInvalidUsername();
+            return false;
+        }
+
+        try {
+            const snapshot = await db.collection('usernames').doc(username.toLowerCase()).get();
+            isUsernameAvailable = !snapshot.exists;
+            updateUIAfterCheck(isUsernameAvailable);
+            return isUsernameAvailable;
+        } catch (error) {
+            console.error('Error checking availability:', error);
+            usernameStatus.textContent = 'Error checking availability';
+            usernameStatus.className = 'status-indicator unavailable';
+            continueBtn.disabled = true;
+            return false;
+        }
+    }
+
+    // UI Updates
+    function showInvalidUsername() {
         usernameStatus.textContent = 'Invalid format (a-z, 0-9, _)';
         usernameStatus.className = 'status-indicator unavailable';
-    }
-    continueBtn.disabled = true;
-}
-
-function updateUIAfterCheck(isAvailable) {
-    usernameStatus.textContent = isAvailable ? '✓ Available' : '✗ Taken';
-    usernameStatus.className = `status-indicator ${isAvailable ? 'available' : 'unavailable'}`;
-    continueBtn.disabled = !isAvailable;
-}
-
-// Input Handler
-usernameInput.addEventListener('input', function(e) {
-    const username = e.target.value.toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '');
-    
-    if (username !== e.target.value) {
-        e.target.value = username;
-    }
-    
-    currentUsername = username;
-    clearTimeout(usernameCheckTimeout);
-    
-    if (!username) {
-        usernameStatus.textContent = '';
-        usernameStatus.className = 'status-indicator';
         continueBtn.disabled = true;
-        return;
     }
-    
-    if (!validateUsername(username)) {
-        showInvalidUsername();
-        return;
+
+    function updateUIAfterCheck(isAvailable) {
+        usernameStatus.textContent = isAvailable ? '✓ Available' : '✗ Taken';
+        usernameStatus.className = `status-indicator ${isAvailable ? 'available' : 'unavailable'}`;
+        continueBtn.disabled = !isAvailable;
     }
-    
-    usernameStatus.textContent = 'Checking...';
-    usernameStatus.className = 'status-indicator checking';
-    continueBtn.disabled = true;
-    
-    usernameCheckTimeout = setTimeout(() => {
-        checkUsernameAvailability(username);
-    }, 300);
-});
 
-// Simple Username Saving
-async function saveUsername(userId, username) {
-    const usernameLower = username.toLowerCase();
-    const batch = db.batch();
-    
-    const usernameRef = db.collection('usernames').doc(usernameLower);
-    batch.set(usernameRef, { 
-        userId: userId,
-        reservedAt: firebase.firestore.FieldValue.serverTimestamp()
+    // Input Handler
+    usernameInput.addEventListener('input', function (e) {
+        const username = e.target.value.toLowerCase()
+            .replace(/\s+/g, '_')
+            .replace(/[^a-z0-9_]/g, '');
+
+        if (username !== e.target.value) {
+            e.target.value = username;
+        }
+
+        currentUsername = username;
+        clearTimeout(usernameCheckTimeout);
+
+        if (!username) {
+            usernameStatus.textContent = '';
+            usernameStatus.className = 'status-indicator';
+            continueBtn.disabled = true;
+            return;
+        }
+
+        if (!validateUsername(username)) {
+            showInvalidUsername();
+            return;
+        }
+
+        usernameStatus.textContent = 'Checking...';
+        usernameStatus.className = 'status-indicator checking';
+        continueBtn.disabled = true;
+
+        usernameCheckTimeout = setTimeout(() => {
+            checkUsernameAvailability(username);
+        }, 500);
     });
-    
-    const userRef = db.collection('users').doc(userId);
-    batch.update(userRef, {
-        username: usernameLower,
-        accountComplete: true,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+
+    // Save Username Safely with Transaction
+    async function saveUsername(userId, username) {
+        const usernameLower = username.toLowerCase();
+        const usernameRef = db.collection('usernames').doc(usernameLower);
+        const userRef = db.collection('users').doc(userId);
+
+        try {
+            await db.runTransaction(async (transaction) => {
+                const usernameDoc = await transaction.get(usernameRef);
+                if (usernameDoc.exists) {
+                    throw new Error('Username already taken');
+                }
+
+                transaction.create(usernameRef, {
+                    userId: userId,
+                    reservedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                transaction.update(userRef, {
+                    username: usernameLower,
+                    accountComplete: true,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            // Success
+            window.location.href = 'index.html';
+
+        } catch (error) {
+            console.error('Transaction failed:', error.message);
+            usernameStatus.textContent = '✗ Taken (just now)';
+            usernameStatus.className = 'status-indicator unavailable';
+            continueBtn.disabled = false;
+
+            // Restore button UI
+            const btnText = continueBtn.querySelector('.btn-text');
+            const spinner = continueBtn.querySelector('.spinner');
+            if (btnText) btnText.style.display = 'inline-block';
+            if (spinner) spinner.style.display = 'none';
+        }
+    }
+
+    // Continue Button Handler
+    continueBtn.addEventListener('click', async function (e) {
+        e.preventDefault();
+
+        if (!isUsernameAvailable || !currentUser) return;
+
+        const btnText = this.querySelector('.btn-text');
+        const spinner = this.querySelector('.spinner');
+        if (btnText) btnText.style.display = 'none';
+        if (spinner) spinner.style.display = 'inline-block';
+        this.disabled = true;
+
+        await saveUsername(currentUser.uid, currentUsername);
     });
-    
-    await batch.commit();
-}
 
-// Continue Button Handler (Simplified)
-continueBtn.addEventListener('click', async function(e) {
-    e.preventDefault();
-    
-    if (!isUsernameAvailable || !currentUser) return;
-    
-    // Show loading state
-    const btnText = this.querySelector('.btn-text');
-    const spinner = this.querySelector('.spinner');
-    if (btnText) btnText.style.display = 'none';
-    if (spinner) spinner.style.display = 'inline-block';
-    this.disabled = true;
-    
-    await saveUsername(currentUser.uid, currentUsername);
-    window.location.href = 'index.html';
-});
-
-// Helper Function
-function generateRandomUsername() {
-    const adjectives = ['cool', 'happy', 'sunny', 'bright', 'quick'];
-    const nouns = ['fox', 'star', 'bird', 'wave', 'cloud'];
-    return `${adjectives[Math.floor(Math.random()*adjectives.length)]}_${
-           nouns[Math.floor(Math.random()*nouns.length)]}${
-           Math.floor(10 + Math.random() * 90)}`;
-}
+    // Random Username Fallback
+    function generateRandomUsername() {
+        const adjectives = ['cool', 'happy', 'sunny', 'bright', 'quick'];
+        const nouns = ['fox', 'star', 'bird', 'wave', 'cloud'];
+        return `${adjectives[Math.floor(Math.random() * adjectives.length)]}_${
+            nouns[Math.floor(Math.random() * nouns.length)]
+        }${Math.floor(10 + Math.random() * 90)}`;
+    }
+</script>
 </script>
 </body>
 </html>
