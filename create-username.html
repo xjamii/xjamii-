@@ -453,8 +453,7 @@
     </div>
 
 <script>
-           
-    // Firebase Configuration
+// Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -476,19 +475,18 @@ const db = firebase.firestore();
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const usernameStatus = document.getElementById('username-status');
-const suggestionsContainer = document.getElementById('suggestions-container');
 const preloader = document.querySelector('.preloader');
 const mainContent = document.querySelector('.main-content');
 
-// Add spinner to continue button (matches password page exactly)
+// Configure Continue Button Spinner (matches password page)
 if (!continueBtn.querySelector('.spinner')) {
     continueBtn.innerHTML = `
         <span class="btn-text">Continue</span>
-        <span class="spinner" style="display: none;">
-            <span class="spinner-dot" style="color: #fff;"></span>
-            <span class="spinner-dot" style="color: #fff;"></span>
-            <span class="spinner-dot" style="color: #fff;"></span>
-            <span class="spinner-dot" style="color: #fff;"></span>
+        <span class="spinner" style="display:none;">
+            <span class="spinner-dot" style="color:#fff;"></span>
+            <span class="spinner-dot" style="color:#fff;"></span>
+            <span class="spinner-dot" style="color:#fff;"></span>
+            <span class="spinner-dot" style="color:#fff;"></span>
         </span>
     `;
 }
@@ -499,17 +497,18 @@ let isUsernameAvailable = false;
 let currentUser = null;
 let usernameCheckTimeout;
 
-// Preloader Logic (matches password page exactly)
+// Preloader Control (matches password page)
+function hidePreloader() {
+    preloader.style.display = 'none';
+    mainContent.style.display = 'block';
+}
+
 window.addEventListener('load', function() {
     const navType = performance.getEntriesByType("navigation")[0].type;
     if (navType === 'back_forward') {
-        preloader.style.display = 'none';
-        mainContent.style.display = 'block';
+        hidePreloader();
     } else {
-        setTimeout(function() {
-            preloader.style.display = 'none';
-            mainContent.style.display = 'block';
-        }, 1500);
+        setTimeout(hidePreloader, 1500);
     }
 });
 
@@ -524,7 +523,7 @@ auth.onAuthStateChanged(async (user) => {
     generateInitialUsername(user);
 });
 
-// Generate Initial Username Suggestion
+// Username Generation
 function generateInitialUsername(user) {
     const baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
                      user.email?.split('@')[0]?.toLowerCase() || '';
@@ -538,36 +537,6 @@ function generateInitialUsername(user) {
     checkUsernameAvailability(suggestion);
 }
 
-// Username Input Handler
-usernameInput.addEventListener('input', function(e) {
-    const username = e.target.value.toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '');
-    
-    if (username !== e.target.value) {
-        e.target.value = username;
-    }
-    
-    currentUsername = username;
-    clearTimeout(usernameCheckTimeout);
-    
-    if (!username) {
-        resetUsernameStatus();
-        return;
-    }
-    
-    if (!validateUsername(username)) {
-        showInvalidUsername();
-        return;
-    }
-    
-    showCheckingStatus();
-    
-    usernameCheckTimeout = setTimeout(() => {
-        checkUsernameAvailability(username);
-    }, 300);
-});
-
 // Username Validation
 function validateUsername(username) {
     if (!username) return false;
@@ -575,7 +544,7 @@ function validateUsername(username) {
     return /^[a-z0-9_]+$/.test(username);
 }
 
-// Check Username Availability
+// Username Availability Check
 async function checkUsernameAvailability(username) {
     if (!validateUsername(username)) {
         showInvalidUsername();
@@ -597,7 +566,7 @@ async function checkUsernameAvailability(username) {
     }
 }
 
-// UI Update Functions
+// UI Status Updates
 function resetUsernameStatus() {
     usernameStatus.textContent = '';
     usernameStatus.className = 'status-indicator';
@@ -635,22 +604,21 @@ async function reserveUsername(userId, username) {
     const usernameLower = username.toLowerCase();
     
     return db.runTransaction(async (transaction) => {
-        // Verify username is still available
         const usernameRef = db.collection('usernames').doc(usernameLower);
-        const usernameDoc = await transaction.get(usernameRef);
+        const userRef = db.collection('users').doc(userId);
         
-        if (usernameDoc.exists) {
+        // Verify availability
+        const doc = await transaction.get(usernameRef);
+        if (doc.exists) {
             throw { code: 'username-taken', message: 'Username was just taken' };
         }
         
-        // Reserve username
+        // Perform updates
         transaction.set(usernameRef, { 
             userId: userId,
-            reservedAt: firebase.firestore.FieldValue.serverTimestamp()
+            reservedAt: firebase.firestore.FieldValue.serverTimestamp() 
         });
         
-        // Update user document
-        const userRef = db.collection('users').doc(userId);
         transaction.update(userRef, {
             username: usernameLower,
             accountComplete: true,
@@ -659,18 +627,18 @@ async function reserveUsername(userId, username) {
     });
 }
 
-// Continue Button Handler with Loading State
+// Continue Button Handler with Enhanced Error Handling
 continueBtn.addEventListener('click', async function(e) {
     e.preventDefault();
     
-    // Final validation
+    // Validate inputs
     if (!isUsernameAvailable || !validateUsername(currentUsername) || !currentUser) {
         usernameStatus.textContent = 'Please choose an available username';
         usernameStatus.className = 'status-indicator unavailable';
         return;
     }
     
-    // Set loading state (matches password page exactly)
+    // Set loading state
     const btnText = this.querySelector('.btn-text');
     const spinner = this.querySelector('.spinner');
     btnText.style.display = 'none';
@@ -678,7 +646,7 @@ continueBtn.addEventListener('click', async function(e) {
     this.disabled = true;
     
     try {
-        // Attempt to reserve username
+        // Attempt reservation
         await reserveUsername(currentUser.uid, currentUsername);
         
         // Success - redirect
@@ -686,27 +654,29 @@ continueBtn.addEventListener('click', async function(e) {
     } catch (error) {
         console.error("Save error:", error);
         
-        // Handle specific error cases
+        // Handle specific errors
         let errorMessage = 'Error saving username';
         if (error.code === 'username-taken') {
             errorMessage = 'Username was just taken. Please try another.';
             isUsernameAvailable = false;
         } else if (error.code === 'permission-denied') {
             errorMessage = 'Permission denied. Please refresh and try again.';
+        } else if (error.code === 'aborted') {
+            errorMessage = 'Network error. Please check your connection.';
         }
         
         // Update UI
         usernameStatus.textContent = errorMessage;
         usernameStatus.className = 'status-indicator unavailable';
         
-        // Restore button state
+        // Reset button
         btnText.style.display = 'block';
         spinner.style.display = 'none';
         this.disabled = false;
     }
 });
 
-// Back Button Handler (matches password page)
+// Back Button Handler (if exists)
 document.getElementById('back-btn')?.addEventListener('click', function() {
     const btnText = this.querySelector('.btn-text');
     const spinner = this.querySelector('.spinner');
@@ -718,7 +688,7 @@ document.getElementById('back-btn')?.addEventListener('click', function() {
     window.location.href = 'password.html';
 });
 
-// Helper Functions
+// Helper Function
 function generateRandomUsername() {
     const adjectives = ['cool', 'happy', 'sunny', 'bright', 'quick'];
     const nouns = ['fox', 'star', 'bird', 'wave', 'cloud'];
