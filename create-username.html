@@ -286,8 +286,7 @@
     </div>
 
 <script>
-                            
-// Firebase config
+        // Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -322,57 +321,24 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
     
-    // Generate suggestions using either displayName or email
+    // Generate single suggestion using either displayName or email
     const baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
                     user.email?.split('@')[0]?.toLowerCase() || '';
     const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
     
-    generateSuggestions(cleanBase);
-});
-
-// Generate username suggestions (Instagram-style)
-function generateSuggestions(base) {
-    suggestionsContainer.innerHTML = '';
+    // Generate just one suggested username
+    const suggestion = cleanBase ? 
+        `${cleanBase}${Math.floor(100 + Math.random() * 900)}` : // 3-digit suffix
+        generateRandomUsername();
     
-    const suggestions = [
-        base && `${base}${Math.floor(100 + Math.random() * 900)}`,  // 3-digit suffix
-        base && `${base}_${Math.floor(10 + Math.random() * 90)}`,    // 2-digit suffix with underscore
-        base && `${base}${String.fromCharCode(97 + Math.floor(Math.random() * 26))}`, // Random letter
-        generateRandomUsername()
-    ].filter(Boolean);
-
-    // Create all suggestion pills first
-    const pills = suggestions.map(suggestion => {
-        const pill = document.createElement('div');
-        pill.className = 'suggestion-pill loading';
-        pill.textContent = suggestion;
-        pill.addEventListener('click', () => {
-            usernameInput.value = suggestion;
-            checkAvailability(suggestion);
-            suggestionsContainer.style.display = 'none'; // Hide suggestions after selection
-        });
-        suggestionsContainer.appendChild(pill);
-        return pill;
-    });
-
-    // Check availability in parallel
-    suggestions.forEach((suggestion, index) => {
-        checkAvailability(suggestion, pills[index]);
-    });
-}
-
-// Show suggestions when input is focused
-usernameInput.addEventListener('focus', function() {
-    if (suggestionsContainer.children.length > 0) {
-        suggestionsContainer.style.display = 'flex';
-    }
-});
-
-// Hide suggestions when clicking outside
-document.addEventListener('click', function(e) {
-    if (e.target !== usernameInput && !suggestionsContainer.contains(e.target)) {
-        suggestionsContainer.style.display = 'none';
-    }
+    // Pre-fill the input with the suggested username
+    usernameInput.value = suggestion;
+    
+    // Check its availability
+    await checkAvailability(suggestion);
+    
+    // Hide suggestions container as we're only using one pre-filled suggestion
+    suggestionsContainer.style.display = 'none';
 });
 
 // Ultra-fast username availability check
@@ -385,8 +351,19 @@ async function checkAvailability(username, pillElement = null) {
         return availabilityCache[usernameLower];
     }
 
+    // Don't show invalid format for empty input
+    if (!username) {
+        usernameStatus.textContent = '';
+        usernameStatus.className = 'status-indicator';
+        return false;
+    }
+
     if (!validateUsername(username)) {
-        updateAvailabilityUI(false, username, pillElement);
+        // Only show invalid format if user has typed at least 1 character
+        if (username.length > 0) {
+            usernameStatus.textContent = 'Invalid format';
+            usernameStatus.className = 'status-indicator unavailable';
+        }
         return false;
     }
 
@@ -470,12 +447,11 @@ usernameInput.addEventListener('input', function(e) {
     
     clearTimeout(checkTimeout);
     
-    // Immediate UI update for fast feedback
-    if (!validateUsername(username)) {
-        usernameStatus.textContent = 'Invalid format';
-        usernameStatus.className = 'status-indicator unavailable';
+    // Don't show status for empty input
+    if (!username) {
+        usernameStatus.textContent = '';
+        usernameStatus.className = 'status-indicator';
         continueBtn.disabled = true;
-        suggestionsContainer.style.display = 'none'; // Hide suggestions if invalid
         return;
     }
     
@@ -483,11 +459,6 @@ usernameInput.addEventListener('input', function(e) {
     usernameStatus.textContent = 'Checking...';
     usernameStatus.className = 'status-indicator checking';
     continueBtn.disabled = true;
-    
-    // Show suggestions if they exist
-    if (suggestionsContainer.children.length > 0) {
-        suggestionsContainer.style.display = 'flex';
-    }
     
     // Debounced actual check
     checkTimeout = setTimeout(() => {
@@ -600,6 +571,7 @@ document.getElementById('back-btn').addEventListener('click', function() {
 
     window.location.href = 'password.html';
 });
-                   </script>
+        </script>
 </body>
 </html>
+         
