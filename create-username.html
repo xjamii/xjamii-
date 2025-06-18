@@ -394,7 +394,8 @@
     </div>
 
 <script>
-                            // Firebase Configuration
+           
+    // Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -417,6 +418,29 @@ const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const usernameStatus = document.getElementById('username-status');
 const suggestionsContainer = document.getElementById('suggestions-container');
+
+// Get button elements to match password page style
+const btnText = continueBtn.querySelector('.btn-text') || document.createElement('span');
+const spinner = continueBtn.querySelector('.spinner') || document.createElement('span');
+
+// Add classes if elements don't exist
+if (!continueBtn.querySelector('.btn-text')) {
+    btnText.className = 'btn-text';
+    btnText.textContent = 'Continue';
+    continueBtn.appendChild(btnText);
+}
+
+if (!continueBtn.querySelector('.spinner')) {
+    spinner.className = 'spinner';
+    spinner.style.display = 'none';
+    spinner.innerHTML = `
+        <span class="spinner-dot" style="color: #fff;"></span>
+        <span class="spinner-dot" style="color: #fff;"></span>
+        <span class="spinner-dot" style="color: #fff;"></span>
+        <span class="spinner-dot" style="color: #fff;"></span>
+    `;
+    continueBtn.appendChild(spinner);
+}
 
 // State Management
 let currentUsername = '';
@@ -446,7 +470,6 @@ function generateInitialUsername(user) {
     usernameInput.value = suggestion;
     currentUsername = suggestion;
     checkUsernameAvailability(suggestion);
-    suggestionsContainer.style.display = 'none';
 }
 
 // Username Input Handler
@@ -541,7 +564,7 @@ function updateUIAfterCheck(isAvailable) {
     continueBtn.disabled = !isAvailable;
 }
 
-// Continue Button Handler (Fixed Submission)
+// Continue Button Handler - Modified to match password page style
 continueBtn.addEventListener('click', async function(e) {
     e.preventDefault();
     
@@ -552,14 +575,10 @@ continueBtn.addEventListener('click', async function(e) {
         return;
     }
     
-    const btn = this;
-    const spinner = btn.querySelector('.spinner');
-    const btnText = btn.querySelector('.btn-text');
-    
-    // Show loading state
+    // Show loading state (matches password page)
     btnText.style.display = 'none';
     spinner.style.display = 'block';
-    btn.disabled = true;
+    continueBtn.disabled = true;
     
     try {
         // Final availability verification
@@ -576,10 +595,10 @@ continueBtn.addEventListener('click', async function(e) {
     } catch (error) {
         console.error("Submission error:", error);
         
-        // Restore button state
+        // Restore button state (matches password page)
         btnText.style.display = 'block';
         spinner.style.display = 'none';
-        btn.disabled = false;
+        continueBtn.disabled = false;
         
         // Show appropriate error message
         if (error.message.includes('taken during submission')) {
@@ -634,6 +653,6 @@ window.addEventListener('load', function() {
 document.getElementById('back-btn').addEventListener('click', function() {
     window.location.href = 'password.html';
 });
-                               </script>
+</script>
 </body>
 </html>
