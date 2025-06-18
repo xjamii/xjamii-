@@ -453,7 +453,7 @@
     </div>
 
 <script>
-// Firebase Configuration
+    // Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -478,38 +478,18 @@ const usernameStatus = document.getElementById('username-status');
 const preloader = document.querySelector('.preloader');
 const mainContent = document.querySelector('.main-content');
 
-// Configure Continue Button Spinner (matches password page)
-if (!continueBtn.querySelector('.spinner')) {
-    continueBtn.innerHTML = `
-        <span class="btn-text">Continue</span>
-        <span class="spinner" style="display:none;">
-            <span class="spinner-dot" style="color:#fff;"></span>
-            <span class="spinner-dot" style="color:#fff;"></span>
-            <span class="spinner-dot" style="color:#fff;"></span>
-            <span class="spinner-dot" style="color:#fff;"></span>
-        </span>
-    `;
-}
-
 // State Management
 let currentUsername = '';
 let isUsernameAvailable = false;
 let currentUser = null;
 let usernameCheckTimeout;
 
-// Preloader Control (matches password page)
-function hidePreloader() {
-    preloader.style.display = 'none';
-    mainContent.style.display = 'block';
-}
-
+// Preloader Control
 window.addEventListener('load', function() {
-    const navType = performance.getEntriesByType("navigation")[0].type;
-    if (navType === 'back_forward') {
-        hidePreloader();
-    } else {
-        setTimeout(hidePreloader, 1500);
-    }
+    setTimeout(() => {
+        preloader.style.display = 'none';
+        mainContent.style.display = 'block';
+    }, 1500);
 });
 
 // Auth State Observer
@@ -518,7 +498,6 @@ auth.onAuthStateChanged(async (user) => {
         window.location.href = 'signin.html';
         return;
     }
-    
     currentUser = user;
     generateInitialUsername(user);
 });
@@ -551,45 +530,18 @@ async function checkUsernameAvailability(username) {
         return false;
     }
     
-    try {
-        const snapshot = await db.collection('usernames').doc(username.toLowerCase()).get();
-        isUsernameAvailable = !snapshot.exists;
-        
-        if (currentUsername === username) {
-            updateUIAfterCheck(isUsernameAvailable);
-        }
-        return isUsernameAvailable;
-    } catch (error) {
-        console.error("Availability check failed:", error);
-        showCheckFailed();
-        return false;
-    }
+    const snapshot = await db.collection('usernames').doc(username.toLowerCase()).get();
+    isUsernameAvailable = !snapshot.exists;
+    updateUIAfterCheck(isUsernameAvailable);
+    return isUsernameAvailable;
 }
 
-// UI Status Updates
-function resetUsernameStatus() {
-    usernameStatus.textContent = '';
-    usernameStatus.className = 'status-indicator';
-    continueBtn.disabled = true;
-}
-
+// UI Updates
 function showInvalidUsername() {
     if (currentUsername.length > 0) {
         usernameStatus.textContent = 'Invalid format (a-z, 0-9, _)';
         usernameStatus.className = 'status-indicator unavailable';
     }
-    continueBtn.disabled = true;
-}
-
-function showCheckingStatus() {
-    usernameStatus.textContent = 'Checking...';
-    usernameStatus.className = 'status-indicator checking';
-    continueBtn.disabled = true;
-}
-
-function showCheckFailed() {
-    usernameStatus.textContent = 'Check failed';
-    usernameStatus.className = 'status-indicator unavailable';
     continueBtn.disabled = true;
 }
 
@@ -599,93 +551,76 @@ function updateUIAfterCheck(isAvailable) {
     continueBtn.disabled = !isAvailable;
 }
 
-// Atomic Username Reservation
-async function reserveUsername(userId, username) {
-    const usernameLower = username.toLowerCase();
+// Input Handler
+usernameInput.addEventListener('input', function(e) {
+    const username = e.target.value.toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_]/g, '');
     
-    return db.runTransaction(async (transaction) => {
-        const usernameRef = db.collection('usernames').doc(usernameLower);
-        const userRef = db.collection('users').doc(userId);
-        
-        // Verify availability
-        const doc = await transaction.get(usernameRef);
-        if (doc.exists) {
-            throw { code: 'username-taken', message: 'Username was just taken' };
-        }
-        
-        // Perform updates
-        transaction.set(usernameRef, { 
-            userId: userId,
-            reservedAt: firebase.firestore.FieldValue.serverTimestamp() 
-        });
-        
-        transaction.update(userRef, {
-            username: usernameLower,
-            accountComplete: true,
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    });
-}
-
-// Continue Button Handler with Enhanced Error Handling
-continueBtn.addEventListener('click', async function(e) {
-    e.preventDefault();
+    if (username !== e.target.value) {
+        e.target.value = username;
+    }
     
-    // Validate inputs
-    if (!isUsernameAvailable || !validateUsername(currentUsername) || !currentUser) {
-        usernameStatus.textContent = 'Please choose an available username';
-        usernameStatus.className = 'status-indicator unavailable';
+    currentUsername = username;
+    clearTimeout(usernameCheckTimeout);
+    
+    if (!username) {
+        usernameStatus.textContent = '';
+        usernameStatus.className = 'status-indicator';
+        continueBtn.disabled = true;
         return;
     }
     
-    // Set loading state
-    const btnText = this.querySelector('.btn-text');
-    const spinner = this.querySelector('.spinner');
-    btnText.style.display = 'none';
-    spinner.style.display = 'inline-block';
-    this.disabled = true;
-    
-    try {
-        // Attempt reservation
-        await reserveUsername(currentUser.uid, currentUsername);
-        
-        // Success - redirect
-        window.location.href = 'index.html';
-    } catch (error) {
-        console.error("Save error:", error);
-        
-        // Handle specific errors
-        let errorMessage = 'Error saving username';
-        if (error.code === 'username-taken') {
-            errorMessage = 'Username was just taken. Please try another.';
-            isUsernameAvailable = false;
-        } else if (error.code === 'permission-denied') {
-            errorMessage = 'Permission denied. Please refresh and try again.';
-        } else if (error.code === 'aborted') {
-            errorMessage = 'Network error. Please check your connection.';
-        }
-        
-        // Update UI
-        usernameStatus.textContent = errorMessage;
-        usernameStatus.className = 'status-indicator unavailable';
-        
-        // Reset button
-        btnText.style.display = 'block';
-        spinner.style.display = 'none';
-        this.disabled = false;
+    if (!validateUsername(username)) {
+        showInvalidUsername();
+        return;
     }
+    
+    usernameStatus.textContent = 'Checking...';
+    usernameStatus.className = 'status-indicator checking';
+    continueBtn.disabled = true;
+    
+    usernameCheckTimeout = setTimeout(() => {
+        checkUsernameAvailability(username);
+    }, 300);
 });
 
-// Back Button Handler (if exists)
-document.getElementById('back-btn')?.addEventListener('click', function() {
+// Simple Username Saving
+async function saveUsername(userId, username) {
+    const usernameLower = username.toLowerCase();
+    const batch = db.batch();
+    
+    const usernameRef = db.collection('usernames').doc(usernameLower);
+    batch.set(usernameRef, { 
+        userId: userId,
+        reservedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    const userRef = db.collection('users').doc(userId);
+    batch.update(userRef, {
+        username: usernameLower,
+        accountComplete: true,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    await batch.commit();
+}
+
+// Continue Button Handler (Simplified)
+continueBtn.addEventListener('click', async function(e) {
+    e.preventDefault();
+    
+    if (!isUsernameAvailable || !currentUser) return;
+    
+    // Show loading state
     const btnText = this.querySelector('.btn-text');
     const spinner = this.querySelector('.spinner');
-    
-    btnText.style.display = 'none';
-    spinner.style.display = 'inline-block';
+    if (btnText) btnText.style.display = 'none';
+    if (spinner) spinner.style.display = 'inline-block';
     this.disabled = true;
     
-    window.location.href = 'password.html';
+    await saveUsername(currentUser.uid, currentUsername);
+    window.location.href = 'index.html';
 });
 
 // Helper Function
