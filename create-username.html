@@ -6,11 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Username - X-Aviation</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        /* Your existing styles remain the same */
         body {
             margin: 0;
             padding: 0;
@@ -117,532 +116,234 @@
             margin-top: 5px;
             display: none;
         }
-
-        /* New styles for username suggestions */
-        .suggestions-container {
-            margin-top: 10px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .suggestion-pill {
-            padding: 6px 12px;
-            background-color: #E0E0E0;
-            border-radius: 16px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .suggestion-pill:hover {
-            background-color: #BDBDBD;
-        }
-
-        /* Add to your existing CSS */
-.checking-message {
-    color: #666;
-    font-size: 14px;
-    margin-top: 5px;
-    display: none;
-}
-
-.suggestion-pill.loading {
-    opacity: 0.7;
-    pointer-events: none;
-}
-
-            .availability-badge {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin-left: 6px;
-    position: relative;
-}
-
-.availability-badge.checking {
-    background: #FFC107;
-    animation: pulse 1.5s infinite;
-}
-
-.availability-badge.available {
-    background: #4CAF50;
-}
-
-.availability-badge.unavailable {
-    background: #F44336;
-}
-
-.availability-badge.error {
-    background: #9E9E9E;
-}
-
-@keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
-}
-
-.suggestion-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 12px;
-    margin: 4px;
-    background: #E0E0E0;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.suggestion-pill:hover {
-    background: #BDBDBD;
-}
-
-        .status-indicator {
-    margin-top: 5px;
-    font-size: 14px;
-}
-.available {
-    color: green;
-}
-.unavailable {
-    color: red;
-}
-.suggestion-pill.available {
-    border-color: green;
-}
-.suggestion-pill.unavailable {
-    border-color: red;
-}
-
-        /* Add these styles to your CSS */
-.status-indicator {
-    margin-top: 5px;
-    font-size: 14px;
-    font-weight: bold;
-    display: none; /* Hidden by default */
-}
-
-.status-indicator.available {
-    color: #00a400;
-    display: block;
-}
-
-.status-indicator.unavailable {
-    color: #ff4d4d;
-    display: block;
-}
-
-.suggestion-pill.available {
-    border: 1px solid #00a400;
-    color: #00a400;
-}
-
-.suggestion-pill.unavailable {
-    border: 1px solid #ff4d4d;
-    color: #ff4d4d;
-}
-
-.suggestions-container {
-    margin-top: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.suggestion-pill {
-    padding: 6px 12px;
-    border-radius: 20px;
-    background: #f0f0f0;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-
-        /* Main Container Styles */
-.username-container {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 2rem;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Input Field Styling */
-.username-input {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    box-sizing: border-box;
-    margin-bottom: 8px;
-}
-
-.username-input:focus {
-    border-color: #6366f1;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-
-/* Status Indicator Styles */
-.status-indicator {
-    font-size: 14px;
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 20px; /* Prevent layout shift */
-}
-
-.status-indicator.checking {
-    color: #64748b;
-}
-
-.status-indicator.available {
-    color: #10b981;
-    font-weight: 500;
-}
-
-.status-indicator.unavailable {
-    color: #ef4444;
-    font-weight: 500;
-}
-
-/* Suggestions Container */
-.suggestions-container {
-    display: none; /* Hidden by default */
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.suggestion-pill {
-    padding: 6px 12px;
-    background: #f3f4f6;
-    border-radius: 20px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.suggestion-pill:hover {
-    background: #e5e7eb;
-}
-
-.suggestion-pill.available {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.suggestion-pill.unavailable {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-.suggestion-pill.loading {
-    position: relative;
-    color: transparent;
-    overflow: hidden;
-}
-
-.suggestion-pill.loading::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, transparent, #f3f4f6, transparent);
-    animation: loadingShimmer 1.5s infinite;
-}
-
-@keyframes loadingShimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-
-/* Spinner dots - matches password page */
-.spinner {
-    display: none;
-    position: relative;
-    width: 24px;
-    height: 24px;
-    vertical-align: middle;
-}
-
-.spinner-dot {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    animation: spinner-bounce 1.4s infinite ease-in-out both;
-}
-
-.spinner-dot:nth-child(1) {
-    top: 0;
-    left: 9px;
-    animation-delay: -0.32s;
-}
-
-.spinner-dot:nth-child(2) {
-    top: 9px;
-    left: 0;
-    animation-delay: -0.16s;
-}
-
-.spinner-dot:nth-child(3) {
-    top: 9px;
-    left: 18px;
-}
-
-.spinner-dot:nth-child(4) {
-    top: 18px;
-    left: 9px;
-    animation-delay: -0.48s;
-}
-
-@keyframes spinner-bounce {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1); }
-}
-
-/* Button disabled state */
-.continue-button:disabled {
-    background-color: #cccccc;
-    border-color: #cccccc;
-    cursor: not-allowed;
-}
-    
     </style>
 </head>
 <body>
-
-    <div class="preloader">
-    <div class="preloader-spinner">
-        <div class="preloader-spinner-dot"></div>
-        <div class="preloader-spinner-dot"></div>
-        <div class="preloader-spinner-dot"></div>
-        <div class="preloader-spinner-dot"></div>
-    </div>
-</div>
     <div class="main-content">
-    <div class="logo-container">
-        <img src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" alt="X-Aviation Logo" class="logo">
-    </div>
-    
-    <div class="form-container">
-        <h1 class="title">Create your username</h1>
+        <div class="logo-container">
+            <img src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" alt="X-Aviation Logo" class="logo">
+        </div>
         
-        <div class="input-container">
-            <label for="username" class="input-label">Username</label>
-            <input type="text" class="text-input" id="username" placeholder="Enter your username" autocapitalize="off" autocorrect="off">
-            <div id="username-status" class="status-indicator"></div>
-            <div class="error-message" id="username-error"></div>
-            <div class="success-message" id="username-success"></div>
-            <div class="suggestions-container" id="suggestions-container"></div>
+        <div class="form-container">
+            <h1 class="title">Create your username</h1>
+            
+            <div class="input-container">
+                <label for="username" class="input-label">Username</label>
+                <input type="text" class="text-input" id="username" placeholder="Enter your username" autocapitalize="off" autocorrect="off">
+                <div class="error-message" id="username-error"></div>
+                <div class="success-message" id="username-success"></div>
+            </div>
         </div>
     </div>
-</div>
 
     <div class="button-footer">
-        <button class="continue-button" id="continue-btn">continue</button>
+        <button class="continue-button" id="continue-btn">Continue</button>
     </div>
 
-                
-     
 
-                
-    <script>
-// Firebase Configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-    authDomain: "x-jamii.firebaseapp.com",
-    projectId: "x-jamii",
-    storageBucket: "x-jamii.appspot.com",
-    messagingSenderId: "927548667044",
-    appId: "1:927548667044:web:835e597909f51a2e4da231",
-    measurementId: "G-9S45DQ04HZ"
+               
+<script>
+   const firebaseConfig = {
+  apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+  authDomain: "x-jamii.firebaseapp.com",
+  projectId: "x-jamii",
+  storageBucket: "x-jamii.appspot.com",
+  messagingSenderId: "927548667044",
+  appId: "1:927548667044:web:835e597909f51a2e4da231",
+  measurementId: "G-9S45DQ04HZ"
 };
 
 // Initialize Firebase
 if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+  firebase.initializeApp(firebaseConfig);
 }
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// DOM Elements
-const usernameInput = document.getElementById('username');
-const continueBtn = document.getElementById('continue-btn');
-const preloader = document.querySelector('.preloader');
-const mainContent = document.querySelector('.main-content');
-
-// State Management
-let currentUser = null;
-
-// Preloader Control
-window.addEventListener('load', function() {
-    setTimeout(() => {
-        preloader.style.display = 'none';
-        mainContent.style.display = 'block';
-    }, 1500);
+// Check authentication state when page loads
+auth.onAuthStateChanged((user) => {
+  if (!user) {
+    // Redirect to sign-in if not authenticated
+    window.location.href = 'signin.html';
+    return;
+  }
+  
+  // User is authenticated, generate username
+  generateAndCheckUsername();
 });
 
-// Enhanced Auth State Observer
-auth.onAuthStateChanged(async (user) => {
-    if (!user) {
-        window.location.href = 'signin.html';
-        return;
+// Generate and check username
+async function generateAndCheckUsername() {
+  let username;
+  let isTaken = true;
+  let attempts = 0;
+  const maxAttempts = 5;
+
+  while (isTaken && attempts < maxAttempts) {
+    username = generateRandomUsername();
+    isTaken = !(await checkUsernameAvailability(username, false));
+    attempts++;
+  }
+
+  if (attempts >= maxAttempts && isTaken) {
+    console.error("Failed to generate available username after multiple attempts");
+    document.getElementById('username-error').textContent = "Couldn't generate a username. Please try manually.";
+    document.getElementById('username-error').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('username').value = username;
+  await checkUsernameAvailability(username);
+}
+
+function generateRandomUsername() {
+  const adjectives = ['happy', 'sunny', 'quick', 'bright', 'clever', 'lucky', 'soaring', 'flying', 'cloud', 'jet'];
+  const nouns = ['pilot', 'flyer', 'aviator', 'wing', 'sky', 'cloud', 'captain', 'jet', 'aircraft', 'wings'];
+  const randomNum = Math.floor(Math.random() * 1000);
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  return `${adjective}_${noun}${randomNum}`.toLowerCase();
+}
+
+async function checkUsernameAvailability(username, showMessages = true) {
+  const errorElement = document.getElementById('username-error');
+  const successElement = document.getElementById('username-success');
+
+  if (showMessages) {
+    errorElement.style.display = 'none';
+    successElement.style.display = 'none';
+  }
+
+  // Validation checks
+  if (!username) {
+    if (showMessages) {
+      errorElement.textContent = 'Username is required';
+      errorElement.style.display = 'block';
     }
-    
-    // Check if user already completed username setup
-    const userDoc = await db.collection('users').doc(user.uid).get();
-    
-    if (userDoc.exists && userDoc.data().accountComplete) {
-        // Username already set - redirect to main app
-        window.location.href = 'index.html';
-        return;
+    return false;
+  }
+
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    if (showMessages) {
+      errorElement.textContent = 'Only lowercase letters, numbers, and underscores allowed';
+      errorElement.style.display = 'block';
     }
-    
-    currentUser = user;
-    await generateInitialUsername(user);
+    return false;
+  }
+
+  if (username.length < 3) {
+    if (showMessages) {
+      errorElement.textContent = 'Must be at least 3 characters';
+      errorElement.style.display = 'block';
+    }
+    return false;
+  }
+
+  if (username.length > 20) {
+    if (showMessages) {
+      errorElement.textContent = 'Must be less than 20 characters';
+      errorElement.style.display = 'block';
+    }
+    return false;
+  }
+
+  try {
+    const snapshot = await db.collection('users').where('username', '==', username).get();
+    if (!snapshot.empty) {
+      if (showMessages) {
+        errorElement.textContent = 'Username not available';
+        errorElement.style.display = 'block';
+      }
+      return false;
+    } else {
+      if (showMessages) {
+        successElement.textContent = 'Username available';
+        successElement.style.display = 'block';
+      }
+      return true;
+    }
+  } catch (error) {
+    console.error("Error checking username:", error);
+    if (showMessages) {
+      errorElement.textContent = 'Error checking username. Try again.';
+      errorElement.style.display = 'block';
+    }
+    return false;
+  }
+}
+
+// Username input event listener
+document.getElementById('username').addEventListener('input', function (e) {
+  let value = e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  if (value !== e.target.value) {
+    e.target.value = value;
+  }
+
+  if (value.length >= 3) {
+    checkUsernameAvailability(value);
+  } else {
+    document.getElementById('username-error').style.display = 'none';
+    document.getElementById('username-success').style.display = 'none';
+  }
 });
 
-// Username Generation with Improved Handling
-async function generateInitialUsername(user) {
-    try {
-        // Get base name from displayName or email
-        const baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
-                         user.email?.split('@')[0]?.toLowerCase() || 'user';
-        
-        // Clean the base name (remove special chars)
-        const cleanBase = baseName.replace(/[^a-z0-9._]/g, '');
-        
-        // Generate initial username (without numbers first)
-        let username = cleanBase;
-        let counter = 1;
-        
-        // Check if username exists and add numbers until available
-        while (true) {
-            const isAvailable = await checkUsernameAvailability(username);
-            if (isAvailable) break;
-            
-            username = `${cleanBase}${counter}`;
-            counter++;
-            
-            // Prevent infinite loop
-            if (counter > 100) {
-                username = `${cleanBase}${Date.now().toString().slice(-4)}`;
-                break;
-            }
-        }
-        
-        usernameInput.value = username;
-    } catch (error) {
-        console.error("Username generation error:", error);
-        // Fallback to random username
-        usernameInput.value = `user${Date.now().toString().slice(-6)}`;
-    }
-}
+// Continue button event listener
+document.getElementById('continue-btn').addEventListener('click', async function () {
+  const username = document.getElementById('username').value.trim();
+  const errorElement = document.getElementById('username-error');
+  const successElement = document.getElementById('username-success');
+  const button = this;
 
-// Username Availability Check with Error Handling
-async function checkUsernameAvailability(username) {
-    try {
-        if (!username || username.length < 3) return false;
-        
-        const snapshot = await db.collection('usernames')
-                              .where('usernameLower', '==', username.toLowerCase())
-                              .limit(1)
-                              .get();
-        
-        return snapshot.empty;
-    } catch (error) {
-        console.error("Availability check failed:", error);
-        return false;
-    }
-}
+  errorElement.style.display = 'none';
+  successElement.style.display = 'none';
 
-// Robust Username Saving with Transaction
-async function saveUsername(userId, username) {
-    try {
-        const usernameLower = username.toLowerCase();
-        
-        // Use transaction to prevent race conditions
-        await db.runTransaction(async (transaction) => {
-            // 1. Check username availability
-            const usernameQuery = db.collection('usernames')
-                                .where('usernameLower', '==', usernameLower)
-                                .limit(1);
-            
-            const snapshot = await transaction.get(usernameQuery);
-            if (!snapshot.empty) {
-                throw new Error('Username taken');
-            }
+  // Show loading state
+  button.disabled = true;
+  button.textContent = 'Saving...';
 
-            // 2. Create username record
-            const usernameRef = db.collection('usernames').doc();
-            transaction.set(usernameRef, {
-                username: username,
-                usernameLower: usernameLower,
-                userId: userId,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+  // Validate username
+  const isAvailable = await checkUsernameAvailability(username);
+  if (!isAvailable) {
+    button.disabled = false;
+    button.textContent = 'Continue';
+    return;
+  }
 
-            // 3. Update user document - using set with merge for reliability
-            const userRef = db.collection('users').doc(userId);
-            transaction.set(userRef, {
-                username: username,
-                usernameLower: usernameLower,
-                accountComplete: true,
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        });
+  const user = auth.currentUser;
+  if (!user) {
+    errorElement.textContent = 'No authenticated user found. Please sign in again.';
+    errorElement.style.display = 'block';
+    button.disabled = false;
+    button.textContent = 'Continue';
+    window.location.href = 'signin.html';
+    return;
+  }
 
-        // Add verification marker
-        sessionStorage.setItem('username_setup_complete', 'true');
-        
-        // Ensure all data is written before redirect
-        await new Promise(resolve => setTimeout(resolve, 500));
-        window.location.href = 'index.html';
-        
-    } catch (error) {
-        console.error("Save username error:", error);
-        // Automatic fallback with unique username
-        const fallbackUsername = `user${Date.now().toString().slice(-6)}`;
-        await saveUsername(userId, fallbackUsername);
-    }
-}
+  try {
+    // Save username to Firestore
+    await db.collection('users').doc(user.uid).set({
+      username: username,
+      email: user.email,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
 
-// Continue Button Handler with Loading State
-continueBtn.addEventListener('click', async function(e) {
-    e.preventDefault();
-    if (!currentUser) return;
-    
-    // Show loading state
-    continueBtn.disabled = true;
-    continueBtn.innerHTML = 'Creating account...';
-    
-    // Get and clean username
-    const username = usernameInput.value.trim();
-    
-    // Basic client-side validation
-    if (!username || username.length < 3) {
-        alert('Username must be at least 3 characters');
-        continueBtn.disabled = false;
-        continueBtn.innerHTML = 'Continue';
-        return;
-    }
-    
-    // Save and redirect
-    await saveUsername(currentUser.uid, username);
+    // Optional: Update user profile
+    await user.updateProfile({
+      displayName: username
+    });
+
+    // Redirect on success
+    window.location.href = 'index.html';
+  } catch (err) {
+    console.error("Error saving username:", err);
+    errorElement.textContent = 'Failed to save username: ' + (err.message || 'Please try again.');
+    errorElement.style.display = 'block';
+    button.disabled = false;
+    button.textContent = 'Continue';
+  }
 });
 </script>
-
-
-
 </body>
 </html>
