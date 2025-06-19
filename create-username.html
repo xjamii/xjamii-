@@ -349,6 +349,7 @@ function generateSuggestions(base) {
         pill.addEventListener('click', () => {
             usernameInput.value = suggestion;
             checkAvailability(suggestion);
+            suggestionsContainer.style.display = 'none'; // Hide suggestions after selection
         });
         suggestionsContainer.appendChild(pill);
         return pill;
@@ -359,6 +360,20 @@ function generateSuggestions(base) {
         checkAvailability(suggestion, pills[index]);
     });
 }
+
+// Show suggestions when input is focused
+usernameInput.addEventListener('focus', function() {
+    if (suggestionsContainer.children.length > 0) {
+        suggestionsContainer.style.display = 'flex';
+    }
+});
+
+// Hide suggestions when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target !== usernameInput && !suggestionsContainer.contains(e.target)) {
+        suggestionsContainer.style.display = 'none';
+    }
+});
 
 // Ultra-fast username availability check
 async function checkAvailability(username, pillElement = null) {
@@ -460,6 +475,7 @@ usernameInput.addEventListener('input', function(e) {
         usernameStatus.textContent = 'Invalid format';
         usernameStatus.className = 'status-indicator unavailable';
         continueBtn.disabled = true;
+        suggestionsContainer.style.display = 'none'; // Hide suggestions if invalid
         return;
     }
     
@@ -467,6 +483,11 @@ usernameInput.addEventListener('input', function(e) {
     usernameStatus.textContent = 'Checking...';
     usernameStatus.className = 'status-indicator checking';
     continueBtn.disabled = true;
+    
+    // Show suggestions if they exist
+    if (suggestionsContainer.children.length > 0) {
+        suggestionsContainer.style.display = 'flex';
+    }
     
     // Debounced actual check
     checkTimeout = setTimeout(() => {
@@ -579,9 +600,6 @@ document.getElementById('back-btn').addEventListener('click', function() {
 
     window.location.href = 'password.html';
 });
-    
-                
-
-</script>
+                   </script>
 </body>
 </html>
