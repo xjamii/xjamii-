@@ -449,7 +449,7 @@
 </div>
 
     <div class="button-footer">
-        <button class="continue-button" id="continue-btn"></button>
+        <button class="continue-button" id="continue-btn">continue</button>
     </div>
 
                 
@@ -689,14 +689,7 @@ async function saveUsername(userId, username) {
         if (spinner) spinner.style.display = 'none';
         continueBtn.disabled = false;
         
-        // Show error
-        if (error.message.includes('taken')) {
-            showUsernameUnavailable('✗ Taken (just now)');
-        } else {
-            showUsernameError('Error saving username');
-        }
-    }
-}
+        
 
 // Continue Button Handler
 continueBtn.addEventListener('click', async function(e) {
@@ -714,6 +707,6 @@ function generateRandomUsername() {
            Math.floor(10 + Math.random() * 90)}`;
 }
 </script>
-</script>
+
 </body>
 </html>
