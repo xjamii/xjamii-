@@ -259,176 +259,9 @@
     font-size: 14px;
     transition: all 0.2s;
 }
-
-        /* Main Container Styles */
-.username-container {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 2rem;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Input Field Styling */
-.username-input {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    box-sizing: border-box;
-    margin-bottom: 8px;
-}
-
-.username-input:focus {
-    border-color: #6366f1;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-
-/* Status Indicator Styles */
-.status-indicator {
-    font-size: 14px;
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 20px; /* Prevent layout shift */
-}
-
-.status-indicator.checking {
-    color: #64748b;
-}
-
-.status-indicator.available {
-    color: #10b981;
-    font-weight: 500;
-}
-
-.status-indicator.unavailable {
-    color: #ef4444;
-    font-weight: 500;
-}
-
-/* Suggestions Container */
-.suggestions-container {
-    display: none; /* Hidden by default */
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.suggestion-pill {
-    padding: 6px 12px;
-    background: #f3f4f6;
-    border-radius: 20px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.suggestion-pill:hover {
-    background: #e5e7eb;
-}
-
-.suggestion-pill.available {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.suggestion-pill.unavailable {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-.suggestion-pill.loading {
-    position: relative;
-    color: transparent;
-    overflow: hidden;
-}
-
-.suggestion-pill.loading::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, transparent, #f3f4f6, transparent);
-    animation: loadingShimmer 1.5s infinite;
-}
-
-@keyframes loadingShimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-
-/* Spinner dots - matches password page */
-.spinner {
-    display: none;
-    position: relative;
-    width: 24px;
-    height: 24px;
-    vertical-align: middle;
-}
-
-.spinner-dot {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    animation: spinner-bounce 1.4s infinite ease-in-out both;
-}
-
-.spinner-dot:nth-child(1) {
-    top: 0;
-    left: 9px;
-    animation-delay: -0.32s;
-}
-
-.spinner-dot:nth-child(2) {
-    top: 9px;
-    left: 0;
-    animation-delay: -0.16s;
-}
-
-.spinner-dot:nth-child(3) {
-    top: 9px;
-    left: 18px;
-}
-
-.spinner-dot:nth-child(4) {
-    top: 18px;
-    left: 9px;
-    animation-delay: -0.48s;
-}
-
-@keyframes spinner-bounce {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1); }
-}
-
-/* Button disabled state */
-.continue-button:disabled {
-    background-color: #cccccc;
-    border-color: #cccccc;
-    cursor: not-allowed;
-}
-    
     </style>
 </head>
 <body>
-
-    <div class="preloader">
-    <div class="preloader-spinner">
-        <div class="preloader-spinner-dot"></div>
-        <div class="preloader-spinner-dot"></div>
-        <div class="preloader-spinner-dot"></div>
-        <div class="preloader-spinner-dot"></div>
-    </div>
-</div>
     <div class="main-content">
     <div class="logo-container">
         <img src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" alt="X-Aviation Logo" class="logo">
@@ -449,13 +282,13 @@
 </div>
 
     <div class="button-footer">
-        <button class="continue-button" id="continue-btn"></button>
+        <button class="continue-button" id="continue-btn">Continue</button>
     </div>
 
-                
-     
 <script>
-// Firebase Configuration
+                            
+
+// Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -476,244 +309,212 @@ const db = firebase.firestore();
 // DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
+const suggestionsContainer = document.getElementById('suggestions-container');
 const usernameStatus = document.getElementById('username-status');
-const preloader = document.querySelector('.preloader');
-const mainContent = document.querySelector('.main-content');
 
-// State Management
-let currentUsername = '';
-let isUsernameAvailable = false;
-let currentUser = null;
-let checkDebounceTimer;
-
-// Preloader Control
-window.addEventListener('load', function() {
-    setTimeout(() => {
-        preloader.style.display = 'none';
-        mainContent.style.display = 'block';
-    }, 1500);
-});
-
-// Auth State Observer
+// Check auth state
 auth.onAuthStateChanged(async (user) => {
     if (!user) {
         window.location.href = 'signin.html';
         return;
     }
-    currentUser = user;
-    await generateInitialUsername(user);
+    
+    // Generate suggestions using either displayName or email
+    const baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
+                    user.email?.split('@')[0]?.toLowerCase() || '';
+    const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
+    
+    generateSuggestions(cleanBase);
 });
 
-// Username Generation
-async function generateInitialUsername(user) {
-    try {
-        const baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
-                         user.email?.split('@')[0]?.toLowerCase() || '';
-        const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
-        const suggestion = cleanBase ? 
-            `${cleanBase}${Math.floor(100 + Math.random() * 900)}` : 
-            generateRandomUsername();
-        
-        usernameInput.value = suggestion;
-        currentUsername = suggestion;
-        await checkUsernameAvailability(suggestion);
-    } catch (error) {
-        console.error("Username generation error:", error);
+// Generate username suggestions
+function generateSuggestions(base) {
+    suggestionsContainer.innerHTML = '';
+    
+    const suggestions = [
+        base && `${base}${Math.floor(Math.random() * 100)}`,
+        base && `${base}_${Math.floor(Math.random() * 100)}`,
+        generateRandomUsername()
+    ].filter(Boolean);
+
+    suggestions.forEach(suggestion => {
+        const pill = document.createElement('div');
+        pill.className = 'suggestion-pill';
+        pill.textContent = suggestion;
+        pill.addEventListener('click', async () => {
+            usernameInput.value = suggestion;
+            await checkAvailability(suggestion);
+            updateContinueButton();
+        });
+        suggestionsContainer.appendChild(pill);
+        checkAvailability(suggestion, pill);
+    });
+
+    if (suggestions.length > 0) {
+        usernameInput.value = suggestions[0];
+        checkAvailability(suggestions[0]);
     }
 }
 
-// Username Validation
-function validateUsername(username) {
-    if (!username) return false;
-    if (username.length < 3 || username.length > 30) return false;
-    return /^[a-zA-Z0-9._]+$/.test(username); // Allows letters, numbers, dots, underscores
-}
+// Check username availability
+async function checkAvailability(username, pillElement = null) {
+    if (!validateUsername(username)) {
+        if (pillElement) {
+            pillElement.classList.remove('available');
+            pillElement.classList.add('unavailable');
+        }
+        usernameStatus.textContent = 'Invalid format (a-z, 0-9, _)';
+        usernameStatus.className = 'status-indicator unavailable';
+        return false;
+    }
 
-// Username Availability Check (Instagram-style)
-async function checkUsernameAvailability(username) {
+    // Show checking state
+    if (pillElement) {
+        pillElement.classList.remove('available', 'unavailable');
+    }
+    usernameStatus.textContent = 'Checking...';
+    usernameStatus.className = 'status-indicator';
+
     try {
-        // Clear previous checks
-        clearTimeout(checkDebounceTimer);
+        const snapshot = await db.collection('users')
+            .where('username', '==', username.toLowerCase())
+            .limit(1)
+            .get();
         
-        // Show checking state
-        usernameStatus.textContent = 'Checking...';
-        usernameStatus.className = 'status-indicator checking';
-        continueBtn.disabled = true;
+        const isAvailable = snapshot.empty;
         
-        // Validate format first
-        if (!validateUsername(username)) {
-            showInvalidUsername();
-            return false;
+        if (pillElement) {
+            pillElement.classList.toggle('available', isAvailable);
+            pillElement.classList.toggle('unavailable', !isAvailable);
         }
         
-        // Check reserved names (add more as needed)
-        const reservedNames = ['admin', 'support', 'instagram', 'facebook', 'twitter', 'user'];
-        if (reservedNames.includes(username.toLowerCase())) {
-            showUsernameUnavailable('Reserved username');
-            return false;
-        }
+        usernameStatus.textContent = isAvailable ? '✓ Available' : '✗ Unavailable';
+        usernameStatus.className = `status-indicator ${isAvailable ? 'available' : 'unavailable'}`;
         
-        // Check minimum length
-        if (username.length < 3) {
-            showUsernameUnavailable('Too short (min 3 chars)');
-            return false;
-        }
-        
-        // Check Firestore (case-insensitive)
-        const snapshot = await db.collection('usernames')
-                              .where('usernameLower', '==', username.toLowerCase())
-                              .limit(1)
-                              .get();
-        
-        isUsernameAvailable = snapshot.empty;
-        
-        // Update UI
-        if (isUsernameAvailable) {
-            usernameStatus.textContent = '✓ Available';
-            usernameStatus.className = 'status-indicator available';
-            continueBtn.disabled = false;
-        } else {
-            showUsernameUnavailable('✗ Taken');
-        }
-        
-        return isUsernameAvailable;
+        return isAvailable;
     } catch (error) {
-        console.error("Availability check failed:", error);
-        showUsernameError('Error checking');
+        console.error("Availability check error:", error);
+        if (pillElement) {
+            pillElement.classList.remove('available');
+            pillElement.classList.add('unavailable');
+        }
+        usernameStatus.textContent = 'Error checking';
+        usernameStatus.className = 'status-indicator unavailable';
         return false;
     }
 }
 
-// UI Helper Functions
-function showInvalidUsername() {
-    usernameStatus.textContent = 'Only letters, numbers, . and _';
-    usernameStatus.className = 'status-indicator unavailable';
-    continueBtn.disabled = true;
-    isUsernameAvailable = false;
+// Validate username format
+function validateUsername(username) {
+    if (!username) return false;
+    if (username.length < 3 || username.length > 20) return false;
+    if (!/^[a-z0-9_]+$/.test(username)) return false;
+    return true;
 }
 
-function showUsernameUnavailable(message) {
-    usernameStatus.textContent = message;
-    usernameStatus.className = 'status-indicator unavailable';
-    continueBtn.disabled = true;
-    isUsernameAvailable = false;
+// Generate random username
+function generateRandomUsername() {
+    const parts = ['sky', 'fly', 'wing', 'air', 'jet', 'cloud', 'pilot', 'aviator'];
+    return `${parts[Math.floor(Math.random()*parts.length)]}_${parts[Math.floor(Math.random()*parts.length)]}${Math.floor(Math.random()*100)}`;
 }
 
-function showUsernameError(message) {
-    usernameStatus.textContent = message;
-    usernameStatus.className = 'status-indicator error';
-    continueBtn.disabled = true;
-    isUsernameAvailable = false;
-}
-
-// Input Handler with Debouncing
+// Input field handler with real-time checking
+let checkTimeout;
 usernameInput.addEventListener('input', function(e) {
-    const username = e.target.value
-        .toLowerCase()
+    const username = e.target.value.toLowerCase()
         .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9._]/g, '');
+        .replace(/[^a-z0-9_]/g, '');
     
     if (username !== e.target.value) {
         e.target.value = username;
     }
     
-    currentUsername = username;
-    clearTimeout(checkDebounceTimer);
-    
-    if (!username) {
-        usernameStatus.textContent = '';
-        usernameStatus.className = 'status-indicator';
-        continueBtn.disabled = true;
-        isUsernameAvailable = false;
-        return;
-    }
-    
-    // Debounce the check by 500ms after typing stops
-    checkDebounceTimer = setTimeout(async () => {
-        await checkUsernameAvailability(username);
+    clearTimeout(checkTimeout);
+    checkTimeout = setTimeout(async () => {
+        await checkAvailability(username);
+        updateContinueButton();
     }, 500);
 });
 
-// Save Username (Transaction-safe)
-async function saveUsername(userId, username) {
-    try {
-        const usernameLower = username.toLowerCase();
-        
-        // Show saving state
-        const btnText = continueBtn.querySelector('.btn-text');
-        const spinner = continueBtn.querySelector('.spinner');
-        if (btnText) btnText.style.display = 'none';
-        if (spinner) spinner.style.display = 'inline-block';
-        continueBtn.disabled = true;
-        
-        // Use transaction to prevent race conditions
-        await db.runTransaction(async (transaction) => {
-            // Check if username is still available
-            const usernameQuery = db.collection('usernames')
-                                  .where('usernameLower', '==', usernameLower)
-                                  .limit(1);
-            
-            const snapshot = await transaction.get(usernameQuery);
-            if (!snapshot.empty) {
-                throw new Error('Username was taken');
-            }
-            
-            // Create username record
-            const usernameRef = db.collection('usernames').doc();
-            transaction.set(usernameRef, {
-                username: username,
-                usernameLower: usernameLower,
-                userId: userId,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            // Update user document
-            const userRef = db.collection('users').doc(userId);
-            transaction.update(userRef, {
-                username: username,
-                usernameLower: usernameLower,
-                accountComplete: true,
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        });
-        
-        // Redirect on success
-        window.location.href = 'index.html';
-    } catch (error) {
-        console.error("Save username error:", error);
-        
-        // Reset button state
-        const btnText = continueBtn.querySelector('.btn-text');
-        const spinner = continueBtn.querySelector('.spinner');
-        if (btnText) btnText.style.display = 'inline-block';
-        if (spinner) spinner.style.display = 'none';
-        continueBtn.disabled = false;
-        
-        // Show error
-        if (error.message.includes('taken')) {
-            showUsernameUnavailable('✗ Taken (just now)');
-        } else {
-            showUsernameError('Error saving username');
-        }
-    }
+// Update continue button state
+function updateContinueButton() {
+    const username = usernameInput.value.trim();
+    const isValid = validateUsername(username);
+    continueBtn.disabled = !isValid || usernameStatus.classList.contains('unavailable');
 }
 
-// Continue Button Handler
+// Continue button handler
 continueBtn.addEventListener('click', async function(e) {
     e.preventDefault();
-    if (!isUsernameAvailable || !currentUser) return;
-    await saveUsername(currentUser.uid, currentUsername);
+    
+    const username = usernameInput.value.trim();
+    const btn = this;
+    const spinner = btn.querySelector('.spinner');
+    const btnText = btn.querySelector('.btn-text');
+    
+    // Final validation
+    if (!validateUsername(username)) {
+        usernameStatus.textContent = 'Invalid username format';
+        usernameStatus.className = 'status-indicator unavailable';
+        return;
+    }
+    
+    // UI loading state
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+    btn.disabled = true;
+    
+    try {
+        const user = auth.currentUser;
+        if (!user) throw new Error('No authenticated user');
+        
+        // Update Firestore with username and mark complete
+        await db.collection('users').doc(user.uid).update({
+            username: username.toLowerCase(),
+            accountComplete: true,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Redirect to main app
+        window.location.href = 'index.html';
+        
+    } catch (error) {
+        console.error("Username save error:", error);
+        btnText.style.display = 'block';
+        spinner.style.display = 'none';
+        btn.disabled = false;
+        usernameStatus.textContent = 'Error saving. Try again.';
+        usernameStatus.className = 'status-indicator unavailable';
+    }
 });
 
-// Helper Function
-function generateRandomUsername() {
-    const adjectives = ['cool', 'happy', 'sunny', 'bright', 'quick'];
-    const nouns = ['fox', 'star', 'bird', 'wave', 'cloud'];
-    return `${adjectives[Math.floor(Math.random()*adjectives.length)]}_${
-           nouns[Math.floor(Math.random()*nouns.length)]}${
-           Math.floor(10 + Math.random() * 90)}`;
-}
-</script>
+// Preloader logic
+window.addEventListener('load', function() {
+    const navType = performance.getEntriesByType("navigation")[0].type;
+    if (navType === 'back_forward') {
+        document.querySelector('.preloader').style.display = 'none';
+        document.querySelector('.main-content').style.display = 'block';
+    } else {
+        setTimeout(function() {
+            document.querySelector('.preloader').style.display = 'none';
+            document.querySelector('.main-content').style.display = 'block';
+        }, 2000);
+    }
+});
+
+// Back button
+document.getElementById('back-btn').addEventListener('click', function() {
+    const btn = this;
+    const spinner = btn.querySelector('.spinner');
+    const btnText = btn.querySelector('.btn-text');
+
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+    btn.disabled = true;
+
+    window.location.href = 'password.html';
+});
+
 </script>
 </body>
 </html>
