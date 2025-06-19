@@ -455,7 +455,8 @@
                 
      
 
-                <script>
+                
+    <script>
 // Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
@@ -491,17 +492,27 @@ window.addEventListener('load', function() {
     }, 1500);
 });
 
-// Auth State Observer
+// Enhanced Auth State Observer
 auth.onAuthStateChanged(async (user) => {
     if (!user) {
         window.location.href = 'signin.html';
         return;
     }
+    
+    // Check if user already completed username setup
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    
+    if (userDoc.exists && userDoc.data().accountComplete) {
+        // Username already set - redirect to main app
+        window.location.href = 'index.html';
+        return;
+    }
+    
     currentUser = user;
     await generateInitialUsername(user);
 });
 
-// Username Generation
+// Username Generation with Improved Handling
 async function generateInitialUsername(user) {
     try {
         // Get base name from displayName or email
@@ -509,13 +520,13 @@ async function generateInitialUsername(user) {
                          user.email?.split('@')[0]?.toLowerCase() || 'user';
         
         // Clean the base name (remove special chars)
-        const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
+        const cleanBase = baseName.replace(/[^a-z0-9._]/g, '');
         
         // Generate initial username (without numbers first)
         let username = cleanBase;
         let counter = 1;
         
-        // Check if username exists and add numbers until we find an available one
+        // Check if username exists and add numbers until available
         while (true) {
             const isAvailable = await checkUsernameAvailability(username);
             if (isAvailable) break;
@@ -524,8 +535,8 @@ async function generateInitialUsername(user) {
             counter++;
             
             // Prevent infinite loop
-            if (counter > 1000) {
-                username = `${cleanBase}${Date.now()}`;
+            if (counter > 100) {
+                username = `${cleanBase}${Date.now().toString().slice(-4)}`;
                 break;
             }
         }
@@ -534,13 +545,15 @@ async function generateInitialUsername(user) {
     } catch (error) {
         console.error("Username generation error:", error);
         // Fallback to random username
-        usernameInput.value = `user${Date.now()}`;
+        usernameInput.value = `user${Date.now().toString().slice(-6)}`;
     }
 }
 
-// Simple Username Availability Check
+// Username Availability Check with Error Handling
 async function checkUsernameAvailability(username) {
     try {
+        if (!username || username.length < 3) return false;
+        
         const snapshot = await db.collection('usernames')
                               .where('usernameLower', '==', username.toLowerCase())
                               .limit(1)
@@ -553,24 +566,24 @@ async function checkUsernameAvailability(username) {
     }
 }
 
-// Save Username and Redirect
+// Robust Username Saving with Transaction
 async function saveUsername(userId, username) {
     try {
         const usernameLower = username.toLowerCase();
         
         // Use transaction to prevent race conditions
         await db.runTransaction(async (transaction) => {
-            // Check if username is still available
+            // 1. Check username availability
             const usernameQuery = db.collection('usernames')
-                                  .where('usernameLower', '==', usernameLower)
-                                  .limit(1);
+                                .where('usernameLower', '==', usernameLower)
+                                .limit(1);
             
             const snapshot = await transaction.get(usernameQuery);
             if (!snapshot.empty) {
-                throw new Error('Username was taken');
+                throw new Error('Username taken');
             }
-            
-            // Create username record
+
+            // 2. Create username record
             const usernameRef = db.collection('usernames').doc();
             transaction.set(usernameRef, {
                 username: username,
@@ -578,38 +591,57 @@ async function saveUsername(userId, username) {
                 userId: userId,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            
-            // Update user document
+
+            // 3. Update user document - using set with merge for reliability
             const userRef = db.collection('users').doc(userId);
-            transaction.update(userRef, {
+            transaction.set(userRef, {
                 username: username,
                 usernameLower: usernameLower,
                 accountComplete: true,
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            }, { merge: true });
         });
+
+        // Add verification marker
+        sessionStorage.setItem('username_setup_complete', 'true');
         
-        // Redirect on success
+        // Ensure all data is written before redirect
+        await new Promise(resolve => setTimeout(resolve, 500));
         window.location.href = 'index.html';
+        
     } catch (error) {
         console.error("Save username error:", error);
-        // If error occurs, just redirect anyway with a fallback username
-        window.location.href = 'index.html';
+        // Automatic fallback with unique username
+        const fallbackUsername = `user${Date.now().toString().slice(-6)}`;
+        await saveUsername(userId, fallbackUsername);
     }
 }
 
-// Continue Button Handler - redirect immediately
+// Continue Button Handler with Loading State
 continueBtn.addEventListener('click', async function(e) {
     e.preventDefault();
     if (!currentUser) return;
     
-    // Get the current username value or use the generated one
-    const username = usernameInput.value.trim() || usernameInput.value;
+    // Show loading state
+    continueBtn.disabled = true;
+    continueBtn.innerHTML = 'Creating account...';
+    
+    // Get and clean username
+    const username = usernameInput.value.trim();
+    
+    // Basic client-side validation
+    if (!username || username.length < 3) {
+        alert('Username must be at least 3 characters');
+        continueBtn.disabled = false;
+        continueBtn.innerHTML = 'Continue';
+        return;
+    }
     
     // Save and redirect
     await saveUsername(currentUser.uid, username);
 });
 </script>
+
 
 
 </body>
