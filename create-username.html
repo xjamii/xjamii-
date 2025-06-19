@@ -309,7 +309,7 @@ const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 
 // Generate username when page loads
-auth.onAuthStateChanged(async (user) => {
+auth.onAuthStateChanged((user) => {
     if (!user) {
         window.location.href = 'signin.html';
         return;
@@ -329,27 +329,38 @@ continueBtn.addEventListener('click', async () => {
     const username = usernameInput.value.trim().toLowerCase();
     const user = auth.currentUser;
 
-    // Save to Firestore
-    const batch = db.batch();
-    
-    // 1. Reserve username in 'usernames' collection
-    const usernameRef = db.collection('usernames').doc(username);
-    batch.set(usernameRef, {
-        userId: user.uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    
-    // 2. Update user document with username
-    const userRef = db.collection('users').doc(user.uid);
-    batch.update(userRef, {
-        username: username,
-        profileComplete: true
-    });
-    
-    await batch.commit();
-    
-    // Redirect to main page
-    window.location.href = 'index.html';
+    if (!user || !username) {
+        console.error("No user or username!");
+        window.location.href = 'index.html'; // Redirect anyway
+        return;
+    }
+
+    try {
+        // Save to Firestore
+        const batch = db.batch();
+        
+        // 1. Reserve username in 'usernames' collection
+        const usernameRef = db.collection('usernames').doc(username);
+        batch.set(usernameRef, {
+            userId: user.uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // 2. Update user document with username
+        const userRef = db.collection('users').doc(user.uid);
+        batch.update(userRef, {
+            username: username,
+            profileComplete: true
+        });
+        
+        await batch.commit();
+        console.log("Username saved successfully!");
+    } catch (error) {
+        console.error("Error saving username:", error);
+    } finally {
+        // Redirect no matter what
+        window.location.href = 'index.html';
+    }
 });
         </script>
 </body>
