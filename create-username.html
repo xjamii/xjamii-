@@ -259,114 +259,6 @@
     font-size: 14px;
     transition: all 0.2s;
 }
-
-        /* Main Container Styles */
-.username-container {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 2rem;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Input Field Styling */
-.username-input {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    box-sizing: border-box;
-    margin-bottom: 8px;
-}
-
-.username-input:focus {
-    border-color: #6366f1;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-
-/* Status Indicator Styles */
-.status-indicator {
-    font-size: 14px;
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 20px; /* Prevent layout shift */
-}
-
-.status-indicator.checking {
-    color: #64748b;
-}
-
-.status-indicator.available {
-    color: #10b981;
-    font-weight: 500;
-}
-
-.status-indicator.unavailable {
-    color: #ef4444;
-    font-weight: 500;
-}
-
-/* Suggestions Container */
-.suggestions-container {
-    display: none; /* Hidden by default */
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.suggestion-pill {
-    padding: 6px 12px;
-    background: #f3f4f6;
-    border-radius: 20px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.suggestion-pill:hover {
-    background: #e5e7eb;
-}
-
-.suggestion-pill.available {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.suggestion-pill.unavailable {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-.suggestion-pill.loading {
-    position: relative;
-    color: transparent;
-    overflow: hidden;
-}
-
-.suggestion-pill.loading::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, transparent, #f3f4f6, transparent);
-    animation: loadingShimmer 1.5s infinite;
-}
-
-@keyframes loadingShimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-
-
-    
     </style>
 </head>
 <body>
@@ -421,7 +313,6 @@ const usernameStatus = document.getElementById('username-status');
 // Cache for instant feedback
 let availabilityCache = {};
 let lastRequest = null;
-let currentCheckId = 0;
 
 // Check auth state
 auth.onAuthStateChanged(async (user) => {
@@ -435,26 +326,95 @@ auth.onAuthStateChanged(async (user) => {
                     user.email?.split('@')[0]?.toLowerCase() || '';
     const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
     
-    // Generate one suggested username
+    // Generate just one suggested username
     const suggestion = cleanBase ? 
         `${cleanBase}${Math.floor(100 + Math.random() * 900)}` : // 3-digit suffix
         generateRandomUsername();
     
     // Pre-fill the input with the suggested username
     usernameInput.value = suggestion;
-    suggestionsContainer.style.display = 'none';
     
-    // Trigger initial availability check
-    triggerAvailabilityCheck(suggestion);
+    // Check its availability
+    await checkAvailability(suggestion);
+    
+    // Hide suggestions container as we're only using one pre-filled suggestion
+    suggestionsContainer.style.display = 'none';
 });
 
-// Generate random username
-function generateRandomUsername() {
-    const adjectives = ['cool', 'happy', 'sunny', 'bright', 'quick'];
-    const nouns = ['fox', 'star', 'bird', 'wave', 'cloud'];
-    return `${adjectives[Math.floor(Math.random()*adjectives.length)]}_${
-           nouns[Math.floor(Math.random()*nouns.length)]}${
-           Math.floor(10 + Math.random() * 90)}`;
+// Ultra-fast username availability check
+async function checkAvailability(username, pillElement = null) {
+    const usernameLower = username.toLowerCase();
+    
+    // Immediate cache check
+    if (availabilityCache[usernameLower] !== undefined) {
+        updateAvailabilityUI(availabilityCache[usernameLower], username, pillElement);
+        return availabilityCache[usernameLower];
+    }
+
+    // Don't show invalid format for empty input
+    if (!username) {
+        usernameStatus.textContent = '';
+        usernameStatus.className = 'status-indicator';
+        return false;
+    }
+
+    if (!validateUsername(username)) {
+        // Only show invalid format if user has typed at least 1 character
+        if (username.length > 0) {
+            usernameStatus.textContent = 'Invalid format';
+            usernameStatus.className = 'status-indicator unavailable';
+        }
+        return false;
+    }
+
+    // Show checking state
+    updateCheckingUI(username, pillElement);
+
+    // Cancel previous request if still pending
+    if (lastRequest) {
+        lastRequest.cancel();
+    }
+
+    try {
+        // Create new request
+        lastRequest = db.collection('usernames').doc(usernameLower);
+        const snapshot = await lastRequest.get();
+        
+        const isAvailable = !snapshot.exists;
+        availabilityCache[usernameLower] = isAvailable;
+        
+        updateAvailabilityUI(isAvailable, username, pillElement);
+        return isAvailable;
+    } catch (error) {
+        if (error.name !== 'FirebaseError') { // Ignore cancellation errors
+            console.error("Check error:", error);
+        }
+        return false;
+    }
+}
+
+// Update UI helpers
+function updateCheckingUI(username, pillElement) {
+    if (pillElement) {
+        pillElement.classList.add('loading');
+        pillElement.classList.remove('available', 'unavailable');
+    }
+    if (usernameInput.value.toLowerCase() === username.toLowerCase()) {
+        usernameStatus.textContent = 'Checking...';
+        usernameStatus.className = 'status-indicator checking';
+    }
+}
+
+function updateAvailabilityUI(isAvailable, username, pillElement) {
+    if (pillElement) {
+        pillElement.classList.remove('loading');
+        pillElement.classList.add(isAvailable ? 'available' : 'unavailable');
+    }
+    if (usernameInput.value.toLowerCase() === username.toLowerCase()) {
+        usernameStatus.textContent = isAvailable ? '✓ Available' : '✗ Taken';
+        usernameStatus.className = `status-indicator ${isAvailable ? 'available' : 'unavailable'}`;
+        updateContinueButton();
+    }
 }
 
 // Validate username format
@@ -463,6 +423,15 @@ function validateUsername(username) {
     if (username.length < 3 || username.length > 20) return false;
     if (!/^[a-z0-9_]+$/.test(username)) return false;
     return true;
+}
+
+// Generate random username
+function generateRandomUsername() {
+    const adjectives = ['cool', 'happy', 'sunny', 'bright', 'quick'];
+    const nouns = ['fox', 'star', 'bird', 'wave', 'cloud'];
+    return `${adjectives[Math.floor(Math.random()*adjectives.length)]}_${
+           nouns[Math.floor(Math.random()*nouns.length)]}${
+           Math.floor(10 + Math.random() * 90)}`;
 }
 
 // Input handler with optimized debouncing
@@ -486,16 +455,6 @@ usernameInput.addEventListener('input', function(e) {
         return;
     }
     
-    // Immediate validation feedback (but only after first character)
-    if (!validateUsername(username)) {
-        if (username.length > 0) {
-            usernameStatus.textContent = 'Invalid format';
-            usernameStatus.className = 'status-indicator unavailable';
-        }
-        continueBtn.disabled = true;
-        return;
-    }
-    
     // Show checking immediately
     usernameStatus.textContent = 'Checking...';
     usernameStatus.className = 'status-indicator checking';
@@ -503,53 +462,9 @@ usernameInput.addEventListener('input', function(e) {
     
     // Debounced actual check
     checkTimeout = setTimeout(() => {
-        triggerAvailabilityCheck(username);
+        checkAvailability(username);
     }, 300);
 });
-
-// Improved availability check with request tracking
-async function triggerAvailabilityCheck(username) {
-    const checkId = ++currentCheckId;
-    const usernameLower = username.toLowerCase();
-    
-    // Don't check if invalid
-    if (!validateUsername(username)) {
-        return false;
-    }
-
-    try {
-        // Show checking state
-        usernameStatus.textContent = 'Checking...';
-        usernameStatus.className = 'status-indicator checking';
-        
-        const snapshot = await db.collection('usernames').doc(usernameLower).get();
-        const isAvailable = !snapshot.exists;
-        availabilityCache[usernameLower] = isAvailable;
-        
-        // Only update if this is the most recent check
-        if (checkId === currentCheckId) {
-            updateAvailabilityUI(isAvailable, username);
-        }
-        
-        return isAvailable;
-    } catch (error) {
-        console.error("Check error:", error);
-        if (checkId === currentCheckId) {
-            usernameStatus.textContent = 'Check failed';
-            usernameStatus.className = 'status-indicator unavailable';
-        }
-        return false;
-    }
-}
-
-// Update UI based on availability
-function updateAvailabilityUI(isAvailable, username) {
-    if (usernameInput.value.toLowerCase() === username.toLowerCase()) {
-        usernameStatus.textContent = isAvailable ? '✓ Available' : '✗ Taken';
-        usernameStatus.className = `status-indicator ${isAvailable ? 'available' : 'unavailable'}`;
-        updateContinueButton();
-    }
-}
 
 // Update continue button state
 function updateContinueButton() {
@@ -607,12 +522,6 @@ continueBtn.addEventListener('click', async function(e) {
         const user = auth.currentUser;
         if (!user) throw new Error('No user');
         
-        // Final availability check before reserving
-        const isAvailable = await triggerAvailabilityCheck(username);
-        if (!isAvailable) {
-            throw new Error('Username no longer available');
-        }
-        
         // Reserve username atomically
         await reserveUsername(user.uid, username);
         
@@ -662,6 +571,7 @@ document.getElementById('back-btn').addEventListener('click', function() {
 
     window.location.href = 'password.html';
 });
-                               </script>
+        </script>
 </body>
 </html>
+         
