@@ -215,6 +215,50 @@
 .suggestion-pill.unavailable {
     border-color: red;
 }
+
+        /* Add these styles to your CSS */
+.status-indicator {
+    margin-top: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    display: none; /* Hidden by default */
+}
+
+.status-indicator.available {
+    color: #00a400;
+    display: block;
+}
+
+.status-indicator.unavailable {
+    color: #ff4d4d;
+    display: block;
+}
+
+.suggestion-pill.available {
+    border: 1px solid #00a400;
+    color: #00a400;
+}
+
+.suggestion-pill.unavailable {
+    border: 1px solid #ff4d4d;
+    color: #ff4d4d;
+}
+
+.suggestions-container {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestion-pill {
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: #f0f0f0;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
     </style>
 </head>
 <body>
@@ -244,9 +288,7 @@
 <script>
                             
 
-
-
-            // Firebase config - KEEP EXISTING
+// Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -257,20 +299,20 @@ const firebaseConfig = {
     measurementId: "G-9S45DQ04HZ"
 };
 
-// Initialize Firebase - KEEP EXISTING
+// Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// DOM Elements - KEEP EXISTING STRUCTURE
+// DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const suggestionsContainer = document.getElementById('suggestions-container');
-const usernameStatus = document.getElementById('username-status'); // Add this element in your HTML
+const usernameStatus = document.getElementById('username-status');
 
-// Check auth state - KEEP EXISTING
+// Check auth state
 auth.onAuthStateChanged(async (user) => {
     if (!user) {
         window.location.href = 'signin.html';
@@ -285,7 +327,7 @@ auth.onAuthStateChanged(async (user) => {
     generateSuggestions(cleanBase);
 });
 
-// Generate username suggestions - MODIFIED for real-time checking
+// Generate username suggestions
 function generateSuggestions(base) {
     suggestionsContainer.innerHTML = '';
     
@@ -298,10 +340,11 @@ function generateSuggestions(base) {
     suggestions.forEach(suggestion => {
         const pill = document.createElement('div');
         pill.className = 'suggestion-pill';
-        pill.innerHTML = `${suggestion}`;
-        pill.addEventListener('click', () => {
+        pill.textContent = suggestion;
+        pill.addEventListener('click', async () => {
             usernameInput.value = suggestion;
-            checkAvailability(suggestion);
+            await checkAvailability(suggestion);
+            updateContinueButton();
         });
         suggestionsContainer.appendChild(pill);
         checkAvailability(suggestion, pill);
@@ -313,34 +356,55 @@ function generateSuggestions(base) {
     }
 }
 
-// Check username availability - SIMPLIFIED
+// Check username availability
 async function checkAvailability(username, pillElement = null) {
     if (!validateUsername(username)) {
-        if (pillElement) pillElement.classList.add('unavailable');
-        usernameStatus.textContent = 'Invalid format';
-        usernameStatus.className = 'unavailable';
+        if (pillElement) {
+            pillElement.classList.remove('available');
+            pillElement.classList.add('unavailable');
+        }
+        usernameStatus.textContent = 'Invalid format (a-z, 0-9, _)';
+        usernameStatus.className = 'status-indicator unavailable';
         return false;
     }
 
-    const snapshot = await db.collection('users')
-        .where('username', '==', username.toLowerCase())
-        .limit(1)
-        .get();
-    
-    const isAvailable = snapshot.empty;
-    
+    // Show checking state
     if (pillElement) {
-        pillElement.classList.toggle('available', isAvailable);
-        pillElement.classList.toggle('unavailable', !isAvailable);
+        pillElement.classList.remove('available', 'unavailable');
     }
-    
-    usernameStatus.textContent = isAvailable ? 'Available' : 'Unavailable';
-    usernameStatus.className = isAvailable ? 'available' : 'unavailable';
-    
-    return isAvailable;
+    usernameStatus.textContent = 'Checking...';
+    usernameStatus.className = 'status-indicator';
+
+    try {
+        const snapshot = await db.collection('users')
+            .where('username', '==', username.toLowerCase())
+            .limit(1)
+            .get();
+        
+        const isAvailable = snapshot.empty;
+        
+        if (pillElement) {
+            pillElement.classList.toggle('available', isAvailable);
+            pillElement.classList.toggle('unavailable', !isAvailable);
+        }
+        
+        usernameStatus.textContent = isAvailable ? '✓ Available' : '✗ Unavailable';
+        usernameStatus.className = `status-indicator ${isAvailable ? 'available' : 'unavailable'}`;
+        
+        return isAvailable;
+    } catch (error) {
+        console.error("Availability check error:", error);
+        if (pillElement) {
+            pillElement.classList.remove('available');
+            pillElement.classList.add('unavailable');
+        }
+        usernameStatus.textContent = 'Error checking';
+        usernameStatus.className = 'status-indicator unavailable';
+        return false;
+    }
 }
 
-// Validate username format - KEEP EXISTING
+// Validate username format
 function validateUsername(username) {
     if (!username) return false;
     if (username.length < 3 || username.length > 20) return false;
@@ -348,13 +412,13 @@ function validateUsername(username) {
     return true;
 }
 
-// Generate random username - KEEP EXISTING
+// Generate random username
 function generateRandomUsername() {
     const parts = ['sky', 'fly', 'wing', 'air', 'jet', 'cloud', 'pilot', 'aviator'];
     return `${parts[Math.floor(Math.random()*parts.length)]}_${parts[Math.floor(Math.random()*parts.length)]}${Math.floor(Math.random()*100)}`;
 }
 
-// Input field handler - MODIFIED for real-time checking
+// Input field handler with real-time checking
 let checkTimeout;
 usernameInput.addEventListener('input', function(e) {
     const username = e.target.value.toLowerCase()
@@ -366,12 +430,20 @@ usernameInput.addEventListener('input', function(e) {
     }
     
     clearTimeout(checkTimeout);
-    checkTimeout = setTimeout(() => {
-        checkAvailability(username);
-    }, 300);
+    checkTimeout = setTimeout(async () => {
+        await checkAvailability(username);
+        updateContinueButton();
+    }, 500);
 });
 
-// Continue button handler - KEEP EXISTING
+// Update continue button state
+function updateContinueButton() {
+    const username = usernameInput.value.trim();
+    const isValid = validateUsername(username);
+    continueBtn.disabled = !isValid || usernameStatus.classList.contains('unavailable');
+}
+
+// Continue button handler
 continueBtn.addEventListener('click', async function(e) {
     e.preventDefault();
     
@@ -380,18 +452,10 @@ continueBtn.addEventListener('click', async function(e) {
     const spinner = btn.querySelector('.spinner');
     const btnText = btn.querySelector('.btn-text');
     
-    // Validate username
+    // Final validation
     if (!validateUsername(username)) {
-        usernameStatus.textContent = 'Invalid format';
-        usernameStatus.className = 'unavailable';
-        return;
-    }
-    
-    // Check availability
-    const isAvailable = await checkAvailability(username);
-    if (!isAvailable) {
-        usernameStatus.textContent = 'Unavailable';
-        usernameStatus.className = 'unavailable';
+        usernameStatus.textContent = 'Invalid username format';
+        usernameStatus.className = 'status-indicator unavailable';
         return;
     }
     
@@ -419,10 +483,12 @@ continueBtn.addEventListener('click', async function(e) {
         btnText.style.display = 'block';
         spinner.style.display = 'none';
         btn.disabled = false;
+        usernameStatus.textContent = 'Error saving. Try again.';
+        usernameStatus.className = 'status-indicator unavailable';
     }
 });
 
-// Preloader logic - KEEP EXISTING
+// Preloader logic
 window.addEventListener('load', function() {
     const navType = performance.getEntriesByType("navigation")[0].type;
     if (navType === 'back_forward') {
@@ -436,7 +502,7 @@ window.addEventListener('load', function() {
     }
 });
 
-// Back button - KEEP EXISTING
+// Back button
 document.getElementById('back-btn').addEventListener('click', function() {
     const btn = this;
     const spinner = btn.querySelector('.spinner');
@@ -448,6 +514,7 @@ document.getElementById('back-btn').addEventListener('click', function() {
 
     window.location.href = 'password.html';
 });
+
 </script>
 </body>
 </html>
