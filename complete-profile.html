@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#ECEFF1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Profile - X-Aviation</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #ECEFF1;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Preloader Styles */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ECEFF1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .preloader-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            position: relative;
+        }
+
+        .preloader-spinner-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #000;
+            animation: spinner-bounce 1.4s infinite ease-in-out both;
+        }
+
+        .preloader-spinner-dot:nth-child(1) {
+            top: 0;
+            left: 16px;
+            animation-delay: -0.32s;
+        }
+
+        .preloader-spinner-dot:nth-child(2) {
+            top: 16px;
+            left: 0;
+            animation-delay: -0.16s;
+        }
+
+        .preloader-spinner-dot:nth-child(3) {
+            top: 16px;
+            left: 32px;
+        }
+
+        .preloader-spinner-dot:nth-child(4) {
+            top: 32px;
+            left: 16px;
+            animation-delay: -0.48s;
+        }
+
+        @keyframes spinner-bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            display: none;
+            flex: 1;
+            padding: 40px 30px 80px;
+            box-sizing: border-box;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            height: 60px;
+            width: auto;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 0 40px;
+            color: #000;
+            text-align: left;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Profile Picture Upload */
+        .avatar-upload {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .avatar-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #ddd;
+            overflow: hidden;
+            margin-bottom: 15px;
+            position: relative;
+            border: 3px solid #000;
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-btn {
+            background-color: #000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Bio Input */
+        .bio-container {
+            margin-bottom: 20px;
+        }
+
+        .bio-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .bio-input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            min-height: 100px;
+            resize: none;
+            background-color: #ECEFF1;
+        }
+
+        .bio-input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Website Input */
+        .website-container {
+            margin-bottom: 30px;
+        }
+
+        .website-input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #ECEFF1;
+        }
+
+        .website-input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        /* Button Footer */
+        .button-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            background-color: #ECEFF1;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        .action-button {
+            width: 100%;
+            height: 50px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .continue-button {
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #000;
+        }
+
+        .continue-button:hover {
+            background-color: #333;
+        }
+
+        .continue-button:disabled {
+            background-color: #ccc;
+            border-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            position: relative;
+        }
+
+        .spinner-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: spinner-bounce 1.4s infinite ease-in-out both;
+        }
+
+        .spinner-dot:nth-child(1) {
+            top: 0;
+            left: 9px;
+            animation-delay: -0.32s;
+        }
+
+        .spinner-dot:nth-child(2) {
+            top: 9px;
+            left: 0;
+            animation-delay: -0.16s;
+        }
+
+        .spinner-dot:nth-child(3) {
+            top: 9px;
+            left: 18px;
+        }
+
+        .spinner-dot:nth-child(4) {
+            top: 18px;
+            left: 9px;
+            animation-delay: -0.48s;
+        }
+
+        /* Error message */
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Preloader -->
+    <div class="preloader">
+        <div class="preloader-spinner">
+            <div class="preloader-spinner-dot"></div>
+            <div class="preloader-spinner-dot"></div>
+            <div class="preloader-spinner-dot"></div>
+            <div class="preloader-spinner-dot"></div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="logo-container">
+            <img 
+                src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" 
+                alt="X-Aviation Logo" 
+                class="logo" 
+                loading="eager"
+                width="60"
+                onerror="this.style.display='none'"
+            >
+        </div>
+        
+        <div class="form-container">
+            <h1 class="title">Complete your profile</h1>
+            
+            <div class="avatar-upload">
+                <div class="avatar-preview" id="avatar-preview">
+                    <!-- Default avatar will be shown here -->
+                </div>
+                <button class="upload-btn" id="upload-button">
+                    Upload Photo
+                </button>
+                <div class="error-message" id="avatar-error"></div>
+            </div>
+            
+            <div class="bio-container">
+                <label class="bio-label">Bio (optional)</label>
+                <textarea class="bio-input" id="bio" placeholder="Tell us about yourself..."></textarea>
+                <div class="char-counter" id="char-counter">150 characters left</div>
+            </div>
+            
+            <div class="website-container">
+                <label class="bio-label">Website (optional)</label>
+                <input type="text" class="website-input" id="website" placeholder="https://example.com">
+                <div class="error-message" id="website-error"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Button Footer -->
+    <div class="button-footer">
+        <button class="action-button continue-button" id="continue-btn">
+            <span class="btn-text">Complete Profile</span>
+            <span class="spinner" style="display: none;">
+                <span class="spinner-dot" style="color: #fff;"></span>
+                <span class="spinner-dot" style="color: #fff;"></span>
+                <span class="spinner-dot" style="color: #fff;"></span>
+                <span class="spinner-dot" style="color: #fff;"></span>
+            </span>
+        </button>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+            authDomain: "x-jamii.firebaseapp.com",
+            projectId: "x-jamii",
+            storageBucket: "x-jamii.appspot.com",
+            messagingSenderId: "927548667044",
+            appId: "1:927548667044:web:835e597909f51a2e4da231",
+            measurementId: "G-9S45DQ04HZ"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const continueBtn = document.getElementById('continue-btn');
+        const bioInput = document.getElementById('bio');
+        const charCounter = document.getElementById('char-counter');
+        const websiteInput = document.getElementById('website');
+        const avatarPreview = document.getElementById('avatar-preview');
+        const uploadButton = document.getElementById('upload-button');
+        const avatarError = document.getElementById('avatar-error');
+        const websiteError = document.getElementById('website-error');
+
+        // Cloudinary Widget
+        const cloudinaryWidget = cloudinary.createUploadWidget(
+            {
+                cloudName: 'dwwhpznwb',
+                uploadPreset: 'user_avatars',
+                cropping: true,
+                croppingAspectRatio: 1,
+                sources: ['local', 'camera'],
+                showAdvancedOptions: false,
+                multiple: false,
+                resourceType: 'image',
+                maxFileSize: 5000000, // 5MB
+                clientAllowedFormats: ['jpg', 'png', 'jpeg', 'webp'],
+                styles: {
+                    palette: {
+                        window: '#ECEFF1',
+                        windowBorder: '#000',
+                        tabIcon: '#000',
+                        menuIcons: '#000',
+                        textDark: '#000',
+                        textLight: '#fff',
+                        link: '#000',
+                        action: '#000',
+                        inactiveTabIcon: '#666',
+                        error: '#e74c3c',
+                        inProgress: '#000',
+                        complete: '#000',
+                        sourceBg: '#ECEFF1'
+                    }
+                }
+            },
+            (error, result) => {
+                if (!error && result && result.event === "success") {
+                    // Display the uploaded image
+                    const img = document.createElement('img');
+                    img.src = result.info.secure_url;
+                    avatarPreview.innerHTML = '';
+                    avatarPreview.appendChild(img);
+                    
+                    // Store the Cloudinary public ID for future reference
+                    avatarPreview.dataset.publicId = result.info.public_id;
+                    avatarError.style.display = 'none';
+                } else if (error) {
+                    avatarError.textContent = 'Upload failed. Please try again.';
+                    avatarError.style.display = 'block';
+                }
+            }
+        );
+
+        // Bio Character Counter
+        bioInput.addEventListener('input', () => {
+            const remaining = 150 - bioInput.value.length;
+            charCounter.textContent = `${remaining} characters left`;
+            
+            if (remaining < 0) {
+                bioInput.value = bioInput.value.slice(0, 150);
+                charCounter.textContent = '0 characters left';
+            }
+        });
+
+        // Website Validation
+        function validateWebsite(url) {
+            if (!url) return true; // Optional field
+            
+            try {
+                new URL(url.startsWith('http') ? url : `https://${url}`);
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        // Complete Profile Handler
+        continueBtn.addEventListener('click', async function() {
+            const btn = this;
+            const spinner = btn.querySelector('.spinner');
+            const btnText = btn.querySelector('.btn-text');
+            
+            // UI Loading State
+            btnText.style.display = 'none';
+            spinner.style.display = 'block';
+            btn.disabled = true;
+
+            // Validate Website
+            if (websiteInput.value && !validateWebsite(websiteInput.value)) {
+                websiteError.textContent = 'Please enter a valid URL';
+                websiteError.style.display = 'block';
+                resetButton(btn, spinner, btnText);
+                return;
+            }
+
+            try {
+                const user = auth.currentUser;
+                if (!user) throw new Error('User not authenticated');
+
+                // Prepare update data
+                const updates = {
+                    'profile.bio': bioInput.value.trim(),
+                    'profile.website': websiteInput.value.trim() || null,
+                    'timestamps.lastUpdated': firebase.firestore.FieldValue.serverTimestamp(),
+                    'accountComplete': true
+                };
+
+                // Add Cloudinary URL if uploaded
+                if (avatarPreview.dataset.publicId) {
+                    updates['profile.picture'] = {
+                        url: avatarPreview.querySelector('img').src,
+                        public_id: avatarPreview.dataset.publicId
+                    };
+                }
+
+                // Update Firestore
+                await db.collection('users').doc(user.uid).update(updates);
+
+                // Update Auth profile if picture was uploaded
+                if (avatarPreview.dataset.publicId) {
+                    await user.updateProfile({
+                        photoURL: avatarPreview.querySelector('img').src
+                    });
+                }
+
+                // Redirect to main app
+                window.location.href = 'index.html';
+
+            } catch (error) {
+                console.error("Profile completion error:", error);
+                avatarError.textContent = 'Failed to save profile. Please try again.';
+                avatarError.style.display = 'block';
+                resetButton(btn, spinner, btnText);
+            }
+        });
+
+        // Helper Functions
+        function resetButton(btn, spinner, btnText) {
+            btnText.style.display = 'block';
+            spinner.style.display = 'none';
+            btn.disabled = false;
+        }
+
+        // Initialize Cloudinary Upload Button
+        uploadButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            cloudinaryWidget.open();
+        });
+
+        // Preloader Logic
+        window.addEventListener('load', function() {
+            const navType = performance.getEntriesByType("navigation")[0].type;
+            if (navType === 'back_forward') {
+                document.querySelector('.preloader').style.display = 'none';
+                document.querySelector('.main-content').style.display = 'block';
+            } else {
+                setTimeout(function() {
+                    document.querySelector('.preloader').style.display = 'none';
+                    document.querySelector('.main-content').style.display = 'block';
+                    
+                    // Set default avatar with user initials
+                    const user = auth.currentUser;
+                    if (user && user.displayName) {
+                        const initials = user.displayName.split(' ').map(n => n[0]).join('').toUpperCase();
+                        avatarPreview.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:bold;color:#000">${initials}</div>`;
+                    }
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
