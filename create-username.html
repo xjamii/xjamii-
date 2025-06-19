@@ -454,7 +454,8 @@
 
                 
      
-<script>
+
+                <script>
 // Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
@@ -476,15 +477,11 @@ const db = firebase.firestore();
 // DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
-const usernameStatus = document.getElementById('username-status');
 const preloader = document.querySelector('.preloader');
 const mainContent = document.querySelector('.main-content');
 
 // State Management
-let currentUsername = '';
-let isUsernameAvailable = false;
 let currentUser = null;
-let checkDebounceTimer;
 
 // Preloader Control
 window.addEventListener('load', function() {
@@ -507,144 +504,59 @@ auth.onAuthStateChanged(async (user) => {
 // Username Generation
 async function generateInitialUsername(user) {
     try {
+        // Get base name from displayName or email
         const baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
-                         user.email?.split('@')[0]?.toLowerCase() || '';
-        const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
-        const suggestion = cleanBase ? 
-            `${cleanBase}${Math.floor(100 + Math.random() * 900)}` : 
-            generateRandomUsername();
+                         user.email?.split('@')[0]?.toLowerCase() || 'user';
         
-        usernameInput.value = suggestion;
-        currentUsername = suggestion;
-        await checkUsernameAvailability(suggestion);
+        // Clean the base name (remove special chars)
+        const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
+        
+        // Generate initial username (without numbers first)
+        let username = cleanBase;
+        let counter = 1;
+        
+        // Check if username exists and add numbers until we find an available one
+        while (true) {
+            const isAvailable = await checkUsernameAvailability(username);
+            if (isAvailable) break;
+            
+            username = `${cleanBase}${counter}`;
+            counter++;
+            
+            // Prevent infinite loop
+            if (counter > 1000) {
+                username = `${cleanBase}${Date.now()}`;
+                break;
+            }
+        }
+        
+        usernameInput.value = username;
     } catch (error) {
         console.error("Username generation error:", error);
+        // Fallback to random username
+        usernameInput.value = `user${Date.now()}`;
     }
 }
 
-// Username Validation
-function validateUsername(username) {
-    if (!username) return false;
-    if (username.length < 3 || username.length > 30) return false;
-    return /^[a-zA-Z0-9._]+$/.test(username); // Allows letters, numbers, dots, underscores
-}
-
-// Username Availability Check (Instagram-style)
+// Simple Username Availability Check
 async function checkUsernameAvailability(username) {
     try {
-        // Clear previous checks
-        clearTimeout(checkDebounceTimer);
-        
-        // Show checking state
-        usernameStatus.textContent = 'Checking...';
-        usernameStatus.className = 'status-indicator checking';
-        continueBtn.disabled = true;
-        
-        // Validate format first
-        if (!validateUsername(username)) {
-            showInvalidUsername();
-            return false;
-        }
-        
-        // Check reserved names (add more as needed)
-        const reservedNames = ['admin', 'support', 'instagram', 'facebook', 'twitter', 'user'];
-        if (reservedNames.includes(username.toLowerCase())) {
-            showUsernameUnavailable('Reserved username');
-            return false;
-        }
-        
-        // Check minimum length
-        if (username.length < 3) {
-            showUsernameUnavailable('Too short (min 3 chars)');
-            return false;
-        }
-        
-        // Check Firestore (case-insensitive)
         const snapshot = await db.collection('usernames')
                               .where('usernameLower', '==', username.toLowerCase())
                               .limit(1)
                               .get();
         
-        isUsernameAvailable = snapshot.empty;
-        
-        // Update UI
-        if (isUsernameAvailable) {
-            usernameStatus.textContent = '✓ Available';
-            usernameStatus.className = 'status-indicator available';
-            continueBtn.disabled = false;
-        } else {
-            showUsernameUnavailable('✗ Taken');
-        }
-        
-        return isUsernameAvailable;
+        return snapshot.empty;
     } catch (error) {
         console.error("Availability check failed:", error);
-        showUsernameError('Error checking');
         return false;
     }
 }
 
-// UI Helper Functions
-function showInvalidUsername() {
-    usernameStatus.textContent = 'Only letters, numbers, . and _';
-    usernameStatus.className = 'status-indicator unavailable';
-    continueBtn.disabled = true;
-    isUsernameAvailable = false;
-}
-
-function showUsernameUnavailable(message) {
-    usernameStatus.textContent = message;
-    usernameStatus.className = 'status-indicator unavailable';
-    continueBtn.disabled = true;
-    isUsernameAvailable = false;
-}
-
-function showUsernameError(message) {
-    usernameStatus.textContent = message;
-    usernameStatus.className = 'status-indicator error';
-    continueBtn.disabled = true;
-    isUsernameAvailable = false;
-}
-
-// Input Handler with Debouncing
-usernameInput.addEventListener('input', function(e) {
-    const username = e.target.value
-        .toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9._]/g, '');
-    
-    if (username !== e.target.value) {
-        e.target.value = username;
-    }
-    
-    currentUsername = username;
-    clearTimeout(checkDebounceTimer);
-    
-    if (!username) {
-        usernameStatus.textContent = '';
-        usernameStatus.className = 'status-indicator';
-        continueBtn.disabled = true;
-        isUsernameAvailable = false;
-        return;
-    }
-    
-    // Debounce the check by 500ms after typing stops
-    checkDebounceTimer = setTimeout(async () => {
-        await checkUsernameAvailability(username);
-    }, 500);
-});
-
-// Save Username (Transaction-safe)
+// Save Username and Redirect
 async function saveUsername(userId, username) {
     try {
         const usernameLower = username.toLowerCase();
-        
-        // Show saving state
-        const btnText = continueBtn.querySelector('.btn-text');
-        const spinner = continueBtn.querySelector('.spinner');
-        if (btnText) btnText.style.display = 'none';
-        if (spinner) spinner.style.display = 'inline-block';
-        continueBtn.disabled = true;
         
         // Use transaction to prevent race conditions
         await db.runTransaction(async (transaction) => {
@@ -681,32 +593,24 @@ async function saveUsername(userId, username) {
         window.location.href = 'index.html';
     } catch (error) {
         console.error("Save username error:", error);
-        
-        // Reset button state
-        const btnText = continueBtn.querySelector('.btn-text');
-        const spinner = continueBtn.querySelector('.spinner');
-        if (btnText) btnText.style.display = 'inline-block';
-        if (spinner) spinner.style.display = 'none';
-        continueBtn.disabled = false;
-        
-        
+        // If error occurs, just redirect anyway with a fallback username
+        window.location.href = 'index.html';
+    }
+}
 
-// Continue Button Handler
+// Continue Button Handler - redirect immediately
 continueBtn.addEventListener('click', async function(e) {
     e.preventDefault();
-    if (!isUsernameAvailable || !currentUser) return;
-    await saveUsername(currentUser.uid, currentUsername);
+    if (!currentUser) return;
+    
+    // Get the current username value or use the generated one
+    const username = usernameInput.value.trim() || usernameInput.value;
+    
+    // Save and redirect
+    await saveUsername(currentUser.uid, username);
 });
-
-// Helper Function
-function generateRandomUsername() {
-    const adjectives = ['cool', 'happy', 'sunny', 'bright', 'quick'];
-    const nouns = ['fox', 'star', 'bird', 'wave', 'cloud'];
-    return `${adjectives[Math.floor(Math.random()*adjectives.length)]}_${
-           nouns[Math.floor(Math.random()*nouns.length)]}${
-           Math.floor(10 + Math.random() * 90)}`;
-}
 </script>
+
 
 </body>
 </html>
