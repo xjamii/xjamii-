@@ -286,7 +286,7 @@
     </div>
 
 <script>
-                  // Firebase config
+                                  // Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -307,270 +307,49 @@ const db = firebase.firestore();
 // DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
-const suggestionsContainer = document.getElementById('suggestions-container');
-const usernameStatus = document.getElementById('username-status');
-const usernameError = document.getElementById('username-error');
-const usernameSuccess = document.getElementById('username-success');
 
-// Cache for instant feedback
-let availabilityCache = {};
-let lastRequest = null;
-
-// Check auth state
+// Generate username when page loads
 auth.onAuthStateChanged(async (user) => {
     if (!user) {
         window.location.href = 'signin.html';
         return;
     }
+
+    // Create username from name/email
+    const name = user.displayName || user.email.split('@')[0];
+    const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const randomNum = Math.floor(100 + Math.random() * 900);
+    const username = `${cleanName}${randomNum}`;
     
-    // Generate single suggestion using either displayName or email
-    const baseName = user.displayName?.split(' ')[0]?.toLowerCase() || 
-                    user.email?.split('@')[0]?.toLowerCase() || '';
-    const cleanBase = baseName.replace(/[^a-z0-9]/g, '');
-    
-    // Generate just one suggested username
-    const suggestion = cleanBase ? 
-        `${cleanBase}${Math.floor(100 + Math.random() * 900)}` : // 3-digit suffix
-        generateRandomUsername();
-    
-    // Pre-fill the input with the suggested username
-    usernameInput.value = suggestion;
-    
-    // Check its availability
-    await checkAvailability(suggestion);
-    
-    // Hide suggestions container as we're only using one pre-filled suggestion
-    suggestionsContainer.style.display = 'none';
-    
-    // Focus the input field
-    usernameInput.focus();
+    usernameInput.value = username;
 });
 
-// Check username availability
-async function checkAvailability(username, pillElement = null) {
-    const usernameLower = username.toLowerCase();
-    
-    // Immediate cache check
-    if (availabilityCache[usernameLower] !== undefined) {
-        updateAvailabilityUI(availabilityCache[usernameLower], username, pillElement);
-        return availabilityCache[usernameLower];
-    }
+// Save username and redirect
+continueBtn.addEventListener('click', async () => {
+    const username = usernameInput.value.trim().toLowerCase();
+    const user = auth.currentUser;
 
-    // Don't show invalid format for empty input
-    if (!username) {
-        usernameStatus.textContent = '';
-        usernameStatus.className = 'status-indicator';
-        return false;
-    }
-
-    if (!validateUsername(username)) {
-        // Only show invalid format if user has typed at least 1 character
-        if (username.length > 0) {
-            usernameStatus.textContent = 'Invalid format (3-20 chars, a-z, 0-9, _)';
-            usernameStatus.className = 'status-indicator unavailable';
-        }
-        return false;
-    }
-
-    // Show checking state
-    updateCheckingUI(username, pillElement);
-
-    try {
-        const snapshot = await db.collection('usernames').doc(usernameLower).get();
-        const isAvailable = !snapshot.exists;
-        availabilityCache[usernameLower] = isAvailable;
-        
-        updateAvailabilityUI(isAvailable, username, pillElement);
-        return isAvailable;
-    } catch (error) {
-        console.error("Check error:", error);
-        usernameStatus.textContent = 'Error checking availability';
-        usernameStatus.className = 'status-indicator unavailable';
-        return false;
-    }
-}
-
-// Update UI when checking availability
-function updateCheckingUI(username, pillElement) {
-    if (pillElement) {
-        pillElement.classList.add('loading');
-        pillElement.classList.remove('available', 'unavailable');
-    }
-    if (usernameInput.value.toLowerCase() === username.toLowerCase()) {
-        usernameStatus.textContent = 'Checking availability...';
-        usernameStatus.className = 'status-indicator checking';
-        continueBtn.disabled = true;
-    }
-}
-
-// Update UI with availability result
-function updateAvailabilityUI(isAvailable, username, pillElement) {
-    if (pillElement) {
-        pillElement.classList.remove('loading');
-        pillElement.classList.add(isAvailable ? 'available' : 'unavailable');
-    }
-    if (usernameInput.value.toLowerCase() === username.toLowerCase()) {
-        usernameStatus.textContent = isAvailable ? '✓ Available' : '✗ Username taken';
-        usernameStatus.className = `status-indicator ${isAvailable ? 'available' : 'unavailable'}`;
-        updateContinueButton();
-    }
-}
-
-// Validate username format
-function validateUsername(username) {
-    if (!username) return false;
-    if (username.length < 3 || username.length > 20) return false;
-    if (!/^[a-z0-9_]+$/i.test(username)) return false;
-    return true;
-}
-
-// Generate random username
-function generateRandomUsername() {
-    const adjectives = ['cool', 'happy', 'sunny', 'bright', 'quick'];
-    const nouns = ['fox', 'star', 'bird', 'wave', 'cloud'];
-    return `${adjectives[Math.floor(Math.random()*adjectives.length)]}_${
-           nouns[Math.floor(Math.random()*nouns.length)]}${
-           Math.floor(10 + Math.random() * 90)}`;
-}
-
-// Input handler with debouncing
-let checkTimeout;
-usernameInput.addEventListener('input', function(e) {
-    const username = e.target.value.toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '');
-    
-    if (username !== e.target.value) {
-        e.target.value = username;
-    }
-    
-    clearTimeout(checkTimeout);
-    
-    // Don't show status for empty input
-    if (!username) {
-        usernameStatus.textContent = '';
-        usernameStatus.className = 'status-indicator';
-        continueBtn.disabled = true;
-        return;
-    }
-    
-    // Show checking immediately
-    usernameStatus.textContent = 'Checking...';
-    usernameStatus.className = 'status-indicator checking';
-    continueBtn.disabled = true;
-    
-    // Debounced actual check
-    checkTimeout = setTimeout(() => {
-        checkAvailability(username);
-    }, 500);
-});
-
-// Update continue button state
-function updateContinueButton() {
-    const username = usernameInput.value.trim();
-    const isValid = validateUsername(username);
-    const isAvailable = availabilityCache[username.toLowerCase()];
-    
-    continueBtn.disabled = !isValid || !isAvailable;
-    continueBtn.style.opacity = continueBtn.disabled ? '0.7' : '1';
-}
-
-// Reserve username (atomic operation)
-async function reserveUsername(userId, username) {
-    const usernameLower = username.toLowerCase();
+    // Save to Firestore
     const batch = db.batch();
     
-    // Reserve username
-    const usernameRef = db.collection('usernames').doc(usernameLower);
-    batch.set(usernameRef, { 
-        userId: userId,
-        reservedAt: firebase.firestore.FieldValue.serverTimestamp()
+    // 1. Reserve username in 'usernames' collection
+    const usernameRef = db.collection('usernames').doc(username);
+    batch.set(usernameRef, {
+        userId: user.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     
-    // Update user document
-    const userRef = db.collection('users').doc(userId);
+    // 2. Update user document with username
+    const userRef = db.collection('users').doc(user.uid);
     batch.update(userRef, {
-        username: usernameLower,
-        accountComplete: true,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        username: username,
+        profileComplete: true
     });
     
     await batch.commit();
-}
-
-// Continue button handler
-continueBtn.addEventListener('click', async function(e) {
-    e.preventDefault();
     
-    const username = usernameInput.value.trim();
-    
-    // Validate
-    if (!validateUsername(username)) {
-        usernameStatus.textContent = 'Invalid username format';
-        usernameStatus.className = 'status-indicator unavailable';
-        return;
-    }
-    
-    // Double-check availability
-    const isAvailable = await checkAvailability(username);
-    if (!isAvailable) {
-        usernameStatus.textContent = 'Username is no longer available';
-        usernameStatus.className = 'status-indicator unavailable';
-        return;
-    }
-    
-    // UI loading state
-    continueBtn.disabled = true;
-    const originalText = continueBtn.textContent;
-    continueBtn.textContent = 'Saving...';
-    
-    try {
-        const user = auth.currentUser;
-        if (!user) throw new Error('No authenticated user');
-        
-        // Reserve username atomically
-        await reserveUsername(user.uid, username);
-        
-        // Show success message briefly before redirect
-        usernameStatus.textContent = 'Username saved successfully!';
-        usernameStatus.className = 'status-indicator available';
-        usernameSuccess.style.display = 'block';
-        usernameSuccess.textContent = 'Redirecting...';
-        
-        // Clear cache
-        availabilityCache = {};
-        
-        // Redirect after short delay
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 1000);
-    } catch (error) {
-        console.error("Save error:", error);
-        continueBtn.disabled = false;
-        continueBtn.textContent = originalText;
-        
-        if (error.code === 'permission-denied') {
-            usernameStatus.textContent = 'Permission denied. Please sign in again.';
-        } else if (error.code === 'resource-exhausted') {
-            usernameStatus.textContent = 'Too many attempts. Try again later.';
-        } else {
-            usernameStatus.textContent = 'Error saving username. Please try again.';
-        }
-        usernameStatus.className = 'status-indicator unavailable';
-        usernameError.style.display = 'block';
-        usernameError.textContent = error.message;
-    }
-});
-
-// Initialize button state
-updateContinueButton();
-
-// Handle Enter key press
-usernameInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && !continueBtn.disabled) {
-        continueBtn.click();
-    }
-});      
+    // Redirect to main page
+    window.location.href = 'index.html';
 });
         </script>
 </body>
