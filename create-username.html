@@ -287,7 +287,6 @@
 
 <script>
                             
-
 // Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
@@ -312,6 +311,10 @@ const continueBtn = document.getElementById('continue-btn');
 const suggestionsContainer = document.getElementById('suggestions-container');
 const usernameStatus = document.getElementById('username-status');
 
+// Cache for instant feedback
+let availabilityCache = {};
+let lastRequest = null;
+
 // Check auth state
 auth.onAuthStateChanged(async (user) => {
     if (!user) {
@@ -327,80 +330,98 @@ auth.onAuthStateChanged(async (user) => {
     generateSuggestions(cleanBase);
 });
 
-// Generate username suggestions
+// Generate username suggestions (Instagram-style)
 function generateSuggestions(base) {
     suggestionsContainer.innerHTML = '';
     
     const suggestions = [
-        base && `${base}${Math.floor(Math.random() * 100)}`,
-        base && `${base}_${Math.floor(Math.random() * 100)}`,
+        base && `${base}${Math.floor(100 + Math.random() * 900)}`,  // 3-digit suffix
+        base && `${base}_${Math.floor(10 + Math.random() * 90)}`,    // 2-digit suffix with underscore
+        base && `${base}${String.fromCharCode(97 + Math.floor(Math.random() * 26))}`, // Random letter
         generateRandomUsername()
     ].filter(Boolean);
 
-    suggestions.forEach(suggestion => {
+    // Create all suggestion pills first
+    const pills = suggestions.map(suggestion => {
         const pill = document.createElement('div');
-        pill.className = 'suggestion-pill';
+        pill.className = 'suggestion-pill loading';
         pill.textContent = suggestion;
-        pill.addEventListener('click', async () => {
+        pill.addEventListener('click', () => {
             usernameInput.value = suggestion;
-            await checkAvailability(suggestion);
-            updateContinueButton();
+            checkAvailability(suggestion);
         });
         suggestionsContainer.appendChild(pill);
-        checkAvailability(suggestion, pill);
+        return pill;
     });
 
-    if (suggestions.length > 0) {
-        usernameInput.value = suggestions[0];
-        checkAvailability(suggestions[0]);
-    }
+    // Check availability in parallel
+    suggestions.forEach((suggestion, index) => {
+        checkAvailability(suggestion, pills[index]);
+    });
 }
 
-// Check username availability
+// Ultra-fast username availability check
 async function checkAvailability(username, pillElement = null) {
+    const usernameLower = username.toLowerCase();
+    
+    // Immediate cache check
+    if (availabilityCache[usernameLower] !== undefined) {
+        updateAvailabilityUI(availabilityCache[usernameLower], username, pillElement);
+        return availabilityCache[usernameLower];
+    }
+
     if (!validateUsername(username)) {
-        if (pillElement) {
-            pillElement.classList.remove('available');
-            pillElement.classList.add('unavailable');
-        }
-        usernameStatus.textContent = 'Invalid format (a-z, 0-9, _)';
-        usernameStatus.className = 'status-indicator unavailable';
+        updateAvailabilityUI(false, username, pillElement);
         return false;
     }
 
     // Show checking state
-    if (pillElement) {
-        pillElement.classList.remove('available', 'unavailable');
+    updateCheckingUI(username, pillElement);
+
+    // Cancel previous request if still pending
+    if (lastRequest) {
+        lastRequest.cancel();
     }
-    usernameStatus.textContent = 'Checking...';
-    usernameStatus.className = 'status-indicator';
 
     try {
-        const snapshot = await db.collection('users')
-            .where('username', '==', username.toLowerCase())
-            .limit(1)
-            .get();
+        // Create new request
+        lastRequest = db.collection('usernames').doc(usernameLower);
+        const snapshot = await lastRequest.get();
         
-        const isAvailable = snapshot.empty;
+        const isAvailable = !snapshot.exists;
+        availabilityCache[usernameLower] = isAvailable;
         
-        if (pillElement) {
-            pillElement.classList.toggle('available', isAvailable);
-            pillElement.classList.toggle('unavailable', !isAvailable);
-        }
-        
-        usernameStatus.textContent = isAvailable ? '✓ Available' : '✗ Unavailable';
-        usernameStatus.className = `status-indicator ${isAvailable ? 'available' : 'unavailable'}`;
-        
+        updateAvailabilityUI(isAvailable, username, pillElement);
         return isAvailable;
     } catch (error) {
-        console.error("Availability check error:", error);
-        if (pillElement) {
-            pillElement.classList.remove('available');
-            pillElement.classList.add('unavailable');
+        if (error.name !== 'FirebaseError') { // Ignore cancellation errors
+            console.error("Check error:", error);
         }
-        usernameStatus.textContent = 'Error checking';
-        usernameStatus.className = 'status-indicator unavailable';
         return false;
+    }
+}
+
+// Update UI helpers
+function updateCheckingUI(username, pillElement) {
+    if (pillElement) {
+        pillElement.classList.add('loading');
+        pillElement.classList.remove('available', 'unavailable');
+    }
+    if (usernameInput.value.toLowerCase() === username.toLowerCase()) {
+        usernameStatus.textContent = 'Checking...';
+        usernameStatus.className = 'status-indicator checking';
+    }
+}
+
+function updateAvailabilityUI(isAvailable, username, pillElement) {
+    if (pillElement) {
+        pillElement.classList.remove('loading');
+        pillElement.classList.add(isAvailable ? 'available' : 'unavailable');
+    }
+    if (usernameInput.value.toLowerCase() === username.toLowerCase()) {
+        usernameStatus.textContent = isAvailable ? '✓ Available' : '✗ Taken';
+        usernameStatus.className = `status-indicator ${isAvailable ? 'available' : 'unavailable'}`;
+        updateContinueButton();
     }
 }
 
@@ -414,11 +435,14 @@ function validateUsername(username) {
 
 // Generate random username
 function generateRandomUsername() {
-    const parts = ['sky', 'fly', 'wing', 'air', 'jet', 'cloud', 'pilot', 'aviator'];
-    return `${parts[Math.floor(Math.random()*parts.length)]}_${parts[Math.floor(Math.random()*parts.length)]}${Math.floor(Math.random()*100)}`;
+    const adjectives = ['cool', 'happy', 'sunny', 'bright', 'quick'];
+    const nouns = ['fox', 'star', 'bird', 'wave', 'cloud'];
+    return `${adjectives[Math.floor(Math.random()*adjectives.length)]}_${
+           nouns[Math.floor(Math.random()*nouns.length)]}${
+           Math.floor(10 + Math.random() * 90)}`;
 }
 
-// Input field handler with real-time checking
+// Input handler with optimized debouncing
 let checkTimeout;
 usernameInput.addEventListener('input', function(e) {
     const username = e.target.value.toLowerCase()
@@ -430,17 +454,55 @@ usernameInput.addEventListener('input', function(e) {
     }
     
     clearTimeout(checkTimeout);
-    checkTimeout = setTimeout(async () => {
-        await checkAvailability(username);
-        updateContinueButton();
-    }, 500);
+    
+    // Immediate UI update for fast feedback
+    if (!validateUsername(username)) {
+        usernameStatus.textContent = 'Invalid format';
+        usernameStatus.className = 'status-indicator unavailable';
+        continueBtn.disabled = true;
+        return;
+    }
+    
+    // Show checking immediately
+    usernameStatus.textContent = 'Checking...';
+    usernameStatus.className = 'status-indicator checking';
+    continueBtn.disabled = true;
+    
+    // Debounced actual check
+    checkTimeout = setTimeout(() => {
+        checkAvailability(username);
+    }, 300);
 });
 
 // Update continue button state
 function updateContinueButton() {
     const username = usernameInput.value.trim();
     const isValid = validateUsername(username);
-    continueBtn.disabled = !isValid || usernameStatus.classList.contains('unavailable');
+    const isAvailable = availabilityCache[username.toLowerCase()];
+    continueBtn.disabled = !isValid || !isAvailable;
+}
+
+// Reserve username (atomic operation)
+async function reserveUsername(userId, username) {
+    const usernameLower = username.toLowerCase();
+    const batch = db.batch();
+    
+    // Reserve username
+    const usernameRef = db.collection('usernames').doc(usernameLower);
+    batch.set(usernameRef, { 
+        userId: userId,
+        reservedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Update user document
+    const userRef = db.collection('users').doc(userId);
+    batch.update(userRef, {
+        username: usernameLower,
+        accountComplete: true,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    await batch.commit();
 }
 
 // Continue button handler
@@ -452,9 +514,9 @@ continueBtn.addEventListener('click', async function(e) {
     const spinner = btn.querySelector('.spinner');
     const btnText = btn.querySelector('.btn-text');
     
-    // Final validation
+    // Validate
     if (!validateUsername(username)) {
-        usernameStatus.textContent = 'Invalid username format';
+        usernameStatus.textContent = 'Invalid username';
         usernameStatus.className = 'status-indicator unavailable';
         return;
     }
@@ -466,24 +528,27 @@ continueBtn.addEventListener('click', async function(e) {
     
     try {
         const user = auth.currentUser;
-        if (!user) throw new Error('No authenticated user');
+        if (!user) throw new Error('No user');
         
-        // Update Firestore with username and mark complete
-        await db.collection('users').doc(user.uid).update({
-            username: username.toLowerCase(),
-            accountComplete: true,
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        // Reserve username atomically
+        await reserveUsername(user.uid, username);
         
-        // Redirect to main app
+        // Clear cache
+        availabilityCache = {};
+        
+        // Redirect
         window.location.href = 'index.html';
-        
     } catch (error) {
-        console.error("Username save error:", error);
+        console.error("Save error:", error);
         btnText.style.display = 'block';
         spinner.style.display = 'none';
         btn.disabled = false;
-        usernameStatus.textContent = 'Error saving. Try again.';
+        
+        if (error.code === 'resource-exhausted') {
+            usernameStatus.textContent = 'Too many attempts. Try again later.';
+        } else {
+            usernameStatus.textContent = 'Error saving. Try another username.';
+        }
         usernameStatus.className = 'status-indicator unavailable';
     }
 });
@@ -498,7 +563,7 @@ window.addEventListener('load', function() {
         setTimeout(function() {
             document.querySelector('.preloader').style.display = 'none';
             document.querySelector('.main-content').style.display = 'block';
-        }, 2000);
+        }, 1500);
     }
 });
 
@@ -514,6 +579,8 @@ document.getElementById('back-btn').addEventListener('click', function() {
 
     window.location.href = 'password.html';
 });
+    
+                
 
 </script>
 </body>
