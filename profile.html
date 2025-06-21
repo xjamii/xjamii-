@@ -1985,7 +1985,8 @@
 <div class="more-menu-overlay"></div>
 
         <script>
-   // Firebase Configuration
+   
+  // Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
     authDomain: "x-jamii.firebaseapp.com",
@@ -2017,9 +2018,9 @@ const profileName = document.getElementById('profile-name');
 const profileUsername = document.getElementById('profile-username');
 const profileBio = document.getElementById('profile-bio');
 const profileWebsite = document.getElementById('profile-website');
-const postsCount = document.getElementById('posts-count')?.querySelector('.stat-number');
-const followersCount = document.getElementById('followers-count')?.querySelector('.stat-number');
-const followingCount = document.getElementById('following-count')?.querySelector('.stat-number');
+const postsCount = document.getElementById('posts-count').querySelector('.stat-number');
+const followersCount = document.getElementById('followers-count').querySelector('.stat-number');
+const followingCount = document.getElementById('following-count').querySelector('.stat-number');
 const editProfileBtn = document.getElementById('edit-profile-btn');
 const messageBtn = document.getElementById('message-btn');
 const followBtn = document.getElementById('follow-btn');
@@ -2028,121 +2029,74 @@ const profilePosts = document.getElementById('profile-posts');
 
 // Initialize the page
 function init() {
-    console.log("Initializing profile page...");
+    // Get profile user from URL
+    const username = window.location.pathname.split('/').pop();
     
-    // Get username from URL
-    const username = extractUsernameFromUrl();
-    console.log("Extracted username from URL:", username);
-
-    // Check authentication state
     auth.onAuthStateChanged(async user => {
-        console.log("Auth state changed. User:", user ? user.uid : "Not logged in");
-        
         if (!user) {
-            showLoginRequiredMessage();
+            // Not logged in - redirect to login page
+            window.location.href = 'login.html';
             return;
         }
         
         currentUser = user;
-        console.log("Current user authenticated:", user.uid);
         
-        try {
-            if (!username || username === 'profile.html') {
-                // Viewing own profile
-                console.log("Loading current user's profile");
-                await loadProfile(user.uid);
-                setupUIForOwner();
-            } else {
-                // Viewing someone else's profile
-                console.log(`Loading profile for username: ${username}`);
-                await loadProfileByUsername(username);
-                setupUIForVisitor();
-            }
-        } catch (error) {
-            console.error("Error during profile initialization:", error);
-            showErrorState("Failed to load profile. Please try again later.");
+        if (!username || username === 'profile.html') {
+            // Viewing own profile
+            profileUser = user;
+            await loadProfile(user.uid);
+            setupUIForOwner();
+        } else {
+            // Viewing someone else's profile
+            await loadProfileByUsername(username);
+            setupUIForVisitor();
         }
     });
 
-    // Set up infinite scroll
-    setupInfiniteScroll();
-}
-
-// Extract username from URL
-function extractUsernameFromUrl() {
-    const path = window.location.pathname;
-    if (path.includes('/profile/')) {
-        return path.split('/profile/')[1].replace(/\/$/, '');
-    }
-    return path.split('/').pop().replace('.html', '');
-}
-
-// Show login required message
-function showLoginRequiredMessage() {
-    hideSkeleton();
-    profilePosts.innerHTML = `
-        <div class="empty-state">
-            <div class="empty-state-icon">
-                <i class="fas fa-user-lock"></i>
-            </div>
-            <div class="empty-state-text">
-                You need to log in to view this profile
-            </div>
-            <a href="login.html" class="profile-btn primary" style="margin-top: 16px;">
-                <i class="fas fa-sign-in-alt"></i> Log In
-            </a>
-        </div>
-    `;
+    // Add scroll event listener for infinite scroll
+    window.addEventListener('scroll', () => {
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+            if (profileUser && !loadingMore && !allPostsLoaded) {
+                loadUserPosts(profileUser.uid, true);
+            }
+        }
+    });
 }
 
 // Load profile data
 async function loadProfile(uid) {
-    console.log(`Loading profile data for UID: ${uid}`);
-    
     try {
-        // Reset pagination variables
-        resetPagination();
-        
-        // Fetch user document and post count in parallel
+        // Reset pagination variables when loading a new profile
+        lastPost = null;
+        loadingMore = false;
+        allPostsLoaded = false;
+
         const [userDoc, totalPosts] = await Promise.all([
             db.collection('users').doc(uid).get(),
             db.collection('posts').where('userId', '==', uid).get().then(snap => snap.size)
         ]);
 
-        if (!userDoc.exists) {
-            throw new Error("User document does not exist");
+        if (userDoc.exists) {
+            profileUser = { uid, ...userDoc.data() };
+            renderProfile();
+            
+            // Set total post count
+            postsCount.textContent = totalPosts;
+            
+            // Load initial data in parallel
+            await Promise.all([
+                loadUserPosts(uid),
+                loadFollowStats(uid),
+                currentUser && currentUser.uid !== uid ? checkFollowStatus() : Promise.resolve(),
+                currentUser && currentUser.uid !== uid ? checkBlockStatus() : Promise.resolve()
+            ]);
+        } else {
+            console.log("No such user!");
+            showErrorState();
         }
-
-        profileUser = { 
-            uid, 
-            ...userDoc.data(),
-            // Ensure required fields exist
-            displayName: userDoc.data().displayName || "User",
-            username: userDoc.data().username || "user",
-            bio: userDoc.data().bio || "",
-            photoURL: userDoc.data().photoURL || null,
-            website: userDoc.data().website || null,
-            verified: userDoc.data().verified || false
-        };
-
-        console.log("Profile user data loaded:", profileUser);
-        
-        // Update UI
-        renderProfile();
-        postsCount.textContent = totalPosts;
-        
-        // Load additional data in parallel
-        await Promise.all([
-            loadUserPosts(uid),
-            loadFollowStats(uid),
-            currentUser.uid !== uid ? checkFollowStatus() : Promise.resolve(),
-            currentUser.uid !== uid ? checkBlockStatus() : Promise.resolve()
-        ]);
-
     } catch (error) {
         console.error("Error loading profile:", error);
-        showErrorState("Failed to load profile data. Please try again.");
-        throw error;
+        showErrorState();
     } finally {
         hideSkeleton();
     }
@@ -2150,97 +2104,106 @@ async function loadProfile(uid) {
 
 // Load profile by username
 async function loadProfileByUsername(username) {
-    console.log(`Loading profile by username: ${username}`);
-    
     try {
-        // Reset pagination variables
-        resetPagination();
-        
+        // Reset pagination variables when loading a new profile
+        lastPost = null;
+        loadingMore = false;
+        allPostsLoaded = false;
+
         const usersSnapshot = await db.collection('users')
             .where('username', '==', username.toLowerCase())
             .limit(1)
             .get();
-
-        if (usersSnapshot.empty) {
-            throw new Error("No user found with this username");
+        
+        if (!usersSnapshot.empty) {
+            const userDoc = usersSnapshot.docs[0];
+            profileUser = { uid: userDoc.id, ...userDoc.data() };
+            renderProfile();
+            
+            // Load all data in parallel
+            const [totalPosts] = await Promise.all([
+                db.collection('posts').where('userId', '==', userDoc.id).get().then(snap => snap.size),
+                loadUserPosts(userDoc.id),
+                loadFollowStats(userDoc.id),
+                currentUser && currentUser.uid !== userDoc.id ? checkFollowStatus() : Promise.resolve(),
+                currentUser && currentUser.uid !== userDoc.id ? checkBlockStatus() : Promise.resolve()
+            ]);
+            
+            // Set total post count
+            postsCount.textContent = totalPosts;
+        } else {
+            console.log("No user found with that username");
+            showErrorState();
         }
-
-        const userDoc = usersSnapshot.docs[0];
-        const uid = userDoc.id;
-        
-        // Fetch additional data in parallel
-        const [totalPosts] = await Promise.all([
-            db.collection('posts').where('userId', '==', uid).get().then(snap => snap.size),
-            loadProfile(uid) // Reuse the loadProfile function
-        ]);
-        
-        postsCount.textContent = totalPosts;
-
     } catch (error) {
         console.error("Error loading profile by username:", error);
-        showErrorState(`User @${username} not found.`);
-        throw error;
+        showErrorState();
+    } finally {
+        hideSkeleton();
     }
 }
 
-// Reset pagination variables
-function resetPagination() {
-    lastPost = null;
-    loadingMore = false;
-    allPostsLoaded = false;
+// Hide skeleton loader with fade-out effect
+function hideSkeleton() {
+    skeletonPreloader.style.opacity = '0';
+    setTimeout(() => {
+        skeletonPreloader.style.display = 'none';
+    }, 300);
+}
+
+// Show error state
+function showErrorState() {
+    profilePosts.innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="empty-state-text">
+                Error loading profile. Please try again later.
+            </div>
+        </div>
+    `;
 }
 
 // Render profile data
 function renderProfile() {
-    console.log("Rendering profile UI...");
-    
-    if (!profileUser) {
-        console.error("No profile user data to render");
-        return;
-    }
-
     // Avatar
     if (profileUser.photoURL) {
-        profileAvatar.innerHTML = `<img src="${profileUser.photoURL}" alt="${profileUser.displayName}" onerror="this.onerror=null;this.innerHTML='${profileUser.displayName.charAt(0).toUpperCase()}'">`;
+        profileAvatar.innerHTML = `<img src="${profileUser.photoURL}" alt="${profileUser.displayName}">`;
     } else {
-        const initial = profileUser.displayName.charAt(0).toUpperCase();
+        const initial = profileUser.displayName?.charAt(0).toUpperCase() || 'U';
         profileAvatar.textContent = initial;
     }
     
     // Name and verification
-    profileName.innerHTML = profileUser.displayName;
+    profileName.innerHTML = profileUser.displayName || 'User';
     if (profileUser.verified) {
         profileName.innerHTML += '<i class="fas fa-check-circle verified-badge"></i>';
     }
     
     // Username
-    profileUsername.textContent = `@${profileUser.username}`;
+    profileUsername.textContent = `@${profileUser.username || 'user'}`;
     
     // Bio
-    profileBio.textContent = profileUser.bio;
-    profileBio.style.display = profileUser.bio ? 'block' : 'none';
+    profileBio.textContent = profileUser.bio || '';
     
     // Website
     if (profileUser.website) {
-        let websiteUrl = profileUser.website;
-        if (!websiteUrl.startsWith('http')) {
-            websiteUrl = `https://${websiteUrl}`;
-        }
         profileWebsite.innerHTML = `<i class="fas fa-link"></i> ${profileUser.website.replace(/^https?:\/\//, '')}`;
-        profileWebsite.href = websiteUrl;
+        profileWebsite.href = profileUser.website.startsWith('http') ? profileUser.website : `https://${profileUser.website}`;
         profileWebsite.style.display = 'inline-block';
     } else {
         profileWebsite.style.display = 'none';
     }
 
-    // Message button data
-    if (messageBtn) {
+    // Set message button data attributes
+    if (messageBtn && profileUser) {
         messageBtn.dataset.user = JSON.stringify({
             uid: profileUser.uid,
-            displayName: profileUser.displayName,
-            username: profileUser.username,
-            verified: profileUser.verified,
-            photoURL: profileUser.photoURL
+            displayName: profileUser.displayName || 'User',
+            username: profileUser.username || 'user',
+            verified: profileUser.verified || false,
+            photoURL: profileUser.photoURL || ''
         });
     }
 }
@@ -2277,7 +2240,7 @@ async function loadUserPosts(uid, loadMore = false) {
             return;
         }
 
-        // Clear posts on initial load
+        // Only clear posts on initial load
         if (!loadMore) {
             profilePosts.innerHTML = '';
             
@@ -2288,7 +2251,7 @@ async function loadUserPosts(uid, loadMore = false) {
                             <i class="far fa-newspaper"></i>
                         </div>
                         <div class="empty-state-text">
-                            No posts yet. When ${profileUser?.displayName || "this user"} posts something, it will show up here.
+                            There are no posts to show yet.
                         </div>
                     </div>
                 `;
@@ -2297,87 +2260,78 @@ async function loadUserPosts(uid, loadMore = false) {
             }
         }
 
-        // Process and render posts
-        renderPosts(postsSnapshot);
+        // Process posts
+        const posts = postsSnapshot.docs.map(doc => {
+            const post = doc.data();
+            post.id = doc.id;
+            post.user = profileUser;
+            return post;
+        });
+        
+        // Render posts
+        posts.forEach(post => {
+            const postEl = document.createElement('div');
+            postEl.className = 'post';
+            postEl.innerHTML = `
+                <div class="post-header">
+                    <div class="post-avatar" onclick="navigateToProfile('${post.user.username}')">
+                        ${post.user.photoURL ? `<img src="${post.user.photoURL}">` : post.user.displayName.charAt(0)}
+                    </div>
+                    <div class="post-user-info">
+                        <div class="post-user" onclick="navigateToProfile('${post.user.username}')">
+                            ${post.user.displayName}
+                            ${post.user.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+                        </div>
+                        <div class="post-username" onclick="navigateToProfile('${post.user.username}')">
+                            @${post.user.username}
+                        </div>
+                    </div>
+                </div>
+                <div class="post-content">${formatPostContent(post.content)}</div>
+                ${post.media && post.media.length ? createMediaContent(post.media) : ''}
+                <div class="post-time">${formatTime(post.timestamp?.toDate())}</div>
+            `;
+            profilePosts.appendChild(postEl);
+        });
 
+        document.getElementById('load-more-spinner').style.display = 'none';
+        
     } catch (error) {
-        console.error("Error loading posts:", error);
+        console.error("Error loading user posts:", error);
+        document.getElementById('load-more-spinner').style.display = 'none';
+        
         if (!loadMore) {
             profilePosts.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
+                        <i class="fas fa-exclamation-circle"></i>
                     </div>
                     <div class="empty-state-text">
-                        Failed to load posts. Please check your connection and try again.
+                        Error loading posts. Please try again later.
                     </div>
                 </div>
             `;
         }
-    } finally {
-        document.getElementById('load-more-spinner').style.display = 'none';
-        loadingMore = false;
     }
+    
+    loadingMore = false;
 }
 
-// Render posts to the DOM
-function renderPosts(postsSnapshot) {
-    postsSnapshot.docs.forEach(doc => {
-        const post = doc.data();
-        post.id = doc.id;
-        post.user = profileUser;
-        
-        const postEl = document.createElement('div');
-        postEl.className = 'post';
-        postEl.innerHTML = createPostHTML(post);
-        profilePosts.appendChild(postEl);
-    });
-}
-
-// Create HTML for a single post
-function createPostHTML(post) {
-    return `
-        <div class="post-header">
-            <div class="post-avatar" onclick="navigateToProfile('${post.user.username}')">
-                ${post.user.photoURL ? 
-                    `<img src="${post.user.photoURL}" alt="${post.user.displayName}">` : 
-                    post.user.displayName.charAt(0).toUpperCase()}
-            </div>
-            <div class="post-user-info">
-                <div class="post-user" onclick="navigateToProfile('${post.user.username}')">
-                    ${post.user.displayName}
-                    ${post.user.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-                </div>
-                <div class="post-username" onclick="navigateToProfile('${post.user.username}')">
-                    @${post.user.username}
-                </div>
-            </div>
-        </div>
-        <div class="post-content">${formatPostContent(post.content)}</div>
-        ${post.media && post.media.length ? createMediaContent(post.media) : ''}
-        <div class="post-time">${formatTime(post.timestamp?.toDate())}</div>
-    `;
-}
-
-// Format post content with links and mentions
+// Format post content
 function formatPostContent(text) {
     if (!text) return '';
     
-    // Convert URLs to clickable links
     text = text.replace(/(https?:\/\/[^\s]+)/g, url => {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        return `<a href="${url}" target="_blank">${url}</a>`;
     });
     
-    // Convert hashtags to links
     text = text.replace(/#(\w+)/g, '<a href="/hashtag/$1" class="hashtag">#$1</a>');
-    
-    // Convert mentions to profile links
     text = text.replace(/@(\w+)/g, '<a href="/profile/$1" class="mention">@$1</a>');
     
     return text;
 }
 
-// Format timestamp
+// Format time
 function formatTime(date) {
     if (!date) return '';
     const now = new Date();
@@ -2386,16 +2340,15 @@ function formatTime(date) {
     const minute = 60 * 1000;
     const hour = minute * 60;
     const day = hour * 24;
-    const week = day * 7;
     
     if (diff < minute) return 'Just now';
     if (diff < hour) return `${Math.floor(diff / minute)}m`;
     if (diff < day) return `${Math.floor(diff / hour)}h`;
-    if (diff < week) return `${Math.floor(diff / day)}d`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (diff < day * 7) return `${Math.floor(diff / day)}d`;
+    return date.toLocaleDateString();
 }
 
-// Create media content HTML
+// Create media content
 function createMediaContent(media) {
     if (!media || !media.length) return '';
     
@@ -2404,7 +2357,6 @@ function createMediaContent(media) {
             <div class="video-container">
                 <video controls>
                     <source src="${media[0].url}" type="video/mp4">
-                    Your browser does not support the video tag.
                 </video>
             </div>
         `;
@@ -2412,12 +2364,12 @@ function createMediaContent(media) {
     
     return `
         <div class="single-image-container">
-            <img src="${media[0].url}" loading="lazy" alt="Post image">
+            <img src="${media[0].url}" loading="lazy">
         </div>
     `;
 }
 
-// Load follow statistics
+// Load follow stats
 async function loadFollowStats(uid) {
     try {
         const [followersSnapshot, followingSnapshot] = await Promise.all([
@@ -2425,17 +2377,17 @@ async function loadFollowStats(uid) {
             db.collection('users').doc(uid).collection('following').get()
         ]);
         
-        if (followersCount) followersCount.textContent = followersSnapshot.size;
-        if (followingCount) followingCount.textContent = followingSnapshot.size;
+        followersCount.textContent = followersSnapshot.size;
+        followingCount.textContent = followingSnapshot.size;
         
     } catch (error) {
         console.error("Error loading follow stats:", error);
     }
 }
 
-// Check if current user is following profile user
+// Check follow status
 async function checkFollowStatus() {
-    if (!currentUser || !profileUser || currentUser.uid === profileUser.uid) return;
+    if (!currentUser || !profileUser) return;
     
     try {
         const followDoc = await db.collection('users')
@@ -2453,8 +2405,6 @@ async function checkFollowStatus() {
 
 // Update follow button UI
 function updateFollowButton() {
-    if (!followBtn) return;
-    
     if (isFollowing) {
         followBtn.innerHTML = '<i class="fas fa-check"></i> Following';
         followBtn.classList.add('following');
@@ -2464,9 +2414,9 @@ function updateFollowButton() {
     }
 }
 
-// Check if current user has blocked profile user
+// Check block status
 async function checkBlockStatus() {
-    if (!currentUser || !profileUser || currentUser.uid === profileUser.uid) return;
+    if (!currentUser || !profileUser) return;
     
     try {
         const blockDoc = await db.collection('users')
@@ -2485,8 +2435,6 @@ async function checkBlockStatus() {
 // Update block button UI
 function updateBlockButton() {
     const blockOption = document.querySelector('.more-menu-option:first-child');
-    if (!blockOption) return;
-    
     if (isBlocked) {
         blockOption.innerHTML = '<i class="fas fa-ban"></i> <span>Unblock</span>';
     } else {
@@ -2496,81 +2444,178 @@ function updateBlockButton() {
 
 // Setup UI for profile owner
 function setupUIForOwner() {
-    if (editProfileBtn) editProfileBtn.style.display = 'flex';
+    editProfileBtn.style.display = 'flex';
     if (messageBtn) messageBtn.style.display = 'none';
-    if (followBtn) followBtn.style.display = 'none';
-    if (moreBtn) moreBtn.style.display = 'none';
+    followBtn.style.display = 'none';
+    moreBtn.style.display = 'none';
 }
 
 // Setup UI for visitor
 function setupUIForVisitor() {
-    if (editProfileBtn) editProfileBtn.style.display = 'none';
+    editProfileBtn.style.display = 'none';
     if (messageBtn) messageBtn.style.display = 'inline-block';
-    if (followBtn) followBtn.style.display = 'inline-block';
-    if (moreBtn) moreBtn.style.display = 'inline-block';
+    followBtn.style.display = 'inline-block';
+    moreBtn.style.display = 'inline-block';
 }
 
-// Set up infinite scroll
-function setupInfiniteScroll() {
-    window.addEventListener('scroll', () => {
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-            if (profileUser && !loadingMore && !allPostsLoaded) {
-                loadUserPosts(profileUser.uid, true);
-            }
-        }
-    });
-}
-
-// Show error state
-function showErrorState(message = "An error occurred. Please try again.") {
-    hideSkeleton();
-    if (profilePosts) {
-        profilePosts.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="empty-state-text">
-                    ${message}
-                </div>
-                <button onclick="location.reload()" class="profile-btn primary" style="margin-top: 16px;">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-            </div>
-        `;
+// Follow button handler
+followBtn.addEventListener('click', async () => {
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
     }
-}
-
-// Hide skeleton loader
-function hideSkeleton() {
-    if (skeletonPreloader) {
-        skeletonPreloader.style.opacity = '0';
-        setTimeout(() => {
-            skeletonPreloader.style.display = 'none';
-        }, 300);
-    }
-}
-
-// Initialize the page when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Add a timeout fallback in case initialization hangs
-    const initTimeout = setTimeout(() => {
-        if (skeletonPreloader && skeletonPreloader.style.display !== 'none') {
-            showErrorState("Taking longer than expected to load. Please check your connection.");
+    
+    try {
+        if (isFollowing) {
+            await Promise.all([
+                db.collection('users')
+                    .doc(currentUser.uid)
+                    .collection('following')
+                    .doc(profileUser.uid)
+                    .delete(),
+                db.collection('users')
+                    .doc(profileUser.uid)
+                    .collection('followers')
+                    .doc(currentUser.uid)
+                    .delete()
+            ]);
+            
+            isFollowing = false;
+        } else {
+            await Promise.all([
+                db.collection('users')
+                    .doc(currentUser.uid)
+                    .collection('following')
+                    .doc(profileUser.uid)
+                    .set({
+                        followedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }),
+                db.collection('users')
+                    .doc(profileUser.uid)
+                    .collection('followers')
+                    .doc(currentUser.uid)
+                    .set({
+                        followedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    })
+            ]);
+            
+            isFollowing = true;
         }
-    }, 10000); // 10 seconds timeout
-
-    // Initialize the page
-    init().finally(() => {
-        clearTimeout(initTimeout);
-    });
+        
+        updateFollowButton();
+        loadFollowStats(profileUser.uid);
+    } catch (error) {
+        console.error("Error toggling follow:", error);
+        alert('Failed to update follow status');
+    }
 });
 
-// Global navigation function
+// Block button handler
+document.querySelector('.more-menu-option:first-child').addEventListener('click', async () => {
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        if (isBlocked) {
+            await db.collection('users')
+                .doc(currentUser.uid)
+                .collection('blocked')
+                .doc(profileUser.uid)
+                .delete();
+            
+            isBlocked = false;
+        } else {
+            await db.collection('users')
+                .doc(currentUser.uid)
+                .collection('blocked')
+                .doc(profileUser.uid)
+                .set({
+                    blockedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            
+            isBlocked = true;
+        }
+        
+        updateBlockButton();
+        
+        if (isBlocked) {
+            document.querySelector('.more-menu').classList.remove('show');
+            document.querySelector('.more-menu-overlay').classList.remove('show');
+            
+            alert(`You've blocked @${profileUser.username}. You won't see their content.`);
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+        }
+    } catch (error) {
+        console.error("Error toggling block:", error);
+        alert('Failed to update block status');
+    }
+});
+
+// Report button handler
+document.querySelector('.more-menu-option:last-child').addEventListener('click', async () => {
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    const reportOption = document.querySelector('.more-menu-option:last-child span');
+    reportOption.textContent = 'Report Sent';
+    
+    setTimeout(() => {
+        document.querySelector('.more-menu').classList.remove('show');
+        document.querySelector('.more-menu-overlay').classList.remove('show');
+        reportOption.textContent = 'Report';
+    }, 1500);
+    
+    try {
+        await db.collection('reports').add({
+            reporterId: currentUser.uid,
+            reportedUserId: profileUser.uid,
+            reportedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'pending'
+        });
+    } catch (error) {
+        console.error("Error sending report:", error);
+    }
+});
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', init);
+
+// Navigation function
 window.navigateToProfile = function(username) {
     window.location.href = `/profile/${username}`;
 };
 
+// More button click handler
+moreBtn.addEventListener('click', (e) => {
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    e.stopPropagation();
+    document.querySelector('.more-menu').classList.add('show');
+    document.querySelector('.more-menu-overlay').classList.add('show');
+});
+
+// Close menu when clicking overlay
+document.querySelector('.more-menu-overlay').addEventListener('click', () => {
+    document.querySelector('.more-menu').classList.remove('show');
+    document.querySelector('.more-menu-overlay').classList.remove('show');
+});
+
+// Close menu when clicking anywhere else
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.more-menu') && !e.target.closest('.more-btn')) {
+        document.querySelector('.more-menu').classList.remove('show');
+        document.querySelector('.more-menu-overlay').classList.remove('show');
+    }
+});
 </script>
+<script src="message.js"></script>
 </body>
 </html>
