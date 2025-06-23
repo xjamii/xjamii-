@@ -8,9 +8,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <style>
-        /* Your existing styles remain the same */
         body {
             margin: 0;
             padding: 0;
@@ -64,6 +64,7 @@
             font-size: 16px;
             box-sizing: border-box;
             background-color: #ECEFF1;
+            padding-right: 40px; /* Space for status icon */
         }
 
         .text-input:focus {
@@ -104,6 +105,12 @@
             border: 2px solid #000;
         }
 
+        .continue-button:disabled {
+            background-color: #cccccc;
+            border-color: #cccccc;
+            cursor: not-allowed;
+        }
+
         .error-message {
             color: #e74c3c;
             font-size: 14px;
@@ -118,7 +125,6 @@
             display: none;
         }
 
-        /* New styles for username suggestions */
         .suggestions-container {
             margin-top: 10px;
             display: flex;
@@ -139,230 +145,390 @@
             background-color: #BDBDBD;
         }
 
-        /* Add to your existing CSS */
-.checking-message {
-    color: #666;
-    font-size: 14px;
-    margin-top: 5px;
-    display: none;
-}
+        .checking-message {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
 
-.suggestion-pill.loading {
-    opacity: 0.7;
-    pointer-events: none;
-}
+        .suggestion-pill.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
 
-            .availability-badge {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin-left: 6px;
-    position: relative;
-}
+        /* Status indicator styles */
+        .input-status {
+            position: absolute;
+            right: 15px;
+            top: 42px;
+            font-size: 18px;
+            display: none;
+        }
 
-.availability-badge.checking {
-    background: #FFC107;
-    animation: pulse 1.5s infinite;
-}
+        .input-status.available {
+            color: #0095f6;
+            display: block;
+        }
 
-.availability-badge.available {
-    background: #4CAF50;
-}
+        .input-status.unavailable {
+            color: #ed4956;
+            display: block;
+        }
 
-.availability-badge.unavailable {
-    background: #F44336;
-}
+        .input-status.checking {
+            color: #999;
+            display: block;
+        }
 
-.availability-badge.error {
-    background: #9E9E9E;
-}
+        /* Username requirements */
+        .requirements {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #666;
+        }
 
-@keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
-}
+        .requirement {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
 
-.suggestion-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 12px;
-    margin: 4px;
-    background: #E0E0E0;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
+        .requirement i {
+            margin-right: 5px;
+            font-size: 12px;
+        }
 
-.suggestion-pill:hover {
-    background: #BDBDBD;
-}
+        .requirement.valid {
+            color: #0095f6;
+        }
 
-        .status-indicator {
-    margin-top: 5px;
-    font-size: 14px;
-}
-.available {
-    color: green;
-}
-.unavailable {
-    color: red;
-}
-.suggestion-pill.available {
-    border-color: green;
-}
-.suggestion-pill.unavailable {
-    border-color: red;
-}
+        /* Suggestion pills with status */
+        .suggestion-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            margin: 4px;
+            background: #f0f0f0;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
 
-        /* Add these styles to your CSS */
-.status-indicator {
-    margin-top: 5px;
-    font-size: 14px;
-    font-weight: bold;
-    display: none; /* Hidden by default */
-}
+        .suggestion-pill:hover {
+            background: #e0e0e0;
+        }
 
-.status-indicator.available {
-    color: #00a400;
-    display: block;
-}
+        .suggestion-pill .status-icon {
+            margin-left: 5px;
+            font-size: 12px;
+        }
 
-.status-indicator.unavailable {
-    color: #ff4d4d;
-    display: block;
-}
+        .suggestion-pill.available {
+            background-color: #e3f2fd;
+            color: #0095f6;
+        }
 
-.suggestion-pill.available {
-    border: 1px solid #00a400;
-    color: #00a400;
-}
+        .suggestion-pill.available .status-icon {
+            color: #0095f6;
+        }
 
-.suggestion-pill.unavailable {
-    border: 1px solid #ff4d4d;
-    color: #ff4d4d;
-}
+        .suggestion-pill.unavailable {
+            background-color: #ffebee;
+            color: #ed4956;
+        }
 
-.suggestions-container {
-    margin-top: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.suggestion-pill {
-    padding: 6px 12px;
-    border-radius: 20px;
-    background: #f0f0f0;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s;
-}
+        .suggestion-pill.unavailable .status-icon {
+            color: #ed4956;
+        }
     </style>
 </head>
 <body>
     <div class="main-content">
-    <div class="logo-container">
-        <img src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" alt="X-Aviation Logo" class="logo">
-    </div>
-    
-    <div class="form-container">
-        <h1 class="title">Create your username</h1>
+        <div class="logo-container">
+            <img src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" alt="X-Aviation Logo" class="logo">
+        </div>
         
-        <div class="input-container">
-            <label for="username" class="input-label">Username</label>
-            <input type="text" class="text-input" id="username" placeholder="Enter your username" autocapitalize="off" autocorrect="off">
-            <div id="username-status" class="status-indicator"></div>
-            <div class="error-message" id="username-error"></div>
-            <div class="success-message" id="username-success"></div>
-            <div class="suggestions-container" id="suggestions-container"></div>
+        <div class="form-container">
+            <h1 class="title">Create your username</h1>
+            
+            <div class="input-container">
+                <label for="username" class="input-label">Username</label>
+                <div style="position: relative;">
+                    <input type="text" class="text-input" id="username" placeholder="Enter your username" autocapitalize="off" autocorrect="off">
+                    <span class="input-status" id="input-status"></span>
+                </div>
+                <div class="error-message" id="username-error"></div>
+                <div class="success-message" id="username-success"></div>
+                <div class="checking-message" id="checking-message">Checking availability...</div>
+                
+                <div class="requirements">
+                    <div class="requirement" id="length-req">
+                        <i class="fas fa-circle"></i>
+                        <span>5-20 characters</span>
+                    </div>
+                    <div class="requirement" id="chars-req">
+                        <i class="fas fa-circle"></i>
+                        <span>Letters, numbers, underscores</span>
+                    </div>
+                    <div class="requirement" id="available-req">
+                        <i class="fas fa-circle"></i>
+                        <span>Available username</span>
+                    </div>
+                </div>
+                
+                <div class="suggestions-container" id="suggestions-container"></div>
+            </div>
         </div>
     </div>
-</div>
 
     <div class="button-footer">
-        <button class="continue-button" id="continue-btn">Continue</button>
+        <button class="continue-button" id="continue-btn" disabled>Continue</button>
     </div>
 
-<script>
-                                  // Firebase config
-const firebaseConfig = {
-    apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-    authDomain: "x-jamii.firebaseapp.com",
-    projectId: "x-jamii",
-    storageBucket: "x-jamii.appspot.com",
-    messagingSenderId: "927548667044",
-    appId: "1:927548667044:web:835e597909f51a2e4da231",
-    measurementId: "G-9S45DQ04HZ"
-};
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+            authDomain: "x-jamii.firebaseapp.com",
+            projectId: "x-jamii",
+            storageBucket: "x-jamii.appspot.com",
+            messagingSenderId: "927548667044",
+            appId: "1:927548667044:web:835e597909f51a2e4da231",
+            measurementId: "G-9S45DQ04HZ"
+        };
 
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const auth = firebase.auth();
-const db = firebase.firestore();
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-// DOM Elements
-const usernameInput = document.getElementById('username');
-const continueBtn = document.getElementById('continue-btn');
-
-// Generate username when page loads
-auth.onAuthStateChanged((user) => {
-    if (!user) {
-        window.location.href = 'signin.html';
-        return;
-    }
-
-    // Create username from name/email
-    const name = user.displayName || user.email.split('@')[0];
-    const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const randomNum = Math.floor(100 + Math.random() * 900);
-    const username = `${cleanName}${randomNum}`;
-    
-    usernameInput.value = username;
-});
-
-// Save username and redirect
-continueBtn.addEventListener('click', async () => {
-    const username = usernameInput.value.trim().toLowerCase();
-    const user = auth.currentUser;
-
-    if (!user || !username) {
-        console.error("No user or username!");
-        window.location.href = 'index.html'; // Redirect anyway
-        return;
-    }
-
-    try {
-        // Save to Firestore
-        const batch = db.batch();
+        // DOM Elements
+        const usernameInput = document.getElementById('username');
+        const continueBtn = document.getElementById('continue-btn');
+        const inputStatus = document.getElementById('input-status');
+        const usernameError = document.getElementById('username-error');
+        const usernameSuccess = document.getElementById('username-success');
+        const checkingMessage = document.getElementById('checking-message');
+        const suggestionsContainer = document.getElementById('suggestions-container');
         
-        // 1. Reserve username in 'usernames' collection
-        const usernameRef = db.collection('usernames').doc(username);
-        batch.set(usernameRef, {
-            userId: user.uid,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        // Requirement elements
+        const lengthReq = document.getElementById('length-req');
+        const charsReq = document.getElementById('chars-req');
+        const availableReq = document.getElementById('available-req');
+
+        // Debounce function to limit how often we check username availability
+        let debounceTimer;
+        function debounce(func, delay) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(func, delay);
+        }
+
+        // Check if username is valid
+        function isValidUsername(username) {
+            const regex = /^[a-zA-Z0-9_]{5,20}$/;
+            return regex.test(username);
+        }
+
+        // Check username availability in Firestore
+        async function checkUsernameAvailability(username) {
+            if (!username || !isValidUsername(username)) {
+                return false;
+            }
+
+            try {
+                const doc = await db.collection('usernames').doc(username).get();
+                return !doc.exists;
+            } catch (error) {
+                console.error("Error checking username:", error);
+                return false;
+            }
+        }
+
+        // Generate alternative username suggestions
+        function generateSuggestions(base) {
+            const suggestions = [];
+            
+            // Clean the base name
+            const cleanBase = base.toLowerCase().replace(/[^a-z0-9_]/g, '');
+            if (!cleanBase) return suggestions;
+            
+            // Generate variations
+            suggestions.push(`${cleanBase}${Math.floor(100 + Math.random() * 900)}`);
+            suggestions.push(`${cleanBase}_${Math.floor(10 + Math.random() * 90)}`);
+            suggestions.push(`${cleanBase}${String.fromCharCode(97 + Math.floor(Math.random() * 26))}`);
+            suggestions.push(`the_${cleanBase}`);
+            suggestions.push(`${cleanBase}${Math.floor(1000 + Math.random() * 9000)}`);
+            
+            return suggestions.slice(0, 5); // Return max 5 suggestions
+        }
+
+        // Update UI based on username validation
+        async function updateUsernameStatus(username) {
+            // Reset UI
+            inputStatus.className = 'input-status checking';
+            inputStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+            checkingMessage.style.display = 'block';
+            usernameError.style.display = 'none';
+            usernameSuccess.style.display = 'none';
+            continueBtn.disabled = true;
+            
+            // Hide suggestions while checking
+            suggestionsContainer.innerHTML = '';
+            
+            // Validate username format first
+            const validLength = username.length >= 5 && username.length <= 20;
+            const validChars = /^[a-zA-Z0-9_]+$/.test(username);
+            
+            // Update requirement indicators
+            lengthReq.className = validLength ? 'requirement valid' : 'requirement';
+            lengthReq.innerHTML = `<i class="fas ${validLength ? 'fa-check' : 'fa-circle'}"></i><span>5-20 characters</span>`;
+            
+            charsReq.className = validChars ? 'requirement valid' : 'requirement';
+            charsReq.innerHTML = `<i class="fas ${validChars ? 'fa-check' : 'fa-circle'}"></i><span>Letters, numbers, underscores</span>`;
+            
+            if (!username) {
+                inputStatus.className = 'input-status';
+                inputStatus.innerHTML = '';
+                checkingMessage.style.display = 'none';
+                return;
+            }
+            
+            if (!validLength || !validChars) {
+                inputStatus.className = 'input-status unavailable';
+                inputStatus.innerHTML = '<i class="fas fa-times"></i>';
+                checkingMessage.style.display = 'none';
+                usernameError.style.display = 'block';
+                usernameError.textContent = 'Username must be 5-20 characters and only contain letters, numbers, and underscores.';
+                return;
+            }
+            
+            // Check availability
+            const isAvailable = await checkUsernameAvailability(username);
+            
+            // Update UI based on availability
+            if (isAvailable) {
+                inputStatus.className = 'input-status available';
+                inputStatus.innerHTML = '<i class="fas fa-check"></i>';
+                usernameSuccess.style.display = 'block';
+                usernameSuccess.textContent = 'Username is available!';
+                continueBtn.disabled = false;
+                
+                availableReq.className = 'requirement valid';
+                availableReq.innerHTML = '<i class="fas fa-check"></i><span>Available username</span>';
+            } else {
+                inputStatus.className = 'input-status unavailable';
+                inputStatus.innerHTML = '<i class="fas fa-times"></i>';
+                usernameError.style.display = 'block';
+                usernameError.textContent = 'This username is not available.';
+                
+                availableReq.className = 'requirement';
+                availableReq.innerHTML = '<i class="fas fa-circle"></i><span>Available username</span>';
+                
+                // Generate and show suggestions
+                const suggestions = generateSuggestions(username);
+                showSuggestions(suggestions);
+            }
+            
+            checkingMessage.style.display = 'none';
+        }
+
+        // Show username suggestions
+        async function showSuggestions(suggestions) {
+            suggestionsContainer.innerHTML = '';
+            
+            for (const suggestion of suggestions) {
+                const pill = document.createElement('div');
+                pill.className = 'suggestion-pill loading';
+                pill.textContent = suggestion;
+                pill.innerHTML += '<span class="status-icon"><i class="fas fa-circle-notch fa-spin"></i></span>';
+                suggestionsContainer.appendChild(pill);
+                
+                // Check availability for each suggestion
+                const isAvailable = await checkUsernameAvailability(suggestion);
+                
+                // Update pill based on availability
+                pill.className = isAvailable ? 'suggestion-pill available' : 'suggestion-pill unavailable';
+                pill.innerHTML = suggestion + `<span class="status-icon"><i class="fas ${isAvailable ? 'fa-check' : 'fa-times'}"></i></span>`;
+                
+                // Add click handler to fill input with suggestion
+                pill.addEventListener('click', () => {
+                    usernameInput.value = suggestion;
+                    updateUsernameStatus(suggestion);
+                });
+            }
+        }
+
+        // Event listeners
+        usernameInput.addEventListener('input', () => {
+            const username = usernameInput.value.trim();
+            debounce(() => updateUsernameStatus(username), 500);
         });
-        
-        // 2. Update user document with username
-        const userRef = db.collection('users').doc(user.uid);
-        batch.update(userRef, {
-            username: username,
-            profileComplete: true
+
+        // Generate username when page loads
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'signin.html';
+                return;
+            }
+
+            // Create username from name/email
+            const name = user.displayName || user.email.split('@')[0];
+            const cleanName = name.toLowerCase().replace(/[^a-z0-9_]/g, '');
+            const randomNum = Math.floor(100 + Math.random() * 900);
+            const username = `${cleanName}${randomNum}`;
+            
+            usernameInput.value = username;
+            updateUsernameStatus(username);
         });
-        
-        await batch.commit();
-        console.log("Username saved successfully!");
-    } catch (error) {
-        console.error("Error saving username:", error);
-    } finally {
-        // Redirect no matter what
-        window.location.href = 'index.html';
-    }
-});
-        </script>
+
+        // Save username and redirect
+        continueBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim().toLowerCase();
+            const user = auth.currentUser;
+
+            if (!user || !username) {
+                console.error("No user or username!");
+                return;
+            }
+
+            // Double-check availability before proceeding
+            const isAvailable = await checkUsernameAvailability(username);
+            if (!isAvailable) {
+                usernameError.style.display = 'block';
+                usernameError.textContent = 'This username is no longer available. Please choose another one.';
+                return;
+            }
+
+            try {
+                // Save to Firestore
+                const batch = db.batch();
+                
+                // 1. Reserve username in 'usernames' collection
+                const usernameRef = db.collection('usernames').doc(username);
+                batch.set(usernameRef, {
+                    userId: user.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // 2. Update user document with username
+                const userRef = db.collection('users').doc(user.uid);
+                batch.update(userRef, {
+                    username: username,
+                    profileComplete: true
+                });
+                
+                await batch.commit();
+                console.log("Username saved successfully!");
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error("Error saving username:", error);
+                usernameError.style.display = 'block';
+                usernameError.textContent = 'An error occurred. Please try again.';
+            }
+        });
+    </script>
 </body>
 </html>
-         
