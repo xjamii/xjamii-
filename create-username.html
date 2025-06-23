@@ -250,224 +250,225 @@
     </div>
 
     <script>
-        // Firebase config
-        const firebaseConfig = {
-            apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-            authDomain: "x-jamii.firebaseapp.com",
-            projectId: "x-jamii",
-            storageBucket: "x-jamii.appspot.com",
-            messagingSenderId: "927548667044",
-            appId: "1:927548667044:web:835e597909f51a2e4da231",
-            measurementId: "G-9S45DQ04HZ"
-        };
+                        
+                 // Firebase config
+const firebaseConfig = {
+    apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
+    authDomain: "x-jamii.firebaseapp.com",
+    projectId: "x-jamii",
+    storageBucket: "x-jamii.appspot.com",
+    messagingSenderId: "927548667044",
+    appId: "1:927548667044:web:835e597909f51a2e4da231",
+    measurementId: "G-9S45DQ04HZ"
+};
 
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+// Initialize Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// DOM Elements
+const usernameInput = document.getElementById('username');
+const continueBtn = document.getElementById('continue-btn');
+const inputStatus = document.getElementById('input-status');
+const usernameError = document.getElementById('username-error');
+const usernameSuccess = document.getElementById('username-success');
+const checkingMessage = document.getElementById('checking-message');
+const suggestionsContainer = document.getElementById('suggestions-container');
+
+// Debounce function to limit how often we check username availability
+let debounceTimer;
+function debounce(func, delay) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(func, delay);
+}
+
+// Check if username is valid
+function isValidUsername(username) {
+    const regex = /^[a-zA-Z0-9_]{5,20}$/;
+    return regex.test(username);
+}
+
+// Check username availability in Firestore
+async function checkUsernameAvailability(username) {
+    if (!username || !isValidUsername(username)) {
+        return false;
+    }
+
+    try {
+        const doc = await db.collection('usernames').doc(username).get();
+        return !doc.exists;
+    } catch (error) {
+        console.error("Error checking username:", error);
+        return false;
+    }
+}
+
+// Generate alternative username suggestions
+function generateSuggestions(base) {
+    const suggestions = [];
+    
+    // Clean the base name
+    const cleanBase = base.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (!cleanBase) return suggestions;
+    
+    // Generate variations
+    suggestions.push(`${cleanBase}${Math.floor(100 + Math.random() * 900)}`);
+    suggestions.push(`${cleanBase}_${Math.floor(10 + Math.random() * 90)}`);
+    suggestions.push(`${cleanBase}${String.fromCharCode(97 + Math.floor(Math.random() * 26))}`);
+    suggestions.push(`the_${cleanBase}`);
+    suggestions.push(`${cleanBase}${Math.floor(1000 + Math.random() * 9000)}`);
+    
+    return suggestions.slice(0, 5); // Return max 5 suggestions
+}
+
+// Update UI based on username validation
+async function updateUsernameStatus(username) {
+    // Show spinner while checking
+    inputStatus.className = 'input-status checking';
+    inputStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+    checkingMessage.style.display = 'none';
+    usernameError.style.display = 'none';
+    usernameSuccess.style.display = 'none';
+    continueBtn.disabled = true;
+    
+    // Hide suggestions while checking
+    suggestionsContainer.innerHTML = '';
+    
+    if (!username) {
+        inputStatus.className = 'input-status';
+        inputStatus.innerHTML = '';
+        return;
+    }
+    
+    // Validate username format
+    const isValid = isValidUsername(username);
+    
+    // Check availability if format is valid
+    if (isValid) {
+        const isAvailable = await checkUsernameAvailability(username);
+        
+        // Update UI based on availability
+        if (isAvailable) {
+            inputStatus.className = 'input-status available';
+            inputStatus.innerHTML = '<i class="fas fa-check"></i>';
+            usernameSuccess.style.display = 'block';
+            usernameSuccess.textContent = 'Username is available!';
+            continueBtn.disabled = false;
+        } else {
+            inputStatus.className = 'input-status unavailable';
+            inputStatus.innerHTML = '<i class="fas fa-times"></i>';
+            usernameError.style.display = 'block';
+            usernameError.textContent = 'This username is not available.';
+            
+            // Generate and show suggestions
+            const suggestions = generateSuggestions(username);
+            showSuggestions(suggestions);
         }
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+    } else {
+        inputStatus.className = 'input-status unavailable';
+        inputStatus.innerHTML = '<i class="fas fa-times"></i>';
+        usernameError.style.display = 'block';
+        usernameError.textContent = 'Username must be 5-20 characters and only contain letters, numbers, and underscores.';
+    }
+}
 
-        // DOM Elements
-        const usernameInput = document.getElementById('username');
-        const continueBtn = document.getElementById('continue-btn');
-        const inputStatus = document.getElementById('input-status');
-        const usernameError = document.getElementById('username-error');
-        const usernameSuccess = document.getElementById('username-success');
-        const checkingMessage = document.getElementById('checking-message');
-        const suggestionsContainer = document.getElementById('suggestions-container');
-
-        // Debounce function to limit how often we check username availability
-        let debounceTimer;
-        function debounce(func, delay) {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(func, delay);
-        }
-
-        // Check if username is valid
-        function isValidUsername(username) {
-            const regex = /^[a-zA-Z0-9_]{5,20}$/;
-            return regex.test(username);
-        }
-
-        // Check username availability in Firestore
-        async function checkUsernameAvailability(username) {
-            if (!username || !isValidUsername(username)) {
-                return false;
-            }
-
-            try {
-                const doc = await db.collection('usernames').doc(username).get();
-                return !doc.exists;
-            } catch (error) {
-                console.error("Error checking username:", error);
-                return false;
-            }
-        }
-
-        // Generate alternative username suggestions
-        function generateSuggestions(base) {
-            const suggestions = [];
-            
-            // Clean the base name
-            const cleanBase = base.toLowerCase().replace(/[^a-z0-9_]/g, '');
-            if (!cleanBase) return suggestions;
-            
-            // Generate variations
-            suggestions.push(`${cleanBase}${Math.floor(100 + Math.random() * 900)}`);
-            suggestions.push(`${cleanBase}_${Math.floor(10 + Math.random() * 90)}`);
-            suggestions.push(`${cleanBase}${String.fromCharCode(97 + Math.floor(Math.random() * 26))}`);
-            suggestions.push(`the_${cleanBase}`);
-            suggestions.push(`${cleanBase}${Math.floor(1000 + Math.random() * 9000)}`);
-            
-            return suggestions.slice(0, 5); // Return max 5 suggestions
-        }
-
-        // Update UI based on username validation
-        async function updateUsernameStatus(username) {
-            // Show spinner while checking
-            inputStatus.className = 'input-status checking';
-            inputStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-            checkingMessage.style.display = 'none';
-            usernameError.style.display = 'none';
-            usernameSuccess.style.display = 'none';
-            continueBtn.disabled = true;
-            
-            // Hide suggestions while checking
-            suggestionsContainer.innerHTML = '';
-            
-            if (!username) {
-                inputStatus.className = 'input-status';
-                inputStatus.innerHTML = '';
-                return;
-            }
-            
-            // Validate username format
-            const isValid = isValidUsername(username);
-            
-            // Check availability if format is valid
-            if (isValid) {
-                const isAvailable = await checkUsernameAvailability(username);
-                
-                // Update UI based on availability
-                if (isAvailable) {
-                    inputStatus.className = 'input-status available';
-                    inputStatus.innerHTML = '<i class="fas fa-check"></i>';
-                    usernameSuccess.style.display = 'block';
-                    usernameSuccess.textContent = 'Username is available!';
-                    continueBtn.disabled = false;
-                } else {
-                    inputStatus.className = 'input-status unavailable';
-                    inputStatus.innerHTML = '<i class="fas fa-times"></i>';
-                    usernameError.style.display = 'block';
-                    usernameError.textContent = 'This username is not available.';
-                    
-                    // Generate and show suggestions
-                    const suggestions = generateSuggestions(username);
-                    showSuggestions(suggestions);
-                }
-            } else {
-                inputStatus.className = 'input-status unavailable';
-                inputStatus.innerHTML = '<i class="fas fa-times"></i>';
-                usernameError.style.display = 'block';
-                usernameError.textContent = 'Username must be 5-20 characters and only contain letters, numbers, and underscores.';
-            }
-        }
-
-        // Show username suggestions
-        async function showSuggestions(suggestions) {
-            suggestionsContainer.innerHTML = '';
-            
-            for (const suggestion of suggestions) {
-                const pill = document.createElement('div');
-                pill.className = 'suggestion-pill loading';
-                pill.textContent = suggestion;
-                pill.innerHTML += '<span class="status-icon"><i class="fas fa-circle-notch fa-spin"></i></span>';
-                suggestionsContainer.appendChild(pill);
-                
-                // Check availability for each suggestion
-                const isAvailable = await checkUsernameAvailability(suggestion);
-                
-                // Update pill based on availability
-                pill.className = isAvailable ? 'suggestion-pill available' : 'suggestion-pill unavailable';
-                pill.innerHTML = suggestion + `<span class="status-icon"><i class="fas ${isAvailable ? 'fa-check' : 'fa-times'}"></i></span>`;
-                
-                // Add click handler to fill input with suggestion
-                pill.addEventListener('click', () => {
-                    usernameInput.value = suggestion;
-                    updateUsernameStatus(suggestion);
-                });
-            }
-        }
-
-        // Event listeners
-        usernameInput.addEventListener('input', () => {
-            const username = usernameInput.value.trim();
-            debounce(() => updateUsernameStatus(username), 500);
+// Show username suggestions
+async function showSuggestions(suggestions) {
+    suggestionsContainer.innerHTML = '';
+    
+    for (const suggestion of suggestions) {
+        const pill = document.createElement('div');
+        pill.className = 'suggestion-pill loading';
+        pill.textContent = suggestion;
+        pill.innerHTML += '<span class="status-icon"><i class="fas fa-circle-notch fa-spin"></i></span>';
+        suggestionsContainer.appendChild(pill);
+        
+        // Check availability for each suggestion
+        const isAvailable = await checkUsernameAvailability(suggestion);
+        
+        // Update pill based on availability
+        pill.className = isAvailable ? 'suggestion-pill available' : 'suggestion-pill unavailable';
+        pill.innerHTML = suggestion + `<span class="status-icon"><i class="fas ${isAvailable ? 'fa-check' : 'fa-times'}"></i></span>`;
+        
+        // Add click handler to fill input with suggestion
+        pill.addEventListener('click', () => {
+            usernameInput.value = suggestion;
+            updateUsernameStatus(suggestion);
         });
+    }
+}
 
-        // Generate username when page loads
-        auth.onAuthStateChanged(async (user) => {
-            if (!user) {
-                window.location.href = 'signin.html';
-                return;
-            }
+// Event listeners
+usernameInput.addEventListener('input', () => {
+    const username = usernameInput.value.trim();
+    debounce(() => updateUsernameStatus(username), 500);
+});
 
-            // Create username from name/email
-            const name = user.displayName || user.email.split('@')[0];
-            const cleanName = name.toLowerCase().replace(/[^a-z0-9_]/g, '');
-            const randomNum = Math.floor(100 + Math.random() * 900);
-            const username = `${cleanBase}${randomNum}`;
-            
-            usernameInput.value = username;
-            updateUsernameStatus(username);
+// Generate username when page loads
+auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+        window.location.href = 'signin.html';
+        return;
+    }
+
+    // Create username from name/email
+    const name = user.displayName || user.email.split('@')[0];
+    const cleanName = name.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const randomNum = Math.floor(100 + Math.random() * 900);
+    const username = `${cleanName}${randomNum}`;
+    
+    usernameInput.value = username;
+    updateUsernameStatus(username);
+});
+
+// Save username and redirect
+continueBtn.addEventListener('click', async () => {
+    const username = usernameInput.value.trim().toLowerCase();
+    const user = auth.currentUser;
+
+    if (!user || !username) {
+        console.error("No user or username!");
+        return;
+    }
+
+    // Double-check availability before proceeding
+    const isAvailable = await checkUsernameAvailability(username);
+    if (!isAvailable) {
+        usernameError.style.display = 'block';
+        usernameError.textContent = 'This username is no longer available. Please choose another one.';
+        return;
+    }
+
+    try {
+        // Save to Firestore
+        const batch = db.batch();
+        
+        // 1. Reserve username in 'usernames' collection
+        const usernameRef = db.collection('usernames').doc(username);
+        batch.set(usernameRef, {
+            userId: user.uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-
-        // Save username and redirect
-        continueBtn.addEventListener('click', async () => {
-            const username = usernameInput.value.trim().toLowerCase();
-            const user = auth.currentUser;
-
-            if (!user || !username) {
-                console.error("No user or username!");
-                return;
-            }
-
-            // Double-check availability before proceeding
-            const isAvailable = await checkUsernameAvailability(username);
-            if (!isAvailable) {
-                usernameError.style.display = 'block';
-                usernameError.textContent = 'This username is no longer available. Please choose another one.';
-                return;
-            }
-
-            try {
-                // Save to Firestore
-                const batch = db.batch();
-                
-                // 1. Reserve username in 'usernames' collection
-                const usernameRef = db.collection('usernames').doc(username);
-                batch.set(usernameRef, {
-                    userId: user.uid,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // 2. Update user document with username
-                const userRef = db.collection('users').doc(user.uid);
-                batch.update(userRef, {
-                    username: username,
-                    profileComplete: true
-                });
-                
-                await batch.commit();
-                console.log("Username saved successfully!");
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error("Error saving username:", error);
-                usernameError.style.display = 'block';
-                usernameError.textContent = 'An error occurred. Please try again.';
-            }
+        
+        // 2. Update user document with username
+        const userRef = db.collection('users').doc(user.uid);
+        batch.update(userRef, {
+            username: username,
+            profileComplete: true
         });
+        
+        await batch.commit();
+        console.log("Username saved successfully!");
+        window.location.href = 'index.html';
+    } catch (error) {
+        console.error("Error saving username:", error);
+        usernameError.style.display = 'block';
+        usernameError.textContent = 'An error occurred. Please try again.';
+    }
+});
     </script>
 </body>
 </html>
