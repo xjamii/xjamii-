@@ -7,12 +7,12 @@
     <title>Login - X-Aviation</title>
     <!-- Firebase v8 SDKs -->
  <link rel="stylesheet" href="style.css" />
-<!-- Firebase v11 Compat SDKs -->
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-analytics-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.1/firebase-storage-compat.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    // ✅ Initialize Supabase
+    const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey); </script>
 <style>
     
         body {
@@ -346,23 +346,8 @@
         </button>
     </div>
 
-            
-                        <script>
-  // Firebase Config
-  const firebaseConfig = {
-    apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-    authDomain: "x-jamii.firebaseapp.com",
-    projectId: "x-jamii",
-    storageBucket: "x-jamii.appspot.com",
-    messagingSenderId: "927548667044",
-    appId: "1:927548667044:web:835e597909f51a2e4da231",
-    measurementId: "G-9S45DQ04HZ"
-  };
-
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-
+            <script>
+ 
   // Preloader delay
   setTimeout(() => {
     document.querySelector('.preloader').style.display = 'none';
@@ -387,10 +372,10 @@
     btn.querySelector('.btn-text').style.display = 'none';
     btn.querySelector('.spinner').style.display = 'block';
     btn.disabled = true;
-    setTimeout(() => window.location.href = 'welcome.html', 300);
+    setTimeout(() => (window.location.href = 'welcome.html'), 300);
   });
 
-  // Hide input errors on change
+  // Input validation handlers
   ['email', 'password'].forEach(id => {
     document.getElementById(id).addEventListener('input', () => {
       document.getElementById(`${id}-error`).style.display = 'none';
@@ -399,12 +384,14 @@
   });
 
   // Login handler
-  document.getElementById('login-btn').addEventListener('click', function () {
+  document.getElementById('login-btn').addEventListener('click', async function () {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value.trim();
+
     const emailError = document.getElementById('email-error');
     const passwordError = document.getElementById('password-error');
     const mainError = document.getElementById('main-error');
+
     const btn = this;
     const spinner = btn.querySelector('.spinner');
     const btnText = btn.querySelector('.btn-text');
@@ -439,35 +426,31 @@
     spinner.style.display = 'block';
     btn.disabled = true;
 
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => window.location.href = 'index.html')
-      .catch((error) => {
-        btnText.style.display = 'inline';
-        spinner.style.display = 'none';
-        btn.disabled = false;
+    try {
+      // Sign in with Supabase
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-        switch (error.code) {
-          case 'auth/wrong-password':
-            mainError.textContent = 'Incorrect password. Please try again.';
-            break;
-          case 'auth/user-not-found':
-            mainError.textContent = 'No account found with this email.';
-            break;
-          case 'auth/invalid-email':
-            mainError.textContent = 'Invalid email address.';
-            break;
-          case 'auth/network-request-failed':
-            mainError.textContent = 'Network error. Please check your internet.';
-            break;
-          case 'auth/too-many-requests':
-            mainError.textContent = 'Too many attempts. Try again later.';
-            break;
-          default:
-            mainError.textContent = 'Login failed. Please try again.';
+      if (error) throw error;
+
+      window.location.href = 'index.html';
+    } catch (error) {
+      btnText.style.display = 'inline';
+      spinner.style.display = 'none';
+      btn.disabled = false;
+
+      // Error handling
+      let message = 'Login failed. Please try again.';
+      if (error.message) {
+        if (error.message.includes('Invalid login credentials')) {
+          message = 'Incorrect email or password.';
+        } else if (error.message.includes('network')) {
+          message = 'Network error. Please check your connection.';
         }
+      }
 
-        mainError.style.display = 'block';
-      });
+      mainError.textContent = message;
+      mainError.style.display = 'block';
+    }
   });
 
   // Toggle password visibility
