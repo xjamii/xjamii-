@@ -219,6 +219,32 @@
         .suggestion-pill.unavailable .status-icon {
             color: #ed4956;
         }
+
+       /* Remove the old positioning and add these new styles */
+.input-status {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    display: none;
+    pointer-events: none; /* Prevents interaction with the icon */
+}
+
+/* Adjust the input padding to ensure text doesn't overlap the icon */
+.text-input {
+    padding-right: 40px !important; /* Make sure this is larger than the icon */
+}
+
+/* Container needs relative positioning */
+.input-container {
+    position: relative;
+}
+
+/* Make sure the input container has proper spacing */
+.input-container div {
+    position: relative;
+} 
     </style>
 </head>
 <body>
