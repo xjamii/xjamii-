@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="theme-color" content="#ECEFF1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - X-Aviation</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-   
+    <title>Sign Up - Xjamii</title>
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    // ✅ Initialize Supabase
+    const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
     <style>
         body {
             margin: 0;
@@ -297,173 +300,150 @@
         </button>
     </div>
 <script>
-                // Firebase configuration - KEEP EXISTING
-const firebaseConfig = {
-    apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-    authDomain: "x-jamii.firebaseapp.com",
-    projectId: "x-jamii",
-    storageBucket: "x-jamii.appspot.com",
-    messagingSenderId: "927548667044",
-    appId: "1:927548667044:web:835e597909f51a2e4da231",
-    measurementId: "G-9S45DQ04HZ"
-};
+    // DOM Elements - KEEP EXISTING STRUCTURE
+    const continueBtn = document.getElementById('continue-btn');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const nameError = document.getElementById('name-error');
+    const emailError = document.getElementById('email-error');
 
-// Initialize Firebase - KEEP EXISTING
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const auth = firebase.auth();
-
-// DOM Elements - KEEP EXISTING STRUCTURE
-const continueBtn = document.getElementById('continue-btn');
-const nameInput = document.getElementById('name');
-const emailInput = document.getElementById('email');
-const nameError = document.getElementById('name-error');
-const emailError = document.getElementById('email-error');
-
-// Improved validation functions
-function validateName(name) {
-    name = name.trim();
-    if (!name) return { valid: false, message: 'Name is required' };
-    if (name.length < 2) return { valid: false, message: 'Name too short (min 2 chars)' };
-    if (name.length > 50) return { valid: false, message: 'Name too long (max 50 chars)' };
-    if (/[^a-zA-Z \-']/.test(name)) return { valid: false, message: 'Invalid characters' };
-    return { valid: true };
-}
-
-function validateEmail(email) {
-    email = email.trim().toLowerCase();
-    if (!email) return { valid: false, message: 'Email is required' };
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return { valid: false, message: 'Invalid email format' };
+    // Improved validation functions
+    function validateName(name) {
+        name = name.trim();
+        if (!name) return { valid: false, message: 'Name is required' };
+        if (name.length < 2) return { valid: false, message: 'Name too short (min 2 chars)' };
+        if (name.length > 50) return { valid: false, message: 'Name too long (max 50 chars)' };
+        if (/[^a-zA-Z \-']/.test(name)) return { valid: false, message: 'Invalid characters' };
+        return { valid: true };
     }
-    return { valid: true };
-}
 
-// Real-time validation with debounce
-let emailCheckTimeout;
-emailInput.addEventListener('input', () => {
-    clearTimeout(emailCheckTimeout);
-    emailCheckTimeout = setTimeout(checkEmailAvailability, 500);
-});
-
-nameInput.addEventListener('input', () => {
-    const validation = validateName(nameInput.value);
-    nameError.textContent = validation.valid ? '' : validation.message;
-    nameError.style.display = validation.valid ? 'none' : 'block';
-});
-
-// Improved email availability check
-async function checkEmailAvailability() {
-    const email = emailInput.value.trim().toLowerCase();
-    const validation = validateEmail(email);
-    
-    if (!validation.valid) {
-        emailError.textContent = validation.message;
-        emailError.style.display = 'block';
-        return false;
+    function validateEmail(email) {
+        email = email.trim().toLowerCase();
+        if (!email) return { valid: false, message: 'Email is required' };
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return { valid: false, message: 'Invalid email format' };
+        }
+        return { valid: true };
     }
-    
-    try {
-        const methods = await auth.fetchSignInMethodsForEmail(email);
-        if (methods.length > 0) {
-            emailError.textContent = 'Email already in use';
+
+    let emailCheckTimeout;
+    emailInput.addEventListener('input', () => {
+        clearTimeout(emailCheckTimeout);
+        emailCheckTimeout = setTimeout(checkEmailAvailability, 500);
+    });
+
+    nameInput.addEventListener('input', () => {
+        const validation = validateName(nameInput.value);
+        nameError.textContent = validation.valid ? '' : validation.message;
+        nameError.style.display = validation.valid ? 'none' : 'block';
+    });
+
+    async function checkEmailAvailability() {
+        const email = emailInput.value.trim().toLowerCase();
+        const validation = validateEmail(email);
+
+        if (!validation.valid) {
+            emailError.textContent = validation.message;
             emailError.style.display = 'block';
             return false;
         }
-        emailError.style.display = 'none';
-        return true;
-    } catch (error) {
-        console.error("Email check error:", error);
-        emailError.textContent = 'Error checking email. Try again.';
-        emailError.style.display = 'block';
-        return false;
-    }
-}
 
-// Continue button handler - IMPROVED
-continueBtn.addEventListener('click', async function(e) {
-    e.preventDefault();
-    
-    // UI state
-    const btn = this;
-    const spinner = btn.querySelector('.spinner');
-    const btnText = btn.querySelector('.btn-text');
-    
-    // Validate inputs
-    const nameValidation = validateName(nameInput.value);
-    const emailValidation = validateEmail(emailInput.value);
-    
-    if (!nameValidation.valid) {
-        nameError.textContent = nameValidation.message;
-        nameError.style.display = 'block';
-        return;
-    }
-    
-    if (!emailValidation.valid) {
-        emailError.textContent = emailValidation.message;
-        emailError.style.display = 'block';
-        return;
-    }
-    
-    // Show loading state
-    btnText.style.display = 'none';
-    spinner.style.display = 'block';
-    btn.disabled = true;
-    
-    // Final email availability check
-    try {
-        const isEmailAvailable = await checkEmailAvailability();
-        if (!isEmailAvailable) {
-            throw new Error('Email not available');
-        }
-        
-        // Store data for next steps
-        localStorage.setItem('signup-name', nameInput.value.trim());
-        localStorage.setItem('signup-email', emailInput.value.trim().toLowerCase());
-        
-        // Redirect to password page
-        window.location.href = 'password.html';
-        
-    } catch (error) {
-        console.error("Continue error:", error);
-        btnText.style.display = 'block';
-        spinner.style.display = 'none';
-        btn.disabled = false;
-        
-        if (error.message.includes('network')) {
-            emailError.textContent = 'Network error. Please check connection.';
+        try {
+            const { data, error } = await supabase
+                .from('Profiles') // <-- Make sure this matches your actual table name
+                .select('id')
+                .eq('email', email);
+
+            if (error) throw error;
+            if (data && data.length > 0) {
+                emailError.textContent = 'Email already in use';
+                emailError.style.display = 'block';
+                return false;
+            }
+            emailError.style.display = 'none';
+            return true;
+        } catch (error) {
+            console.error('Email check error:', error);
+            emailError.textContent = 'Error checking email. Try again.';
             emailError.style.display = 'block';
+            return false;
         }
     }
-});
 
-// Preloader logic - KEEP EXISTING
-window.addEventListener('load', function() {
-    const navType = performance.getEntriesByType("navigation")[0].type;
-    if (navType === 'back_forward') {
-        document.querySelector('.preloader').style.display = 'none';
-        document.querySelector('.main-content').style.display = 'block';
-    } else {
-        setTimeout(function() {
+    continueBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+
+        const btn = this;
+        const spinner = btn.querySelector('.spinner');
+        const btnText = btn.querySelector('.btn-text');
+
+        const nameValidation = validateName(nameInput.value);
+        const emailValidation = validateEmail(emailInput.value);
+
+        if (!nameValidation.valid) {
+            nameError.textContent = nameValidation.message;
+            nameError.style.display = 'block';
+            return;
+        }
+
+        if (!emailValidation.valid) {
+            emailError.textContent = emailValidation.message;
+            emailError.style.display = 'block';
+            return;
+        }
+
+        btnText.style.display = 'none';
+        spinner.style.display = 'block';
+        btn.disabled = true;
+
+        try {
+            const isEmailAvailable = await checkEmailAvailability();
+            if (!isEmailAvailable) {
+                throw new Error('Email not available');
+            }
+
+            localStorage.setItem('signup-name', nameInput.value.trim());
+            localStorage.setItem('signup-email', emailInput.value.trim().toLowerCase());
+
+            window.location.href = 'password.html';
+
+        } catch (error) {
+            console.error('Continue error:', error);
+            btnText.style.display = 'block';
+            spinner.style.display = 'none';
+            btn.disabled = false;
+
+            if (error.message.includes('network')) {
+                emailError.textContent = 'Network error. Please check connection.';
+                emailError.style.display = 'block';
+            }
+        }
+    });
+
+    window.addEventListener('load', function() {
+        const navType = performance.getEntriesByType('navigation')[0].type;
+        if (navType === 'back_forward') {
             document.querySelector('.preloader').style.display = 'none';
             document.querySelector('.main-content').style.display = 'block';
-        }, 2000);
-    }
-});
+        } else {
+            setTimeout(() => {
+                document.querySelector('.preloader').style.display = 'none';
+                document.querySelector('.main-content').style.display = 'block';
+            }, 2000);
+        }
+    });
 
-// Back button - KEEP EXISTING
-document.getElementById('back-btn').addEventListener('click', function() {
-    const btn = this;
-    const spinner = btn.querySelector('.spinner');
-    const btnText = btn.querySelector('.btn-text');
+    document.getElementById('back-btn').addEventListener('click', function() {
+        const btn = this;
+        const spinner = btn.querySelector('.spinner');
+        const btnText = btn.querySelector('.btn-text');
 
-    btnText.style.display = 'none';
-    spinner.style.display = 'block';
-    btn.disabled = true;
+        btnText.style.display = 'none';
+        spinner.style.display = 'block';
+        btn.disabled = true;
 
-    window.location.href = 'welcome.html';
-});
+        window.location.href = 'welcome.html';
+    });
 </script>
 </body>
 </html>
