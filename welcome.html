@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="style.css" />
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
   const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
   const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -350,39 +351,34 @@
     </div>
 
     <script>
-    // Hide preloader and show main content after 10 seconds
-    setTimeout(function () {
+
+    // ⬇️ Preloader
+    setTimeout(() => {
         document.querySelector('.preloader').style.display = 'none';
         document.querySelector('.main-content').style.display = 'block';
     }, 10000);
 
-    // Reset buttons on browser back/forward navigation
-    window.addEventListener('pageshow', function () {
+    // ⬇️ Reset buttons on back/forward
+    window.addEventListener('pageshow', () => {
         resetButton('signup-btn');
         resetButton('login-btn');
         resetButton('google-btn', true);
     });
 
-    // Reset button helper
+    // ⬇️ Reset helper
     function resetButton(id, isGoogle = false) {
         const btn = document.getElementById(id);
         if (!btn) return;
         btn.disabled = false;
-
         const spinner = btn.querySelector('.spinner');
         const btnText = btn.querySelector('.btn-text');
-
         if (spinner) spinner.style.display = 'none';
         if (btnText) btnText.style.display = 'inline';
-
-        if (isGoogle) {
-            btn.innerHTML = '<i class="fab fa-google google-icon"></i> Sign in with Google';
-        }
+        if (isGoogle) btn.innerHTML = '<i class="fab fa-google google-icon"></i> Sign in with Google';
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         const logos = document.querySelectorAll('.preloader-logo, .main-logo');
-
         logos.forEach(logo => {
             logo.onload = function () {
                 const aspectRatio = logo.naturalWidth / logo.naturalHeight;
@@ -391,7 +387,7 @@
             if (logo.complete) logo.onload();
         });
 
-        // Google sign-in button
+        // ⬇️ Google Sign-in
         document.getElementById('google-btn').addEventListener('click', async function () {
             const btn = this;
             const errorElement = document.getElementById('google-error');
@@ -402,36 +398,34 @@
             errorElement.style.display = 'none';
 
             try {
+                // Start OAuth
                 const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-
                 if (error) throw error;
 
-                // Check auth state in listener
+                // ⬇️ Listen for auth state change
                 supabase.auth.onAuthStateChange(async (event, session) => {
                     if (session) {
                         const user = session.user;
-                        console.log('Google sign-in successful', user);
-
-                        // Fetch profile
                         const { data: profile, error: profileError } = await supabase
-                          .from('Profiles')
-                          .select('username')
-                          .eq('id', user.id)
-                          .single();
+                            .from('Profiles')
+                            .select('username')
+                            .eq('id', user.id)
+                            .single();
 
                         if (profileError) {
-                            // profile not found - create new profile
+                            // ⬇️ New user: insert their full_name and email
                             await supabase.from('Profiles').insert([{
                                 id: user.id,
                                 email: user.email,
+                                full_name: user.user_metadata.full_name || user.user_metadata.name || '',
                                 created_at: new Date().toISOString()
                             }]);
                             window.location.href = 'create-username.html';
                         } else if (profile.username) {
-                            // username exists
+                            // Existing profile with username
                             window.location.href = 'index.html';
                         } else {
-                            // username missing
+                            // Existing profile, missing username
                             window.location.href = 'create-username.html';
                         }
                     }
@@ -445,33 +439,30 @@
             }
         });
 
-        // Signup and Login Buttons
+        // ⬇️ Signup button
         document.getElementById('signup-btn').addEventListener('click', function () {
             const btn = this;
             const spinner = btn.querySelector('.spinner');
             const btnText = btn.querySelector('.btn-text');
-
             if (btnText) btnText.style.display = 'none';
             if (spinner) spinner.style.display = 'block';
             btn.disabled = true;
-
             window.location.href = 'signup.html';
         });
 
+        // ⬇️ Login button
         document.getElementById('login-btn').addEventListener('click', function () {
             const btn = this;
             const spinner = btn.querySelector('.spinner');
             const btnText = btn.querySelector('.btn-text');
-
             if (btnText) btnText.style.display = 'none';
             if (spinner) spinner.style.display = 'block';
             btn.disabled = true;
-
             window.location.href = 'login.html';
         });
     });
 
-    // Friendly error messages
+    // ⬇️ Friendly error messages
     function getFriendlyErrorMessage(errorCode) {
         switch (errorCode) {
             case 'network_request_failed':
@@ -484,6 +475,6 @@
                 return 'Failed to sign in with Google. Please try again.';
         }
     }
-</script>
+</script>                        
 </body>
 </html>
