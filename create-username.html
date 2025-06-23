@@ -167,7 +167,7 @@
         }
 
         .input-status.available {
-            color: #0095f6;
+            color: #2ecc71; /* Changed from blue to green */
             display: block;
         }
 
@@ -179,28 +179,6 @@
         .input-status.checking {
             color: #999;
             display: block;
-        }
-
-        /* Username requirements */
-        .requirements {
-            margin-top: 10px;
-            font-size: 13px;
-            color: #666;
-        }
-
-        .requirement {
-            display: flex;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .requirement i {
-            margin-right: 5px;
-            font-size: 12px;
-        }
-
-        .requirement.valid {
-            color: #0095f6;
         }
 
         /* Suggestion pills with status */
@@ -225,12 +203,12 @@
         }
 
         .suggestion-pill.available {
-            background-color: #e3f2fd;
-            color: #0095f6;
+            background-color: #e8f5e9; /* Light green background */
+            color: #2ecc71; /* Green text */
         }
 
         .suggestion-pill.available .status-icon {
-            color: #0095f6;
+            color: #2ecc71;
         }
 
         .suggestion-pill.unavailable {
@@ -261,21 +239,6 @@
                 <div class="error-message" id="username-error"></div>
                 <div class="success-message" id="username-success"></div>
                 <div class="checking-message" id="checking-message">Checking availability...</div>
-                
-                <div class="requirements">
-                    <div class="requirement" id="length-req">
-                        <i class="fas fa-circle"></i>
-                        <span>5-20 characters</span>
-                    </div>
-                    <div class="requirement" id="chars-req">
-                        <i class="fas fa-circle"></i>
-                        <span>Letters, numbers, underscores</span>
-                    </div>
-                    <div class="requirement" id="available-req">
-                        <i class="fas fa-circle"></i>
-                        <span>Available username</span>
-                    </div>
-                </div>
                 
                 <div class="suggestions-container" id="suggestions-container"></div>
             </div>
@@ -313,11 +276,6 @@
         const usernameSuccess = document.getElementById('username-success');
         const checkingMessage = document.getElementById('checking-message');
         const suggestionsContainer = document.getElementById('suggestions-container');
-        
-        // Requirement elements
-        const lengthReq = document.getElementById('length-req');
-        const charsReq = document.getElementById('chars-req');
-        const availableReq = document.getElementById('available-req');
 
         // Debounce function to limit how often we check username availability
         let debounceTimer;
@@ -367,10 +325,10 @@
 
         // Update UI based on username validation
         async function updateUsernameStatus(username) {
-            // Reset UI
+            // Show spinner while checking
             inputStatus.className = 'input-status checking';
             inputStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-            checkingMessage.style.display = 'block';
+            checkingMessage.style.display = 'none';
             usernameError.style.display = 'none';
             usernameSuccess.style.display = 'none';
             continueBtn.disabled = true;
@@ -378,61 +336,42 @@
             // Hide suggestions while checking
             suggestionsContainer.innerHTML = '';
             
-            // Validate username format first
-            const validLength = username.length >= 5 && username.length <= 20;
-            const validChars = /^[a-zA-Z0-9_]+$/.test(username);
-            
-            // Update requirement indicators
-            lengthReq.className = validLength ? 'requirement valid' : 'requirement';
-            lengthReq.innerHTML = `<i class="fas ${validLength ? 'fa-check' : 'fa-circle'}"></i><span>5-20 characters</span>`;
-            
-            charsReq.className = validChars ? 'requirement valid' : 'requirement';
-            charsReq.innerHTML = `<i class="fas ${validChars ? 'fa-check' : 'fa-circle'}"></i><span>Letters, numbers, underscores</span>`;
-            
             if (!username) {
                 inputStatus.className = 'input-status';
                 inputStatus.innerHTML = '';
-                checkingMessage.style.display = 'none';
                 return;
             }
             
-            if (!validLength || !validChars) {
-                inputStatus.className = 'input-status unavailable';
-                inputStatus.innerHTML = '<i class="fas fa-times"></i>';
-                checkingMessage.style.display = 'none';
-                usernameError.style.display = 'block';
-                usernameError.textContent = 'Username must be 5-20 characters and only contain letters, numbers, and underscores.';
-                return;
-            }
+            // Validate username format
+            const isValid = isValidUsername(username);
             
-            // Check availability
-            const isAvailable = await checkUsernameAvailability(username);
-            
-            // Update UI based on availability
-            if (isAvailable) {
-                inputStatus.className = 'input-status available';
-                inputStatus.innerHTML = '<i class="fas fa-check"></i>';
-                usernameSuccess.style.display = 'block';
-                usernameSuccess.textContent = 'Username is available!';
-                continueBtn.disabled = false;
+            // Check availability if format is valid
+            if (isValid) {
+                const isAvailable = await checkUsernameAvailability(username);
                 
-                availableReq.className = 'requirement valid';
-                availableReq.innerHTML = '<i class="fas fa-check"></i><span>Available username</span>';
+                // Update UI based on availability
+                if (isAvailable) {
+                    inputStatus.className = 'input-status available';
+                    inputStatus.innerHTML = '<i class="fas fa-check"></i>';
+                    usernameSuccess.style.display = 'block';
+                    usernameSuccess.textContent = 'Username is available!';
+                    continueBtn.disabled = false;
+                } else {
+                    inputStatus.className = 'input-status unavailable';
+                    inputStatus.innerHTML = '<i class="fas fa-times"></i>';
+                    usernameError.style.display = 'block';
+                    usernameError.textContent = 'This username is not available.';
+                    
+                    // Generate and show suggestions
+                    const suggestions = generateSuggestions(username);
+                    showSuggestions(suggestions);
+                }
             } else {
                 inputStatus.className = 'input-status unavailable';
                 inputStatus.innerHTML = '<i class="fas fa-times"></i>';
                 usernameError.style.display = 'block';
-                usernameError.textContent = 'This username is not available.';
-                
-                availableReq.className = 'requirement';
-                availableReq.innerHTML = '<i class="fas fa-circle"></i><span>Available username</span>';
-                
-                // Generate and show suggestions
-                const suggestions = generateSuggestions(username);
-                showSuggestions(suggestions);
+                usernameError.textContent = 'Username must be 5-20 characters and only contain letters, numbers, and underscores.';
             }
-            
-            checkingMessage.style.display = 'none';
         }
 
         // Show username suggestions
@@ -478,7 +417,7 @@
             const name = user.displayName || user.email.split('@')[0];
             const cleanName = name.toLowerCase().replace(/[^a-z0-9_]/g, '');
             const randomNum = Math.floor(100 + Math.random() * 900);
-            const username = `${cleanName}${randomNum}`;
+            const username = `${cleanBase}${randomNum}`;
             
             usernameInput.value = username;
             updateUsernameStatus(username);
