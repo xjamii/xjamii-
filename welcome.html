@@ -5,7 +5,7 @@
   <meta name="theme-color" content="#ECEFF1">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Welcome to X-Aviation" />
-  <title>Welcome to X-Jamii</title>
+  <title>Welcome to Xjamii</title>
 
   <!-- Font Awesome for Google icon -->
   <link
@@ -15,15 +15,12 @@
 
   <!-- Your custom styles (optional) -->
   <link rel="stylesheet" href="style.css" />
-
-  <!-- Firebase v8 SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-
-  <!-- Optional Firebase products (uncomment if needed) -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script> -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script> -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+  const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+</script>
 
   <style>
     /* You can include your custom styles here */
@@ -311,7 +308,7 @@
                 height="100"
                 onerror="this.style.display='none'"
             >
-            <div class="welcome-text">Join Today X-Jamii<br>community</div>
+            <div class="welcome-text">Join Now Xjamii<br>community</div>
             
             <div class="button-container">
                 <!-- Error message for Google auth -->
@@ -348,26 +345,11 @@
         </div>
         
         <div class="footer">
-            &copy; 2025 X-Jamii. All rights reserved.
+            &copy; 2025 Xjamii. All rights reserved.
         </div>
     </div>
 
     <script>
-   const firebaseConfig = {
-  apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-  authDomain: "x-jamii.firebaseapp.com",
-  projectId: "x-jamii",
-  storageBucket: "x-jamii.firebasestorage.app",
-  messagingSenderId: "927548667044",
-  appId: "1:927548667044:web:835e597909f51a2e4da231",
-  measurementId: "G-9S45DQ04HZ"
-};
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const provider = new firebase.auth.GoogleAuthProvider();
-
     // Hide preloader and show main content after 10 seconds
     setTimeout(function () {
         document.querySelector('.preloader').style.display = 'none';
@@ -381,11 +363,10 @@
         resetButton('google-btn', true);
     });
 
-    // Function to reset buttons
+    // Reset button helper
     function resetButton(id, isGoogle = false) {
         const btn = document.getElementById(id);
         if (!btn) return;
-
         btn.disabled = false;
 
         const spinner = btn.querySelector('.spinner');
@@ -394,7 +375,6 @@
         if (spinner) spinner.style.display = 'none';
         if (btnText) btnText.style.display = 'inline';
 
-        // Reset Google button text if needed
         if (isGoogle) {
             btn.innerHTML = '<i class="fab fa-google google-icon"></i> Sign in with Google';
         }
@@ -408,13 +388,11 @@
                 const aspectRatio = logo.naturalWidth / logo.naturalHeight;
                 logo.style.width = (parseInt(logo.height) * aspectRatio) + 'px';
             };
-            if (logo.complete) {
-                logo.onload();
-            }
+            if (logo.complete) logo.onload();
         });
 
         // Google sign-in button
-        document.getElementById('google-btn').addEventListener('click', function () {
+        document.getElementById('google-btn').addEventListener('click', async function () {
             const btn = this;
             const errorElement = document.getElementById('google-error');
             const originalText = btn.innerHTML;
@@ -423,43 +401,51 @@
             btn.disabled = true;
             errorElement.style.display = 'none';
 
-            auth.signInWithPopup(provider)
-    .then(async (result) => {
-        const user = result.user;
-        console.log('Google sign-in successful', user);
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
 
-        const db = firebase.firestore();
-        const userDoc = await db.collection('users').doc(user.uid).get();
+                if (error) throw error;
 
-        if (userDoc.exists && userDoc.data().username) {
-            // ✅ Existing user with username
-            window.location.href = 'index.html';
-        } else {
-            // 🆕 New user or missing username
-            // Optionally create basic user profile in Firestore if it doesn't exist
-            if (!userDoc.exists) {
-                await db.collection('users').doc(user.uid).set({
-                    email: user.email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                // Check auth state in listener
+                supabase.auth.onAuthStateChange(async (event, session) => {
+                    if (session) {
+                        const user = session.user;
+                        console.log('Google sign-in successful', user);
+
+                        // Fetch profile
+                        const { data: profile, error: profileError } = await supabase
+                          .from('Profiles')
+                          .select('username')
+                          .eq('id', user.id)
+                          .single();
+
+                        if (profileError) {
+                            // profile not found - create new profile
+                            await supabase.from('Profiles').insert([{
+                                id: user.id,
+                                email: user.email,
+                                created_at: new Date().toISOString()
+                            }]);
+                            window.location.href = 'create-username.html';
+                        } else if (profile.username) {
+                            // username exists
+                            window.location.href = 'index.html';
+                        } else {
+                            // username missing
+                            window.location.href = 'create-username.html';
+                        }
+                    }
                 });
+            } catch (err) {
+                console.error('Google sign-in error', err.message);
+                errorElement.textContent = getFriendlyErrorMessage(err.code || '');
+                errorElement.style.display = 'block';
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
-            window.location.href = 'create-username.html';
-        }
-    })
-                .catch((error) => {
-                    const errorCode = error.code;
-                    const errorMessage = error.message;
-                    console.error('Google sign-in error', errorCode, errorMessage);
-
-                    errorElement.textContent = getFriendlyErrorMessage(errorCode);
-                    errorElement.style.display = 'block';
-
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                });
         });
 
-        // Signup button
+        // Signup and Login Buttons
         document.getElementById('signup-btn').addEventListener('click', function () {
             const btn = this;
             const spinner = btn.querySelector('.spinner');
@@ -472,7 +458,6 @@
             window.location.href = 'signup.html';
         });
 
-        // Login button
         document.getElementById('login-btn').addEventListener('click', function () {
             const btn = this;
             const spinner = btn.querySelector('.spinner');
@@ -486,16 +471,14 @@
         });
     });
 
-    // Firebase error code handler
+    // Friendly error messages
     function getFriendlyErrorMessage(errorCode) {
         switch (errorCode) {
-            case 'auth/network-request-failed':
+            case 'network_request_failed':
                 return 'Network error. Please check your internet connection and try again.';
-            case 'auth/popup-closed-by-user':
+            case 'popup_closed':
                 return 'Sign in window was closed. Please try again.';
-            case 'auth/cancelled-popup-request':
-                return 'Sign in process cancelled. Please try again.';
-            case 'auth/popup-blocked':
+            case 'popup_blocked':
                 return 'Popup blocked. Please allow popups for this site and try again.';
             default:
                 return 'Failed to sign in with Google. Please try again.';
