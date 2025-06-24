@@ -388,10 +388,11 @@ supabase.auth.getUser().then(async ({ data: { user } }) => {
 usernameInput.addEventListener('input', () => {
   debounce(() => updateUsernameStatus(usernameInput.value.trim()), 500);
 });
-
-// Save username
+ 
+    // Save username
 continueBtn.addEventListener('click', async () => {
   const username = usernameInput.value.trim().toLowerCase();
+
   if (!isValidUsername(username)) return;
 
   const isAvailable = await checkUsernameAvailability(username);
@@ -402,26 +403,13 @@ continueBtn.addEventListener('click', async () => {
   }
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    usernameError.style.display = 'block';
-    usernameError.textContent = 'Error: Not signed in.';
-    return;
+  if (user) {
+    // Simply upsert — if profile exists, it'll update; if not, it'll insert
+    await supabase.from('profiles').upsert({ id: user.id, username });
+
+    // Redirect after attempting to save
+    window.location.href = 'index.html';
   }
-
-  // Save username using upsert
-  const { error } = await supabase
-    .from('profiles')
-    .upsert({ id: user.id, username });
-
-  if (error) {
-    console.error('Error saving username:', error); // Log the full error
-    usernameError.style.display = 'block';
-    usernameError.textContent = 'Error saving username. Please try again.';
-    return;
-  }
-
-  // Success
-  window.location.href = 'index.html';
 });
 </script>                 
                 
