@@ -269,7 +269,7 @@
         <button class="continue-button" id="continue-btn" disabled>Continue</button>
     </div>
     <script>
-                  // DOM Elements
+                      // DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const inputStatus = document.getElementById('input-status');
@@ -292,11 +292,15 @@ function isValidUsername(username) {
 // Check username availability with Supabase
 async function checkUsernameAvailability(username) {
   if (!isValidUsername(username)) return false;
-  const { data } = await supabase.from('Profiles').select('id').eq('username', username).maybeSingle();
+  const { data } = await supabase
+    .from('Profiles')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
   return !data;
 }
 
-// Generate suggestions
+// Generate username suggestions
 function generateSuggestions(base) {
   const suggestions = [];
   const cleanBase = base.toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -310,7 +314,7 @@ function generateSuggestions(base) {
   return suggestions;
 }
 
-// Show suggestions UI
+// Show suggestions
 async function showSuggestions(suggestions) {
   suggestionsContainer.innerHTML = '';
   for (const suggestion of suggestions) {
@@ -366,22 +370,28 @@ async function updateUsernameStatus(username) {
   }
 }
 
-// Load auth user & prefill username
+// Load existing username if available
 supabase.auth.getUser().then(async ({ data: { user } }) => {
   if (!user) return (window.location.href = 'signin.html');
 
-  // Fetch existing profile username
-  const { data: profile } = await supabase.from('Profiles').select('username').eq('id', user.id).single();
+  // Fetch existing username
+  const { data: profile } = await supabase.from('Profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
 
-  let username = profile?.username;
-  if (!username) {
-    // Fallback to generate one
-    const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
-    username = `${name.toLowerCase().replace(/[^a-z0-9_]/g, '')}${Math.floor(100 + Math.random() * 900)}`;
+  if (profile?.username) {
+    // Existing username — just show it
+    usernameInput.value = profile.username;
+    await updateUsernameStatus(profile.username);
+    return;
   }
 
-  usernameInput.value = username;
-  updateUsernameStatus(username);
+  // No username set — generate one
+  const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
+  const suggestedUsername = `${name.toLowerCase().replace(/[^a-z0-9_]/g, '')}${Math.floor(100 + Math.random() * 900)}`;
+  usernameInput.value = suggestedUsername;
+  await updateUsernameStatus(suggestedUsername);
 });
 
 // Input listener
@@ -402,17 +412,17 @@ continueBtn.addEventListener('click', async () => {
   }
 
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
 
-  if (user) {
-    const { error } = await supabase.from('Profiles').update({ username }).eq('id', user.id);
-    if (error) {
-      usernameError.style.display = 'block';
-      usernameError.textContent = 'Error saving username. Please try again.';
-      return;
-    }
-    window.location.href = 'index.html';
+  const { error } = await supabase.from('Profiles').update({ username }).eq('id', user.id);
+  if (error) {
+    usernameError.style.display = 'block';
+    usernameError.textContent = 'Error saving username. Please try again.';
+    return;
   }
+
+  window.location.href = 'index.html';
 });
-</script>
+    </script>
 </body>
 </html>
