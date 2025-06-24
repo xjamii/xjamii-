@@ -268,150 +268,100 @@
     <div class="button-footer">
         <button class="continue-button" id="continue-btn" disabled>Continue</button>
     </div>
-                        
-        <script>
-const usernameInput = document.getElementById('username');
-const continueBtn = document.getElementById('continue-btn');
-const inputStatus = document.getElementById('input-status');
-const usernameError = document.getElementById('username-error');
-const usernameSuccess = document.getElementById('username-success');
-const checkingMessage = document.getElementById('checking-message');
-const suggestionsContainer = document.getElementById('suggestions-container');
-
-// Debounce helper
-let debounceTimer;
-function debounce(func, delay) {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(func, delay);
-}
-
-// Validate username format
-function isValidUsername(username) {
-  return /^[a-zA-Z0-9_]{5,20}$/.test(username);
-}
-
-// Check username availability with Supabase
-async function checkUsernameAvailability(username) {
-  if (!isValidUsername(username)) return false;
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('username', username)
-    .maybeSingle();
-
-  return !data; // available if not found
-}
-
-// Generate suggestions
-function generateSuggestions(base) {
-  const suggestions = [];
-  const cleanBase = base.toLowerCase().replace(/[^a-z0-9_]/g, '');
-  if (!cleanBase) return suggestions;
-
-  suggestions.push(`${cleanBase}${Math.floor(100 + Math.random() * 900)}`);
-  suggestions.push(`${cleanBase}_${Math.floor(10 + Math.random() * 90)}`);
-  suggestions.push(`${cleanBase}${String.fromCharCode(97 + Math.floor(Math.random() * 26))}`);
-  suggestions.push(`the_${cleanBase}`);
-  suggestions.push(`${cleanBase}${Math.floor(1000 + Math.random() * 9000)}`);
-  return suggestions;
-}
-
-// Show suggestions UI
-async function showSuggestions(suggestions) {
-  suggestionsContainer.innerHTML = '';
-  for (const suggestion of suggestions) {
-    const pill = document.createElement('div');
-    pill.className = 'suggestion-pill loading';
-    pill.innerHTML = `${suggestion}<span class="status-icon"><i class="fas fa-circle-notch fa-spin"></i></span>`;
-    suggestionsContainer.appendChild(pill);
-
-    const isAvailable = await checkUsernameAvailability(suggestion);
-    pill.className = isAvailable ? 'suggestion-pill available' : 'suggestion-pill unavailable';
-    pill.innerHTML = `${suggestion}<span class="status-icon"><i class="fas ${isAvailable ? 'fa-check' : 'fa-times'}"></i></span>`;
-
-    pill.addEventListener('click', () => {
-      usernameInput.value = suggestion;
-      updateUsernameStatus(suggestion);
-    });
-  }
-}
-
-// Validate and update status
-async function updateUsernameStatus(username) {
-  inputStatus.className = 'input-status checking';
-  inputStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-  usernameError.style.display = usernameSuccess.style.display = 'none';
-  continueBtn.disabled = true;
-  suggestionsContainer.innerHTML = '';
-
-  if (!username) {
-    inputStatus.className = 'input-status';
-    inputStatus.innerHTML = '';
-    return;
-  }
-
-  if (isValidUsername(username)) {
-    const isAvailable = await checkUsernameAvailability(username);
-    if (isAvailable) {
-      inputStatus.className = 'input-status available';
-      inputStatus.innerHTML = '<i class="fas fa-check"></i>';
-      usernameSuccess.style.display = 'block';
-      usernameSuccess.textContent = 'Username is available!';
-      continueBtn.disabled = false;
-    } else {
-      inputStatus.className = 'input-status unavailable';
-      inputStatus.innerHTML = '<i class="fas fa-times"></i>';
-      usernameError.style.display = 'block';
-      usernameError.textContent = 'This username is not available.';
-      showSuggestions(generateSuggestions(username));
-    }
-  } else {
-    inputStatus.className = 'input-status unavailable';
-    inputStatus.innerHTML = '<i class="fas fa-times"></i>';
-    usernameError.style.display = 'block';
-    usernameError.textContent = 'Username must be 5-20 chars and contain only letters, numbers, or underscores.';
-  }
-}
-
-// Load auth user & default username
+                 <script>       
+            // Load auth user & username
 supabase.auth.getUser().then(async ({ data: { user } }) => {
   if (!user) return (window.location.href = 'signin.html');
 
-  const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
-  const username = `${name.toLowerCase().replace(/[^a-z0-9_]/g, '')}${Math.floor(100 + Math.random() * 900)}`;
-  usernameInput.value = username;
-  updateUsernameStatus(username);
+  // Fetch profile username
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching profile:', error);
+    return;
+  }
+
+  if (profile && profile.username) {
+    usernameInput.value = profile.username;
+    usernameInput.dataset.original = profile.username; // store original username
+    usernameSuccess.style.display = 'block';
+    usernameSuccess.textContent = 'Current username';
+    continueBtn.disabled = false; // let them continue if unchanged
+  } else {
+    // no existing username: generate one
+    const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
+    const username = `${name.toLowerCase().replace(/[^a-z0-9_]/g, '')}${Math.floor(100 + Math.random() * 900)}`;
+    usernameInput.value = username;
+    await updateUsernameStatus(username);
+  }
 });
 
 // Input listener
 usernameInput.addEventListener('input', () => {
-  debounce(() => updateUsernameStatus(usernameInput.value.trim()), 500);
+  const currentUsername = usernameInput.value.trim().toLowerCase();
+  const original = usernameInput.dataset.original || '';
+  
+  if (currentUsername === original) {
+    // No change — allow continue
+    usernameSuccess.style.display = 'block';
+    usernameSuccess.textContent = 'Current username';
+    usernameError.style.display = 'none';
+    continueBtn.disabled = false;
+    inputStatus.className = '';
+    inputStatus.innerHTML = '';
+    return;
+  }
+  
+  debounce(() => updateUsernameStatus(currentUsername), 500);
 });
- 
-    // Save username
+
+// Save username
 continueBtn.addEventListener('click', async () => {
   const username = usernameInput.value.trim().toLowerCase();
+  const original = usernameInput.dataset.original || '';
+  
+  // If username not changed, go straight to index
+  if (username === original) {
+    return (window.location.href = 'index.html');
+  }
 
-  if (!isValidUsername(username)) return;
+  if (!isValidUsername(username)) {
+    usernameError.style.display = 'block';
+    usernameError.textContent = 'Username must be 5-20 chars (letters, numbers, underscore).';
+    return;
+  }
 
   const isAvailable = await checkUsernameAvailability(username);
   if (!isAvailable) {
     usernameError.style.display = 'block';
-    usernameError.textContent = 'This username is no longer available.';
+    usernameError.textContent = 'That username is already taken.';
     return;
   }
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (user) {
-    // Simply upsert — if profile exists, it'll update; if not, it'll insert
-    await supabase.from('profiles').upsert({ id: user.id, username });
-
-    // Redirect after attempting to save
-    window.location.href = 'index.html';
+  if (!user) {
+    usernameError.style.display = 'block';
+    usernameError.textContent = 'Error: Not signed in.';
+    return;
   }
-});
-</script>                 
-                
+
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({ id: user.id, username });
+
+  if (error) {
+    usernameError.style.display = 'block';
+    usernameError.textContent = 'Error saving username. Please try again.';
+    return;
+  }
+
+  // Success — go to index
+  window.location.href = 'index.html';
+});           
+</script>
 </body>
 </html>
