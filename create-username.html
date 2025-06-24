@@ -268,10 +268,8 @@
     <div class="button-footer">
         <button class="continue-button" id="continue-btn" disabled>Continue</button>
     </div>
-
-
                         
-    <script>
+        <script>
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const inputStatus = document.getElementById('input-status');
@@ -378,7 +376,7 @@ async function updateUsernameStatus(username) {
 
 // Load auth user & default username
 supabase.auth.getUser().then(async ({ data: { user } }) => {
-  if (!user) return window.location.href = 'signin.html';
+  if (!user) return (window.location.href = 'signin.html');
 
   const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
   const username = `${name.toLowerCase().replace(/[^a-z0-9_]/g, '')}${Math.floor(100 + Math.random() * 900)}`;
@@ -404,23 +402,28 @@ continueBtn.addEventListener('click', async () => {
   }
 
   const { data: { user } } = await supabase.auth.getUser();
-
-  if (user) {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ username })
-      .eq('id', user.id);
-
-    if (error) {
-      usernameError.style.display = 'block';
-      usernameError.textContent = 'Error saving username. Please try again.';
-      return;
-    }
-
-    window.location.href = 'index.html';
+  if (!user) {
+    usernameError.style.display = 'block';
+    usernameError.textContent = 'Error: Not signed in.';
+    return;
   }
+
+  // Save username using upsert
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({ id: user.id, username });
+
+  if (error) {
+    console.error('Error saving username:', error); // Log the full error
+    usernameError.style.display = 'block';
+    usernameError.textContent = 'Error saving username. Please try again.';
+    return;
+  }
+
+  // Success
+  window.location.href = 'index.html';
 });
-</script>                         
+</script>                 
                 
 </body>
 </html>
