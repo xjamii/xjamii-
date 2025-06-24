@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#ECEFF1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Confirmed - Xjamii</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #ECEFF1;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Preloader Styles */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ECEFF1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .preloader-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            position: relative;
+        }
+
+        .preloader-spinner-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #000;
+            animation: spinner-bounce 1.4s infinite ease-in-out both;
+        }
+
+        .preloader-spinner-dot:nth-child(1) {
+            top: 0;
+            left: 16px;
+            animation-delay: -0.32s;
+        }
+
+        .preloader-spinner-dot:nth-child(2) {
+            top: 16px;
+            left: 0;
+            animation-delay: -0.16s;
+        }
+
+        .preloader-spinner-dot:nth-child(3) {
+            top: 16px;
+            left: 32px;
+        }
+
+        .preloader-spinner-dot:nth-child(4) {
+            top: 32px;
+            left: 16px;
+            animation-delay: -0.48s;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            display: none;
+            flex: 1;
+            padding: 40px 30px 80px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            height: 60px;
+            width: auto;
+        }
+
+        .confirmation-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .confirmation-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            background-color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirmation-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: #fff;
+        }
+
+        .confirmation-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 0 20px;
+            color: #000;
+        }
+
+        .confirmation-message {
+            font-size: 18px;
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 40px;
+        }
+
+        /* Button Footer */
+        .button-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            background-color: #ECEFF1;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        .continue-button {
+            width: 100%;
+            max-width: 500px;
+            height: 50px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #000;
+        }
+
+        .continue-button:hover {
+            background-color: #333;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            position: relative;
+        }
+
+        .spinner-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: spinner-bounce 1.4s infinite ease-in-out both;
+        }
+
+        .spinner-dot:nth-child(1) {
+            top: 0;
+            left: 9px;
+            animation-delay: -0.32s;
+        }
+
+        .spinner-dot:nth-child(2) {
+            top: 9px;
+            left: 0;
+            animation-delay: -0.16s;
+        }
+
+        .spinner-dot:nth-child(3) {
+            top: 9px;
+            left: 18px;
+        }
+
+        .spinner-dot:nth-child(4) {
+            top: 18px;
+            left: 9px;
+            animation-delay: -0.48s;
+        }
+
+        @keyframes spinner-bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Preloader -->
+    <div class="preloader">
+        <div class="preloader-spinner">
+            <div class="preloader-spinner-dot"></div>
+            <div class="preloader-spinner-dot"></div>
+            <div class="preloader-spinner-dot"></div>
+            <div class="preloader-spinner-dot"></div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="logo-container">
+            <img 
+                src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" 
+                alt="X-Aviation Logo" 
+                class="logo" 
+                loading="eager"
+                width="60"
+                onerror="this.style.display='none'"
+            >
+        </div>
+        
+        <div class="confirmation-container">
+            <div class="confirmation-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+            </div>
+            <h1 class="confirmation-title">Email Confirmed</h1>
+            <p class="confirmation-message">Your email has been successfully verified.</p>
+        </div>
+    </div>
+
+    <!-- Button Footer -->
+    <div class="button-footer">
+        <button class="continue-button" id="continue-btn">
+            <span class="btn-text">Continue</span>
+            <span class="spinner" style="display: none;">
+                <span class="spinner-dot" style="color: #fff;"></span>
+                <span class="spinner-dot" style="color: #fff;"></span>
+                <span class="spinner-dot" style="color: #fff;"></span>
+                <span class="spinner-dot" style="color: #fff;"></span>
+            </span>
+        </button>
+    </div>
+
+    <script>
+        // Preloader delay
+        setTimeout(() => {
+            document.querySelector('.preloader').style.display = 'none';
+            document.querySelector('.main-content').style.display = 'block';
+        }, 2000);
+
+        // Continue button handler
+        document.getElementById('continue-btn').addEventListener('click', function() {
+            const btn = this;
+            const spinner = btn.querySelector('.spinner');
+            const btnText = btn.querySelector('.btn-text');
+            
+            btnText.style.display = 'none';
+            spinner.style.display = 'block';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                window.location.href = 'create-username.html';
+            }, 300);
+        });
+    </script>
+</body>
+</html>
