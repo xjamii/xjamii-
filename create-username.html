@@ -270,7 +270,7 @@
     </div>
     <script>
                       
-              // DOM Elements
+    // DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const inputStatus = document.getElementById('input-status');
@@ -381,17 +381,17 @@ async function updateUsernameStatus(username) {
   }
 }
 
-// Load current username (stores EXACT original value)
+// Load current username
 async function loadCurrentUsername() {
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select('username, full_name')
     .eq('id', userId)
     .single();
 
   if (profile?.username) {
-    usernameInput.value = profile.username; // Show exact original
-    usernameInput.setAttribute('data-original-username', profile.username); // Store exact original
+    usernameInput.value = profile.username;
+    usernameInput.setAttribute('data-original-username', profile.username);
     await updateUsernameStatus(profile.username);
   }
 }
@@ -406,7 +406,6 @@ supabase.auth.getUser().then(async ({ data: { user } }) => {
   if (!usernameInput.value) {
     const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
     usernameInput.value = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-    usernameInput.setAttribute('data-original-username', usernameInput.value);
     await updateUsernameStatus(usernameInput.value);
   }
 });
@@ -416,18 +415,18 @@ usernameInput.addEventListener('input', () => {
   debounce(() => updateUsernameStatus(usernameInput.value.trim()), 500);
 });
 
-// Save handler - ONLY updates if username changed
+// Enhanced save handler with detailed error handling
 continueBtn.addEventListener('click', async () => {
   const newUsername = usernameInput.value.trim().toLowerCase();
   const originalUsername = usernameInput.getAttribute('data-original-username');
 
-  // 1. EXACT comparison with original
+  // 1. Skip update if unchanged
   if (newUsername === originalUsername) {
     window.location.href = 'index.html';
-    return; // Exit immediately if unchanged
+    return;
   }
 
-  // 2. Validate new username
+  // 2. Validate format
   if (!isValidUsername(newUsername)) {
     showError('Username must be 1-20 chars (letters, numbers, _)');
     return;
@@ -436,24 +435,33 @@ continueBtn.addEventListener('click', async () => {
   // 3. Check availability
   const isAvailable = await checkUsernameAvailability(newUsername);
   if (!isAvailable) {
-    showError('Username taken. Try another.');
+    showError('Username taken. Try these suggestions:');
+    showSuggestions(generateSuggestions(newUsername));
     return;
   }
 
-  // 4. Attempt update
-  const { error } = await supabase
-    .from('profiles')
-    .update({ username: newUsername })
-    .eq('id', userId);
+  // 4. Attempt update with error differentiation
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ username: newUsername })
+      .eq('id', userId)
+      .select();
 
-  if (error) {
-    showError(error.message.includes('unique') 
-      ? 'Username was taken. Try another.' 
-      : 'Update failed. Please try again.');
-    return;
+    if (error) throw error;
+    
+    window.location.href = 'index.html';
+  } catch (error) {
+    console.error('Update error:', error);
+    
+    const errorMap = {
+      '23505': 'Username already exists. Try another name.',
+      '42501': 'You don\'t have permission to update (check RLS policies).',
+      'P0001': 'Trigger blocked the update. Contact support.'
+    };
+
+    showError(errorMap[error.code] || `Update failed: ${error.message}`);
   }
-
-  window.location.href = 'index.html';
 });
 
 // Helper function
