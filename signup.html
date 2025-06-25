@@ -300,6 +300,9 @@
         </button>
     </div>
 <script>
+        
+
+
 // DOM Elements
 const continueBtn = document.getElementById('continue-btn');
 const nameInput = document.getElementById('name');
@@ -325,79 +328,13 @@ function validateEmail(email) {
     return { valid: true };
 }
 
-// Check email availability with better error handling
-let emailCheckTimeout;
-async function checkEmailAvailability() {
-    const email = emailInput.value.trim().toLowerCase();
-    const validation = validateEmail(email);
-
-    if (!validation.valid) {
-        emailError.textContent = validation.message;
-        emailError.style.display = 'block';
-        return false;
-    }
-
-    try {
-        // First check auth.users table
-        const { data: authData, error: authError } = await supabase
-            .from('auth.users')
-            .select('email')
-            .eq('email', email)
-            .maybeSingle();
-
-        if (authError) throw authError;
-        
-        if (authData) {
-            emailError.textContent = 'Email already in use';
-            emailError.style.display = 'block';
-            return false;
-        }
-
-        // Then check profiles table if needed
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('email')
-            .eq('email', email)
-            .maybeSingle();
-
-        if (profileError) throw profileError;
-        
-        if (profileData) {
-            emailError.textContent = 'Email already in use';
-            emailError.style.display = 'block';
-            return false;
-        }
-
-        emailError.style.display = 'none';
-        return true;
-
-    } catch (error) {
-        console.error('Email check error:', error);
-        emailError.textContent = 'Error checking email availability';
-        emailError.style.display = 'block';
-        return false;
-    }
-}
-
-// Debounced email input handler
+// Email input handler
 emailInput.addEventListener('input', () => {
-    clearTimeout(emailCheckTimeout);
     const email = emailInput.value.trim();
+    const validation = validateEmail(email);
     
-    if (!email) {
-        emailError.style.display = 'none';
-        return;
-    }
-    
-    emailCheckTimeout = setTimeout(async () => {
-        const validation = validateEmail(email);
-        if (!validation.valid) {
-            emailError.textContent = validation.message;
-            emailError.style.display = 'block';
-            return;
-        }
-        await checkEmailAvailability();
-    }, 500);
+    emailError.textContent = validation.valid ? '' : validation.message;
+    emailError.style.display = validation.valid ? 'none' : 'block';
 });
 
 // Name input validation
@@ -437,12 +374,6 @@ continueBtn.addEventListener('click', async function(e) {
     btn.disabled = true;
 
     try {
-        // Final email availability check
-        const isEmailAvailable = await checkEmailAvailability();
-        if (!isEmailAvailable) {
-            throw new Error('Email not available');
-        }
-
         // Store data for next step
         localStorage.setItem('signup-name', nameInput.value.trim());
         localStorage.setItem('signup-email', emailInput.value.trim().toLowerCase());
@@ -455,12 +386,8 @@ continueBtn.addEventListener('click', async function(e) {
         btnText.style.display = 'block';
         spinner.style.display = 'none';
         btn.disabled = false;
-
-        if (error.message.includes('network')) {
-            emailError.textContent = 'Network error. Please check connection.';
-        } else {
-            emailError.textContent = error.message || 'Error processing request';
-        }
+        
+        emailError.textContent = 'Error processing request. Please try again.';
         emailError.style.display = 'block';
     }
 });
