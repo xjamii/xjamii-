@@ -304,185 +304,120 @@
 
 
 // DOM Elements
-const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
-const inputStatus = document.getElementById('input-status');
-const usernameError = document.getElementById('username-error');
-const usernameSuccess = document.getElementById('username-success');
-const suggestionsContainer = document.getElementById('suggestions-container');
+const nameInput = document.getElementById('name');
+const emailInput = document.getElementById('email');
+const nameError = document.getElementById('name-error');
+const emailError = document.getElementById('email-error');
 
-// Get user ID from URL if available
-const urlParams = new URLSearchParams(window.location.search);
-const userId = urlParams.get('id');
-
-// Debounce helper
-let debounceTimer;
-function debounce(func, delay) {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(func, delay);
+// Validation functions
+function validateName(name) {
+    name = name.trim();
+    if (!name) return { valid: false, message: 'Name is required' };
+    if (name.length < 2) return { valid: false, message: 'Name too short (min 2 chars)' };
+    if (name.length > 50) return { valid: false, message: 'Name too long (max 50 chars)' };
+    return { valid: true };
 }
 
-// Validate username format
-function isValidUsername(username) {
-  return /^[a-zA-Z0-9_]{5,20}$/.test(username);
-}
-
-// Check username availability with Supabase
-async function checkUsernameAvailability(username) {
-  if (!isValidUsername(username)) return false;
-  const { data } = await supabase
-    .from('profiles')  // ← Changed from Profiles to profiles
-    .select('id')
-    .eq('username', username)
-    .maybeSingle();
-  return !data;
-}
-
-// Generate username suggestions
-function generateSuggestions(base) {
-  const suggestions = [];
-  const cleanBase = base.toLowerCase().replace(/[^a-z0-9_]/g, '');
-  if (!cleanBase) return suggestions;
-
-  suggestions.push(`${cleanBase}${Math.floor(100 + Math.random() * 900)}`);
-  suggestions.push(`${cleanBase}_${Math.floor(10 + Math.random() * 90)}`);
-  suggestions.push(`${cleanBase}${String.fromCharCode(97 + Math.floor(Math.random() * 26))}`);
-  suggestions.push(`the_${cleanBase}`);
-  suggestions.push(`${cleanBase}${Math.floor(1000 + Math.random() * 9000)}`);
-  return suggestions;
-}
-
-// Show suggestions
-async function showSuggestions(suggestions) {
-  suggestionsContainer.innerHTML = '';
-  for (const suggestion of suggestions) {
-    const pill = document.createElement('div');
-    pill.className = 'suggestion-pill loading';
-    pill.innerHTML = `${suggestion}<span class="status-icon"><i class="fas fa-circle-notch fa-spin"></i></span>`;
-    suggestionsContainer.appendChild(pill);
-
-    const isAvailable = await checkUsernameAvailability(suggestion);
-    pill.className = isAvailable ? 'suggestion-pill available' : 'suggestion-pill unavailable';
-    pill.innerHTML = `${suggestion}<span class="status-icon"><i class="fas ${isAvailable ? 'fa-check' : 'fa-times'}"></i></span>`;
-
-    pill.addEventListener('click', () => {
-      usernameInput.value = suggestion;
-      updateUsernameStatus(suggestion);
-    });
-  }
-}
-
-// Validate & update status
-async function updateUsernameStatus(username) {
-  inputStatus.className = 'input-status checking';
-  inputStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-  usernameError.style.display = usernameSuccess.style.display = 'none';
-  continueBtn.disabled = true;
-  suggestionsContainer.innerHTML = '';
-
-  if (!username) {
-    inputStatus.innerHTML = '';
-    return;
-  }
-
-  if (isValidUsername(username)) {
-    const isAvailable = await checkUsernameAvailability(username);
-    if (isAvailable) {
-      inputStatus.className = 'input-status available';
-      inputStatus.innerHTML = '<i class="fas fa-check"></i>';
-      usernameSuccess.style.display = 'block';
-      usernameSuccess.textContent = 'Username is available!';
-      continueBtn.disabled = false;
-    } else {
-      inputStatus.className = 'input-status unavailable';
-      inputStatus.innerHTML = '<i class="fas fa-times"></i>';
-      usernameError.style.display = 'block';
-      usernameError.textContent = 'This username is not available.';
-      showSuggestions(generateSuggestions(username));
+function validateEmail(email) {
+    email = email.trim().toLowerCase();
+    if (!email) return { valid: false, message: 'Email is required' };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return { valid: false, message: 'Invalid email format' };
     }
-  } else {
-    inputStatus.className = 'input-status unavailable';
-    inputStatus.innerHTML = '<i class="fas fa-times"></i>';
-    usernameError.style.display = 'block';
-    usernameError.textContent = 'Username must be 5-20 chars (letters, numbers, or underscores).';
-  }
+    return { valid: true };
 }
 
-// Load existing username if available
-supabase.auth.getUser().then(async ({ data: { user } }) => {
-  if (!user) return (window.location.href = 'signin.html');
-
-  // Use userId from URL if available, otherwise use authenticated user's ID
-  const targetUserId = userId || user.id;
-
-  // Fetch existing username
-  const { data: profile } = await supabase.from('profiles')  // ← Changed from Profiles to profiles
-    .select('username, accountComplete')
-    .eq('id', targetUserId)
-    .single();
-
-  if (profile?.username) {
-    // Existing username — just show it
-    usernameInput.value = profile.username;
-    await updateUsernameStatus(profile.username);
+// Email input handler
+emailInput.addEventListener('input', () => {
+    const email = emailInput.value.trim();
+    const validation = validateEmail(email);
     
-    // If account is already complete, redirect
-    if (profile.accountComplete) {
-      window.location.href = 'index.html';
+    emailError.textContent = validation.valid ? '' : validation.message;
+    emailError.style.display = validation.valid ? 'none' : 'block';
+});
+
+// Name input validation
+nameInput.addEventListener('input', () => {
+    const validation = validateName(nameInput.value);
+    nameError.textContent = validation.valid ? '' : validation.message;
+    nameError.style.display = validation.valid ? 'none' : 'block';
+});
+
+// Continue button handler
+continueBtn.addEventListener('click', async function(e) {
+    e.preventDefault();
+
+    const btn = this;
+    const spinner = btn.querySelector('.spinner');
+    const btnText = btn.querySelector('.btn-text');
+
+    // Validate inputs
+    const nameValidation = validateName(nameInput.value);
+    const emailValidation = validateEmail(emailInput.value);
+
+    if (!nameValidation.valid) {
+        nameError.textContent = nameValidation.message;
+        nameError.style.display = 'block';
+        return;
     }
-    return;
-  }
 
-  // No username set — generate one
-  const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
-  const suggestedUsername = `${name.toLowerCase().replace(/[^a-z0-9_]/g, '')}${Math.floor(100 + Math.random() * 900)}`;
-  usernameInput.value = suggestedUsername;
-  await updateUsernameStatus(suggestedUsername);
+    if (!emailValidation.valid) {
+        emailError.textContent = emailValidation.message;
+        emailError.style.display = 'block';
+        return;
+    }
+
+    // Show loading state
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+    btn.disabled = true;
+
+    try {
+        // Store data for next step
+        localStorage.setItem('signup-name', nameInput.value.trim());
+        localStorage.setItem('signup-email', emailInput.value.trim().toLowerCase());
+
+        // Proceed to password creation
+        window.location.href = 'password.html';
+
+    } catch (error) {
+        console.error('Continue error:', error);
+        btnText.style.display = 'block';
+        spinner.style.display = 'none';
+        btn.disabled = false;
+        
+        emailError.textContent = 'Error processing request. Please try again.';
+        emailError.style.display = 'block';
+    }
 });
 
-// Input listener
-usernameInput.addEventListener('input', () => {
-  debounce(() => updateUsernameStatus(usernameInput.value.trim()), 500);
+// Preloader and navigation
+window.addEventListener('load', function() {
+    const navType = performance.getEntriesByType('navigation')[0]?.type || 'navigate';
+    if (navType === 'back_forward') {
+        document.querySelector('.preloader').style.display = 'none';
+        document.querySelector('.main-content').style.display = 'block';
+    } else {
+        setTimeout(() => {
+            document.querySelector('.preloader').style.display = 'none';
+            document.querySelector('.main-content').style.display = 'block';
+        }, 2000);
+    }
 });
 
-// Save username
-continueBtn.addEventListener('click', async () => {
-  const username = usernameInput.value.trim().toLowerCase();
-  if (!isValidUsername(username)) return;
+// Back button handler
+document.getElementById('back-btn').addEventListener('click', function() {
+    const btn = this;
+    const spinner = btn.querySelector('.spinner');
+    const btnText = btn.querySelector('.btn-text');
 
-  const isAvailable = await checkUsernameAvailability(username);
-  if (!isAvailable) {
-    usernameError.style.display = 'block';
-    usernameError.textContent = 'This username is no longer available.';
-    return;
-  }
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+    btn.disabled = true;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  // Use userId from URL if available, otherwise use authenticated user's ID
-  const targetUserId = userId || user.id;
-
-  const { error } = await supabase.from('profiles').update({  // ← Changed from Profiles to profiles
-    username,
-    accountComplete: true 
-  }).eq('id', targetUserId);
-
-  if (error) {
-    usernameError.style.display = 'block';
-    usernameError.textContent = 'Error saving username. Please try again.';
-    return;
-  }
-
-  window.location.href = 'index.html';
+    window.location.href = 'welcome.html';
 });
-
-// Show error message
-function showError(message) {
-  usernameError.style.display = 'block';
-  usernameError.textContent = message;
-  usernameError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
 </script>
 </body>
 </html>
