@@ -271,13 +271,17 @@
     <script>
                       
 
-// DOM Elements
+    // DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const inputStatus = document.getElementById('input-status');
 const usernameError = document.getElementById('username-error');
 const usernameSuccess = document.getElementById('username-success');
 const suggestionsContainer = document.getElementById('suggestions-container');
+
+// Get user ID from URL if available
+const urlParams = new URLSearchParams(window.location.search);
+const userId = urlParams.get('id');
 
 // Debounce helper
 let debounceTimer;
@@ -376,16 +380,24 @@ async function updateUsernameStatus(username) {
 supabase.auth.getUser().then(async ({ data: { user } }) => {
   if (!user) return (window.location.href = 'signin.html');
 
+  // Use userId from URL if available, otherwise use authenticated user's ID
+  const targetUserId = userId || user.id;
+
   // Fetch existing username
   const { data: profile } = await supabase.from('Profiles')
-    .select('username')
-    .eq('id', user.id)
+    .select('username, accountComplete')
+    .eq('id', targetUserId)
     .single();
 
   if (profile?.username) {
     // Existing username — just show it
     usernameInput.value = profile.username;
     await updateUsernameStatus(profile.username);
+    
+    // If account is already complete, redirect
+    if (profile.accountComplete) {
+      window.location.href = 'index.html';
+    }
     return;
   }
 
@@ -416,7 +428,14 @@ continueBtn.addEventListener('click', async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  const { error } = await supabase.from('Profiles').update({ username }).eq('id', user.id);
+  // Use userId from URL if available, otherwise use authenticated user's ID
+  const targetUserId = userId || user.id;
+
+  const { error } = await supabase.from('Profiles').update({ 
+    username,
+    accountComplete: true 
+  }).eq('id', targetUserId);
+
   if (error) {
     usernameError.style.display = 'block';
     usernameError.textContent = 'Error saving username. Please try again.';
@@ -425,6 +444,13 @@ continueBtn.addEventListener('click', async () => {
 
   window.location.href = 'index.html';
 });
+
+// Show error message
+function showError(message) {
+  usernameError.style.display = 'block';
+  usernameError.textContent = message;
+  usernameError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
     </script>
 </body>
 </html>
