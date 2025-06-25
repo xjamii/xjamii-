@@ -10,16 +10,20 @@
   <!-- Other meta tags -->
   <link rel="stylesheet" href="posts.css">
   <link rel="stylesheet" href="css/suggestions.css">
-   <!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+  </script>
 
-<!-- Swiper -->
-<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+  <!-- Swiper -->
+  <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
-<!-- Your dynamic posts system -->
-<script src="js/posts.js"></script>
+  <!-- Your dynamic posts system -->
+  <script src="js/posts.js"></script>
 </head>
     <style>
         * {
@@ -953,7 +957,7 @@
 
         <!-- Logout Section -->
         <div class="logout-section">
-            <div class="logout-btn" onclick="window.location.href='welcome.html'">
+            <div class="logout-btn" onclick="logout()">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Log Out</span>
             </div>
@@ -1020,22 +1024,6 @@
     </div>
 
   <script>
-    // Firebase Configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-        authDomain: "x-jamii.firebaseapp.com",
-        projectId: "x-jamii",
-        storageBucket: "x-jamii.appspot.com",
-        messagingSenderId: "927548667044",
-        appId: "1:927548667044:web:835e597909f51a2e4da231",
-        measurementId: "G-9S45DQ04HZ"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
     // Preloader functionality
     document.addEventListener('DOMContentLoaded', function() {
         // Check if user is logged in but doesn't have a username
@@ -1094,7 +1082,7 @@
         return new Promise(async (resolve, reject) => {
             try {
                 // Add all your essential data loading here
-                // Example: await db.collection('posts').get();
+                // Example: await supabase.from('posts').select('*');
                 
                 // For now just simulate loading
                 setTimeout(resolve, 2000);
@@ -1105,23 +1093,40 @@
     }
 
     // Function to check if user needs to set a username
-    function checkUsername() {
-        // Check authentication status
-        auth.onAuthStateChanged(user => {
+    async function checkUsername() {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            
+            if (error) throw error;
+            
             if (user) {
                 // User is logged in, check if they have a username
-                db.collection('users').doc(user.uid).get()
-                    .then(doc => {
-                        if (!doc.exists || !doc.data().username) {
-                            // Redirect to create username page
-                            window.location.href = 'create-username.html';
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error checking username:", error);
-                    });
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (profileError || !profile || !profile.username) {
+                    // Redirect to create username page
+                    window.location.href = 'create-username.html';
+                }
             }
-        });
+        } catch (error) {
+            console.error("Error checking username:", error);
+        }
+    }
+
+    // Logout function
+    async function logout() {
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            window.location.href = 'welcome.html';
+        } catch (error) {
+            console.error('Error logging out:', error);
+            alert('Failed to log out. Please try again.');
+        }
     }
 
     // Toggle Menu
