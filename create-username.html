@@ -270,8 +270,7 @@
     </div>
     <script>
                       
-    
-    // DOM Elements
+              // DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const inputStatus = document.getElementById('input-status');
@@ -279,22 +278,9 @@ const usernameError = document.getElementById('username-error');
 const usernameSuccess = document.getElementById('username-success');
 const suggestionsContainer = document.getElementById('suggestions-container');
 
-// Get user ID safely
-function getUserId() {
-  // 1. Check URL params first
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlId = urlParams.get('id');
-  
-  // 2. Validate UUID format
-  if (urlId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(urlId)) {
-    return urlId;
-  }
-  
-  // 3. Fallback to auth user if available
-  return supabase.auth.user()?.id || null;
-}
-
-const userId = getUserId();
+// Get user ID from URL
+const urlParams = new URLSearchParams(window.location.search);
+const userId = urlParams.get('id');
 
 // Debounce helper
 let debounceTimer;
@@ -310,7 +296,7 @@ function isValidUsername(username) {
 
 // Check username availability
 async function checkUsernameAvailability(username) {
-  if (!isValidUsername(username) || !userId) return false;
+  if (!isValidUsername(username)) return false;
   
   const { data } = await supabase
     .from('profiles')
@@ -395,45 +381,32 @@ async function updateUsernameStatus(username) {
   }
 }
 
-// Load current username
+// Load current username (stores EXACT original value)
 async function loadCurrentUsername() {
-  if (!userId) return;
-  
-  const { data: profile, error } = await supabase
+  const { data: profile } = await supabase
     .from('profiles')
     .select('username, full_name')
     .eq('id', userId)
     .single();
 
-  if (error) console.error("Profile load error:", error);
-  
   if (profile?.username) {
-    usernameInput.value = profile.username;
-    usernameInput.setAttribute('data-original-username', profile.username);
+    usernameInput.value = profile.username; // Show exact original
+    usernameInput.setAttribute('data-original-username', profile.username); // Store exact original
     await updateUsernameStatus(profile.username);
   }
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
+supabase.auth.getUser().then(async ({ data: { user } }) => {
+  if (!user) window.location.href = 'signin.html';
   
-  if (error || !user) {
-    window.location.href = 'signin.html';
-    return;
-  }
-
-  // Initialize with either URL ID or auth user ID
-  if (!userId) {
-    window.location.href = 'signin.html';
-    return;
-  }
-
+  const targetUserId = userId || user.id;
   await loadCurrentUsername();
   
   if (!usernameInput.value) {
     const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
     usernameInput.value = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    usernameInput.setAttribute('data-original-username', usernameInput.value);
     await updateUsernameStatus(usernameInput.value);
   }
 });
@@ -443,60 +416,44 @@ usernameInput.addEventListener('input', () => {
   debounce(() => updateUsernameStatus(usernameInput.value.trim()), 500);
 });
 
-// Robust save handler
+// Save handler - ONLY updates if username changed
 continueBtn.addEventListener('click', async () => {
-  if (!userId) {
-    showError('Session expired. Please sign in again.');
-    setTimeout(() => window.location.href = 'signin.html', 2000);
-    return;
-  }
-
   const newUsername = usernameInput.value.trim().toLowerCase();
   const originalUsername = usernameInput.getAttribute('data-original-username');
 
-  // 1. Skip update if unchanged
+  // 1. EXACT comparison with original
   if (newUsername === originalUsername) {
     window.location.href = 'index.html';
-    return;
+    return; // Exit immediately if unchanged
   }
 
-  // 2. Validate format
+  // 2. Validate new username
   if (!isValidUsername(newUsername)) {
     showError('Username must be 1-20 chars (letters, numbers, _)');
     return;
   }
 
   // 3. Check availability
-  try {
-    const isAvailable = await checkUsernameAvailability(newUsername);
-    if (!isAvailable) {
-      showError('Username taken. Try these suggestions:');
-      showSuggestions(generateSuggestions(newUsername));
-      return;
-    }
-
-    // 4. Attempt update
-    const { error } = await supabase
-      .from('profiles')
-      .update({ username: newUsername })
-      .eq('id', userId)
-      .select();
-
-    if (error) throw error;
-    
-    window.location.href = 'index.html';
-  } catch (error) {
-    console.error('Update error:', error);
-    
-    const errorMessages = {
-      '23505': 'Username already exists. Please try another.',
-      '42501': 'Permission denied. Try signing out and back in.',
-      '22P02': 'Invalid user ID. Please reload the page.',
-      'default': 'Update failed. Please try again later.'
-    };
-
-    showError(errorMessages[error.code] || errorMessages.default);
+  const isAvailable = await checkUsernameAvailability(newUsername);
+  if (!isAvailable) {
+    showError('Username taken. Try another.');
+    return;
   }
+
+  // 4. Attempt update
+  const { error } = await supabase
+    .from('profiles')
+    .update({ username: newUsername })
+    .eq('id', userId);
+
+  if (error) {
+    showError(error.message.includes('unique') 
+      ? 'Username was taken. Try another.' 
+      : 'Update failed. Please try again.');
+    return;
+  }
+
+  window.location.href = 'index.html';
 });
 
 // Helper function
@@ -504,7 +461,6 @@ function showError(message) {
   usernameError.style.display = 'block';
   usernameError.textContent = message;
   usernameError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  continueBtn.disabled = true;
 }
     </script>
 </body>
