@@ -415,24 +415,30 @@ usernameInput.addEventListener('input', () => {
   debounce(() => updateUsernameStatus(usernameInput.value.trim()), 500);
 });
 
-// Enhanced save handler with detailed error handling
 continueBtn.addEventListener('click', async () => {
+  // 1. Verify userId exists
+  if (!userId) {
+    console.error("Missing user ID");
+    showError("Session expired. Please reload the page.");
+    return;
+  }
+
   const newUsername = usernameInput.value.trim().toLowerCase();
   const originalUsername = usernameInput.getAttribute('data-original-username');
 
-  // 1. Skip update if unchanged
+  // 2. Skip update if unchanged
   if (newUsername === originalUsername) {
     window.location.href = 'index.html';
     return;
   }
 
-  // 2. Validate format
+  // 3. Validate format
   if (!isValidUsername(newUsername)) {
     showError('Username must be 1-20 chars (letters, numbers, _)');
     return;
   }
 
-  // 3. Check availability
+  // 4. Check availability
   const isAvailable = await checkUsernameAvailability(newUsername);
   if (!isAvailable) {
     showError('Username taken. Try these suggestions:');
@@ -440,36 +446,33 @@ continueBtn.addEventListener('click', async () => {
     return;
   }
 
-  // 4. Attempt update with error differentiation
+  // 5. Attempt update with proper error handling
   try {
     const { error } = await supabase
       .from('profiles')
       .update({ username: newUsername })
-      .eq('id', userId)
+      .eq('id', userId) // Ensures valid UUID
       .select();
 
     if (error) throw error;
     
     window.location.href = 'index.html';
   } catch (error) {
-    console.error('Update error:', error);
-    
-    const errorMap = {
+    console.error("Update failed:", {
+      error: error.message,
+      userId: userId,
+      newUsername: newUsername
+    });
+
+    const errorMessages = {
+      '22P02': 'Invalid user ID format. Please logout and login again.',
       '23505': 'Username already exists. Try another name.',
-      '42501': 'You don\'t have permission to update (check RLS policies).',
-      'P0001': 'Trigger blocked the update. Contact support.'
+      '42501': 'Permission denied. Try refreshing the page.'
     };
 
-    showError(errorMap[error.code] || `Update failed: ${error.message}`);
+    showError(errorMessages[error.code] || `Update failed: ${error.message}`);
   }
 });
-
-// Helper function
-function showError(message) {
-  usernameError.style.display = 'block';
-  usernameError.textContent = message;
-  usernameError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
     </script>
 </body>
 </html>
