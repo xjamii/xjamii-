@@ -270,7 +270,7 @@
     </div>
     <script>
                       
-      // DOM Elements
+              // DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const inputStatus = document.getElementById('input-status');
@@ -278,7 +278,7 @@ const usernameError = document.getElementById('username-error');
 const usernameSuccess = document.getElementById('username-success');
 const suggestionsContainer = document.getElementById('suggestions-container');
 
-// Get user ID from URL if available
+// Get user ID from URL
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get('id');
 
@@ -308,7 +308,7 @@ async function checkUsernameAvailability(username) {
   return !data;
 }
 
-// Generate username suggestions
+// Generate suggestions
 function generateSuggestions(base) {
   const suggestions = [];
   const cleanBase = base.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -321,7 +321,7 @@ function generateSuggestions(base) {
   return suggestions;
 }
 
-// Show suggestions with availability status
+// Show suggestions
 async function showSuggestions(suggestions) {
   suggestionsContainer.innerHTML = '';
   
@@ -345,7 +345,7 @@ async function showSuggestions(suggestions) {
   }
 }
 
-// Update UI based on username status
+// Update UI status
 async function updateUsernameStatus(username) {
   inputStatus.className = 'input-status checking';
   inputStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
@@ -381,33 +381,32 @@ async function updateUsernameStatus(username) {
   }
 }
 
-// Load current username
+// Load current username (stores EXACT original value)
 async function loadCurrentUsername() {
-  const { data: profile, error } = await supabase
+  const { data: profile } = await supabase
     .from('profiles')
     .select('username, full_name')
     .eq('id', userId)
     .single();
 
   if (profile?.username) {
-    // Display current username but let user change it
-    usernameInput.value = profile.username.split('_')[0]; // Show only the name part
-    usernameInput.setAttribute('data-original-username', profile.username);
+    usernameInput.value = profile.username; // Show exact original
+    usernameInput.setAttribute('data-original-username', profile.username); // Store exact original
     await updateUsernameStatus(profile.username);
   }
 }
 
-// Initialize page
+// Initialize
 supabase.auth.getUser().then(async ({ data: { user } }) => {
-  if (!user) return (window.location.href = 'signin.html');
+  if (!user) window.location.href = 'signin.html';
   
   const targetUserId = userId || user.id;
   await loadCurrentUsername();
   
-  // If no username exists, generate a suggestion
   if (!usernameInput.value) {
     const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
     usernameInput.value = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    usernameInput.setAttribute('data-original-username', usernameInput.value);
     await updateUsernameStatus(usernameInput.value);
   }
 });
@@ -417,38 +416,40 @@ usernameInput.addEventListener('input', () => {
   debounce(() => updateUsernameStatus(usernameInput.value.trim()), 500);
 });
 
-// Save handler - only updates if username was changed
+// Save handler - ONLY updates if username changed
 continueBtn.addEventListener('click', async () => {
   const newUsername = usernameInput.value.trim().toLowerCase();
   const originalUsername = usernameInput.getAttribute('data-original-username');
-  
-  // If username didn't change, just redirect
-  if (newUsername === originalUsername?.split('_')[0]) {
+
+  // 1. EXACT comparison with original
+  if (newUsername === originalUsername) {
     window.location.href = 'index.html';
-    return;
+    return; // Exit immediately if unchanged
   }
 
-  // Validate format
+  // 2. Validate new username
   if (!isValidUsername(newUsername)) {
     showError('Username must be 1-20 chars (letters, numbers, _)');
     return;
   }
 
-  // Check availability (excluding current user's existing username)
+  // 3. Check availability
   const isAvailable = await checkUsernameAvailability(newUsername);
   if (!isAvailable) {
     showError('Username taken. Try another.');
     return;
   }
 
-  // Update username
+  // 4. Attempt update
   const { error } = await supabase
     .from('profiles')
     .update({ username: newUsername })
     .eq('id', userId);
 
   if (error) {
-    showError('Update failed. Please try again.');
+    showError(error.message.includes('unique') 
+      ? 'Username was taken. Try another.' 
+      : 'Update failed. Please try again.');
     return;
   }
 
