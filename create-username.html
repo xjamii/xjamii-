@@ -270,8 +270,7 @@
     </div>
     <script>
                       
-
-    // DOM Elements
+// DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const inputStatus = document.getElementById('input-status');
@@ -299,7 +298,7 @@ function isValidUsername(username) {
 async function checkUsernameAvailability(username) {
   if (!isValidUsername(username)) return false;
   const { data } = await supabase
-    .from('Profiles')
+    .from('profiles')  // ← Changed from Profiles to profiles
     .select('id')
     .eq('username', username)
     .maybeSingle();
@@ -384,7 +383,7 @@ supabase.auth.getUser().then(async ({ data: { user } }) => {
   const targetUserId = userId || user.id;
 
   // Fetch existing username
-  const { data: profile } = await supabase.from('Profiles')
+  const { data: profile } = await supabase.from('profiles')  // ← Changed from Profiles to profiles
     .select('username, accountComplete')
     .eq('id', targetUserId)
     .single();
@@ -431,7 +430,7 @@ continueBtn.addEventListener('click', async () => {
   // Use userId from URL if available, otherwise use authenticated user's ID
   const targetUserId = userId || user.id;
 
-  const { error } = await supabase.from('Profiles').update({ 
+  const { error } = await supabase.from('profiles').update({  // ← Changed from Profiles to profiles
     username,
     accountComplete: true 
   }).eq('id', targetUserId);
@@ -451,6 +450,8 @@ function showError(message) {
   usernameError.textContent = message;
   usernameError.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
+
+  
     </script>
 </body>
 </html>
