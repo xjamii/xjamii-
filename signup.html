@@ -300,150 +300,197 @@
         </button>
     </div>
 <script>
-    // DOM Elements - KEEP EXISTING STRUCTURE
-    const continueBtn = document.getElementById('continue-btn');
-    const nameInput = document.getElementById('name');
-    const emailInput = document.getElementById('email');
-    const nameError = document.getElementById('name-error');
-    const emailError = document.getElementById('email-error');
+// DOM Elements
+const continueBtn = document.getElementById('continue-btn');
+const nameInput = document.getElementById('name');
+const emailInput = document.getElementById('email');
+const nameError = document.getElementById('name-error');
+const emailError = document.getElementById('email-error');
 
-    // Improved validation functions
-    function validateName(name) {
-        name = name.trim();
-        if (!name) return { valid: false, message: 'Name is required' };
-        if (name.length < 2) return { valid: false, message: 'Name too short (min 2 chars)' };
-        if (name.length > 50) return { valid: false, message: 'Name too long (max 50 chars)' };
-        if (/[^a-zA-Z \-']/.test(name)) return { valid: false, message: 'Invalid characters' };
-        return { valid: true };
+// Validation functions
+function validateName(name) {
+    name = name.trim();
+    if (!name) return { valid: false, message: 'Name is required' };
+    if (name.length < 2) return { valid: false, message: 'Name too short (min 2 chars)' };
+    if (name.length > 50) return { valid: false, message: 'Name too long (max 50 chars)' };
+    return { valid: true };
+}
+
+function validateEmail(email) {
+    email = email.trim().toLowerCase();
+    if (!email) return { valid: false, message: 'Email is required' };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return { valid: false, message: 'Invalid email format' };
+    }
+    return { valid: true };
+}
+
+// Check email availability with better error handling
+let emailCheckTimeout;
+async function checkEmailAvailability() {
+    const email = emailInput.value.trim().toLowerCase();
+    const validation = validateEmail(email);
+
+    if (!validation.valid) {
+        emailError.textContent = validation.message;
+        emailError.style.display = 'block';
+        return false;
     }
 
-    function validateEmail(email) {
-        email = email.trim().toLowerCase();
-        if (!email) return { valid: false, message: 'Email is required' };
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            return { valid: false, message: 'Invalid email format' };
+    try {
+        // First check auth.users table
+        const { data: authData, error: authError } = await supabase
+            .from('auth.users')
+            .select('email')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (authError) throw authError;
+        
+        if (authData) {
+            emailError.textContent = 'Email already in use';
+            emailError.style.display = 'block';
+            return false;
         }
-        return { valid: true };
+
+        // Then check profiles table if needed
+        const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (profileError) throw profileError;
+        
+        if (profileData) {
+            emailError.textContent = 'Email already in use';
+            emailError.style.display = 'block';
+            return false;
+        }
+
+        emailError.style.display = 'none';
+        return true;
+
+    } catch (error) {
+        console.error('Email check error:', error);
+        emailError.textContent = 'Error checking email availability';
+        emailError.style.display = 'block';
+        return false;
     }
+}
 
-    let emailCheckTimeout;
-    emailInput.addEventListener('input', () => {
-        clearTimeout(emailCheckTimeout);
-        emailCheckTimeout = setTimeout(checkEmailAvailability, 500);
-    });
-
-    nameInput.addEventListener('input', () => {
-        const validation = validateName(nameInput.value);
-        nameError.textContent = validation.valid ? '' : validation.message;
-        nameError.style.display = validation.valid ? 'none' : 'block';
-    });
-
-    async function checkEmailAvailability() {
-        const email = emailInput.value.trim().toLowerCase();
+// Debounced email input handler
+emailInput.addEventListener('input', () => {
+    clearTimeout(emailCheckTimeout);
+    const email = emailInput.value.trim();
+    
+    if (!email) {
+        emailError.style.display = 'none';
+        return;
+    }
+    
+    emailCheckTimeout = setTimeout(async () => {
         const validation = validateEmail(email);
-
         if (!validation.valid) {
             emailError.textContent = validation.message;
             emailError.style.display = 'block';
-            return false;
+            return;
         }
+        await checkEmailAvailability();
+    }, 500);
+});
 
-        try {
-            const { data, error } = await supabase
-                .from('Profiles') // <-- Make sure this matches your actual table name
-                .select('id')
-                .eq('email', email);
+// Name input validation
+nameInput.addEventListener('input', () => {
+    const validation = validateName(nameInput.value);
+    nameError.textContent = validation.valid ? '' : validation.message;
+    nameError.style.display = validation.valid ? 'none' : 'block';
+});
 
-            if (error) throw error;
-            if (data && data.length > 0) {
-                emailError.textContent = 'Email already in use';
-                emailError.style.display = 'block';
-                return false;
-            }
-            emailError.style.display = 'none';
-            return true;
-        } catch (error) {
-            console.error('Email check error:', error);
-            emailError.textContent = 'Error checking email. Try again.';
-            emailError.style.display = 'block';
-            return false;
-        }
+// Continue button handler
+continueBtn.addEventListener('click', async function(e) {
+    e.preventDefault();
+
+    const btn = this;
+    const spinner = btn.querySelector('.spinner');
+    const btnText = btn.querySelector('.btn-text');
+
+    // Validate inputs
+    const nameValidation = validateName(nameInput.value);
+    const emailValidation = validateEmail(emailInput.value);
+
+    if (!nameValidation.valid) {
+        nameError.textContent = nameValidation.message;
+        nameError.style.display = 'block';
+        return;
     }
 
-    continueBtn.addEventListener('click', async function(e) {
-        e.preventDefault();
+    if (!emailValidation.valid) {
+        emailError.textContent = emailValidation.message;
+        emailError.style.display = 'block';
+        return;
+    }
 
-        const btn = this;
-        const spinner = btn.querySelector('.spinner');
-        const btnText = btn.querySelector('.btn-text');
+    // Show loading state
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+    btn.disabled = true;
 
-        const nameValidation = validateName(nameInput.value);
-        const emailValidation = validateEmail(emailInput.value);
-
-        if (!nameValidation.valid) {
-            nameError.textContent = nameValidation.message;
-            nameError.style.display = 'block';
-            return;
+    try {
+        // Final email availability check
+        const isEmailAvailable = await checkEmailAvailability();
+        if (!isEmailAvailable) {
+            throw new Error('Email not available');
         }
 
-        if (!emailValidation.valid) {
-            emailError.textContent = emailValidation.message;
-            emailError.style.display = 'block';
-            return;
+        // Store data for next step
+        localStorage.setItem('signup-name', nameInput.value.trim());
+        localStorage.setItem('signup-email', emailInput.value.trim().toLowerCase());
+
+        // Proceed to password creation
+        window.location.href = 'password.html';
+
+    } catch (error) {
+        console.error('Continue error:', error);
+        btnText.style.display = 'block';
+        spinner.style.display = 'none';
+        btn.disabled = false;
+
+        if (error.message.includes('network')) {
+            emailError.textContent = 'Network error. Please check connection.';
+        } else {
+            emailError.textContent = error.message || 'Error processing request';
         }
+        emailError.style.display = 'block';
+    }
+});
 
-        btnText.style.display = 'none';
-        spinner.style.display = 'block';
-        btn.disabled = true;
-
-        try {
-            const isEmailAvailable = await checkEmailAvailability();
-            if (!isEmailAvailable) {
-                throw new Error('Email not available');
-            }
-
-            localStorage.setItem('signup-name', nameInput.value.trim());
-            localStorage.setItem('signup-email', emailInput.value.trim().toLowerCase());
-
-            window.location.href = 'password.html';
-
-        } catch (error) {
-            console.error('Continue error:', error);
-            btnText.style.display = 'block';
-            spinner.style.display = 'none';
-            btn.disabled = false;
-
-            if (error.message.includes('network')) {
-                emailError.textContent = 'Network error. Please check connection.';
-                emailError.style.display = 'block';
-            }
-        }
-    });
-
-    window.addEventListener('load', function() {
-        const navType = performance.getEntriesByType('navigation')[0].type;
-        if (navType === 'back_forward') {
+// Preloader and navigation
+window.addEventListener('load', function() {
+    const navType = performance.getEntriesByType('navigation')[0]?.type || 'navigate';
+    if (navType === 'back_forward') {
+        document.querySelector('.preloader').style.display = 'none';
+        document.querySelector('.main-content').style.display = 'block';
+    } else {
+        setTimeout(() => {
             document.querySelector('.preloader').style.display = 'none';
             document.querySelector('.main-content').style.display = 'block';
-        } else {
-            setTimeout(() => {
-                document.querySelector('.preloader').style.display = 'none';
-                document.querySelector('.main-content').style.display = 'block';
-            }, 2000);
-        }
-    });
+        }, 2000);
+    }
+});
 
-    document.getElementById('back-btn').addEventListener('click', function() {
-        const btn = this;
-        const spinner = btn.querySelector('.spinner');
-        const btnText = btn.querySelector('.btn-text');
+// Back button handler
+document.getElementById('back-btn').addEventListener('click', function() {
+    const btn = this;
+    const spinner = btn.querySelector('.spinner');
+    const btnText = btn.querySelector('.btn-text');
 
-        btnText.style.display = 'none';
-        spinner.style.display = 'block';
-        btn.disabled = true;
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+    btn.disabled = true;
 
-        window.location.href = 'welcome.html';
-    });
+    window.location.href = 'welcome.html';
+});
 </script>
 </body>
 </html>
