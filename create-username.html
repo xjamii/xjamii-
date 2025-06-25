@@ -270,6 +270,7 @@
     </div>
     <script>
                       
+    
     // DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
@@ -278,9 +279,22 @@ const usernameError = document.getElementById('username-error');
 const usernameSuccess = document.getElementById('username-success');
 const suggestionsContainer = document.getElementById('suggestions-container');
 
-// Get user ID from URL
-const urlParams = new URLSearchParams(window.location.search);
-const userId = urlParams.get('id');
+// Get user ID safely
+function getUserId() {
+  // 1. Check URL params first
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlId = urlParams.get('id');
+  
+  // 2. Validate UUID format
+  if (urlId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(urlId)) {
+    return urlId;
+  }
+  
+  // 3. Fallback to auth user if available
+  return supabase.auth.user()?.id || null;
+}
+
+const userId = getUserId();
 
 // Debounce helper
 let debounceTimer;
@@ -296,7 +310,7 @@ function isValidUsername(username) {
 
 // Check username availability
 async function checkUsernameAvailability(username) {
-  if (!isValidUsername(username)) return false;
+  if (!isValidUsername(username) || !userId) return false;
   
   const { data } = await supabase
     .from('profiles')
@@ -383,12 +397,16 @@ async function updateUsernameStatus(username) {
 
 // Load current username
 async function loadCurrentUsername() {
+  if (!userId) return;
+  
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('username, full_name')
     .eq('id', userId)
     .single();
 
+  if (error) console.error("Profile load error:", error);
+  
   if (profile?.username) {
     usernameInput.value = profile.username;
     usernameInput.setAttribute('data-original-username', profile.username);
@@ -397,10 +415,20 @@ async function loadCurrentUsername() {
 }
 
 // Initialize
-supabase.auth.getUser().then(async ({ data: { user } }) => {
-  if (!user) window.location.href = 'signin.html';
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { user }, error } = await supabase.auth.getUser();
   
-  const targetUserId = userId || user.id;
+  if (error || !user) {
+    window.location.href = 'signin.html';
+    return;
+  }
+
+  // Initialize with either URL ID or auth user ID
+  if (!userId) {
+    window.location.href = 'signin.html';
+    return;
+  }
+
   await loadCurrentUsername();
   
   if (!usernameInput.value) {
@@ -415,64 +443,69 @@ usernameInput.addEventListener('input', () => {
   debounce(() => updateUsernameStatus(usernameInput.value.trim()), 500);
 });
 
+// Robust save handler
 continueBtn.addEventListener('click', async () => {
-  // 1. Verify userId exists
   if (!userId) {
-    console.error("Missing user ID");
-    showError("Session expired. Please reload the page.");
+    showError('Session expired. Please sign in again.');
+    setTimeout(() => window.location.href = 'signin.html', 2000);
     return;
   }
 
   const newUsername = usernameInput.value.trim().toLowerCase();
   const originalUsername = usernameInput.getAttribute('data-original-username');
 
-  // 2. Skip update if unchanged
+  // 1. Skip update if unchanged
   if (newUsername === originalUsername) {
     window.location.href = 'index.html';
     return;
   }
 
-  // 3. Validate format
+  // 2. Validate format
   if (!isValidUsername(newUsername)) {
     showError('Username must be 1-20 chars (letters, numbers, _)');
     return;
   }
 
-  // 4. Check availability
-  const isAvailable = await checkUsernameAvailability(newUsername);
-  if (!isAvailable) {
-    showError('Username taken. Try these suggestions:');
-    showSuggestions(generateSuggestions(newUsername));
-    return;
-  }
-
-  // 5. Attempt update with proper error handling
+  // 3. Check availability
   try {
+    const isAvailable = await checkUsernameAvailability(newUsername);
+    if (!isAvailable) {
+      showError('Username taken. Try these suggestions:');
+      showSuggestions(generateSuggestions(newUsername));
+      return;
+    }
+
+    // 4. Attempt update
     const { error } = await supabase
       .from('profiles')
       .update({ username: newUsername })
-      .eq('id', userId) // Ensures valid UUID
+      .eq('id', userId)
       .select();
 
     if (error) throw error;
     
     window.location.href = 'index.html';
   } catch (error) {
-    console.error("Update failed:", {
-      error: error.message,
-      userId: userId,
-      newUsername: newUsername
-    });
-
+    console.error('Update error:', error);
+    
     const errorMessages = {
-      '22P02': 'Invalid user ID format. Please logout and login again.',
-      '23505': 'Username already exists. Try another name.',
-      '42501': 'Permission denied. Try refreshing the page.'
+      '23505': 'Username already exists. Please try another.',
+      '42501': 'Permission denied. Try signing out and back in.',
+      '22P02': 'Invalid user ID. Please reload the page.',
+      'default': 'Update failed. Please try again later.'
     };
 
-    showError(errorMessages[error.code] || `Update failed: ${error.message}`);
+    showError(errorMessages[error.code] || errorMessages.default);
   }
 });
+
+// Helper function
+function showError(message) {
+  usernameError.style.display = 'block';
+  usernameError.textContent = message;
+  usernameError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  continueBtn.disabled = true;
+}
     </script>
 </body>
 </html>
