@@ -270,7 +270,7 @@
     </div>
     <script>
                       
-      // DOM Elements (unchanged)
+      // DOM Elements
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const inputStatus = document.getElementById('input-status');
@@ -278,23 +278,23 @@ const usernameError = document.getElementById('username-error');
 const usernameSuccess = document.getElementById('username-success');
 const suggestionsContainer = document.getElementById('suggestions-container');
 
-// Get user ID (unchanged)
+// Get user ID from URL if available
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get('id');
 
-// Debounce helper (unchanged)
+// Debounce helper
 let debounceTimer;
 function debounce(func, delay) {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(func, delay);
 }
 
-// Updated username validation (changed minimum to 1)
+// Validate username format (1-20 chars)
 function isValidUsername(username) {
-  return /^[a-z0-9_]{1,20}$/.test(username); // Changed from {3,20} to {1,20}
+  return /^[a-z0-9_]{1,20}$/.test(username);
 }
 
-// Check username availability (unchanged except validation)
+// Check username availability
 async function checkUsernameAvailability(username) {
   if (!isValidUsername(username)) return false;
   
@@ -308,7 +308,7 @@ async function checkUsernameAvailability(username) {
   return !data;
 }
 
-// Generate suggestions (unchanged)
+// Generate username suggestions
 function generateSuggestions(base) {
   const suggestions = [];
   const cleanBase = base.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -321,7 +321,7 @@ function generateSuggestions(base) {
   return suggestions;
 }
 
-// Show suggestions (unchanged)
+// Show suggestions with availability status
 async function showSuggestions(suggestions) {
   suggestionsContainer.innerHTML = '';
   
@@ -345,7 +345,7 @@ async function showSuggestions(suggestions) {
   }
 }
 
-// Updated validation message (changed from 3-20 to 1-20)
+// Update UI based on username status
 async function updateUsernameStatus(username) {
   inputStatus.className = 'input-status checking';
   inputStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
@@ -377,11 +377,11 @@ async function updateUsernameStatus(username) {
     inputStatus.className = 'input-status unavailable';
     inputStatus.innerHTML = '<i class="fas fa-times"></i>';
     usernameError.style.display = 'block';
-    usernameError.textContent = 'Username must be 1-20 chars (letters, numbers, _)'; // Updated message
+    usernameError.textContent = 'Username must be 1-20 chars (letters, numbers, _)';
   }
 }
 
-// Load current username (unchanged)
+// Load current username
 async function loadCurrentUsername() {
   const { data: profile, error } = await supabase
     .from('profiles')
@@ -390,19 +390,21 @@ async function loadCurrentUsername() {
     .single();
 
   if (profile?.username) {
-    usernameInput.value = profile.username.split('_')[0];
+    // Display current username but let user change it
+    usernameInput.value = profile.username.split('_')[0]; // Show only the name part
     usernameInput.setAttribute('data-original-username', profile.username);
     await updateUsernameStatus(profile.username);
   }
 }
 
-// Initialize page (unchanged)
+// Initialize page
 supabase.auth.getUser().then(async ({ data: { user } }) => {
   if (!user) return (window.location.href = 'signin.html');
   
   const targetUserId = userId || user.id;
   await loadCurrentUsername();
   
+  // If no username exists, generate a suggestion
   if (!usernameInput.value) {
     const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
     usernameInput.value = name.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -410,44 +412,50 @@ supabase.auth.getUser().then(async ({ data: { user } }) => {
   }
 });
 
-// Real-time input listener (unchanged)
+// Real-time input listener
 usernameInput.addEventListener('input', () => {
   debounce(() => updateUsernameStatus(usernameInput.value.trim()), 500);
 });
 
-// Save handler with updated validation message
+// Save handler - only updates if username was changed
 continueBtn.addEventListener('click', async () => {
   const newUsername = usernameInput.value.trim().toLowerCase();
   const originalUsername = usernameInput.getAttribute('data-original-username');
   
-  // Updated validation message
-  if (!isValidUsername(newUsername)) {
-    showError('Username must be 1-20 chars (letters, numbers, _)'); // Changed from 3-20
+  // If username didn't change, just redirect
+  if (newUsername === originalUsername?.split('_')[0]) {
+    window.location.href = 'index.html';
     return;
   }
 
+  // Validate format
+  if (!isValidUsername(newUsername)) {
+    showError('Username must be 1-20 chars (letters, numbers, _)');
+    return;
+  }
+
+  // Check availability (excluding current user's existing username)
   const isAvailable = await checkUsernameAvailability(newUsername);
   if (!isAvailable) {
-    showError('Username was taken just now. Please try another.');
+    showError('Username taken. Try another.');
     return;
   }
 
+  // Update username
   const { error } = await supabase
     .from('profiles')
     .update({ username: newUsername })
     .eq('id', userId);
 
   if (error) {
-    showError(error.message.includes('unique') 
-      ? 'Username was taken. Try another.' 
-      : 'Update failed. Please try again.');
+    showError('Update failed. Please try again.');
     return;
   }
 
   window.location.href = 'index.html';
 });
 
-// Helper function (unchanged)
+// Helper function
 function showError(message) {
   usernameError.style.display = 'block';
   usernameError.textContent = message;
