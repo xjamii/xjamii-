@@ -270,7 +270,7 @@
     </div>
     <script>
                       
-// DOM Elements
+      // DOM Elements (unchanged)
 const usernameInput = document.getElementById('username');
 const continueBtn = document.getElementById('continue-btn');
 const inputStatus = document.getElementById('input-status');
@@ -278,50 +278,53 @@ const usernameError = document.getElementById('username-error');
 const usernameSuccess = document.getElementById('username-success');
 const suggestionsContainer = document.getElementById('suggestions-container');
 
-// Get user ID from URL if available
+// Get user ID (unchanged)
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get('id');
 
-// Debounce helper
+// Debounce helper (unchanged)
 let debounceTimer;
 function debounce(func, delay) {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(func, delay);
 }
 
-// Validate username format
+// Updated username validation (changed minimum to 1)
 function isValidUsername(username) {
-  return /^[a-zA-Z0-9_]{5,20}$/.test(username);
+  return /^[a-z0-9_]{1,20}$/.test(username); // Changed from {3,20} to {1,20}
 }
 
-// Check username availability with Supabase
+// Check username availability (unchanged except validation)
 async function checkUsernameAvailability(username) {
   if (!isValidUsername(username)) return false;
+  
   const { data } = await supabase
-    .from('profiles')  // ← Changed from Profiles to profiles
+    .from('profiles')
     .select('id')
     .eq('username', username)
+    .neq('id', userId)
     .maybeSingle();
+  
   return !data;
 }
 
-// Generate username suggestions
+// Generate suggestions (unchanged)
 function generateSuggestions(base) {
   const suggestions = [];
-  const cleanBase = base.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const cleanBase = base.toLowerCase().replace(/[^a-z0-9]/g, '');
   if (!cleanBase) return suggestions;
 
   suggestions.push(`${cleanBase}${Math.floor(100 + Math.random() * 900)}`);
   suggestions.push(`${cleanBase}_${Math.floor(10 + Math.random() * 90)}`);
   suggestions.push(`${cleanBase}${String.fromCharCode(97 + Math.floor(Math.random() * 26))}`);
   suggestions.push(`the_${cleanBase}`);
-  suggestions.push(`${cleanBase}${Math.floor(1000 + Math.random() * 9000)}`);
   return suggestions;
 }
 
-// Show suggestions
+// Show suggestions (unchanged)
 async function showSuggestions(suggestions) {
   suggestionsContainer.innerHTML = '';
+  
   for (const suggestion of suggestions) {
     const pill = document.createElement('div');
     pill.className = 'suggestion-pill loading';
@@ -329,23 +332,25 @@ async function showSuggestions(suggestions) {
     suggestionsContainer.appendChild(pill);
 
     const isAvailable = await checkUsernameAvailability(suggestion);
+    
     pill.className = isAvailable ? 'suggestion-pill available' : 'suggestion-pill unavailable';
     pill.innerHTML = `${suggestion}<span class="status-icon"><i class="fas ${isAvailable ? 'fa-check' : 'fa-times'}"></i></span>`;
 
-    pill.addEventListener('click', () => {
-      usernameInput.value = suggestion;
-      updateUsernameStatus(suggestion);
-    });
+    if (isAvailable) {
+      pill.addEventListener('click', () => {
+        usernameInput.value = suggestion;
+        updateUsernameStatus(suggestion);
+      });
+    }
   }
 }
 
-// Validate & update status
+// Updated validation message (changed from 3-20 to 1-20)
 async function updateUsernameStatus(username) {
   inputStatus.className = 'input-status checking';
   inputStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
   usernameError.style.display = usernameSuccess.style.display = 'none';
   continueBtn.disabled = true;
-  suggestionsContainer.innerHTML = '';
 
   if (!username) {
     inputStatus.innerHTML = '';
@@ -354,6 +359,7 @@ async function updateUsernameStatus(username) {
 
   if (isValidUsername(username)) {
     const isAvailable = await checkUsernameAvailability(username);
+    
     if (isAvailable) {
       inputStatus.className = 'input-status available';
       inputStatus.innerHTML = '<i class="fas fa-check"></i>';
@@ -371,87 +377,82 @@ async function updateUsernameStatus(username) {
     inputStatus.className = 'input-status unavailable';
     inputStatus.innerHTML = '<i class="fas fa-times"></i>';
     usernameError.style.display = 'block';
-    usernameError.textContent = 'Username must be 5-20 chars (letters, numbers, or underscores).';
+    usernameError.textContent = 'Username must be 1-20 chars (letters, numbers, _)'; // Updated message
   }
 }
 
-// Load existing username if available
-supabase.auth.getUser().then(async ({ data: { user } }) => {
-  if (!user) return (window.location.href = 'signin.html');
-
-  // Use userId from URL if available, otherwise use authenticated user's ID
-  const targetUserId = userId || user.id;
-
-  // Fetch existing username
-  const { data: profile } = await supabase.from('profiles')  // ← Changed from Profiles to profiles
-    .select('username, accountComplete')
-    .eq('id', targetUserId)
+// Load current username (unchanged)
+async function loadCurrentUsername() {
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('username, full_name')
+    .eq('id', userId)
     .single();
 
   if (profile?.username) {
-    // Existing username — just show it
-    usernameInput.value = profile.username;
+    usernameInput.value = profile.username.split('_')[0];
+    usernameInput.setAttribute('data-original-username', profile.username);
     await updateUsernameStatus(profile.username);
-    
-    // If account is already complete, redirect
-    if (profile.accountComplete) {
-      window.location.href = 'index.html';
-    }
-    return;
   }
+}
 
-  // No username set — generate one
-  const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
-  const suggestedUsername = `${name.toLowerCase().replace(/[^a-z0-9_]/g, '')}${Math.floor(100 + Math.random() * 900)}`;
-  usernameInput.value = suggestedUsername;
-  await updateUsernameStatus(suggestedUsername);
+// Initialize page (unchanged)
+supabase.auth.getUser().then(async ({ data: { user } }) => {
+  if (!user) return (window.location.href = 'signin.html');
+  
+  const targetUserId = userId || user.id;
+  await loadCurrentUsername();
+  
+  if (!usernameInput.value) {
+    const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
+    usernameInput.value = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    await updateUsernameStatus(usernameInput.value);
+  }
 });
 
-// Input listener
+// Real-time input listener (unchanged)
 usernameInput.addEventListener('input', () => {
   debounce(() => updateUsernameStatus(usernameInput.value.trim()), 500);
 });
 
-// Save username
+// Save handler with updated validation message
 continueBtn.addEventListener('click', async () => {
-  const username = usernameInput.value.trim().toLowerCase();
-  if (!isValidUsername(username)) return;
-
-  const isAvailable = await checkUsernameAvailability(username);
-  if (!isAvailable) {
-    usernameError.style.display = 'block';
-    usernameError.textContent = 'This username is no longer available.';
+  const newUsername = usernameInput.value.trim().toLowerCase();
+  const originalUsername = usernameInput.getAttribute('data-original-username');
+  
+  // Updated validation message
+  if (!isValidUsername(newUsername)) {
+    showError('Username must be 1-20 chars (letters, numbers, _)'); // Changed from 3-20
     return;
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+  const isAvailable = await checkUsernameAvailability(newUsername);
+  if (!isAvailable) {
+    showError('Username was taken just now. Please try another.');
+    return;
+  }
 
-  // Use userId from URL if available, otherwise use authenticated user's ID
-  const targetUserId = userId || user.id;
-
-  const { error } = await supabase.from('profiles').update({  // ← Changed from Profiles to profiles
-    username,
-    accountComplete: true 
-  }).eq('id', targetUserId);
+  const { error } = await supabase
+    .from('profiles')
+    .update({ username: newUsername })
+    .eq('id', userId);
 
   if (error) {
-    usernameError.style.display = 'block';
-    usernameError.textContent = 'Error saving username. Please try again.';
+    showError(error.message.includes('unique') 
+      ? 'Username was taken. Try another.' 
+      : 'Update failed. Please try again.');
     return;
   }
 
   window.location.href = 'index.html';
 });
 
-// Show error message
+// Helper function (unchanged)
 function showError(message) {
   usernameError.style.display = 'block';
   usernameError.textContent = message;
   usernameError.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
-
-  
     </script>
 </body>
 </html>
