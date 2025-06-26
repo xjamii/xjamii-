@@ -1024,436 +1024,172 @@
     </div>
 
   <script>
-                        
-
-
-            // Global user state
-let currentUser = null;
-let userProfile = null;
-let isDarkMode = localStorage.getItem('darkMode') === 'true';
-
-// DOM Elements
-const logoPreloader = document.getElementById('logoPreloader');
-const spinnerPreloader = document.getElementById('spinnerPreloader');
-const darkModeToggle = document.getElementById('darkModeToggle');
-const dataSaverToggle = document.getElementById('dataSaverToggle');
-const refreshContainer = document.getElementById('refresh-container');
-const refreshSpinner = document.querySelector('.refresh-spinner');
-
-// Initialize the page
-document.addEventListener('DOMContentLoaded', async function() {
-    // Set initial dark mode state
-    document.body.classList.toggle('dark-mode', isDarkMode);
-    darkModeToggle.checked = isDarkMode;
-    
-    // Set data saver preference
-    dataSaverToggle.checked = localStorage.getItem('dataSaver') === 'true';
-    
-    // Show initial preloader
-    handlePreloader();
-    
-    // Check authentication and load user data
-    await checkAuthState();
-    
-    // Update UI with user data
-    await updateUIWithUserData();
-    
-    // Load essential data
-    await loadEssentialData();
-    
-    // Initialize event listeners
-    setupEventListeners();
-});
-
-// Authentication and user data functions
-async function checkAuthState() {
-    try {
-        const { data: { user }, error } = await supabase.auth.getUser();
+    // Preloader functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if user is logged in but doesn't have a username
+        checkUsername();
         
-        if (error) throw error;
+        // Get the referring page
+        const referrer = document.referrer;
+        const excludedPages = [
+            'login.html',
+            'create-username.html',
+            'profile.html',
+            'search.html',
+            'notifications.html',
+            'create-post.html'
+        ];
         
-        if (user) {
-            currentUser = user;
-            await fetchUserProfile();
+        // Check if coming from an excluded page
+        const fromExcludedPage = excludedPages.some(page => referrer.includes(page));
+        
+        if (fromExcludedPage) {
+            // Coming from excluded page - show only spinner preloader
+            document.getElementById('logoPreloader').style.display = 'none';
+            document.getElementById('spinnerPreloader').style.display = 'flex';
             
-            // Check if username is set
-            if (!userProfile?.username) {
-                window.location.href = 'create-username.html';
-                return;
+            // Load all necessary data
+            loadEssentialData().then(() => {
+                // All data loaded successfully
+                document.getElementById('spinnerPreloader').style.display = 'none';
+            }).catch(error => {
+                // Show error feedback
+                console.error('Loading error:', error);
+                document.getElementById('spinnerPreloader').innerHTML = `
+                    <div class="error-feedback">
+                        <p>Failed to load data. Please try again.</p>
+                        <button onclick="window.location.reload()">Retry</button>
+                    </div>
+                `;
+            });
+        } else {
+            // Normal visit or refresh - show both preloaders
+            setTimeout(function() {
+                document.getElementById('logoPreloader').style.display = 'none';
+                
+                // Show spinner preloader for 10 seconds
+                document.getElementById('spinnerPreloader').style.display = 'flex';
+                
+                setTimeout(function() {
+                    document.getElementById('spinnerPreloader').style.display = 'none';
+                }, 10000);
+            }, 3000);
+        }
+    });
+
+    // Function to load all essential data
+    function loadEssentialData() {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Add all your essential data loading here
+                // Example: await supabase.from('posts').select('*');
+                
+                // For now just simulate loading
+                setTimeout(resolve, 2000);
+            } catch (error) {
+                reject(error);
             }
-        } else {
-            // No user logged in - redirect to welcome page
+        });
+    }
+
+    // Function to check if user needs to set a username
+    async function checkUsername() {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            
+            if (error) throw error;
+            
+            if (user) {
+                // User is logged in, check if they have a username
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (profileError || !profile || !profile.username) {
+                    // Redirect to create username page
+                    window.location.href = 'create-username.html';
+                }
+            }
+        } catch (error) {
+            console.error("Error checking username:", error);
+        }
+    }
+
+    // Logout function
+    async function logout() {
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
             window.location.href = 'welcome.html';
+        } catch (error) {
+            console.error('Error logging out:', error);
+            alert('Failed to log out. Please try again.');
         }
-    } catch (error) {
-        console.error("Authentication error:", error);
-        // Optionally show error to user
     }
-}
 
-async function fetchUserProfile() {
-    try {
-        const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-            
-        if (error) throw error;
-        
-        userProfile = profile;
-        return profile;
-    } catch (error) {
-        console.error("Error fetching profile:", error);
-        return null;
+    // Toggle Menu
+    function toggleMenu() {
+        const menuPage = document.getElementById('menuPage');
+        menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
     }
-}
 
-async function updateUIWithUserData() {
-    if (!userProfile) return;
-    
-    // Update profile link
-    const profileLinks = document.querySelectorAll('.nav-icon[title="Profile"]');
-    profileLinks.forEach(link => {
-        link.onclick = () => {
-            window.location.href = `profile.html?id=${userProfile.username}`;
-        };
-    });
-    
-    // Update menu with user info
-    const menuHeader = document.querySelector('.menu-header');
-    if (menuHeader) {
-        const existingUserInfo = document.querySelector('.menu-user-info');
-        if (existingUserInfo) existingUserInfo.remove();
+    // Show Notifications
+    function showNotifications() {
+        const notificationsPage = document.getElementById('notificationsPage');
+        notificationsPage.style.display = 'block';
         
-        const userInfo = document.createElement('div');
-        userInfo.className = 'menu-user-info';
-        userInfo.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid #ddd;">
-                <img src="${userProfile.avatar_url || 'default-avatar.png'}" 
-                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                <div>
-                    <div style="font-weight: bold;">${userProfile.full_name || 'User'}</div>
-                    <div style="font-size: 0.8em; color: #666;">@${userProfile.username}</div>
-                </div>
-            </div>
-        `;
-        menuHeader.parentNode.insertBefore(userInfo, menuHeader.nextSibling);
-    }
-    
-    // Personalize create post button
-    const createPostBtn = document.querySelector('.create-post-btn');
-    if (createPostBtn) {
-        createPostBtn.onclick = () => {
-            window.location.href = `create-post.html?user=${userProfile.username}`;
-        };
-    }
-}
-
-// Data loading functions
-async function loadEssentialData() {
-    try {
-        // Show loading state
-        document.getElementById('posts-loading').style.display = 'block';
+        // Show skeleton preloader and hide content
+        document.getElementById('notificationsSkeleton').style.display = 'block';
+        document.getElementById('notificationsContainer').style.display = 'none';
         
-        // Load posts (filtered for current user if needed)
-        let postsQuery = supabase
-            .from('posts')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(20);
-            
-        if (userProfile?.following) {
-            // Only show posts from followed users
-            postsQuery = postsQuery.in('user_id', userProfile.following);
-        }
-        
-        const { data: posts, error } = await postsQuery;
-        
-        if (error) throw error;
-        
-        // Process and display posts
-        if (posts && posts.length > 0) {
-            displayPosts(posts);
-            document.getElementById('no-posts').style.display = 'none';
-        } else {
-            document.getElementById('no-posts').style.display = 'block';
-        }
-        
-        // Load suggestions
-        await loadSuggestions();
-        
-    } catch (error) {
-        console.error("Error loading data:", error);
-        document.getElementById('posts-error').style.display = 'block';
-    } finally {
-        document.getElementById('posts-loading').style.display = 'none';
-    }
-}
-
-function displayPosts(posts) {
-    const postsContainer = document.getElementById('posts-container');
-    postsContainer.innerHTML = '';
-    
-    posts.forEach(post => {
-        const postElement = document.createElement('div');
-        postElement.className = 'post';
-        postElement.innerHTML = `
-            <div class="post-header">
-                <img src="${post.avatar_url || 'default-avatar.png'}" class="post-avatar">
-                <div class="post-user-info">
-                    <span class="post-username">${post.username}</span>
-                    <span class="post-time">${formatPostTime(post.created_at)}</span>
-                </div>
-            </div>
-            <div class="post-content">${post.content}</div>
-            <div class="post-actions">
-                <button class="post-action like-btn" data-post-id="${post.id}">
-                    <i class="far fa-heart"></i> ${post.likes_count || 0}
-                </button>
-                <button class="post-action comment-btn" data-post-id="${post.id}">
-                    <i class="far fa-comment"></i> ${post.comments_count || 0}
-                </button>
-                <button class="post-action share-btn" data-post-id="${post.id}">
-                    <i class="fas fa-share"></i>
-                </button>
-            </div>
-        `;
-        postsContainer.appendChild(postElement);
-    });
-    
-    // Add event listeners to the new post buttons
-    setupPostInteractions();
-}
-
-async function loadSuggestions() {
-    try {
-        let suggestionsQuery = supabase
-            .from('profiles')
-            .select('id, username, full_name, avatar_url')
-            .neq('id', currentUser.id) // Don't suggest the current user
-            .limit(5);
-            
-        if (userProfile?.following) {
-            // Exclude already followed users
-            suggestionsQuery = suggestionsQuery.not('id', 'in', `(${userProfile.following.join(',')})`);
-        }
-        
-        const { data: suggestions, error } = await suggestionsQuery;
-        
-        if (error) throw error;
-        
-        if (suggestions && suggestions.length > 0) {
-            displaySuggestions(suggestions);
-        }
-    } catch (error) {
-        console.error("Error loading suggestions:", error);
-    }
-}
-
-function displaySuggestions(suggestions) {
-    const suggestionsContainer = document.getElementById('suggestionsScroll');
-    suggestionsContainer.innerHTML = '';
-    
-    suggestions.forEach(user => {
-        const userElement = document.createElement('div');
-        userElement.className = 'suggestion-item';
-        userElement.innerHTML = `
-            <img src="${user.avatar_url || 'default-avatar.png'}" class="suggestion-avatar">
-            <div class="suggestion-info">
-                <div class="suggestion-name">${user.full_name || user.username}</div>
-                <div class="suggestion-username">@${user.username}</div>
-            </div>
-            <button class="follow-btn" data-user-id="${user.id}">Follow</button>
-        `;
-        suggestionsContainer.appendChild(userElement);
-    });
-    
-    // Add event listeners to follow buttons
-    document.querySelectorAll('.follow-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const userId = e.target.dataset.userId;
-            await followUser(userId);
-        });
-    });
-}
-
-// Interaction functions
-async function followUser(userId) {
-    try {
-        const { error } = await supabase
-            .from('followers')
-            .insert({
-                follower_id: currentUser.id,
-                following_id: userId,
-                created_at: new Date().toISOString()
-            });
-            
-        if (error) throw error;
-        
-        // Update UI
-        const followBtn = document.querySelector(`.follow-btn[data-user-id="${userId}"]`);
-        if (followBtn) {
-            followBtn.textContent = 'Following';
-            followBtn.style.backgroundColor = '#00B0FF';
-            followBtn.style.color = 'white';
-        }
-        
-        // Update user profile data
-        await fetchUserProfile();
-    } catch (error) {
-        console.error("Error following user:", error);
-    }
-}
-
-function setupPostInteractions() {
-    document.querySelectorAll('.like-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const postId = e.target.closest('.like-btn').dataset.postId;
-            await likePost(postId);
-        });
-    });
-    
-    document.querySelectorAll('.comment-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const postId = e.target.closest('.comment-btn').dataset.postId;
-            showComments(postId);
-        });
-    });
-    
-    document.querySelectorAll('.share-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const postId = e.target.closest('.share-btn').dataset.postId;
-            showShareOptions(postId);
-        });
-    });
-}
-
-async function likePost(postId) {
-    try {
-        const { error } = await supabase
-            .from('likes')
-            .insert({
-                post_id: postId,
-                user_id: currentUser.id,
-                created_at: new Date().toISOString()
-            });
-            
-        if (error) throw error;
-        
-        // Update like count in UI
-        const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
-        if (likeBtn) {
-            const likeIcon = likeBtn.querySelector('i');
-            const likeCount = likeBtn.textContent.trim().split(' ')[1] || '0';
-            
-            likeIcon.classList.remove('far');
-            likeIcon.classList.add('fas');
-            likeBtn.textContent = ` ${parseInt(likeCount) + 1}`;
-            likeBtn.prepend(likeIcon);
-        }
-    } catch (error) {
-        console.error("Error liking post:", error);
-    }
-}
-
-// UI helper functions
-function formatPostTime(timestamp) {
-    const now = new Date();
-    const postTime = new Date(timestamp);
-    const diffInHours = (now - postTime) / (1000 * 60 * 60);
-    
-    if (diffInHours < 1) {
-        const minutes = Math.floor(diffInHours * 60);
-        return `${minutes}m ago`;
-    } else if (diffInHours < 24) {
-        return `${Math.floor(diffInHours)}h ago`;
-    } else {
-        return postTime.toLocaleDateString();
-    }
-}
-
-function handlePreloader() {
-    const referrer = document.referrer;
-    const excludedPages = [
-        'login.html',
-        'create-username.html',
-        'profile.html',
-        'search.html',
-        'notifications.html',
-        'create-post.html'
-    ];
-    
-    const fromExcludedPage = excludedPages.some(page => referrer.includes(page));
-    
-    if (fromExcludedPage) {
-        logoPreloader.style.display = 'none';
-        spinnerPreloader.style.display = 'flex';
-    } else {
-        setTimeout(() => {
-            logoPreloader.style.display = 'none';
-            spinnerPreloader.style.display = 'flex';
-            
-            setTimeout(() => {
-                spinnerPreloader.style.display = 'none';
-            }, 10000);
+        // Hide skeleton and show content after 3 seconds (simulating loading)
+        setTimeout(function() {
+            document.getElementById('notificationsSkeleton').style.display = 'none';
+            document.getElementById('notificationsContainer').style.display = 'block';
         }, 3000);
     }
-}
 
-function setupEventListeners() {
-    // Dark mode toggle
+    // Hide Notifications
+    function hideNotifications() {
+        document.getElementById('notificationsPage').style.display = 'none';
+    }
+
+    // Dark Mode Toggle
+    const darkModeToggle = document.getElementById('darkModeToggle');
     darkModeToggle.addEventListener('change', function() {
-        isDarkMode = this.checked;
-        document.body.classList.toggle('dark-mode', isDarkMode);
-        localStorage.setItem('darkMode', isDarkMode);
+        document.body.classList.toggle('dark-mode', this.checked);
+        // Save preference to localStorage
+        localStorage.setItem('darkMode', this.checked);
     });
-    
-    // Data saver toggle
+
+    // Check for saved dark mode preference
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+        darkModeToggle.checked = true;
+    }
+
+    // Data Saver Toggle
+    const dataSaverToggle = document.getElementById('dataSaverToggle');
     dataSaverToggle.addEventListener('change', function() {
+        // Implement data saver functionality here
+        console.log('Data Saver:', this.checked);
         localStorage.setItem('dataSaver', this.checked);
     });
-    
-    // Menu toggle
-    document.querySelector('.menu-toggle').addEventListener('click', toggleMenu);
-    
-    // Notifications
-    document.querySelector('.nav-icon[title="Notifications"]').addEventListener('click', showNotifications);
-    
-    // Pull to refresh
-    setupPullToRefresh();
-    
-    // Logout
-    document.querySelector('.logout-btn').addEventListener('click', logout);
-}
 
-// Navigation functions
-function toggleMenu() {
-    const menuPage = document.getElementById('menuPage');
-    menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
-}
+    // Check for saved data saver preference
+    if (localStorage.getItem('dataSaver') === 'true') {
+        dataSaverToggle.checked = true;
+    }
 
-function showNotifications() {
-    const notificationsPage = document.getElementById('notificationsPage');
-    notificationsPage.style.display = 'block';
-    
-    document.getElementById('notificationsSkeleton').style.display = 'block';
-    document.getElementById('notificationsContainer').style.display = 'none';
-    
-    setTimeout(function() {
-        document.getElementById('notificationsSkeleton').style.display = 'none';
-        document.getElementById('notificationsContainer').style.display = 'block';
-    }, 3000);
-}
-
-function hideNotifications() {
-    document.getElementById('notificationsPage').style.display = 'none';
-}
-
-// Pull to refresh implementation
-function setupPullToRefresh() {
+    // Pull to Refresh Functionality
+    const refreshContainer = document.getElementById('refresh-container');
+    const refreshSpinner = document.querySelector('.refresh-spinner');
     let startY = 0;
     let isRefreshing = false;
+    
+    // Minimum pull distance to activate refresh (in pixels)
     const REFRESH_THRESHOLD = 80;
 
     document.addEventListener('touchstart', e => {
@@ -1468,8 +1204,11 @@ function setupPullToRefresh() {
             
             if (pullDistance > 0) {
                 e.preventDefault();
-                refreshContainer.style.top = `${Math.min(50, pullDistance/2) + 6}px`;
                 
+                // Move spinner with pull
+                refreshContainer.style.top = `${Math.min(50, pullDistance/2) + 6}px`; // Adjusted to start below header
+                
+                // Show spinner when threshold passed
                 if (pullDistance > REFRESH_THRESHOLD) {
                     refreshSpinner.style.opacity = '1';
                 } else {
@@ -1484,8 +1223,10 @@ function setupPullToRefresh() {
             const pullDistance = e.changedTouches[0].pageY - startY;
             
             if (pullDistance > REFRESH_THRESHOLD) {
+                // Start refresh
                 startRefresh();
             } else {
+                // Reset if not pulled far enough
                 resetSpinner();
             }
         }
@@ -1494,45 +1235,31 @@ function setupPullToRefresh() {
 
     function startRefresh() {
         isRefreshing = true;
-        refreshContainer.style.top = '56px';
+        refreshContainer.style.top = '56px'; // Position below header
         refreshContainer.classList.add('refreshing');
         
-        // Reload data
-        loadEssentialData().then(() => {
+        // Simulate refresh
+        setTimeout(() => {
             isRefreshing = false;
             refreshContainer.classList.remove('refreshing');
             resetSpinner();
-        });
+            
+            // If on notifications page, show skeleton loader again
+            if (document.getElementById('notificationsPage').style.display === 'block') {
+                document.getElementById('notificationsSkeleton').style.display = 'block';
+                document.getElementById('notificationsContainer').style.display = 'none';
+                setTimeout(function() {
+                    document.getElementById('notificationsSkeleton').style.display = 'none';
+                    document.getElementById('notificationsContainer').style.display = 'block';
+                }, 2000);
+            }
+        }, 1500);
     }
 
     function resetSpinner() {
         refreshContainer.style.top = '56px';
         refreshSpinner.style.opacity = '0';
     }
-}
-
-// Logout function
-async function logout() {
-    try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        window.location.href = 'welcome.html';
-    } catch (error) {
-        console.error('Error logging out:', error);
-        alert('Failed to log out. Please try again.');
-    }
-}
-
-// Initialize the app
-async function initApp() {
-    await checkAuthState();
-    await updateUIWithUserData();
-    await loadEssentialData();
-    setupEventListeners();
-}
-
-// Start the app
-initApp();
 </script>
 <script src="js/suggestions.js" defer></script>
 <script src="js/posts.js"></script>
