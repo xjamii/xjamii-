@@ -1992,200 +1992,188 @@
                                 
         // profile-loader.js - Pure Standalone Profile Loading
 
-// Configuration (matches your existing HTML structure)
-const PROFILE_SELECTORS = {
-  avatar: '#profile-avatar',
-  name: '#profile-name',
-  username: '#profile-username',
-  bio: '#profile-bio',
-  website: '#profile-website',
-  postsCount: '#posts-count .stat-number',
-  followersCount: '#followers-count .stat-number',
-  followingCount: '#following-count .stat-number',
-  editBtn: '#edit-profile-btn',
-  messageBtn: '#message-btn',
-  followBtn: '#follow-btn',
-  moreBtn: '#more-btn'
+      // profile-loader.js - Complete Standalone Implementation
+
+// Initialize Supabase (must be loaded before this script)
+const supabase = window.supabase || supabase.createClient(
+  "https://dadrhoxjhjbnhhrtkgbf.supabase.co",
+  "your-supabase-key"
+);
+
+// DOM Elements
+const elements = {
+  avatar: document.getElementById('profile-avatar'),
+  name: document.getElementById('profile-name'),
+  username: document.getElementById('profile-username'),
+  bio: document.getElementById('profile-bio'),
+  website: document.getElementById('profile-website'),
+  postsCount: document.getElementById('posts-count')?.querySelector('.stat-number'),
+  followersCount: document.getElementById('followers-count')?.querySelector('.stat-number'),
+  followingCount: document.getElementById('following-count')?.querySelector('.stat-number'),
+  editBtn: document.getElementById('edit-profile-btn'),
+  messageBtn: document.getElementById('message-btn'),
+  followBtn: document.getElementById('follow-btn'),
+  moreBtn: document.getElementById('more-btn')
 };
 
-class ProfileLoader {
-  constructor(supabaseClient) {
-    this.supabase = supabaseClient;
-    this.currentUser = null;
-    this.profileUser = null;
-    this.elements = {};
-    
-    // Initialize DOM elements
-    for (const [key, selector] of Object.entries(PROFILE_SELECTORS)) {
-      this.elements[key] = document.querySelector(selector);
+// State
+let currentUser = null;
+let profileUser = null;
+
+// Main Initialization
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    // 1. Check authentication
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      window.location.href = 'login.html';
+      return;
     }
-  }
+    currentUser = user;
 
-  async init() {
-    try {
-      // Get auth state (exactly as your original code)
-      const { data: { user }, error } = await this.supabase.auth.getUser();
-      if (error || !user) {
-        window.location.href = 'login.html';
-        return;
-      }
-      
-      this.currentUser = user;
-      
-      // Get username from URL (same as your code)
-      const pathParts = window.location.pathname.split('/');
-      const username = pathParts[pathParts.length - 1].replace('.html', '');
-      
-      if (!username || username === 'profile') {
-        await this.loadProfile(this.currentUser.id);
-        this.setupUIForOwner();
-      } else {
-        await this.loadProfileByUsername(username);
-        this.setupUIForVisitor();
-      }
-    } catch (error) {
-      console.error("Profile loader error:", error);
-      this.showErrorState();
-    }
-  }
+    // 2. Get username from URL
+    const pathParts = window.location.pathname.split('/');
+    const username = pathParts.pop().replace('.html', '');
 
-  async loadProfile(userId) {
-    try {
-      const { data, error } = await this.supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error || !data) throw error || new Error('User not found');
-      
-      this.profileUser = data;
-      this.renderProfile();
-      
-      await this.loadFollowStats(userId);
-      
-    } catch (error) {
-      console.error("Load profile error:", error);
-      throw error;
-    }
-  }
-
-  async loadProfileByUsername(username) {
-    try {
-      const { data, error } = await this.supabase
-        .from('profiles')
-        .select('*')
-        .eq('username', username.toLowerCase())
-        .single();
-
-      if (error || !data) throw error || new Error('User not found');
-      
-      this.profileUser = data;
-      this.renderProfile();
-      
-      await Promise.all([
-        this.loadFollowStats(data.id),
-        this.checkFollowStatus(),
-        this.checkBlockStatus()
-      ]);
-      
-    } catch (error) {
-      console.error("Load profile error:", error);
-      throw error;
-    }
-  }
-
-  renderProfile() {
-    if (!this.profileUser) return;
-    
-    // Avatar (identical to your original code)
-    if (this.profileUser.avatar_url) {
-      this.elements.avatar.innerHTML = `<img src="${this.profileUser.avatar_url}" alt="${this.profileUser.full_name}">`;
+    // 3. Load appropriate profile
+    if (!username || username === 'profile') {
+      await loadProfile(currentUser.id);
+      showOwnerUI();
     } else {
-      const initials = this.profileUser.full_name 
-        ? this.profileUser.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
-        : 'U';
-      this.elements.avatar.innerHTML = `<div class="avatar-initials">${initials}</div>`;
+      await loadProfileByUsername(username);
+      showVisitorUI();
     }
-    
-    // Name and verification
-    this.elements.name.innerHTML = this.profileUser.full_name || 'User';
-    if (this.profileUser.is_verified) {
-      this.elements.name.innerHTML += '<i class="fas fa-check-circle verified-badge"></i>';
+
+    // 4. Hide loading skeleton
+    const skeleton = document.querySelector('.skeleton-preloader');
+    if (skeleton) {
+      skeleton.style.opacity = '0';
+      setTimeout(() => skeleton.style.display = 'none', 300);
     }
+
+  } catch (error) {
+    console.error("Profile loading failed:", error);
+    showErrorState();
+  }
+});
+
+// Core Functions
+async function loadProfile(userId) {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) throw error || new Error("Profile not found");
     
-    // Username
-    this.elements.username.textContent = `@${this.profileUser.username || 'user'}`;
-    
-    // Bio
-    this.elements.bio.textContent = this.profileUser.bio || '';
-    
-    // Website (identical to your code)
-    if (this.profileUser.website) {
-      this.elements.website.innerHTML = `<i class="fas fa-link"></i> ${this.profileUser.website.replace(/^https?:\/\//, '')}`;
-      this.elements.website.href = this.profileUser.website.startsWith('http') 
-        ? this.profileUser.website 
-        : `https://${this.profileUser.website}`;
-      this.elements.website.style.display = 'inline-block';
-    } else {
-      this.elements.website.style.display = 'none';
-    }
-  }
+    profileUser = data;
+    renderProfile();
+    await loadStats(userId);
 
-  async loadFollowStats(userId) {
-    try {
-      const [{ count: followers }, { count: following }] = await Promise.all([
-        this.supabase.from('follows').select('*', { count: true, head: true }).eq('following_id', userId),
-        this.supabase.from('follows').select('*', { count: true, head: true }).eq('follower_id', userId)
-      ]);
-      
-      if (this.elements.followersCount) this.elements.followersCount.textContent = followers || 0;
-      if (this.elements.followingCount) this.elements.followingCount.textContent = following || 0;
-      
-    } catch (error) {
-      console.error("Load stats error:", error);
-    }
+  } catch (error) {
+    console.error("Failed to load profile:", error);
+    throw error;
   }
-
-  setupUIForOwner() {
-    if (this.elements.editBtn) this.elements.editBtn.style.display = 'flex';
-    if (this.elements.messageBtn) this.elements.messageBtn.style.display = 'none';
-    if (this.elements.followBtn) this.elements.followBtn.style.display = 'none';
-    if (this.elements.moreBtn) this.elements.moreBtn.style.display = 'none';
-  }
-
-  setupUIForVisitor() {
-    if (this.elements.editBtn) this.elements.editBtn.style.display = 'none';
-    if (this.elements.messageBtn) this.elements.messageBtn.style.display = 'inline-block';
-    if (this.elements.followBtn) this.elements.followBtn.style.display = 'inline-block';
-    if (this.elements.moreBtn) this.elements.moreBtn.style.display = 'inline-block';
-  }
-
-  showErrorState() {
-    // Your existing error state handling
-    const container = document.getElementById('profile-posts') || document.body;
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">
-          <i class="fas fa-exclamation-circle"></i>
-        </div>
-        <div class="empty-state-text">
-          Error loading profile. Please try again later.
-        </div>
-      </div>
-    `;
-  }
-
-  // These remain private to match your original structure
-  async checkFollowStatus() { /*...*/ }
-  async checkBlockStatus() { /*...*/ }
 }
 
-// Instantiation and initialization (add this to your existing script loading)
-document.addEventListener('DOMContentLoaded', () => {
-  const profileLoader = new ProfileLoader(supabase);
-  profileLoader.init();
-});
+async function loadProfileByUsername(username) {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('username', username.toLowerCase())
+      .single();
+
+    if (error || !data) throw error || new Error("Profile not found");
+    
+    profileUser = data;
+    renderProfile();
+    await loadStats(data.id);
+
+  } catch (error) {
+    console.error("Failed to load profile:", error);
+    throw error;
+  }
+}
+
+function renderProfile() {
+  if (!profileUser || !elements.avatar) return;
+
+  // Avatar with initials fallback
+  if (profileUser.avatar_url) {
+    elements.avatar.innerHTML = `<img src="${profileUser.avatar_url}" alt="${profileUser.full_name}">`;
+  } else {
+    const initials = profileUser.full_name 
+      ? profileUser.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+      : 'U';
+    elements.avatar.innerHTML = `<div class="avatar-initials">${initials}</div>`;
+  }
+
+  // Profile text
+  elements.name.innerHTML = profileUser.full_name || 'User';
+  if (profileUser.is_verified) {
+    elements.name.innerHTML += '<i class="fas fa-check-circle verified-badge"></i>';
+  }
+  elements.username.textContent = `@${profileUser.username || 'user'}`;
+  elements.bio.textContent = profileUser.bio || '';
+
+  // Website link
+  if (profileUser.website) {
+    elements.website.innerHTML = `<i class="fas fa-link"></i> ${profileUser.website.replace(/^https?:\/\//, '')}`;
+    elements.website.href = profileUser.website.startsWith('http') 
+      ? profileUser.website 
+      : `https://${profileUser.website}`;
+    elements.website.style.display = 'inline-block';
+  } else {
+    elements.website.style.display = 'none';
+  }
+}
+
+async function loadStats(userId) {
+  try {
+    const [{ count: followers }, { count: following }] = await Promise.all([
+      supabase.from('follows').select('*', { count: true, head: true }).eq('following_id', userId),
+      supabase.from('follows').select('*', { count: true, head: true }).eq('follower_id', userId)
+    ]);
+
+    if (elements.followersCount) elements.followersCount.textContent = followers || 0;
+    if (elements.followingCount) elements.followingCount.textContent = following || 0;
+
+  } catch (error) {
+    console.error("Failed to load stats:", error);
+  }
+}
+
+// UI Functions
+function showOwnerUI() {
+  if (elements.editBtn) elements.editBtn.style.display = 'flex';
+  if (elements.messageBtn) elements.messageBtn.style.display = 'none';
+  if (elements.followBtn) elements.followBtn.style.display = 'none';
+  if (elements.moreBtn) elements.moreBtn.style.display = 'none';
+}
+
+function showVisitorUI() {
+  if (elements.editBtn) elements.editBtn.style.display = 'none';
+  if (elements.messageBtn) elements.messageBtn.style.display = 'inline-block';
+  if (elements.followBtn) elements.followBtn.style.display = 'inline-block';
+  if (elements.moreBtn) elements.moreBtn.style.display = 'inline-block';
+}
+
+function showErrorState() {
+  const container = document.getElementById('profile-posts') || document.body;
+  container.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i class="fas fa-exclamation-circle"></i>
+      </div>
+      <div class="empty-state-text">
+        Error loading profile. Please try again later.
+      </div>
+    </div>
+  `;
+}
 </script>
 </body>
 </html>
