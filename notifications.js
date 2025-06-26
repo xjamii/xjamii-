@@ -1,288 +1,344 @@
-// notifications.js - Standalone notifications functionality
+// notifications.js - Complete Implementation with Cloudinary
 
-// Load unread notifications count
-async function loadUnreadNotificationsCount() {
-    try {
-        // Get current user
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-        
-        if (!user) return;
-        
-        // Count unread notifications
-        const { count, error } = await supabase
-            .from('notifications')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('is_read', false);
-            
-        if (error) throw error;
-        
-        // Update badge
-        const badge = document.getElementById('notificationBadge');
-        if (badge) {
-            badge.textContent = count > 0 ? count : '';
-        }
-    } catch (error) {
-        console.error('Error loading notifications count:', error);
-    }
-}
+// Cloudinary Configuration
+const CLOUDINARY_CLOUD_NAME = 'dwwhpznwb';
+const CLOUDINARY_UPLOAD_PRESET = 'web_unsigned_upload';
 
-// Function to get initials from name or username
-function getInitials(name) {
-    if (!name) return '';
-    
-    // Split by space and get first letters of first two words
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) {
-        return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    
-    // If only one word, get first two letters
-    if (name.length >= 2) {
-        return name.substring(0, 2).toUpperCase();
-    }
-    
-    // If very short, just return as is
-    return name.toUpperCase();
-}
+// Initialize real-time listener
+let notificationsChannel;
 
-// Load notifications
+// Main notifications loader
 async function loadNotifications() {
-    try {
-        // Get current user
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-        
-        if (!user) {
-            hideNotifications();
-            return;
-        }
-        
-        // Get notifications with profile data
-        const { data: notifications, error } = await supabase
-            .from('notifications')
-            .select(`
-                id,
-                type,
-                is_read,
-                created_at,
-                actor_id,
-                post_id,
-                comment_id,
-                message_id,
-                profiles:actor_id (username, full_name, avatar_url, is_verified)
-            `)
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(20);
-            
-        if (error) throw error;
-        
-        // Render notifications
-        renderNotifications(notifications);
-        
-        // Mark as read
-        if (notifications.some(n => !n.is_read)) {
-            await markNotificationsAsRead(notifications.filter(n => !n.is_read).map(n => n.id));
-            loadUnreadNotificationsCount(); // Update badge
-        }
-        
-    } catch (error) {
-        console.error('Error loading notifications:', error);
-        renderError();
-    } finally {
-        // Hide skeleton and show content
-        document.getElementById('notificationsSkeleton').style.display = 'none';
-        document.getElementById('notificationsContainer').style.display = 'block';
-    }
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Fetch notifications with related data
+    const { data, error } = await supabase
+      .from('notifications')
+      .select(`
+        id,
+        type,
+        is_read,
+        created_at,
+        actor_id,
+        post_id,
+        comment_id,
+        message_id,
+        profiles:actor_id (username, full_name, avatar_url, is_verified),
+        posts!inner(id, content),
+        comments!inner(content),
+        messages!inner(content)
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+    renderNotifications(data || []);
+    setupRealTimeUpdates(user.id);
+
+  } catch (error) {
+    console.error("Error loading notifications:", error);
+    renderError();
+  }
 }
 
-// Render notifications
+// Real-time updates setup
+function setupRealTimeUpdates(userId) {
+  if (notificationsChannel) supabase.removeChannel(notificationsChannel);
+
+  notificationsChannel = supabase
+    .channel('notifications-changes')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'notifications',
+      filter: `user_id=eq.${userId}`
+    }, handleNotificationChange)
+    .subscribe();
+}
+
+// Handle notification changes
+function handleNotificationChange(payload) {
+  switch(payload.eventType) {
+    case 'INSERT':
+      handleNewNotification(payload.new);
+      break;
+    case 'UPDATE':
+      if (payload.new.is_read) {
+        markNotificationAsReadUI(payload.new.id);
+      }
+      break;
+  }
+}
+
+// Handle new notifications
+function handleNewNotification(notification) {
+  // Update UI immediately
+  addNotificationToUI(notification);
+  
+  // Update unread count
+  updateUnreadCount();
+  
+  // Play sound if app is visible
+  if (document.visibilityState === 'visible') {
+    new Audio('/notification-sound.mp3').play().catch(() => {});
+  }
+}
+
+// Render notifications list
 function renderNotifications(notifications) {
-    const container = document.getElementById('notificationsContainer');
-    
-    if (!notifications || notifications.length === 0) {
-        container.innerHTML = `
-            <div class="no-notifications">
-                <i class="fas fa-bell-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
-                <p>No notifications yet</p>
-                <p style="font-size: 14px; margin-top: 5px;">When you get notifications, they'll show up here</p>
-            </div>
-        `;
-        return;
-    }
-    
-    container.innerHTML = notifications.map(notification => {
-        const profile = notification.profiles;
-        const timeAgo = formatTimeAgo(notification.created_at);
-        let message = '';
-        let action = '';
-        
-        // Determine notification message based on type
-        switch (notification.type) {
-            case 'follow':
-                message = `${profile.full_name || profile.username} started following you`;
-                action = `<button class="notification-action-btn follow">Follow back</button>`;
-                break;
-            case 'like':
-                message = `${profile.full_name || profile.username} liked your post`;
-                action = `<button class="notification-action-btn view">View post</button>`;
-                break;
-            case 'comment':
-                message = `${profile.full_name || profile.username} commented on your post`;
-                action = `<button class="notification-action-btn view">View post</button>`;
-                break;
-            case 'comment_like':
-                message = `${profile.full_name || profile.username} liked your comment`;
-                action = `<button class="notification-action-btn view">View comment</button>`;
-                break;
-            case 'message':
-                message = `${profile.full_name || profile.username} sent you a message`;
-                action = `<button class="notification-action-btn view">View message</button>`;
-                break;
-            default:
-                message = `You have a new notification`;
-        }
-        
-        // Generate initials if no avatar
-        const avatarContent = profile.avatar_url 
-            ? `<img src="${profile.avatar_url}" alt="${profile.username}" class="notification-avatar">`
-            : `<div class="notification-avatar initials">${getInitials(profile.full_name || profile.username)}</div>`;
-        
-        return `
-            <div class="notification-item ${notification.is_read ? '' : 'unread'}" data-id="${notification.id}">
-                ${avatarContent}
-                <div class="notification-content">
-                    <div class="notification-text">
-                        <strong>${profile.full_name || profile.username}</strong> ${message}
-                        ${profile.is_verified ? '<span class="verified-badge"><i class="fas fa-check"></i></span>' : ''}
-                    </div>
-                    <div class="notification-time">${timeAgo}</div>
-                    <div class="notification-action">${action}</div>
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    // Add event listeners to action buttons
-    container.querySelectorAll('.notification-action-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const notificationItem = this.closest('.notification-item');
-            const notificationId = notificationItem.dataset.id;
-            
-            if (this.classList.contains('follow')) {
-                handleFollowAction(notificationItem);
-            } else if (this.classList.contains('view')) {
-                handleViewAction(notificationItem);
-            }
-        });
-    });
-    
-    // Add click handler to notification items
-    container.querySelectorAll('.notification-item').forEach(item => {
-        item.addEventListener('click', function() {
-            // Handle notification click (e.g., navigate to post/message)
-            console.log('Notification clicked:', this.dataset.id);
-        });
-    });
-}
+  const container = document.getElementById('notifications-container');
+  if (!notifications.length) {
+    container.innerHTML = `<div class="empty-state">No notifications yet</div>`;
+    return;
+  }
 
-// Format time ago
-function formatTimeAgo(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
-    
-    if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    return `${Math.floor(seconds / 86400)}d ago`;
-}
-
-// Mark notifications as read
-async function markNotificationsAsRead(notificationIds) {
-    try {
-        const { error } = await supabase
-            .from('notifications')
-            .update({ is_read: true })
-            .in('id', notificationIds);
-            
-        if (error) throw error;
-    } catch (error) {
-        console.error('Error marking notifications as read:', error);
-    }
-}
-
-// Handle follow action
-async function handleFollowAction(notificationItem) {
-    try {
-        const notificationId = notificationItem.dataset.id;
-        const { data: notification, error: notifError } = await supabase
-            .from('notifications')
-            .select('actor_id')
-            .eq('id', notificationId)
-            .single();
-            
-        if (notifError || !notification) throw notifError || new Error('Notification not found');
-        
-        // Get current user
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-        
-        if (!user) return;
-        
-        // Follow the user
-        const { error } = await supabase
-            .from('follows')
-            .insert({
-                follower_id: user.id,
-                following_id: notification.actor_id,
-                relationship_type: 'regular'
-            });
-            
-        if (error) throw error;
-        
-        // Update UI
-        const btn = notificationItem.querySelector('.notification-action-btn');
-        btn.textContent = 'Following';
-        btn.classList.remove('follow');
-        btn.classList.add('view');
-        btn.disabled = true;
-        
-    } catch (error) {
-        console.error('Error handling follow action:', error);
-        alert('Failed to follow user. Please try again.');
-    }
-}
-
-// Handle view action
-function handleViewAction(notificationItem) {
-    const notificationId = notificationItem.dataset.id;
-    // Here you would navigate to the relevant post/message
-    console.log('View action for notification:', notificationId);
-}
-
-// Render error state
-function renderError() {
-    const container = document.getElementById('notificationsContainer');
-    container.innerHTML = `
-        <div class="no-notifications">
-            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <p>Failed to load notifications</p>
-            <button onclick="loadNotifications()" style="margin-top: 10px; padding: 8px 16px; background-color: #00B0FF; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Try Again
-            </button>
+  container.innerHTML = notifications.map(notif => `
+    <div class="notification ${notif.is_read ? '' : 'unread'}" 
+         data-id="${notif.id}"
+         data-type="${notif.type}"
+         ${notif.post_id ? `data-post-id="${notif.post_id}"` : ''}
+         ${notif.comment_id ? `data-comment-id="${notif.comment_id}"` : ''}
+         ${notif.message_id ? `data-message-id="${notif.message_id}"` : ''}>
+      ${renderAvatar(notif.profiles)}
+      <div class="content">
+        <div class="text">
+          ${generateNotificationText(notif)}
+          ${notif.profiles.is_verified ? verifiedBadge() : ''}
         </div>
-    `;
+        <div class="time">${formatTimeAgo(notif.created_at)}</div>
+        ${renderActionButton(notif)}
+      </div>
+    </div>
+  `).join('');
+
+  // Add click handlers
+  document.querySelectorAll('.notification').forEach(el => {
+    el.addEventListener('click', handleNotificationClick);
+  });
 }
 
-// Initialize notifications
-document.addEventListener('DOMContentLoaded', () => {
-    // Check for unread notifications periodically
-    setInterval(loadUnreadNotificationsCount, 30000); // Every 30 seconds
+// Generate notification text
+function generateNotificationText(notification) {
+  const name = notification.profiles.full_name || notification.profiles.username;
+  const baseText = `<strong>${name}</strong> `;
+  
+  const messages = {
+    'like': `${baseText} liked your post`,
+    'comment': `${baseText} commented: "${notification.comments?.content || ''}"`,
+    'comment_like': `${baseText} liked your comment`,
+    'follow': `${baseText} started following you`,
+    'message': `${baseText} sent you a message: "${notification.messages?.content?.substring(0, 30) || ''}..."`
+  };
+  
+  return messages[notification.type] || `${baseText} interacted with your content`;
+}
+
+// Render avatar with Cloudinary optimization
+function renderAvatar(profile) {
+  if (!profile) return fallbackAvatar();
+  
+  const initials = getInitials(profile.full_name || profile.username);
+  const bgColor = stringToColor(profile.username);
+  
+  if (profile.avatar_url) {
+    // Use Cloudinary for optimized avatars
+    const cloudinaryUrl = profile.avatar_url.includes('res.cloudinary.com')
+      ? profile.avatar_url.replace('/upload/', '/upload/w_100,h_100,c_fill,g_face/')
+      : `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_100,h_100,c_fill,g_face/${profile.avatar_url}`;
     
-    // Initial load
-    loadUnreadNotificationsCount();
+    return `<img src="${cloudinaryUrl}" alt="${profile.username}" class="avatar" 
+              onerror="this.onerror=null;this.parentNode.innerHTML='${fallbackAvatar(initials, bgColor)}'">`;
+  }
+  
+  return fallbackAvatar(initials, bgColor);
+}
+
+// Helper functions
+function fallbackAvatar(initials = '??', bgColor = '#666') {
+  return `<div class="avatar-fallback" style="background-color: ${bgColor}">${initials}</div>`;
+}
+
+function getInitials(name) {
+  if (!name) return '??';
+  const parts = name.split(' ');
+  return parts.length > 1 
+    ? `${parts[0][0]}${parts[parts.length-1][0]}`.toUpperCase()
+    : name.substring(0, 2).toUpperCase();
+}
+
+function stringToColor(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 70%, 65%)`;
+}
+
+function renderActionButton(notification) {
+  const actions = {
+    'like': 'View Post',
+    'comment': 'View Post',
+    'comment_like': 'View Comment',
+    'follow': 'View Profile',
+    'message': 'Reply'
+  };
+  
+  if (actions[notification.type]) {
+    return `<button class="action-btn" data-action="${notification.type}">
+      ${actions[notification.type]}
+    </button>`;
+  }
+  return '';
+}
+
+// Handle notification clicks
+function handleNotificationClick(event) {
+  const notification = event.currentTarget;
+  const type = notification.dataset.type;
+  const id = notification.dataset.id;
+
+  // Mark as read
+  supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('id', id);
+
+  // Handle different types
+  switch(type) {
+    case 'like':
+    case 'comment':
+      openPost(notification.dataset.postId);
+      break;
+    case 'comment_like':
+      openComment(notification.dataset.commentId);
+      break;
+    case 'follow':
+      openProfile(notification.dataset.actorId);
+      break;
+    case 'message':
+      openChat(notification.dataset.actorId, notification.dataset.messageId);
+      break;
+  }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  loadNotifications();
+  setInterval(loadUnreadCount, 30000); // Refresh count every 30s
+  
+  // Initialize Cloudinary upload widget if needed
+  if (document.getElementById('avatar-upload-btn')) {
+    initCloudinaryUpload();
+  }
 });
+
+// Cloudinary upload helper
+function initCloudinaryUpload() {
+  window.cloudinary.createUploadWidget(
+    {
+      cloudName: CLOUDINARY_CLOUD_NAME,
+      uploadPreset: CLOUDINARY_UPLOAD_PRESET,
+      cropping: true,
+      croppingAspectRatio: 1,
+      showSkipCropButton: false,
+      folder: 'user_avatars'
+    },
+    (error, result) => {
+      if (result?.event === 'success') {
+        updateUserAvatar(result.info.secure_url);
+      }
+    }
+  ).attach('#avatar-upload-btn');
+}
+
+async function updateUserAvatar(url) {
+  const { data: { user } } = await supabase.auth.getUser();
+  await supabase
+    .from('profiles')
+    .update({ avatar_url: url })
+    .eq('id', user.id);
+}
+
+// Unread count management
+let unreadCount = 0;
+
+async function loadUnreadCount() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { count } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('is_read', false);
+
+  updateUnreadBadge(count || 0);
+}
+
+function updateUnreadBadge(count) {
+  unreadCount = count;
+  const badge = document.getElementById('notification-badge');
+  if (badge) {
+    badge.textContent = count > 0 ? (count > 9 ? '9+' : count) : '';
+    badge.classList.toggle('hidden', count === 0);
+  }
+}
+
+// UI Helpers
+function addNotificationToUI(notification) {
+  const container = document.getElementById('notifications-container');
+  if (!container) return;
+
+  // If empty state exists, remove it
+  const emptyState = container.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  // Prepend new notification
+  container.insertAdjacentHTML('afterbegin', `
+    <div class="notification unread" 
+         data-id="${notification.id}"
+         data-type="${notification.type}"
+         ${notification.post_id ? `data-post-id="${notification.post_id}"` : ''}
+         ${notification.comment_id ? `data-comment-id="${notification.comment_id}"` : ''}
+         ${notification.message_id ? `data-message-id="${notification.message_id}"` : ''}>
+      ${renderAvatar(notification.profiles)}
+      <div class="content">
+        <div class="text">
+          ${generateNotificationText(notification)}
+          ${notification.profiles?.is_verified ? verifiedBadge() : ''}
+        </div>
+        <div class="time">just now</div>
+        ${renderActionButton(notification)}
+      </div>
+    </div>
+  `);
+
+  // Update count
+  updateUnreadBadge(unreadCount + 1);
+}
+
+function verifiedBadge() {
+  return '<span class="verified-badge"><i class="fas fa-check"></i></span>';
+}
+
+function formatTimeAgo(dateString) {
+  // Your existing time formatting function
+  // ...
+}
+
+function renderError() {
+  const container = document.getElementById('notifications-container');
+  if (container) {
+    container.innerHTML = `
+      <div class="error-state">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Failed to load notifications</p>
+        <button onclick="loadNotifications()">Retry</button>
+      </div>
+    `;
+  }
+}
