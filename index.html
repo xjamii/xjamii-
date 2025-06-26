@@ -8,8 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <head>
   <!-- Other meta tags -->
-  <link rel="stylesheet" href="posts.css">
-  <link rel="stylesheet" href="css/suggestions.css">
   
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -21,9 +19,6 @@
 
   <!-- Swiper -->
   <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-
-  <!-- Your dynamic posts system -->
-  <script src="js/posts.js"></script>
 </head>
     <style>
         * {
@@ -43,26 +38,6 @@
         body.dark-mode {
             background-color: #18191a;
             color: #e4e6eb;
-        }
-
-        /* Logo Preloader (from welcome.html) */
-        .logo-preloader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        
-        .logo-preloader img {
-            height: 150px;
-            width: auto;
-            filter: brightness(0) invert(1);
         }
 
         /* Spinner Preloader */
@@ -545,6 +520,31 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
+        /* Create Post Loading State */
+        .create-post-btn.loading {
+            pointer-events: none;
+            width: 50px;
+        }
+
+        .create-post-btn.loading .fa-plus {
+            display: none;
+        }
+
+        .create-post-btn.loading::after {
+            content: "";
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .dark-mode .create-post-btn.loading::after {
+            border: 2px solid rgba(0, 0, 0, 0.3);
+            border-top-color: black;
+        }
+
         /* Notifications Page */
         .notifications-page {
             display: none;
@@ -597,9 +597,97 @@
             cursor: pointer;
         }
 
+        /* Notification Items */
         .notification-container {
-            padding: 20px;
+            padding: 0;
             width: 100%;
+        }
+
+        .notification-item {
+            display: flex;
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .dark-mode .notification-item {
+            border-bottom-color: #3e4042;
+        }
+
+        .notification-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .dark-mode .notification-item:hover {
+            background-color: #303030;
+        }
+
+        .notification-item.unread {
+            background-color: #f0f8ff;
+        }
+
+        .dark-mode .notification-item.unread {
+            background-color: #1a3a5a;
+        }
+
+        .notification-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-text {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .notification-text strong {
+            font-weight: 600;
+        }
+
+        .notification-time {
+            font-size: 12px;
+            color: #777;
+        }
+
+        .dark-mode .notification-time {
+            color: #b0b3b8;
+        }
+
+        .notification-action {
+            margin-top: 4px;
+        }
+
+        .notification-action-btn {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background-color: #e4e6eb;
+        }
+
+        .dark-mode .notification-action-btn {
+            background-color: #3a3b3c;
+            color: #e4e6eb;
+        }
+
+        .notification-action-btn.follow {
+            background-color: #1877f2;
+            color: white;
+        }
+
+        .notification-action-btn.view {
+            background-color: #42b72a;
+            color: white;
         }
 
         .no-notifications {
@@ -607,6 +695,10 @@
             padding: 50px 20px;
             color: #777;
             font-size: 16px;
+        }
+
+        .dark-mode .no-notifications {
+            color: #b0b3b8;
         }
 
         /* Skeleton Preloader for Notifications */
@@ -715,19 +807,38 @@
                 margin: 56px 0 0;
             }
         }
+
+            .notification-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f2f5;
+    color: #555;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.dark-mode .notification-avatar {
+    background-color: #3a3b3c;
+    color: #e4e6eb;
+}
+
+.notification-avatar.initials {
+    background-color: #00B0FF;
+    color: white;
+}
+
+.dark-mode .notification-avatar.initials {
+    background-color: #1DA1F2;
+}
     </style>
 </head>
 <body>
-    <!-- Logo Preloader (from welcome.html) -->
-    <div class="logo-preloader" id="logoPreloader">
-        <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png'/>
-    </div>
-
-    <!-- Spinner Preloader -->
-    <div class="spinner-preloader" id="spinnerPreloader">
-        <div class="spinner"></div>
-    </div>
-
     <!-- Pull to Refresh Container -->
     <div id="refresh-container">
         <div class="refresh-spinner"></div>
@@ -749,7 +860,7 @@
             </div>
             <div class="nav-icon" title="Notifications" onclick="showNotifications()">
                 <i class="fas fa-bell"></i>
-                <span class="badge">3</span>
+                <span class="badge" id="notificationBadge">0</span>
             </div>
             <div class="nav-icon menu-toggle" title="Menu" onclick="toggleMenu()">
                 <div class="menu-line"></div>
@@ -759,100 +870,15 @@
         </div>
     </header>
 
-<!-- Update your suggestions section to this: -->
-<section id="followSuggestionsContainer" class="suggestions-container">
-    <div class="suggestions-header">
-        <div class="suggestions-title">Suggestions For You</div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Empty content since we removed posts and suggestions -->
     </div>
-    <div class="suggestions-scroll-container">
-        <div class="suggestions-scroll" id="suggestionsScroll">
-            <!-- Suggestions will be injected here by JavaScript -->
-        </div>
-    </div>
-</section>
 
-<!-- Add this in your index.html body where posts should appear -->
-<section id="posts-container">
-    <!-- Posts will be dynamically inserted here -->
-</section>
-
-<!-- Comments Popup (keep your existing structure, just ensure these IDs match) -->
-<div id="comments-popup" class="comment-popup">
-    <div class="drag-handle"></div>
-    <div class="comment-popup-header">
-        <h3>Comments</h3>
-        <div class="comment-count">0 comments</div>
+    <!-- Create Post Button -->
+    <div class="create-post-btn" id="createPostBtn" onclick="handleCreatePost()">
+        <i class="fas fa-plus"></i>
     </div>
-    <div class="comment-popup-content">
-        <!-- Comments will be loaded here -->
-    </div>
-    <div class="comment-input-container">
-        <input type="text" class="comment-input" placeholder="Add a comment...">
-        <div class="comment-post-btn">Post</div>
-    </div>
-</div>
-
-<!-- Likes Popup -->
-<div id="likes-popup" class="likes-popup">
-    <div class="drag-handle"></div>
-    <div class="likes-popup-header">
-        <h3>Likes</h3>
-        <div class="likes-count">0 likes</div>
-    </div>
-    <div class="likes-popup-content">
-        <!-- Likes will be loaded here -->
-    </div>
-</div>
-
-<!-- Comment Likes Popup -->
-<div id="comment-likes-popup" class="comment-likes-popup">
-    <div class="drag-handle"></div>
-    <div class="comment-likes-popup-header">
-        <h3>Likes</h3>
-        <div class="comment-likes-count">0 likes</div>
-    </div>
-    <div class="comment-likes-popup-content">
-        <!-- Comment likes will be loaded here -->
-    </div>
-</div>
-
-<!-- Reply Likes Popup -->
-<div id="reply-likes-popup" class="reply-likes-popup">
-    <div class="drag-handle"></div>
-    <div class="reply-likes-popup-header">
-        <h3>Likes</h3>
-        <div class="reply-likes-count">0 likes</div>
-    </div>
-    <div class="reply-likes-popup-content">
-        <!-- Reply likes will be loaded here -->
-    </div>
-</div>
-
-<!-- Share Popup (keep your existing structure) -->
-<div id="share-popup" class="share-popup">
-    <div class="share-popup-header">
-        <h3>Share Post</h3>
-        <div class="share-popup-close"><i class="fas fa-times"></i></div>
-    </div>
-    <div class="share-options">
-        <!-- Your existing share options -->
-    </div>
-</div>
-
-<!-- Loading Spinner (for initial load) -->
-<div id="posts-loading" class="loading-spinner" style="display: none;">
-    <div class="spinner"></div>
-</div>
-
-<!-- No Posts Message (hidden by default) -->
-<div id="no-posts" class="no-posts" style="display: none;">
-    <p>No posts yet. Be the first to post!</p>
-</div>
-
-<!-- Error Message (hidden by default) -->
-<div id="posts-error" class="error-message" style="display: none;">
-    <p>Error loading posts. Please try again.</p>
-</div>
 
     <!-- Menu Page -->
     <div class="menu-page" id="menuPage">
@@ -1005,263 +1031,193 @@
         </div>
 
         <div class="notification-container" id="notificationsContainer" style="display: none;">
-            <div class="no-notifications">
-                <i class="fas fa-bell-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
-                <p>No notifications yet</p>
-                <p style="font-size: 14px; margin-top: 5px;">When you get notifications, they'll show up here</p>
-            </div>
+            <!-- Notifications will be loaded here -->
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Content will be here -->
-    </div>
-
-    <!-- Create Post Button -->
-    <div class="create-post-btn" onclick="window.location.href='create-post.html'">
-        <i class="fas fa-plus"></i>
-    </div>
-
-  <script>
-    // Preloader functionality
-    document.addEventListener('DOMContentLoaded', function() {
+    <script>
+        // Preloader functionality removed as requested
+        
         // Check if user is logged in but doesn't have a username
         checkUsername();
         
-        // Get the referring page
-        const referrer = document.referrer;
-        const excludedPages = [
-            'login.html',
-            'create-username.html',
-            'profile.html',
-            'search.html',
-            'notifications.html',
-            'create-post.html'
-        ];
-        
-        // Check if coming from an excluded page
-        const fromExcludedPage = excludedPages.some(page => referrer.includes(page));
-        
-        if (fromExcludedPage) {
-            // Coming from excluded page - show only spinner preloader
-            document.getElementById('logoPreloader').style.display = 'none';
-            document.getElementById('spinnerPreloader').style.display = 'flex';
-            
-            // Load all necessary data
-            loadEssentialData().then(() => {
-                // All data loaded successfully
-                document.getElementById('spinnerPreloader').style.display = 'none';
-            }).catch(error => {
-                // Show error feedback
-                console.error('Loading error:', error);
-                document.getElementById('spinnerPreloader').innerHTML = `
-                    <div class="error-feedback">
-                        <p>Failed to load data. Please try again.</p>
-                        <button onclick="window.location.reload()">Retry</button>
-                    </div>
-                `;
-            });
-        } else {
-            // Normal visit or refresh - show both preloaders
-            setTimeout(function() {
-                document.getElementById('logoPreloader').style.display = 'none';
-                
-                // Show spinner preloader for 10 seconds
-                document.getElementById('spinnerPreloader').style.display = 'flex';
-                
-                setTimeout(function() {
-                    document.getElementById('spinnerPreloader').style.display = 'none';
-                }, 10000);
-            }, 3000);
-        }
-    });
-
-    // Function to load all essential data
-    function loadEssentialData() {
-        return new Promise(async (resolve, reject) => {
+        // Function to check if user needs to set a username
+        async function checkUsername() {
             try {
-                // Add all your essential data loading here
-                // Example: await supabase.from('posts').select('*');
+                const { data: { user }, error } = await supabase.auth.getUser();
                 
-                // For now just simulate loading
-                setTimeout(resolve, 2000);
+                if (error) throw error;
+                
+                if (user) {
+                    // User is logged in, check if they have a username
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('username')
+                        .eq('id', user.id)
+                        .single();
+                    
+                    if (profileError || !profile || !profile.username) {
+                        // Redirect to create username page
+                        window.location.href = 'create-username.html';
+                    } else {
+                        // Load notifications count
+                        loadUnreadNotificationsCount();
+                    }
+                }
             } catch (error) {
-                reject(error);
+                console.error("Error checking username:", error);
+            }
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                window.location.href = 'welcome.html';
+            } catch (error) {
+                console.error('Error logging out:', error);
+                alert('Failed to log out. Please try again.');
+            }
+        }
+
+        // Toggle Menu
+        function toggleMenu() {
+            const menuPage = document.getElementById('menuPage');
+            menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Show Notifications
+        function showNotifications() {
+            const notificationsPage = document.getElementById('notificationsPage');
+            notificationsPage.style.display = 'block';
+            
+            // Show skeleton preloader and hide content
+            document.getElementById('notificationsSkeleton').style.display = 'block';
+            document.getElementById('notificationsContainer').style.display = 'none';
+            
+            // Load notifications
+            loadNotifications();
+        }
+
+        // Hide Notifications
+        function hideNotifications() {
+            document.getElementById('notificationsPage').style.display = 'none';
+        }
+
+        // Dark Mode Toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        darkModeToggle.addEventListener('change', function() {
+            document.body.classList.toggle('dark-mode', this.checked);
+            // Save preference to localStorage
+            localStorage.setItem('darkMode', this.checked);
+        });
+
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            darkModeToggle.checked = true;
+        }
+
+        // Data Saver Toggle
+        const dataSaverToggle = document.getElementById('dataSaverToggle');
+        dataSaverToggle.addEventListener('change', function() {
+            // Implement data saver functionality here
+            console.log('Data Saver:', this.checked);
+            localStorage.setItem('dataSaver', this.checked);
+        });
+
+        // Check for saved data saver preference
+        if (localStorage.getItem('dataSaver') === 'true') {
+            dataSaverToggle.checked = true;
+        }
+
+        // Create Post Button Loading State
+        function handleCreatePost() {
+            const btn = document.getElementById('createPostBtn');
+            btn.classList.add('loading');
+            
+            // Simulate loading (replace with actual navigation)
+            setTimeout(() => {
+                window.location.href = 'create-post.html';
+            }, 1000);
+        }
+
+        // Pull to Refresh Functionality
+        const refreshContainer = document.getElementById('refresh-container');
+        const refreshSpinner = document.querySelector('.refresh-spinner');
+        let startY = 0;
+        let isRefreshing = false;
+        
+        // Minimum pull distance to activate refresh (in pixels)
+        const REFRESH_THRESHOLD = 80;
+
+        document.addEventListener('touchstart', e => {
+            if ((window.scrollY <= 0 || document.getElementById('notificationsPage').style.display === 'block') && !isRefreshing) {
+                startY = e.touches[0].pageY;
             }
         });
-    }
 
-    // Function to check if user needs to set a username
-    async function checkUsername() {
-        try {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            
-            if (error) throw error;
-            
-            if (user) {
-                // User is logged in, check if they have a username
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('username')
-                    .eq('id', user.id)
-                    .single();
+        document.addEventListener('touchmove', e => {
+            if ((window.scrollY <= 0 || document.getElementById('notificationsPage').style.display === 'block') && startY > 0 && !isRefreshing) {
+                const pullDistance = e.touches[0].pageY - startY;
                 
-                if (profileError || !profile || !profile.username) {
-                    // Redirect to create username page
-                    window.location.href = 'create-username.html';
+                if (pullDistance > 0) {
+                    e.preventDefault();
+                    
+                    // Move spinner with pull
+                    refreshContainer.style.top = `${Math.min(50, pullDistance/2) + 6}px`; // Adjusted to start below header
+                    
+                    // Show spinner when threshold passed
+                    if (pullDistance > REFRESH_THRESHOLD) {
+                        refreshSpinner.style.opacity = '1';
+                    } else {
+                        refreshSpinner.style.opacity = '0';
+                    }
                 }
             }
-        } catch (error) {
-            console.error("Error checking username:", error);
-        }
-    }
+        });
 
-    // Logout function
-    async function logout() {
-        try {
-            const { error } = await supabase.auth.signOut();
-            if (error) throw error;
-            window.location.href = 'welcome.html';
-        } catch (error) {
-            console.error('Error logging out:', error);
-            alert('Failed to log out. Please try again.');
-        }
-    }
-
-    // Toggle Menu
-    function toggleMenu() {
-        const menuPage = document.getElementById('menuPage');
-        menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
-    }
-
-    // Show Notifications
-    function showNotifications() {
-        const notificationsPage = document.getElementById('notificationsPage');
-        notificationsPage.style.display = 'block';
-        
-        // Show skeleton preloader and hide content
-        document.getElementById('notificationsSkeleton').style.display = 'block';
-        document.getElementById('notificationsContainer').style.display = 'none';
-        
-        // Hide skeleton and show content after 3 seconds (simulating loading)
-        setTimeout(function() {
-            document.getElementById('notificationsSkeleton').style.display = 'none';
-            document.getElementById('notificationsContainer').style.display = 'block';
-        }, 3000);
-    }
-
-    // Hide Notifications
-    function hideNotifications() {
-        document.getElementById('notificationsPage').style.display = 'none';
-    }
-
-    // Dark Mode Toggle
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    darkModeToggle.addEventListener('change', function() {
-        document.body.classList.toggle('dark-mode', this.checked);
-        // Save preference to localStorage
-        localStorage.setItem('darkMode', this.checked);
-    });
-
-    // Check for saved dark mode preference
-    if (localStorage.getItem('darkMode') === 'true') {
-        document.body.classList.add('dark-mode');
-        darkModeToggle.checked = true;
-    }
-
-    // Data Saver Toggle
-    const dataSaverToggle = document.getElementById('dataSaverToggle');
-    dataSaverToggle.addEventListener('change', function() {
-        // Implement data saver functionality here
-        console.log('Data Saver:', this.checked);
-        localStorage.setItem('dataSaver', this.checked);
-    });
-
-    // Check for saved data saver preference
-    if (localStorage.getItem('dataSaver') === 'true') {
-        dataSaverToggle.checked = true;
-    }
-
-    // Pull to Refresh Functionality
-    const refreshContainer = document.getElementById('refresh-container');
-    const refreshSpinner = document.querySelector('.refresh-spinner');
-    let startY = 0;
-    let isRefreshing = false;
-    
-    // Minimum pull distance to activate refresh (in pixels)
-    const REFRESH_THRESHOLD = 80;
-
-    document.addEventListener('touchstart', e => {
-        if ((window.scrollY <= 0 || document.getElementById('notificationsPage').style.display === 'block') && !isRefreshing) {
-            startY = e.touches[0].pageY;
-        }
-    });
-
-    document.addEventListener('touchmove', e => {
-        if ((window.scrollY <= 0 || document.getElementById('notificationsPage').style.display === 'block') && startY > 0 && !isRefreshing) {
-            const pullDistance = e.touches[0].pageY - startY;
-            
-            if (pullDistance > 0) {
-                e.preventDefault();
+        document.addEventListener('touchend', e => {
+            if (startY > 0 && !isRefreshing) {
+                const pullDistance = e.changedTouches[0].pageY - startY;
                 
-                // Move spinner with pull
-                refreshContainer.style.top = `${Math.min(50, pullDistance/2) + 6}px`; // Adjusted to start below header
-                
-                // Show spinner when threshold passed
                 if (pullDistance > REFRESH_THRESHOLD) {
-                    refreshSpinner.style.opacity = '1';
+                    // Start refresh
+                    startRefresh();
                 } else {
-                    refreshSpinner.style.opacity = '0';
+                    // Reset if not pulled far enough
+                    resetSpinner();
                 }
             }
-        }
-    });
+            startY = 0;
+        });
 
-    document.addEventListener('touchend', e => {
-        if (startY > 0 && !isRefreshing) {
-            const pullDistance = e.changedTouches[0].pageY - startY;
+        function startRefresh() {
+            isRefreshing = true;
+            refreshContainer.style.top = '56px'; // Position below header
+            refreshContainer.classList.add('refreshing');
             
-            if (pullDistance > REFRESH_THRESHOLD) {
-                // Start refresh
-                startRefresh();
-            } else {
-                // Reset if not pulled far enough
+            // Simulate refresh
+            setTimeout(() => {
+                isRefreshing = false;
+                refreshContainer.classList.remove('refreshing');
                 resetSpinner();
-            }
+                
+                // If on notifications page, reload notifications
+                if (document.getElementById('notificationsPage').style.display === 'block') {
+                    loadNotifications();
+                }
+            }, 1500);
         }
-        startY = 0;
-    });
 
-    function startRefresh() {
-        isRefreshing = true;
-        refreshContainer.style.top = '56px'; // Position below header
-        refreshContainer.classList.add('refreshing');
-        
-        // Simulate refresh
-        setTimeout(() => {
-            isRefreshing = false;
-            refreshContainer.classList.remove('refreshing');
-            resetSpinner();
-            
-            // If on notifications page, show skeleton loader again
-            if (document.getElementById('notificationsPage').style.display === 'block') {
-                document.getElementById('notificationsSkeleton').style.display = 'block';
-                document.getElementById('notificationsContainer').style.display = 'none';
-                setTimeout(function() {
-                    document.getElementById('notificationsSkeleton').style.display = 'none';
-                    document.getElementById('notificationsContainer').style.display = 'block';
-                }, 2000);
-            }
-        }, 1500);
-    }
-
-    function resetSpinner() {
-        refreshContainer.style.top = '56px';
-        refreshSpinner.style.opacity = '0';
-    }
-</script>
-<script src="js/suggestions.js" defer></script>
-<script src="js/posts.js"></script>
+        function resetSpinner() {
+            refreshContainer.style.top = '56px';
+            refreshSpinner.style.opacity = '0';
+        }
+    </script>
+    
+    <!-- Notifications JS (standalone file) -->
+    <script src="notifications.js"></script>
 </body>
 </html>
