@@ -1,231 +1,217 @@
-// Initialize Firebase
-  const firebaseConfig = {
-  apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-  authDomain: "x-jamii.firebaseapp.com",
-  projectId: "x-jamii",
-  storageBucket: "x-jamii.firebasestorage.app",    // <- DIFFERENT
-  messagingSenderId: "927548667044",
-  appId: "1:927548667044:web:835e597909f51a2e4da231",
-  measurementId: "G-9S45DQ04HZ"
-};
+// suggestions.js - Standalone user suggestions component
 
-
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.firestore();
-
-// Pagination variables
-let lastVisibleUser = null;
+// Configuration
+const BATCH_SIZE = 5; // Number of users to load at a time
 let isLoading = false;
-let allUsersLoaded = false;
-let currentFollowingIds = [];
+let allSuggestedUsers = [];
+let displayedUsers = new Set(); // Track displayed users to avoid duplicates
 
-// Function to fetch user suggestions with pagination
-async function fetchUserSuggestions(loadMore = false) {
-    if (isLoading || allUsersLoaded) return;
-    isLoading = true;
+// DOM Elements
+const suggestionsScroll = document.getElementById('suggestionsScroll');
+const suggestionsScrollContainer = document.getElementById('suggestionsScrollContainer');
+const suggestionsLoading = document.getElementById('suggestionsLoading');
 
+// Initialize the suggestions
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadInitialSuggestions();
+    setupInfiniteScroll();
+});
+
+// Load initial batch of suggestions
+async function loadInitialSuggestions() {
     try {
-        const suggestionsScroll = document.getElementById('suggestionsScroll');
-        if (loadMore) {
-            const loadingSpinner = document.createElement('div');
-            loadingSpinner.className = 'loading-spinner';
-            loadingSpinner.innerHTML = '<div class="spinner"></div>';
-            suggestionsScroll.appendChild(loadingSpinner);
-        } else {
-            suggestionsScroll.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
-        }
+        // Get current user ID
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        if (!user) return;
 
-        const currentUserId = firebase.auth().currentUser?.uid;
-        if (!currentUserId) throw new Error("No user logged in");
+        // Show loading state
+        isLoading = true;
+        suggestionsLoading.style.display = 'block';
 
-        if (currentFollowingIds.length === 0) {
-            const followingSnapshot = await db.collection('users')
-                .doc(currentUserId)
-                .collection('following')
-                .get();
-            currentFollowingIds = followingSnapshot.docs.map(doc => doc.id);
-        }
-
-        let query = db.collection('users')
-            .where('uid', 'not-in', [...currentFollowingIds, currentUserId])
-            .orderBy('displayName')
-            .limit(5);
-
-        if (loadMore && lastVisibleUser) {
-            query = query.startAfter(lastVisibleUser);
-        }
-
-        const usersSnapshot = await query.get();
-        const spinner = document.querySelector('#suggestionsScroll .loading-spinner');
-        if (spinner) spinner.remove();
-
-        if (usersSnapshot.empty) {
-            if (loadMore) {
-                allUsersLoaded = true;
-                if (document.querySelectorAll('.suggestion-item').length === 0) {
-                    suggestionsScroll.innerHTML = '<p style="padding: 20px; color: #888;">No suggestions available</p>';
-                }
-            }
-            return;
-        }
-
-        lastVisibleUser = usersSnapshot.docs[usersSnapshot.docs.length - 1];
-
-        usersSnapshot.forEach(doc => {
-            const user = doc.data();
-            suggestionsScroll.appendChild(createSuggestionCard(user));
+        // Get users that current user is not following
+        const { data: suggestedUsers, error } = await supabase.rpc('get_non_followed_users', {
+            current_user_id: user.id,
+            limit_count: BATCH_SIZE
         });
 
-    } catch (error) {
-        console.error("Error fetching suggestions:", error);
-        const spinner = document.querySelector('#suggestionsScroll .loading-spinner');
-        if (spinner) spinner.remove();
+        if (error) throw error;
+
+        // Store all suggested users
+        allSuggestedUsers = suggestedUsers;
         
-        const suggestionsScroll = document.getElementById('suggestionsScroll');
-        if (!loadMore) {
-            suggestionsScroll.innerHTML = '<p style="padding: 20px; color: #888;">Error loading suggestions</p>';
-        }
-    } finally {
+        // Display initial batch
+        displayUsers(suggestedUsers);
+        
+        // Hide loading
         isLoading = false;
+        suggestionsLoading.style.display = 'none';
+    } catch (error) {
+        console.error('Error loading suggestions:', error);
+        isLoading = false;
+        suggestionsLoading.style.display = 'none';
     }
 }
 
-// Function to create a suggestion card with all clickable profile elements
-function createSuggestionCard(user) {
-    const suggestionItem = document.createElement('div');
-    suggestionItem.className = 'suggestion-item';
-    
-    const profileUrl = `/profile/${user.username}`;
-    const names = user.displayName?.split(' ') || ['U'];
-    const initials = names.length > 1 
-        ? `${names[0][0]}${names[names.length - 1][0]}` 
-        : names[0][0];
-    
-    const avatarImage = user.photoURL 
-        ? `<img src="${user.photoURL}" alt="${user.displayName}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`
-        : initials;
-    
-    suggestionItem.innerHTML = `
-        <div class="suggestion-avatar" onclick="navigateToProfile('${profileUrl}')">
-            ${avatarImage}
-        </div>
-        <div class="suggestion-info">
-            <div class="profile-link" onclick="navigateToProfile('${profileUrl}')">
-                <div class="suggestion-name" onclick="navigateToProfile('${profileUrl}')">
-                    ${user.displayName || 'User'} ${user.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-                </div>
-                <div class="suggestion-username" onclick="navigateToProfile('${profileUrl}')">@${user.username || 'user'}</div>
-            </div>
-        </div>
-        <button class="suggestion-follow" onclick="followAccount(event, this, '${user.uid}')">Follow</button>
-    `;
-
-    // Add hover effects to clickable elements
-    const clickableElements = suggestionItem.querySelectorAll('.suggestion-avatar, .suggestion-name, .suggestion-username');
-    clickableElements.forEach(el => {
-        el.style.cursor = 'pointer';
-        el.addEventListener('mouseenter', () => {
-            if (el.classList.contains('suggestion-name')) {
-                el.style.textDecoration = 'underline';
-            } else if (el.classList.contains('suggestion-username')) {
-                el.style.opacity = '0.9';
-            }
-        });
-        el.addEventListener('mouseleave', () => {
-            if (el.classList.contains('suggestion-name')) {
-                el.style.textDecoration = 'none';
-            } else if (el.classList.contains('suggestion-username')) {
-                el.style.opacity = '1';
-            }
-        });
-    });
-
-    return suggestionItem;
-}
-
-// Setup infinite scroll with debounce
-function setupInfiniteScroll() {
-    const scrollContainer = document.querySelector('.suggestions-scroll-container');
-    let scrollDebounce;
-
-    scrollContainer.addEventListener('scroll', () => {
-        clearTimeout(scrollDebounce);
-        scrollDebounce = setTimeout(() => {
-            const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
-            if (scrollLeft + clientWidth > scrollWidth * 0.8 && !isLoading) {
-                fetchUserSuggestions(true);
-            }
-        }, 100);
+// Display users in the scroll container
+function displayUsers(users) {
+    users.forEach(user => {
+        // Skip if already displayed
+        if (displayedUsers.has(user.id)) return;
+        
+        displayedUsers.add(user.id);
+        
+        const userElement = createUserElement(user);
+        suggestionsScroll.appendChild(userElement);
     });
 }
 
-// Global functions
-window.navigateToProfile = function(url) {
-    window.location.href = url;
-};
+// Create a user element
+function createUserElement(user) {
+    const userElement = document.createElement('div');
+    userElement.className = 'suggestion-item';
+    
+    // Profile picture (clickable)
+    const avatarContainer = document.createElement('div');
+    avatarContainer.className = 'suggestion-avatar-container';
+    const avatar = document.createElement('img');
+    avatar.className = 'suggestion-avatar';
+    avatar.src = user.avatar_url || 'https://www.gravatar.com/avatar/?d=mp';
+    avatar.alt = user.full_name || 'User';
+    avatar.onclick = () => window.location.href = `profile.html?id=${user.id}`;
+    avatarContainer.appendChild(avatar);
+    
+    // Add verification badge if verified
+    if (user.is_verified) {
+        const verifiedBadge = document.createElement('div');
+        verifiedBadge.className = 'profile-verified-badge';
+        verifiedBadge.title = 'Verified';
+        avatarContainer.appendChild(verifiedBadge);
+    }
+    
+    // User info (clickable)
+    const userInfo = document.createElement('div');
+    userInfo.className = 'suggestion-info';
+    
+    const userName = document.createElement('div');
+    userName.className = 'suggestion-name';
+    userName.textContent = truncateText(user.full_name || 'User', 15);
+    userName.onclick = () => window.location.href = `profile.html?id=${user.id}`;
+    
+    const userUsername = document.createElement('div');
+    userUsername.className = 'suggestion-username';
+    userUsername.textContent = truncateText(`@${user.username}`, 15);
+    userUsername.onclick = () => window.location.href = `profile.html?id=${user.id}`;
+    
+    userInfo.appendChild(userName);
+    userInfo.appendChild(userUsername);
+    
+    // Follow button
+    const followButton = document.createElement('button');
+    followButton.className = 'suggestion-follow';
+    followButton.textContent = 'Follow';
+    followButton.onclick = (e) => handleFollowClick(e, user.id);
+    
+    // Assemble the element
+    userElement.appendChild(avatarContainer);
+    userElement.appendChild(userInfo);
+    userElement.appendChild(followButton);
+    
+    return userElement;
+}
 
-window.followAccount = async function(event, button, userId) {
-    event.stopPropagation();
-    event.preventDefault();
+// Handle follow button click
+async function handleFollowClick(e, userId) {
+    const button = e.target;
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return;
     
     try {
-        const currentUserId = firebase.auth().currentUser?.uid;
-        if (!currentUserId) {
-            alert("Please log in to follow users");
-            return;
-        }
-        
         if (button.classList.contains('following')) {
-            await db.collection('users').doc(currentUserId).collection('following').doc(userId).delete();
-            await db.collection('users').doc(userId).collection('followers').doc(currentUserId).delete();
-            currentFollowingIds = currentFollowingIds.filter(id => id !== userId);
+            // Unfollow logic
+            const { error } = await supabase
+                .from('follows')
+                .delete()
+                .eq('follower_id', user.id)
+                .eq('following_id', userId);
+            
+            if (error) throw error;
+            
             button.classList.remove('following');
             button.textContent = 'Follow';
         } else {
-            await db.collection('users').doc(currentUserId).collection('following').doc(userId).set({
-                followedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            await db.collection('users').doc(userId).collection('followers').doc(currentUserId).set({
-                followedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            currentFollowingIds.push(userId);
+            // Follow logic
+            const { error } = await supabase
+                .from('follows')
+                .insert([
+                    { 
+                        follower_id: user.id, 
+                        following_id: userId,
+                        created_at: new Date().toISOString()
+                    }
+                ]);
+            
+            if (error) throw error;
+            
             button.classList.add('following');
             button.textContent = 'Following';
         }
     } catch (error) {
-        console.error("Error following/unfollowing:", error);
-        alert("An error occurred. Please try again.");
+        console.error('Error updating follow status:', error);
     }
-};
+}
 
-// Initialize everything
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle clicks on suggestion cards (excluding follow button)
-    document.addEventListener('click', function(e) {
-        const card = e.target.closest('.suggestion-item');
-        const followButton = e.target.closest('.suggestion-follow');
+// Setup infinite scroll
+function setupInfiniteScroll() {
+    suggestionsScrollContainer.addEventListener('scroll', async () => {
+        const { scrollLeft, scrollWidth, clientWidth } = suggestionsScrollContainer;
+        const scrollPosition = scrollLeft + clientWidth;
         
-        if (card && !followButton) {
-            const profileUrl = `/profile/${card.querySelector('.suggestion-username').textContent.replace('@', '')}`;
-            navigateToProfile(profileUrl);
+        // Load more when scrolled near the end
+        if (scrollPosition > scrollWidth - 200 && !isLoading && allSuggestedUsers.length > 0) {
+            await loadMoreSuggestions();
         }
     });
+}
+
+// Load more suggestions
+async function loadMoreSuggestions() {
+    if (isLoading) return;
     
-    setupInfiniteScroll();
-    
-    firebase.auth().onAuthStateChanged(user => {
-        lastVisibleUser = null;
-        allUsersLoaded = false;
+    try {
+        isLoading = true;
+        suggestionsLoading.style.display = 'block';
+        
+        // Get current user ID
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        if (!user) return;
+        
+        // Get next batch of users
+        const { data: suggestedUsers, error } = await supabase.rpc('get_non_followed_users', {
+            current_user_id: user.id,
+            limit_count: BATCH_SIZE,
+            excluded_ids: Array.from(displayedUsers)
+        });
+        
+        if (error) throw error;
+        
+        // Add to all suggested users
+        allSuggestedUsers = [...allSuggestedUsers, ...suggestedUsers];
+        
+        // Display new users
+        displayUsers(suggestedUsers);
+        
         isLoading = false;
-        currentFollowingIds = [];
-        
-        if (user) {
-            fetchUserSuggestions();
-        } else {
-            document.getElementById('suggestionsScroll').innerHTML = 
-                '<p style="padding: 20px; color: #888;">Please log in to see suggestions</p>';
-        }
-    });
-});
+        suggestionsLoading.style.display = 'none';
+    } catch (error) {
+        console.error('Error loading more suggestions:', error);
+        isLoading = false;
+        suggestionsLoading.style.display = 'none';
+    }
+}
+
+// Helper function to truncate long text
+function truncateText(text, maxLength) {
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+}
