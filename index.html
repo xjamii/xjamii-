@@ -837,45 +837,58 @@
     background-color: #1DA1F2;
 }
 
-          .posts-container {
+                  
+
+    
+
+
+     .posts-container {
         width: 100%;
         max-width: 600px;
         margin: 0 auto;
     }
 
-    .post-card {
+    /* Your post template styles */
+    .post {
         background-color: white;
-        border-radius: 12px;
-        padding: 16px;
         margin-bottom: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding-bottom: 12px;
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
-    .dark-mode .post-card {
+    .dark-mode .post {
         background-color: #242526;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
     .post-header {
         display: flex;
         align-items: center;
-        margin-bottom: 12px;
+        padding: 12px 16px;
     }
 
-    .post-user-avatar {
-        width: 48px;
-        height: 48px;
+    .post-avatar {
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         margin-right: 12px;
-        object-fit: cover;
+        background-color: #00B0FF;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 16px;
     }
 
     .post-user-info {
-        flex: 1;
+        flex-grow: 1;
     }
 
-    .post-user-name {
-        font-weight: 700;
+    .post-user {
+        font-weight: bold;
         display: flex;
         align-items: center;
         gap: 4px;
@@ -884,74 +897,284 @@
     .post-username {
         color: #777;
         font-size: 14px;
+        margin-top: 2px;
     }
 
     .dark-mode .post-username {
         color: #b0b3b8;
     }
 
-    .post-content {
-        margin-bottom: 12px;
-        line-height: 1.4;
+    .post-time {
+        color: #777;
+        font-size: 12px;
+        margin-top: 2px;
     }
 
-    .post-media {
-        margin-top: 12px;
-        border-radius: 12px;
+    .dark-mode .post-time {
+        color: #b0b3b8;
+    }
+
+    .post-top-right {
+        position: absolute;
+        top: 12px;
+        right: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .follow-btn {
+        background-color: #000;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        min-width: 80px;
+    }
+
+    .dark-mode .follow-btn {
+        background-color: white;
+        color: #000;
+    }
+
+    .follow-btn:hover {
+        background-color: #333;
+    }
+
+    .dark-mode .follow-btn:hover {
+        background-color: #f0f0f0;
+    }
+
+    .follow-btn.following {
+        background-color: #fff;
+        color: #000;
+        border: 1px solid #ddd;
+    }
+
+    .dark-mode .follow-btn.following {
+        background-color: #242526;
+        color: #e4e6eb;
+        border-color: #3e4042;
+    }
+
+    .post-time-right {
+        color: #777;
+        font-size: 12px;
+    }
+
+    .post-more {
+        color: #777;
+        cursor: pointer;
+        padding: 4px;
+    }
+
+    .post-more-menu {
+        position: absolute;
+        bottom: -100px;
+        right: 16px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        width: 200px;
+        z-index: 100;
         overflow: hidden;
+        display: none;
     }
 
-    .post-media img, .post-media video {
-        width: 100%;
-        max-height: 500px;
-        object-fit: contain;
-        border-radius: 12px;
+    .dark-mode .post-more-menu {
+        background-color: #242526;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
 
-    .post-footer {
+    .post-more-menu.show {
+        display: block;
+    }
+
+    .post-more-option {
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .dark-mode .post-more-option {
+        color: #e4e6eb;
+    }
+
+    .post-more-option:hover {
+        background-color: #f0f2f5;
+    }
+
+    .dark-mode .post-more-option:hover {
+        background-color: #3a3b3c;
+    }
+
+    .post-more-option i {
+        width: 20px;
+        text-align: center;
+    }
+
+    .post-content {
+        padding: 0 16px 12px;
+        line-height: 1.5;
+    }
+
+    .post-content a {
+        color: #00B0FF;
+        text-decoration: none;
+    }
+
+    .post-content a:hover {
+        text-decoration: underline;
+    }
+
+    .post-stats {
         display: flex;
         justify-content: space-between;
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid #eee;
+        padding: 0 16px;
+        color: #777;
+        font-size: 14px;
+        margin-bottom: 8px;
     }
 
-    .dark-mode .post-footer {
+    .dark-mode .post-stats {
+        color: #b0b3b8;
+    }
+
+    .post-viewers {
+        display: flex;
+        align-items: center;
+    }
+
+    .viewers-icon {
+        font-size: 16px;
+        margin-right: 4px;
+        color: #777;
+    }
+
+    .dark-mode .viewers-icon {
+        color: #b0b3b8;
+    }
+
+    .post-actions {
+        display: flex;
+        justify-content: space-between;
+        border-top: 1px solid #eee;
+        padding: 8px 16px 0;
+    }
+
+    .dark-mode .post-actions {
         border-top-color: #3e4042;
     }
 
     .post-action {
         display: flex;
         align-items: center;
-        color: #777;
-        font-size: 14px;
+        color: #555;
         cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        font-size: 14px;
     }
 
     .dark-mode .post-action {
         color: #b0b3b8;
     }
 
-    .post-action i {
-        margin-right: 6px;
-    }
-
-    .post-action.liked {
-        color: #ff0000;
-    }
-
-    .post-action.commented {
+    .post-action:hover {
+        background-color: #f0f0f0;
         color: #00B0FF;
     }
 
-    .post-time {
-        color: #777;
-        font-size: 12px;
-        margin-top: 4px;
+    .dark-mode .post-action:hover {
+        background-color: #3a3b3c;
     }
 
-    .dark-mode .post-time {
-        color: #b0b3b8;
+    .post-action i {
+        margin-right: 6px;
+        font-size: 16px;
+    }
+
+    .post-action.liked {
+        color: #e0245e;
+    }
+
+    .post-action.liked i {
+        color: #e0245e;
+    }
+    
+    .like-animation {
+        position: absolute;
+        font-size: 80px;
+        opacity: 0;
+        pointer-events: none;
+        animation: likeZoom 0.8s forwards;
+        color: #ff0000;
+    }
+    
+    @keyframes likeZoom {
+        0% { transform: scale(0); opacity: 0; }
+        15% { transform: scale(1.2); opacity: 1; }
+        30% { transform: scale(0.95); }
+        45%, 80% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(0); opacity: 0; }
+    }
+
+    .swiper-container {
+        width: 100%;
+        height: 500px;
+        position: relative;
+        margin-bottom: 12px;
+    }
+
+    .swiper-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .photo-counter {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        z-index: 10;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .swiper-container:hover .photo-counter,
+    .swiper-container:active .photo-counter {
+        opacity: 1;
+    }
+
+    /* Adjust post action sizes */
+    .post-actions .post-action i {
+        font-size: 20px;
+        margin-right: 8px;
+    }
+
+    .post-actions .post-action {
+        font-size: 16px;
+        padding: 8px 16px;
+    }
+
+    .like-animation {
+        font-size: 30px;
+    }
+
+    .post-actions {
+        padding: 8px 24px 0;
     }
 
     .no-posts {
@@ -962,6 +1185,54 @@
 
     .dark-mode .no-posts {
         color: #b0b3b8;
+    }
+
+    .skeleton-loader {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .skeleton-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #e0e0e0;
+        margin-right: 12px;
+        animation: pulse 1.5s infinite;
+    }
+
+    .skeleton-details {
+        flex: 1;
+    }
+
+    .skeleton-name {
+        width: 120px;
+        height: 16px;
+        background-color: #e0e0e0;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        animation: pulse 1.5s infinite;
+    }
+
+    .skeleton-username {
+        width: 80px;
+        height: 14px;
+        background-color: #e0e0e0;
+        border-radius: 4px;
+        animation: pulse 1.5s infinite;
+    }
+
+    .dark-mode .skeleton-avatar,
+    .dark-mode .skeleton-name,
+    .dark-mode .skeleton-username {
+        background-color: #3a3b3c;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
     }
     </style>
 </head>
