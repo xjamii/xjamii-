@@ -836,6 +836,133 @@
 .dark-mode .notification-avatar.initials {
     background-color: #1DA1F2;
 }
+
+          .posts-container {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .post-card {
+        background-color: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .dark-mode .post-card {
+        background-color: #242526;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .post-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .post-user-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        margin-right: 12px;
+        object-fit: cover;
+    }
+
+    .post-user-info {
+        flex: 1;
+    }
+
+    .post-user-name {
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .post-username {
+        color: #777;
+        font-size: 14px;
+    }
+
+    .dark-mode .post-username {
+        color: #b0b3b8;
+    }
+
+    .post-content {
+        margin-bottom: 12px;
+        line-height: 1.4;
+    }
+
+    .post-media {
+        margin-top: 12px;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .post-media img, .post-media video {
+        width: 100%;
+        max-height: 500px;
+        object-fit: contain;
+        border-radius: 12px;
+    }
+
+    .post-footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #eee;
+    }
+
+    .dark-mode .post-footer {
+        border-top-color: #3e4042;
+    }
+
+    .post-action {
+        display: flex;
+        align-items: center;
+        color: #777;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .dark-mode .post-action {
+        color: #b0b3b8;
+    }
+
+    .post-action i {
+        margin-right: 6px;
+    }
+
+    .post-action.liked {
+        color: #ff0000;
+    }
+
+    .post-action.commented {
+        color: #00B0FF;
+    }
+
+    .post-time {
+        color: #777;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .dark-mode .post-time {
+        color: #b0b3b8;
+    }
+
+    .no-posts {
+        text-align: center;
+        padding: 40px 20px;
+        color: #777;
+    }
+
+    .dark-mode .no-posts {
+        color: #b0b3b8;
+    }
     </style>
 </head>
 <body>
@@ -872,6 +999,10 @@
 
     <!-- Main Content -->
     <div class="main-content">
+        <!-- Add this inside your main-content div in index.html -->
+<div class="posts-container" id="posts-container">
+    <!-- Posts will be loaded here -->
+</div>
         <!-- Empty content since we removed posts and suggestions -->
     </div>
 
