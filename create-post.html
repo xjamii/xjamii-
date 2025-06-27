@@ -6,510 +6,453 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Post | X-Jamii</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-   <link rel="stylesheet" href="css/posts.css">
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    </script>
     <style>
         * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-}
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
 
-body {
-    background-color: #ECEFF1;
-    padding-bottom: 80px; /* Space for bottom button */
-}
+        body {
+            background-color: #ECEFF1;
+            padding-bottom: 80px; /* Space for bottom button */
+        }
 
-.dark-mode {
-    background-color: #18191a;
-    color: #e4e6eb;
-}
+        .dark-mode {
+            background-color: #18191a;
+            color: #e4e6eb;
+        }
 
-/* Header Styles */
-.create-post-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background-color: white;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #e0e0e0;
-    z-index: 100;
-}
+        /* Header Styles */
+        .create-post-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            z-index: 100;
+        }
 
-.dark-mode .create-post-header {
-    background-color: #242526;
-    border-bottom-color: #3e4042;
-}
+        .dark-mode .create-post-header {
+            background-color: #242526;
+            border-bottom-color: #3e4042;
+        }
 
-.back-button {
-    color: #000;
-    font-size: 20px;
-    text-decoration: none;
-}
+        .back-button {
+            color: #000;
+            font-size: 20px;
+            text-decoration: none;
+        }
 
-.dark-mode .back-button {
-    color: #e4e6eb;
-}
+        .dark-mode .back-button {
+            color: #e4e6eb;
+        }
 
-.logo {
-    height: 30px;
-    filter: brightness(0);
-}
+        .logo-container {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+        }
 
-.dark-mode .logo {
-    filter: brightness(0) invert(1);
-}
+        .logo {
+            height: 30px;
+            filter: brightness(0);
+            width: 100%;
+            object-fit: contain;
+        }
 
-.post-button {
-    background-color: #000;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
+        .dark-mode .logo {
+            filter: brightness(0) invert(1);
+        }
 
-.dark-mode .post-button {
-    background-color: white;
-    color: #000;
-}
+        .post-button {
+            background-color: #000;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-.post-button:hover {
-    background-color: #333;
-}
+        .dark-mode .post-button {
+            background-color: white;
+            color: #000;
+        }
 
-.dark-mode .post-button:hover {
-    background-color: #f0f0f0;
-}
+        .post-button:hover {
+            background-color: #333;
+        }
 
-.post-button.loading {
-    background-color: #333;
-    pointer-events: none;
-}
+        .dark-mode .post-button:hover {
+            background-color: #f0f0f0;
+        }
 
-.dark-mode .post-button.loading {
-    background-color: #f0f0f0;
-}
+        .post-button.loading {
+            background-color: #333;
+            pointer-events: none;
+        }
 
-/* Main Content */
-.create-post-container {
-    margin-top: 70px;
-    padding: 0;
-    width: 100%;
-    min-height: calc(100vh - 150px);
-}
+        .dark-mode .post-button.loading {
+            background-color: #f0f0f0;
+        }
 
-.post-input-container {
-    background-color: white;
-    padding: 20px;
-    width: 100%;
-    margin-bottom: 20px;
-}
+        /* Main Content */
+        .create-post-container {
+            margin-top: 70px;
+            padding: 0;
+            width: 100%;
+            min-height: calc(100vh - 150px);
+        }
 
-.dark-mode .post-input-container {
-    background-color: #242526;
-}
+        .post-input-container {
+            background-color: white;
+            padding: 20px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
 
-.user-info {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-}
+        .dark-mode .post-input-container {
+            background-color: #242526;
+        }
 
-.user-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 12px;
-    background-image: url('https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png');
-    background-size: 70%;
-    background-position: center;
-    background-repeat: no-repeat;
-    border: 1px solid #eee;
-}
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
 
-.dark-mode .user-avatar {
-    background-color: #3a3b3c;
-    border-color: #3e4042;
-}
+        /* Avatar Styles */
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+        }
 
-.user-details {
-    display: flex;
-    flex-direction: column;
-}
+        .dark-mode .user-avatar {
+            background-color: #3a3b3c;
+        }
 
-.user-name {
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: #222;
-}
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-.dark-mode .user-name {
-    color: #e4e6eb;
-}
+        .avatar-initial {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
 
-.user-username {
-    color: #777;
-    font-size: 14px;
-}
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
 
-.dark-mode .user-username {
-    color: #b0b3b8;
-}
+        .user-name {
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #222;
+        }
 
-.verified-badge {
-    color: #00B0FF;
-    font-size: 14px;
-}
+        .dark-mode .user-name {
+            color: #e4e6eb;
+        }
 
-.post-input {
-    width: 100%;
-    min-height: 150px;
-    border: none;
-    resize: none;
-    font-size: 16px;
-    padding: 10px;
-    margin-bottom: 15px;
-    outline: none;
-    background-color: transparent;
-    color: #333;
-}
+        .user-username {
+            color: #777;
+            font-size: 14px;
+        }
 
-.dark-mode .post-input {
-    color: #e4e6eb;
-}
+        .dark-mode .user-username {
+            color: #b0b3b8;
+        }
 
-.post-input::placeholder {
-    color: #999;
-}
+        .verified-badge {
+            color: #00B0FF;
+            font-size: 14px;
+        }
 
-.dark-mode .post-input::placeholder {
-    color: #b0b3b8;
-}
+        .post-input {
+            width: 100%;
+            min-height: 150px;
+            border: none;
+            resize: none;
+            font-size: 16px;
+            padding: 10px;
+            margin-bottom: 15px;
+            outline: none;
+            background-color: transparent;
+            color: #333;
+        }
 
-/* Post Options */
-.post-options {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
-    border-top: 1px solid #eee;
-    padding-top: 15px;
-}
+        .dark-mode .post-input {
+            color: #e4e6eb;
+        }
 
-.dark-mode .post-options {
-    border-top-color: #3e4042;
-}
+        .post-input::placeholder {
+            color: #999;
+        }
 
-.option-button {
-    background: none;
-    border: none;
-    color: #00B0FF;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-}
+        .dark-mode .post-input::placeholder {
+            color: #b0b3b8;
+        }
 
-.option-button:hover {
-    background-color: #e3f2fd;
-}
+        /* Post Options */
+        .post-options {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
 
-.dark-mode .option-button:hover {
-    background-color: #2d88ff22;
-}
+        .dark-mode .post-options {
+            border-top-color: #3e4042;
+        }
 
-.option-button i {
-    margin-right: 6px;
-    font-size: 16px;
-}
+        .option-button {
+            background: none;
+            border: none;
+            color: #00B0FF;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
 
-/* Media Preview */
-.media-preview-container {
-    display: none;
-    margin-top: 15px;
-    margin-bottom: 80px;
-}
+        .option-button:hover {
+            background-color: #e3f2fd;
+        }
 
-.media-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-}
+        .dark-mode .option-button:hover {
+            background-color: #2d88ff22;
+        }
 
-.media-item {
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    height: 150px;
-    background-color: #f0f0f0;
-}
+        .option-button i {
+            margin-right: 6px;
+            font-size: 16px;
+        }
 
-.dark-mode .media-item {
-    background-color: #3a3b3c;
-}
+        /* Media Preview */
+        .media-preview-container {
+            display: none;
+            margin-top: 15px;
+            margin-bottom: 80px;
+        }
 
-.media-item img, .media-item video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
 
-.remove-media {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(255, 0, 0, 0.8);
-    color: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
+        .media-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 150px;
+            background-color: #f0f0f0;
+        }
 
-/* Bottom Post Button */
-.bottom-post-button {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #000;
-    color: white;
-    border: none;
-    border-radius: 30px;
-    padding: 12px 24px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 90;
-    width: calc(100% - 40px);
-    max-width: 500px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
+        .dark-mode .media-item {
+            background-color: #3a3b3c;
+        }
 
-.dark-mode .bottom-post-button {
-    background-color: white;
-    color: #000;
-}
+        .media-item img, .media-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-.bottom-post-button:hover {
-    background-color: #333;
-}
+        .remove-media {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 0, 0, 0.8);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
 
-.dark-mode .bottom-post-button:hover {
-    background-color: #f0f0f0;
-}
+        .media-item:hover .remove-media {
+            opacity: 1;
+        }
 
-/* Error Message */
-.error-message {
-    display: none;
-    text-align: center;
-    color: #ff4444;
-    padding: 15px;
-    margin: 15px 0;
-    background-color: #ffeeee;
-    border-radius: 8px;
-    font-weight: 500;
-}
+        /* Bottom Post Button */
+        .bottom-post-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #000;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 90;
+            width: calc(100% - 40px);
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
 
-.dark-mode .error-message {
-    background-color: #3a1e1e;
-    color: #ff6b6b;
-}
+        .dark-mode .bottom-post-button {
+            background-color: white;
+            color: #000;
+        }
 
-/* Animations */
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
+        .bottom-post-button:hover {
+            background-color: #333;
+        }
 
-/* File Input (hidden) */
-#media-upload {
-    display: none;
-}        
-                    
-.logo-container {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 30px; /* Add this line */
-    height: 30px; /* Add this line */
-    display: flex; /* Add this line */
-    justify-content: center; /* Add this line */
-}
+        .dark-mode .bottom-post-button:hover {
+            background-color: #f0f0f0;
+        }
 
-.logo {
-    height: 30px;
-    filter: brightness(0);
-    width: 100%; /* Add this line */
-    object-fit: contain; /* Add this line */
-}
+        /* Error Message */
+        .error-message {
+            display: none;
+            text-align: center;
+            color: #ff4444;
+            padding: 15px;
+            margin: 15px 0;
+            background-color: #ffeeee;
+            border-radius: 8px;
+            font-weight: 500;
+        }
 
-.dark-mode .logo {
-    filter: brightness(0) invert(1);
-}
+        .dark-mode .error-message {
+            background-color: #3a1e1e;
+            color: #ff6b6b;
+        }
+
+        /* Animations */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* File Input (hidden) */
+        #media-upload {
+            display: none;
+        }
+
         /* Skeleton Loader Styles */
-.skeleton-loader {
-    display: flex;
-    align-items: center;
-    width: 100%;
-}
+        .skeleton-loader {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
 
-.skeleton-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: #e0e0e0;
-    margin-right: 12px;
-    animation: pulse 1.5s infinite;
-}
+        .skeleton-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            margin-right: 12px;
+            animation: pulse 1.5s infinite;
+        }
 
-.skeleton-details {
-    flex: 1;
-}
+        .skeleton-details {
+            flex: 1;
+        }
 
-.skeleton-name {
-    width: 120px;
-    height: 16px;
-    background-color: #e0e0e0;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    animation: pulse 1.5s infinite;
-}
+        .skeleton-name {
+            width: 120px;
+            height: 16px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            animation: pulse 1.5s infinite;
+        }
 
-.skeleton-username {
-    width: 80px;
-    height: 14px;
-    background-color: #e0e0e0;
-    border-radius: 4px;
-    animation: pulse 1.5s infinite;
-}
+        .skeleton-username {
+            width: 80px;
+            height: 14px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
 
-.dark-mode .skeleton-avatar,
-.dark-mode .skeleton-name,
-.dark-mode .skeleton-username {
-    background-color: #3a3b3c;
-}
+        .dark-mode .skeleton-avatar,
+        .dark-mode .skeleton-name,
+        .dark-mode .skeleton-username {
+            background-color: #3a3b3c;
+        }
 
-@keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
-}
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
 
-/* Avatar Initial Styles */
-.avatar-initial {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    font-size: 20px;
-}
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
 
-/* User Info Styles */
-.user-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    margin-right: 12px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f0f0f0;
-}
-
-.dark-mode .user-avatar {
-    background-color: #3a3b3c;
-}
-
-.user-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.user-name {
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: #222;
-}
-
-.dark-mode .user-name {
-    color: #e4e6eb;
-}
-
-.user-username {
-    color: #777;
-    font-size: 14px;
-}
-
-.dark-mode .user-username {
-    color: #b0b3b8;
-}
-
-.verified-badge {
-    color: #00B0FF;
-    font-size: 14px;
-}
+        .dark-mode .spinner {
+            border-top-color: #000;
+        }
     </style>
 </head>
 <body>
-    <!-- Header -->
-<header class="create-post-header">
-    <a href="index.html" class="back-button">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-    
-    <div class="logo-container">
-        <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png' class="logo"/>
-    </div>
-    
-    <button class="post-button" id="submit-post">
-        Post
-    </button>
-</header>
-
-
-        
-        <!DOCTYPE html>
-<html lang="en">
-<head>
-    
     <!-- Header -->
     <header class="create-post-header">
         <a href="index.html" class="back-button">
@@ -528,38 +471,36 @@ body {
     <!-- Main Content -->
     <div class="create-post-container">
         <div class="post-input-container">
-            <!-- Replace your existing user-info-container div with this updated version -->
-<!-- Replace your existing user-info-container div with this updated version -->
-<div class="user-info" id="user-info-container">
-    <!-- Skeleton Loader (shown while loading) -->
-    <div class="skeleton-loader">
-        <div class="skeleton-avatar"></div>
-        <div class="skeleton-details">
-            <div class="skeleton-name"></div>
-            <div class="skeleton-username"></div>
-        </div>
-    </div>
-    
-    <!-- Actual User Info (hidden initially) -->
-    <div class="loaded-user-info" style="display: none;">
-        <div class="user-avatar" id="dynamic-avatar">
-            <!-- Will be populated by JavaScript -->
-        </div>
-        <div class="user-details">
-            <div class="user-name">
-                <span id="display-name">Loading...</span>
-                <span id="verified-badge" style="display: none;">
-                    <i class="fas fa-check-circle verified-badge"></i>
-                </span>
+            <div class="user-info" id="user-info-container">
+                <!-- Skeleton Loader (shown while loading) -->
+                <div class="skeleton-loader">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-details">
+                        <div class="skeleton-name"></div>
+                        <div class="skeleton-username"></div>
+                    </div>
+                </div>
+                
+                <!-- Actual User Info (hidden initially) -->
+                <div class="loaded-user-info" style="display: none;">
+                    <div class="user-avatar" id="dynamic-avatar">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">
+                            <span id="display-name">Loading...</span>
+                            <span id="verified-badge" style="display: none;">
+                                <i class="fas fa-check-circle verified-badge"></i>
+                            </span>
+                        </div>
+                        <div class="user-username" id="username-display">
+                            @loading
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="user-username" id="username-display">
-                @loading
-            </div>
-        </div>
-    </div>
-</div>
             
-            <textarea class="post-input" placeholder="What's on your mind?"></textarea>
+            <textarea class="post-input" id="post-content" placeholder="What's on your mind?"></textarea>
             
             <!-- Media Preview (hidden by default) -->
             <div class="media-preview-container" id="media-preview">
@@ -572,6 +513,9 @@ body {
                 </button>
                 <input type="file" id="media-upload" accept="image/*,video/*" multiple>
             </div>
+            
+            <!-- Error message container -->
+            <div class="error-message" id="error-message"></div>
         </div>
     </div>
 
@@ -580,294 +524,327 @@ body {
         <i class="fas fa-paper-plane"></i> Post
     </button>
 
-
     <script>
-     
-// Initialize Firebase
-const firebaseConfig = {
-    apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-    authDomain: "x-jamii.firebaseapp.com",
-    projectId: "x-jamii",
-    storageBucket: "x-jamii.appspot.com",
-    messagingSenderId: "927548667044",
-    appId: "1:927548667044:web:835e597909f51a2e4da231",
-    measurementId: "G-9S45DQ04HZ"
-};
+        // DOM Elements
+        const userInfoContainer = document.getElementById('user-info-container');
+        const postInput = document.getElementById('post-content');
+        const postButton = document.getElementById('submit-post');
+        const bottomPostButton = document.getElementById('bottom-post-button');
+        const mediaButton = document.getElementById('media-button');
+        const mediaUpload = document.getElementById('media-upload');
+        const mediaPreview = document.getElementById('media-preview');
+        const mediaGrid = document.getElementById('media-grid');
+        const errorMessage = document.getElementById('error-message');
+        const body = document.body;
 
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+        // State variables
+        let uploadedFiles = [];
+        let videoCount = 0;
+        let currentUser = null;
+        let currentProfile = null;
 
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-// DOM Elements
-const userInfoContainer = document.getElementById('user-info-container');
-const postInput = document.querySelector('.post-input');
-const postButton = document.getElementById('submit-post');
-const bottomPostButton = document.getElementById('bottom-post-button');
-const mediaButton = document.getElementById('media-button');
-const mediaUpload = document.getElementById('media-upload');
-const mediaPreview = document.getElementById('media-preview');
-const mediaGrid = document.getElementById('media-grid');
-const body = document.body;
-
-// Check for dark mode preference
-if (localStorage.getItem('darkMode') === 'true') {
-    body.classList.add('dark-mode');
-}
-
-// State variables
-let uploadedFiles = [];
-let videoCount = 0;
-
-// ======================
-// USER PROFILE FUNCTIONS
-// ======================
-
-// Show skeleton loader immediately
-function showSkeletonLoader() {
-    userInfoContainer.innerHTML = `
-        <div class="skeleton-loader">
-            <div class="skeleton-avatar"></div>
-            <div class="skeleton-details">
-                <div class="skeleton-name"></div>
-                <div class="skeleton-username"></div>
-            </div>
-        </div>
-    `;
-}
-
-// Load user profile data
-async function loadUserProfile() {
-    showSkeletonLoader();
-    
-    try {
-        const user = auth.currentUser;
-        if (!user) {
-            window.location.href = 'login.html';
-            return;
+        // Check for dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            body.classList.add('dark-mode');
         }
 
-        // Get data from both Auth and Firestore
-        const userDoc = await db.collection('users').doc(user.uid).get();
-        const userData = userDoc.exists ? userDoc.data() : {};
+        // Initialize the page
+        async function init() {
+            try {
+                // Check if user is logged in
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                currentUser = user;
+                
+                // Load user profile
+                await loadUserProfile();
+                
+                // Set up event listeners
+                setupEventListeners();
+                
+            } catch (error) {
+                console.error("Initialization error:", error);
+                showError("Failed to initialize. Please try again.");
+                window.location.href = 'login.html';
+            }
+        }
 
-        // Determine display name (priority: Auth > Firestore > fallback)
-        const displayName = user.displayName || userData.displayName || 'User';
-        
-        // Determine username (Firestore or generated fallback)
-        const username = userData.username || generateUsernameFallback(user.email || user.uid);
-        
-        // Get verification status
-        const verified = userData.verified || false;
-        
-        // Get photo URL (priority: Auth > Firestore > fallback to initial)
-        const photoURL = user.photoURL || userData.photoURL;
+        // Load user profile data from Supabase
+        async function loadUserProfile() {
+            try {
+                // Show skeleton loader
+                showSkeletonLoader();
+                
+                // Get user profile from profiles table
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (profileError) throw profileError;
+                
+                currentProfile = profile;
+                
+                // Display the user profile
+                displayUserProfile(profile);
+                
+            } catch (error) {
+                console.error("Error loading profile:", error);
+                showError("Failed to load profile. Please try again.");
+                displayDefaultProfile();
+            }
+        }
 
-        // Display the user profile
-        displayUserProfile({
-            displayName,
-            username,
-            verified,
-            photoURL
-        });
-
-    } catch (error) {
-        console.error("Error loading profile:", error);
-        displayDefaultProfile();
-    }
-}
-
-// Display user profile with actual data
-function displayUserProfile({ displayName, username, verified, photoURL }) {
-    userInfoContainer.innerHTML = `
-        <div class="loaded-user-info">
-            <div class="user-avatar">
-                ${getAvatarContent(photoURL, displayName)}
-            </div>
-            <div class="user-details">
-                <div class="user-name">
-                    ${displayName}
-                    ${verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+        // Show skeleton loader
+        function showSkeletonLoader() {
+            userInfoContainer.innerHTML = `
+                <div class="skeleton-loader">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-details">
+                        <div class="skeleton-name"></div>
+                        <div class="skeleton-username"></div>
+                    </div>
                 </div>
-                <div class="user-username">@${username}</div>
-            </div>
-        </div>
-    `;
-}
-
-// Generate fallback username from email or UID
-function generateUsernameFallback(emailOrUid) {
-    if (emailOrUid) {
-        const base = emailOrUid.split('@')[0] || emailOrUid.substring(0, 8);
-        return base.toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 100);
-    }
-    return 'user' + Math.floor(Math.random() * 1000);
-}
-
-// Get appropriate avatar content
-function getAvatarContent(photoURL, displayName) {
-    if (photoURL) {
-        return `<img src="${photoURL}" alt="${displayName}" onerror="handleAvatarError(this)">`;
-    }
-    return createInitialAvatar(displayName);
-}
-
-// Handle avatar image loading errors
-function handleAvatarError(imgElement) {
-    const displayName = imgElement.alt || 'User';
-    imgElement.replaceWith(createInitialAvatar(displayName));
-}
-
-// Create initial avatar with colored background
-function createInitialAvatar(name) {
-    const initial = name.charAt(0).toUpperCase();
-    const colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3'];
-    const color = colors[initial.charCodeAt(0) % colors.length];
-    
-    return `
-        <div class="avatar-initial" style="background-color: ${color}">
-            ${initial}
-        </div>
-    `;
-}
-
-// Display default profile if loading fails
-function displayDefaultProfile() {
-    userInfoContainer.innerHTML = `
-        <div class="loaded-user-info">
-            <div class="user-avatar">
-                ${createInitialAvatar('User')}
-            </div>
-            <div class="user-details">
-                <div class="user-name">User</div>
-                <div class="user-username">@${generateUsernameFallback()}</div>
-            </div>
-        </div>
-    `;
-}
-
-// ======================
-// POST CREATION FUNCTIONS
-// ======================
-
-mediaButton.addEventListener('click', () => mediaUpload.click());
-mediaUpload.addEventListener('change', handleMediaUpload);
-
-function handleMediaUpload(e) {
-    const newFiles = Array.from(e.target.files);
-    
-    // Validate files
-    if (uploadedFiles.length + newFiles.length > 5) return;
-    
-    newFiles.forEach(file => {
-        if (file.type.startsWith('video/')) {
-            if (videoCount >= 1 || file.size > 100 * 1024 * 1024) return;
-            videoCount++;
-        } else if (file.size > 10 * 1024 * 1024) return;
-        
-        uploadedFiles.push(file);
-    });
-    
-    displayMediaPreview();
-}
-
-function displayMediaPreview() {
-    mediaGrid.innerHTML = '';
-    
-    uploadedFiles.forEach((file, index) => {
-        const reader = new FileReader();
-        
-        reader.onload = (event) => {
-            const mediaItem = document.createElement('div');
-            mediaItem.className = 'media-item';
-            
-            mediaItem.innerHTML = file.type.startsWith('video/') ? `
-                <video controls><source src="${event.target.result}" type="${file.type}"></video>
-                <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
-            ` : `
-                <img src="${event.target.result}" alt="Preview">
-                <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
             `;
+        }
+
+        // Display user profile with actual data
+        function displayUserProfile(profile) {
+            const avatarContent = profile.avatar_url 
+                ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}" onerror="handleAvatarError(this)">`
+                : createInitialAvatar(profile.full_name || profile.username);
             
-            mediaGrid.appendChild(mediaItem);
-            mediaItem.querySelector('.remove-media').addEventListener('click', () => removeMediaItem(index));
-        };
-        
-        reader.readAsDataURL(file);
-    });
-    
-    mediaPreview.style.display = uploadedFiles.length ? 'block' : 'none';
-}
+            const verifiedBadge = profile.is_verified 
+                ? '<i class="fas fa-check-circle verified-badge"></i>' 
+                : '';
+            
+            userInfoContainer.innerHTML = `
+                <div class="loaded-user-info">
+                    <div class="user-avatar">
+                        ${avatarContent}
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">
+                            ${profile.full_name || profile.username}
+                            ${verifiedBadge}
+                        </div>
+                        <div class="user-username">@${profile.username}</div>
+                    </div>
+                </div>
+            `;
+        }
 
-function removeMediaItem(index) {
-    if (uploadedFiles[index].type.startsWith('video/')) videoCount--;
-    uploadedFiles.splice(index, 1);
-    displayMediaPreview();
-}
+        // Create initial avatar with colored background
+        function createInitialAvatar(name) {
+            const initial = name ? name.charAt(0).toUpperCase() : 'U';
+            const colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3'];
+            const color = colors[initial.charCodeAt(0) % colors.length];
+            
+            return `
+                <div class="avatar-initial" style="background-color: ${color}">
+                    ${initial}
+                </div>
+            `;
+        }
 
-async function handlePost() {
-    if (!postInput.value.trim() && !uploadedFiles.length) return;
-    
-    // Set loading state
-    const spinner = '<i class="fas fa-spinner fa-spin"></i>';
-    postButton.innerHTML = spinner;
-    bottomPostButton.innerHTML = `${spinner} Posting...`;
-    postButton.disabled = true;
-    bottomPostButton.disabled = true;
-    
-    try {
-        const user = auth.currentUser;
-        if (!user) throw new Error("Not authenticated");
-        
-        // Upload media (simplified - replace with actual upload logic)
-        const mediaUrls = uploadedFiles.map(file => ({
-            url: URL.createObjectURL(file), // Replace with actual upload URL
-            type: file.type.startsWith('video/') ? 'video' : 'image'
-        }));
-        
-        await db.collection('posts').add({
-            content: postInput.value.trim(),
-            media: mediaUrls,
-            userId: user.uid,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            likes: 0,
-            comments: 0,
-            shares: 0
-        });
-        
-        window.location.href = 'index.html';
-        
-    } catch (error) {
-        console.error("Post error:", error);
-        resetPostButton();
-    }
-}
+        // Handle avatar image loading errors
+        function handleAvatarError(imgElement) {
+            const displayName = imgElement.alt || 'User';
+            imgElement.replaceWith(createInitialAvatar(displayName));
+        }
 
-function resetPostButton() {
-    postButton.innerHTML = 'Post';
-    bottomPostButton.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
-    postButton.disabled = false;
-    bottomPostButton.disabled = false;
-}
+        // Display default profile if loading fails
+        function displayDefaultProfile() {
+            userInfoContainer.innerHTML = `
+                <div class="loaded-user-info">
+                    <div class="user-avatar">
+                        ${createInitialAvatar('User')}
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">User</div>
+                        <div class="user-username">@user</div>
+                    </div>
+                </div>
+            `;
+        }
 
-// ======================
-// INITIALIZATION
-// ======================
+        // Set up event listeners
+        function setupEventListeners() {
+            // Media upload handling
+            mediaButton.addEventListener('click', () => mediaUpload.click());
+            mediaUpload.addEventListener('change', handleMediaUpload);
+            
+            // Post submission
+            postButton.addEventListener('click', handlePost);
+            bottomPostButton.addEventListener('click', handlePost);
+            
+            // Error message dismissal
+            errorMessage.addEventListener('click', () => {
+                errorMessage.style.display = 'none';
+            });
+        }
 
-// Start loading profile when auth state changes
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        loadUserProfile();
-    } else {
-        window.location.href = 'login.html';
-    }
-});
+        // Handle media upload
+        function handleMediaUpload(e) {
+            const newFiles = Array.from(e.target.files);
+            
+            // Validate files
+            if (uploadedFiles.length + newFiles.length > 5) {
+                showError("You can upload up to 5 files");
+                return;
+            }
+            
+            newFiles.forEach(file => {
+                if (file.type.startsWith('video/')) {
+                    if (videoCount >= 1) {
+                        showError("You can only upload 1 video per post");
+                        return;
+                    }
+                    if (file.size > 100 * 1024 * 1024) {
+                        showError("Video file size must be less than 100MB");
+                        return;
+                    }
+                    videoCount++;
+                } else if (file.size > 10 * 1024 * 1024) {
+                    showError("Image file size must be less than 10MB");
+                    return;
+                }
+                
+                uploadedFiles.push(file);
+            });
+            
+            displayMediaPreview();
+        }
 
-// Event listeners
-postButton.addEventListener('click', handlePost);
-bottomPostButton.addEventListener('click', handlePost);
-</script>
+        // Display media preview
+        function displayMediaPreview() {
+            mediaGrid.innerHTML = '';
+            
+            uploadedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                
+                reader.onload = (event) => {
+                    const mediaItem = document.createElement('div');
+                    mediaItem.className = 'media-item';
+                    
+                    mediaItem.innerHTML = file.type.startsWith('video/') ? `
+                        <video controls><source src="${event.target.result}" type="${file.type}"></video>
+                        <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
+                    ` : `
+                        <img src="${event.target.result}" alt="Preview">
+                        <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
+                    `;
+                    
+                    mediaGrid.appendChild(mediaItem);
+                    mediaItem.querySelector('.remove-media').addEventListener('click', () => removeMediaItem(index));
+                };
+                
+                reader.readAsDataURL(file);
+            });
+            
+            mediaPreview.style.display = uploadedFiles.length ? 'block' : 'none';
+        }
+
+        // Remove media item
+        function removeMediaItem(index) {
+            if (uploadedFiles[index].type.startsWith('video/')) videoCount--;
+            uploadedFiles.splice(index, 1);
+            displayMediaPreview();
+        }
+
+        // Handle post submission
+        async function handlePost() {
+            const content = postInput.value.trim();
+            
+            if (!content && !uploadedFiles.length) {
+                showError("Please add some content or media to your post");
+                return;
+            }
+            
+            // Set loading state
+            setLoadingState(true);
+            
+            try {
+                // Upload media files if any
+                const mediaUrls = [];
+                
+                if (uploadedFiles.length > 0) {
+                    for (const file of uploadedFiles) {
+                        const filePath = `posts/${currentUser.id}/${Date.now()}_${file.name}`;
+                        const { data, error } = await supabase.storage
+                            .from('post-media') // Make sure you have this bucket in Supabase Storage
+                            .upload(filePath, file);
+                        
+                        if (error) throw error;
+                        
+                        // Get public URL
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('post-media')
+                            .getPublicUrl(data.path);
+                        
+                        mediaUrls.push({
+                            url: publicUrl,
+                            type: file.type.startsWith('video/') ? 'video' : 'image'
+                        });
+                    }
+                }
+                
+                // Create post in database
+                const { data: post, error: insertError } = await supabase
+                    .from('posts')
+                    .insert([{
+                        user_id: currentUser.id,
+                        content: content,
+                        image_url: mediaUrls.find(m => m.type === 'image')?.url || null,
+                        video_url: mediaUrls.find(m => m.type === 'video')?.url || null,
+                        like_count: 0,
+                        comment_count: 0,
+                        views: 0,
+                        likers: []
+                    }])
+                    .select();
+                
+                if (insertError) throw insertError;
+                
+                // Redirect to home page after successful post
+                window.location.href = 'index.html';
+                
+            } catch (error) {
+                console.error("Post error:", error);
+                showError("Failed to create post. Please try again.");
+                setLoadingState(false);
+            }
+        }
+
+        // Set loading state for buttons
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                postButton.innerHTML = '<div class="spinner"></div>';
+                bottomPostButton.innerHTML = '<div class="spinner"></div> Posting...';
+                postButton.disabled = true;
+                bottomPostButton.disabled = true;
+            } else {
+                postButton.innerHTML = 'Post';
+                bottomPostButton.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
+                postButton.disabled = false;
+                bottomPostButton.disabled = false;
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        // Initialize the page when loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
 </body>
 </html>
