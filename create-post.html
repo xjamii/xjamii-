@@ -856,7 +856,7 @@
     <script>
         // DOM Elements
                                
-             // DOM Elements
+                                       // DOM Elements
 const userInfoContainer = document.getElementById('user-info-container');
 const postInput = document.getElementById('post-content');
 const postButton = document.getElementById('submit-post');
@@ -940,10 +940,10 @@ function showSkeletonLoader() {
     `;
 }
 
-// Display user profile with actual data - ONLY THIS PART IS MODIFIED
+// Display user profile with actual data
 function displayUserProfile(profile) {
     const avatarContent = profile.avatar_url 
-        ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}">`
+        ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}" onerror="handleAvatarError(this)">`
         : createInitialAvatar(profile.full_name || profile.username);
     
     const verifiedBadge = profile.is_verified 
@@ -966,27 +966,33 @@ function displayUserProfile(profile) {
     `;
 }
 
-// Create initial avatar with colored background - ONLY THIS PART IS MODIFIED
+// Create initial avatar with FIRST LETTER ONLY
 function createInitialAvatar(name) {
-    if (!name) name = 'User';
-    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    if (!name) name = 'U'; // Default to 'U' if no name
+    const firstLetter = name.charAt(0).toUpperCase(); // Get only first letter
     const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
-    const colorIndex = initials.charCodeAt(0) % colors.length;
-    const color = colors[colorIndex];
+    const colorIndex = firstLetter.charCodeAt(0) % colors.length;
     
     return `
-        <div class="avatar-initial" style="background-color: ${color}; 
-              display: flex; align-items: center; justify-content: center; 
-              width: 100%; height: 100%; border-radius: 50%; 
-              color: white; font-weight: bold; font-size: 18px;">
-            ${initials}
+        <div class="avatar-initial" 
+             style="background-color: ${colors[colorIndex]};
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    width: 100%; 
+                    height: 100%; 
+                    border-radius: 50%; 
+                    color: white; 
+                    font-weight: bold; 
+                    font-size: 18px;">
+            ${firstLetter}
         </div>
     `;
 }
 
 // Handle avatar image loading errors
 function handleAvatarError(imgElement) {
-    const displayName = imgElement.alt || 'User';
+    const displayName = imgElement.alt || 'U';
     imgElement.replaceWith(createInitialAvatar(displayName));
 }
 
@@ -995,7 +1001,7 @@ function displayDefaultProfile() {
     userInfoContainer.innerHTML = `
         <div class="loaded-user-info">
             <div class="user-avatar">
-                ${createInitialAvatar('User')}
+                ${createInitialAvatar('U')}
             </div>
             <div class="user-details">
                 <div class="user-name">User</div>
