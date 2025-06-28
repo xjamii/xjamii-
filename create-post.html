@@ -854,9 +854,7 @@
 
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script>
-        // DOM Elements
-                               
-                                       // DOM Elements
+  // DOM Elements
 const userInfoContainer = document.getElementById('user-info-container');
 const postInput = document.getElementById('post-content');
 const postButton = document.getElementById('submit-post');
@@ -887,8 +885,8 @@ async function init() {
         
         currentUser = user;
         
-        // Load user profile
-        await loadUserProfile();
+        // Load user data using the same method as post feed
+        await loadUserData();
         
         // Set up event listeners
         setupEventListeners();
@@ -900,53 +898,74 @@ async function init() {
     }
 }
 
-// Load user profile data from Supabase
-async function loadUserProfile() {
+// Load user data using the same join pattern as post feed
+async function loadUserData() {
     try {
-        // Show skeleton loader
         showSkeletonLoader();
         
-        // Get user profile from profiles table
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
+        // Method 1: Try through posts join (like your feed)
+        let { data: posts, error } = await supabase
+            .from('posts')
+            .select(`
+                user:user_id (
+                    username,
+                    full_name,
+                    avatar_url,
+                    is_verified
+                )
+            `)
+            .eq('user_id', currentUser.id)
+            .limit(1);
         
-        if (profileError) throw profileError;
+        if (error) throw error;
         
-        currentProfile = profile;
+        // If successful, use this data
+        if (posts && posts.length > 0) {
+            currentProfile = posts[0].user;
+        } 
+        // Fallback: Try direct users table access
+        else {
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select(`
+                    username,
+                    full_name,
+                    avatar_url,
+                    is_verified
+                `)
+                .eq('id', currentUser.id)
+                .single();
+            
+            if (userError) throw userError;
+            currentProfile = userData;
+        }
         
-        // Display the user profile
-        displayUserProfile(profile);
+        console.log("User profile data:", currentProfile); // Debug
+        
+        displayUserProfile(currentProfile);
         
     } catch (error) {
-        console.error("Error loading profile:", error);
-        showError("Failed to load profile. Please try again.");
+        console.error("Error loading user data:", error);
+        showError("Failed to load user data. Please try again.");
         displayDefaultProfile();
     }
 }
 
-// Show skeleton loader
-function showSkeletonLoader() {
-    userInfoContainer.innerHTML = `
-        <div class="skeleton-loader">
-            <div class="skeleton-avatar"></div>
-            <div class="skeleton-details">
-                <div class="skeleton-name"></div>
-                <div class="skeleton-username"></div>
-            </div>
-        </div>
-    `;
-}
-
-// Display user profile with actual data
-function displayUserProfile(profile) {
-    const avatarContent = profile.avatar_url 
-        ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}" onerror="handleAvatarError(this)">`
-        : createInitialAvatar(profile.full_name || profile.username);
+// Display user profile with avatar
+function displayUserProfile(user) {
+    // Get avatar URL - checking multiple possible column names
+    const avatarUrl = user?.avatar_url || user?.avatar || user?.profile_picture;
     
-    const verifiedBadge = profile.is_verified 
+    // Get display name
+    const displayName = user?.full_name || user?.username || 'User';
+    
+    // Create avatar content
+    const avatarContent = avatarUrl 
+        ? `<img src="${avatarUrl}" alt="${displayName}" onerror="handleAvatarError(this)">`
+        : createInitialAvatar(displayName);
+    
+    // Verified badge
+    const verifiedBadge = user?.is_verified 
         ? '<i class="fas fa-check-circle verified-badge"></i>' 
         : '';
     
@@ -957,19 +976,19 @@ function displayUserProfile(profile) {
             </div>
             <div class="user-details">
                 <div class="user-name">
-                    ${profile.full_name || profile.username}
+                    ${displayName}
                     ${verifiedBadge}
                 </div>
-                <div class="user-username">@${profile.username}</div>
+                <div class="user-username">@${user?.username || 'user'}</div>
             </div>
         </div>
     `;
 }
 
-// Create initial avatar with FIRST LETTER ONLY
+// Create initial avatar with first letter
 function createInitialAvatar(name) {
-    if (!name) name = 'U'; // Default to 'U' if no name
-    const firstLetter = name.charAt(0).toUpperCase(); // Get only first letter
+    if (!name) name = 'U';
+    const firstLetter = name.charAt(0).toUpperCase();
     const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
     const colorIndex = firstLetter.charCodeAt(0) % colors.length;
     
@@ -996,7 +1015,7 @@ function handleAvatarError(imgElement) {
     imgElement.replaceWith(createInitialAvatar(displayName));
 }
 
-// Display default profile if loading fails
+// Display default profile
 function displayDefaultProfile() {
     userInfoContainer.innerHTML = `
         <div class="loaded-user-info">
@@ -1011,27 +1030,20 @@ function displayDefaultProfile() {
     `;
 }
 
-// Set up event listeners
+// Rest of your existing functions remain exactly the same...
 function setupEventListeners() {
-    // Media upload handling
     mediaButton.addEventListener('click', () => mediaUpload.click());
     mediaUpload.addEventListener('change', handleMediaUpload);
-    
-    // Post submission
     postButton.addEventListener('click', handlePost);
     bottomPostButton.addEventListener('click', handlePost);
-    
-    // Error message dismissal
     errorMessage.addEventListener('click', () => {
         errorMessage.style.display = 'none';
     });
 }
 
-// Handle media upload
 function handleMediaUpload(e) {
     const newFiles = Array.from(e.target.files);
     
-    // Validate files
     if (uploadedFiles.length + newFiles.length > 5) {
         showError("You can upload up to 5 files");
         return;
@@ -1059,7 +1071,6 @@ function handleMediaUpload(e) {
     displayMediaPreview();
 }
 
-// Display media preview
 function displayMediaPreview() {
     mediaGrid.innerHTML = '';
     
@@ -1088,14 +1099,12 @@ function displayMediaPreview() {
     mediaPreview.style.display = uploadedFiles.length ? 'block' : 'none';
 }
 
-// Remove media item
 function removeMediaItem(index) {
     if (uploadedFiles[index].type.startsWith('video/')) videoCount--;
     uploadedFiles.splice(index, 1);
     displayMediaPreview();
 }
 
-// Handle post submission
 async function handlePost() {
     const content = postInput.value.trim();
     
@@ -1104,11 +1113,9 @@ async function handlePost() {
         return;
     }
     
-    // Set loading state
     setLoadingState(true);
     
     try {
-        // Upload media files to Cloudinary
         const mediaUrls = [];
         
         if (uploadedFiles.length > 0) {
@@ -1123,7 +1130,6 @@ async function handlePost() {
                 });
                 
                 const data = await response.json();
-                
                 mediaUrls.push({
                     url: data.secure_url,
                     type: file.type.startsWith('video/') ? 'video' : 'image'
@@ -1131,7 +1137,6 @@ async function handlePost() {
             }
         }
         
-        // Create post in database
         const { data: post, error: insertError } = await supabase
             .from('posts')
             .insert([{
@@ -1148,7 +1153,6 @@ async function handlePost() {
         
         if (insertError) throw insertError;
         
-        // Redirect to home page after successful post
         window.location.href = 'index.html';
         
     } catch (error) {
@@ -1158,7 +1162,6 @@ async function handlePost() {
     }
 }
 
-// Set loading state for buttons
 function setLoadingState(isLoading) {
     if (isLoading) {
         postButton.innerHTML = '<div class="spinner"></div>';
@@ -1173,14 +1176,13 @@ function setLoadingState(isLoading) {
     }
 }
 
-// Show error message
 function showError(message) {
     errorMessage.textContent = message;
     errorMessage.style.display = 'block';
 }
 
-// Initialize the page when loaded
-document.addEventListener('DOMContentLoaded', init);                               
+// Initialize the page
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
