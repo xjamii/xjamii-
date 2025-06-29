@@ -1344,32 +1344,7 @@
     }
 }
 
- /* Profile pic in header matching post avatar */
-.profile-pic {
-    width: 40px;
-    height: 40px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    border-radius: 50%;
-}
-
-.profile-pic .post-avatar {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    border-radius: 50%;
-}
-
-.profile-pic .post-avatar.initials {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 16px;
-}
+ 
     </style>
 </head>
 <body>
@@ -1590,11 +1565,15 @@
     </div>
 
     <script>
-                        
-// Initialize when DOM is loaded
+     // Notification System
+let notificationAlert = null;
+let notificationChannel = null;
+
+// Initialize notification system
 document.addEventListener('DOMContentLoaded', async () => {
     await checkUsername();
-    await loadPosts(); // Load posts when page loads
+    setupNotificationListener();
+    loadUnreadNotificationsCount();
 });
 
 // Check if user is logged in and has username
@@ -1621,49 +1600,203 @@ async function checkUsername() {
     }
 }
 
-// Set profile picture to match post avatar style
+// Set profile picture or initials
 function setProfilePicture(profile) {
     const profilePic = document.getElementById('profilePic');
-    
-    // Clear any existing content and classes
-    profilePic.innerHTML = '';
-    profilePic.className = 'profile-pic'; // Reset classes
-    
-    // Create avatar container (same as post avatars)
-    const avatar = document.createElement('div');
-    avatar.className = 'post-avatar'; // Use same class as post avatars
-    
     if (profile.avatar_url) {
-        // If user has an avatar, use it
-        avatar.innerHTML = `<img src="${profile.avatar_url}" alt="Profile">`;
+        profilePic.innerHTML = `<img src="${profile.avatar_url}" alt="Profile">`;
     } else {
-        // Otherwise use initials with matching style
-        const initials = getInitials(profile.full_name || profile.username || 'User');
-        avatar.textContent = initials;
-        avatar.classList.add('initials');
-        
-        // Add random color based on user initials for consistency
-        const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
-        const colorIndex = initials.charCodeAt(0) % colors.length;
-        avatar.style.backgroundColor = colors[colorIndex];
-        avatar.style.color = 'white';
+        const initials = getInitials(profile.full_name || 'User');
+        profilePic.textContent = initials;
+        profilePic.classList.add('initials');
     }
-    
-    profilePic.appendChild(avatar);
-    
-    // Add click handler
-    profilePic.onclick = () => window.location.href = 'profile.html';
 }
 
-// Get initials from full name (used for both posts and profile)
+// Get initials from full name
 function getInitials(name) {
-    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U';
+    return name.split(' ')
+        .map(part => part.charAt(0).toUpperCase())
+        .join('')
+        .substring(0, 2);
+}
+
+// Notification badge and alert system
+async function loadUnreadNotificationsCount() {
+    try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        
+        const { count, error } = await supabase
+            .from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('read', false);
+        
+        if (error) throw error;
+        
+        const badge = document.getElementById('notificationBadge');
+        if (count > 0) {
+            badge.textContent = count > 9 ? '9+' : count;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading notifications count:', error);
+    }
+}
+
+// Real-time notification listener
+async function setupNotificationListener() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) return;
+
+    // Unsubscribe from any existing channel
+    if (notificationChannel) {
+        supabase.removeChannel(notificationChannel);
+    }
+
+    notificationChannel = supabase
+        .channel('notifications')
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'notifications',
+                filter: `user_id=eq.${user.id}`
+            },
+            (payload) => {
+                loadUnreadNotificationsCount();
+                showNotificationAlert(payload.new.message || 'You have a new notification');
+            }
+        )
+        .subscribe();
+}
+
+// Show notification alert
+function showNotificationAlert(message) {
+    // Remove existing alert if any
+    if (notificationAlert) {
+        notificationAlert.remove();
+    }
+    
+    // Create new alert element
+    notificationAlert = document.createElement('div');
+    notificationAlert.className = 'notification-alert';
+    notificationAlert.innerHTML = `
+        <div class="notification-alert-content">
+            <i class="fas fa-bell"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notificationAlert);
+    
+    // Show alert with animation
+    setTimeout(() => {
+        notificationAlert.classList.add('show');
+    }, 10);
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+        notificationAlert.classList.remove('show');
+        setTimeout(() => {
+            notificationAlert.remove();
+            notificationAlert = null;
+        }, 300);
+    }, 3000);
+}
+
+// Notifications page functionality
+async function loadNotifications() {
+    try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        
+        document.getElementById('notificationsSkeleton').style.display = 'block';
+        document.getElementById('notificationsContainer').style.display = 'none';
+        
+        const { data: notifications, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Hide skeleton and show notifications
+        document.getElementById('notificationsSkeleton').style.display = 'none';
+        const container = document.getElementById('notificationsContainer');
+        container.style.display = 'block';
+        
+        // Render notifications
+        if (notifications.length === 0) {
+            container.innerHTML = '<div class="no-notifications">No notifications yet</div>';
+        } else {
+            container.innerHTML = notifications.map(notification => `
+                <div class="notification-item ${notification.read ? '' : 'unread'}">
+                    <div class="notification-avatar initials">
+                        ${getInitials(notification.sender_name || 'User')}
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-text">
+                            <strong>${notification.sender_name}</strong> ${notification.message}
+                        </div>
+                        <div class="notification-time">
+                            ${formatNotificationTime(notification.created_at)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Mark notifications as read
+        await supabase
+            .from('notifications')
+            .update({ read: true })
+            .eq('user_id', user.id)
+            .eq('read', false);
+        
+        // Update badge
+        loadUnreadNotificationsCount();
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+        document.getElementById('notificationsSkeleton').style.display = 'none';
+        document.getElementById('notificationsContainer').innerHTML = 
+            '<div class="no-notifications">Error loading notifications</div>';
+        document.getElementById('notificationsContainer').style.display = 'block';
+    }
+}
+
+// Format notification time (e.g., "2 minutes ago")
+function formatNotificationTime(dateString) {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return date.toLocaleDateString();
 }
 
 // Toggle Menu
 function toggleMenu() {
     const menuPage = document.getElementById('menuPage');
     menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
+}
+
+// Show Notifications Page
+function showNotifications() {
+    const notificationsPage = document.getElementById('notificationsPage');
+    notificationsPage.style.display = 'block';
+    loadNotifications();
+}
+
+// Hide Notifications Page
+function hideNotifications() {
+    document.getElementById('notificationsPage').style.display = 'none';
 }
 
 // Logout function
@@ -1676,169 +1809,6 @@ async function logout() {
         console.error('Error logging out:', error);
         alert('Failed to log out. Please try again.');
     }
-}
-
-// Post Loading and Display Functions
-async function loadPosts() {
-    try {
-        document.getElementById('postsSkeleton').style.display = 'block';
-        document.getElementById('postsContainer').innerHTML = '';
-        
-        const { data: posts, error } = await supabase
-            .from('posts')
-            .select(`
-                id,
-                content,
-                created_at,
-                profiles:user_id (
-                    username,
-                    full_name,
-                    avatar_url
-                ),
-                likes:likes (
-                    user_id
-                )
-            `)
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        document.getElementById('postsSkeleton').style.display = 'none';
-        
-        if (posts.length === 0) {
-            document.getElementById('postsContainer').innerHTML = '<div class="no-posts">No posts yet</div>';
-        } else {
-            posts.forEach(post => {
-                document.getElementById('postsContainer').appendChild(createPostElement(post));
-            });
-        }
-        
-        setupPostInteractions();
-    } catch (error) {
-        console.error('Error loading posts:', error);
-        document.getElementById('postsSkeleton').style.display = 'none';
-        document.getElementById('postsContainer').innerHTML = '<div class="no-posts">Error loading posts</div>';
-    }
-}
-
-function createPostElement(post) {
-    const postElement = document.createElement('div');
-    postElement.className = 'post';
-    postElement.dataset.postId = post.id;
-    
-    // Create avatar
-    const avatar = document.createElement('div');
-    avatar.className = 'post-avatar';
-    
-    if (post.profiles.avatar_url) {
-        avatar.innerHTML = `<img src="${post.profiles.avatar_url}" alt="${post.profiles.full_name || post.profiles.username}">`;
-    } else {
-        const initials = getInitials(post.profiles.full_name || post.profiles.username);
-        avatar.textContent = initials;
-        avatar.classList.add('initials');
-        const colorIndex = initials.charCodeAt(0) % 5;
-        const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
-        avatar.style.backgroundColor = colors[colorIndex];
-        avatar.style.color = 'white';
-    }
-    
-    // Create post content
-    const content = document.createElement('div');
-    content.className = 'post-content';
-    
-    const header = document.createElement('div');
-    header.className = 'post-header';
-    header.innerHTML = `
-        <span class="post-author">${post.profiles.full_name || post.profiles.username}</span>
-        <span class="post-time">${formatTime(post.created_at)}</span>
-    `;
-    
-    const text = document.createElement('div');
-    text.className = 'post-text';
-    text.textContent = post.content;
-    
-    const actions = document.createElement('div');
-    actions.className = 'post-actions';
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    const isLiked = post.likes.some(like => like.user_id === user?.id);
-    
-    actions.innerHTML = `
-        <button class="like-button ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}')">
-            <i class="fas fa-heart"></i>
-            <span>${post.likes.length || 0}</span>
-        </button>
-        <button class="comment-button">
-            <i class="fas fa-comment"></i>
-            <span>0</span>
-        </button>
-    `;
-    
-    content.appendChild(header);
-    content.appendChild(text);
-    content.appendChild(actions);
-    
-    postElement.appendChild(avatar);
-    postElement.appendChild(content);
-    
-    return postElement;
-}
-
-function formatTime(dateString) {
-    const now = new Date();
-    const postDate = new Date(dateString);
-    const diffInHours = (now - postDate) / (1000 * 60 * 60);
-    
-    if (diffInHours < 1) {
-        const minutes = Math.floor(diffInHours * 60);
-        return `${minutes}m ago`;
-    } else if (diffInHours < 24) {
-        const hours = Math.floor(diffInHours);
-        return `${hours}h ago`;
-    } else {
-        return postDate.toLocaleDateString();
-    }
-}
-
-async function toggleLike(postId) {
-    try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-        
-        const { data: existingLikes, error: fetchError } = await supabase
-            .from('likes')
-            .select('id')
-            .eq('post_id', postId)
-            .eq('user_id', user.id);
-        
-        if (fetchError) throw fetchError;
-        
-        if (existingLikes.length > 0) {
-            // Unlike
-            const { error: deleteError } = await supabase
-                .from('likes')
-                .delete()
-                .eq('id', existingLikes[0].id);
-            
-            if (deleteError) throw deleteError;
-        } else {
-            // Like
-            const { error: insertError } = await supabase
-                .from('likes')
-                .insert([{ post_id: postId, user_id: user.id }]);
-            
-            if (insertError) throw insertError;
-        }
-        
-        // Refresh the post
-        await loadPosts();
-    } catch (error) {
-        console.error('Error toggling like:', error);
-    }
-}
-
-function setupPostInteractions() {
-    // Add any additional post interaction setup here
 }
 
 // Dark Mode Toggle
