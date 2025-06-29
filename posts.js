@@ -245,7 +245,14 @@ async function toggleLike(postId, isLiked) {
         const heartIcon = likeBtn.querySelector('i');
         heartIcon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
         
-        alert("Failed to update like. Please try again.");
+        // Show specific error message
+        let errorMessage = "Failed to update like. Please try again.";
+        if (error.message.includes('policy')) {
+            errorMessage = "Like failed due to privacy settings. You may not have permission to like this post.";
+        } else if (error.message.includes('network')) {
+            errorMessage = "Network error. Please check your internet connection.";
+        }
+        showFeedback(errorMessage);
     }
 }
 
@@ -502,11 +509,11 @@ function createPostElement(post, currentUserId) {
                             ${post.profiles.full_name || post.profiles.username}
                             ${post.profiles.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
                         </div>
-                        <div class="post-username">@${post.profiles.username}</div>
-                        <div class="post-time">${formatTime(post.created_at)}</div>
+                        <div class="post-username">${post.profiles.full_name || post.profiles.username} @${post.profiles.username}</div>
                     </a>
                 </div>
-                ${!isOwner ? `<button class="follow-btn" data-user-id="${post.user_id}">Follow</button>` : ''}
+                <div class="post-time">${formatTime(post.created_at)}</div>
+                ${!isOwner ? followButton : ''}
                 <div class="post-more">
                     <i class="fas fa-ellipsis-h"></i>
                 </div>
@@ -605,7 +612,15 @@ async function toggleFollow(userId, isFollowing) {
         
     } catch (error) {
         console.error("Error toggling follow:", error);
-        alert("Failed to update follow status. Please try again.");
+        
+        // Show specific error message
+        let errorMessage = "Failed to update follow status. Please try again.";
+        if (error.message.includes('policy')) {
+            errorMessage = "Follow failed due to privacy settings. You may not have permission to follow this user.";
+        } else if (error.message.includes('network')) {
+            errorMessage = "Network error. Please check your internet connection.";
+        }
+        showFeedback(errorMessage);
     }
 }
 
@@ -692,6 +707,40 @@ async function loadComments(postId, container) {
     }
 }
 
+async function addComment(postId, content) {
+    try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+
+        const { error } = await supabase
+            .from('comments')
+            .insert([{
+                post_id: postId,
+                user_id: user.id,
+                content: content
+            }]);
+
+        if (error) throw error;
+
+        // Reload comments
+        await loadComments(postId);
+
+    } catch (error) {
+        console.error("Error adding comment:", error);
+        
+        // Show specific error message
+        let errorMessage = "Failed to add comment. Please try again.";
+        if (error.message.includes('policy')) {
+            errorMessage = "Comment failed due to privacy settings. You may not have permission to comment on this post.";
+        } else if (error.message.includes('network')) {
+            errorMessage = "Network error. Please check your internet connection.";
+        } else if (error.message.includes('content')) {
+            errorMessage = "Comment cannot be empty or too long.";
+        }
+        showFeedback(errorMessage);
+    }
+}
+
 function createCommentElement(comment) {
     const isOwner = comment.user_id === currentUserId;
     
@@ -709,7 +758,7 @@ function createCommentElement(comment) {
                         <div class="comment-user">
                             ${comment.profiles.full_name || comment.profiles.username}
                         </div>
-                        <div class="comment-username">@${comment.profiles.username}</div>
+                        <div class="comment-username">${comment.profiles.full_name || comment.profiles.username} @${comment.profiles.username}</div>
                     </a>
                 </div>
                 <div class="comment-time">${formatTime(comment.created_at)}</div>
