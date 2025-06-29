@@ -855,8 +855,7 @@
     <script>
         // DOM Elements
                                
-                    
-                // DOM Elements
+                    // DOM Elements
 const userInfoContainer = document.getElementById('user-info-container');
 const postInput = document.getElementById('post-content');
 const postButton = document.getElementById('submit-post');
@@ -866,16 +865,13 @@ const mediaUpload = document.getElementById('media-upload');
 const mediaPreview = document.getElementById('media-preview');
 const mediaGrid = document.getElementById('media-grid');
 const errorMessage = document.getElementById('error-message');
+const body = document.body;
 
 // State variables
 let uploadedFiles = [];
 let videoCount = 0;
 let currentUser = null;
 let currentProfile = null;
-
-// Cloudinary configuration
-const cloudName = 'dwwhpznwb';
-const uploadPreset = 'web_usigned_upload';
 
 // Initialize the page
 async function init() {
@@ -889,7 +885,11 @@ async function init() {
         }
         
         currentUser = user;
+        
+        // Load user profile
         await loadUserProfile();
+        
+        // Set up event listeners
         setupEventListeners();
         
     } catch (error) {
@@ -899,26 +899,25 @@ async function init() {
     }
 }
 
+// Load user profile data from Supabase
 async function loadUserProfile() {
     try {
+        // Show skeleton loader
         showSkeletonLoader();
         
+        // Get user profile from profiles table
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('username, full_name, avatar_url, is_verified')
+            .select('*')
             .eq('id', currentUser.id)
             .single();
         
         if (profileError) throw profileError;
         
-        currentProfile = {
-            username: profile?.username || currentUser.email.split('@')[0],
-            full_name: profile?.full_name || currentUser.email.split('@')[0],
-            avatar_url: profile?.avatar_url || null,
-            is_verified: profile?.is_verified || false
-        };
+        currentProfile = profile;
         
-        displayUserProfile(currentProfile);
+        // Display the user profile
+        displayUserProfile(profile);
         
     } catch (error) {
         console.error("Error loading profile:", error);
@@ -927,6 +926,7 @@ async function loadUserProfile() {
     }
 }
 
+// Show skeleton loader
 function showSkeletonLoader() {
     userInfoContainer.innerHTML = `
         <div class="skeleton-loader">
@@ -939,13 +939,11 @@ function showSkeletonLoader() {
     `;
 }
 
+// Display user profile with actual data
 function displayUserProfile(profile) {
-    const displayName = profile.full_name || profile.username;
-    const username = profile.username || displayName.toLowerCase().replace(/\s+/g, '');
-    
     const avatarContent = profile.avatar_url 
-        ? `<img src="${profile.avatar_url}" alt="${displayName}" onerror="handleAvatarError(this)">`
-        : createInitialAvatar(displayName);
+        ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}" onerror="handleAvatarError(this)">`
+        : createInitialAvatar(profile.full_name || profile.username);
     
     const verifiedBadge = profile.is_verified 
         ? '<i class="fas fa-check-circle verified-badge"></i>' 
@@ -958,15 +956,16 @@ function displayUserProfile(profile) {
             </div>
             <div class="user-details">
                 <div class="user-name">
-                    ${displayName}
+                    ${profile.full_name || profile.username}
                     ${verifiedBadge}
                 </div>
-                <div class="user-username">@${username}</div>
+                <div class="user-username">@${profile.username}</div>
             </div>
         </div>
     `;
 }
 
+// Create initial avatar with colored background
 function createInitialAvatar(name) {
     if (!name) name = 'User';
     const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -975,67 +974,72 @@ function createInitialAvatar(name) {
     const color = colors[colorIndex];
     
     return `
-        <div class="avatar-initial" style="background-color: ${color};">
+        <div class="avatar-initial" style="background-color: ${color}; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; color: white; font-weight: bold; font-size: 18px;">
             ${initials}
         </div>
     `;
 }
 
+// Handle avatar image loading errors
 function handleAvatarError(imgElement) {
     const displayName = imgElement.alt || 'User';
     imgElement.replaceWith(createInitialAvatar(displayName));
 }
 
+// Display default profile if loading fails
 function displayDefaultProfile() {
-    const defaultName = currentUser?.email?.split('@')[0] || 'User';
     userInfoContainer.innerHTML = `
         <div class="loaded-user-info">
             <div class="user-avatar">
-                ${createInitialAvatar(defaultName)}
+                ${createInitialAvatar('User')}
             </div>
             <div class="user-details">
-                <div class="user-name">${defaultName}</div>
-                <div class="user-username">@${defaultName.toLowerCase()}</div>
+                <div class="user-name">User</div>
+                <div class="user-username">@user</div>
             </div>
         </div>
     `;
 }
 
+// Set up event listeners
 function setupEventListeners() {
+    // Media upload handling
     mediaButton.addEventListener('click', () => mediaUpload.click());
     mediaUpload.addEventListener('change', handleMediaUpload);
+    
+    // Post submission
     postButton.addEventListener('click', handlePost);
     bottomPostButton.addEventListener('click', handlePost);
-    errorMessage.addEventListener('click', () => errorMessage.style.display = 'none');
+    
+    // Error message dismissal
+    errorMessage.addEventListener('click', () => {
+        errorMessage.style.display = 'none';
+    });
 }
 
+// Handle media upload
 function handleMediaUpload(e) {
     const newFiles = Array.from(e.target.files);
     
-    // Reset file input
-    mediaUpload.value = '';
-    
+    // Validate files
     if (uploadedFiles.length + newFiles.length > 5) {
-        showError("Maximum 5 files allowed (1 video + 4 photos)");
+        showError("You can upload up to 5 files");
         return;
     }
     
     newFiles.forEach(file => {
         if (file.type.startsWith('video/')) {
             if (videoCount >= 1) {
-                showError("Only 1 video allowed per post");
+                showError("You can only upload 1 video per post");
                 return;
             }
             if (file.size > 100 * 1024 * 1024) {
-                showError("Video must be under 100MB");
+                showError("Video file size must be less than 100MB");
                 return;
             }
             videoCount++;
-        } else if (!file.type.startsWith('image/')) {
-            showError("Only images and videos are supported");
-            return;
         } else if (file.size > 10 * 1024 * 1024) {
-            showError("Images must be under 10MB");
+            showError("Image file size must be less than 10MB");
             return;
         }
         
@@ -1045,6 +1049,7 @@ function handleMediaUpload(e) {
     displayMediaPreview();
 }
 
+// Display media preview
 function displayMediaPreview() {
     mediaGrid.innerHTML = '';
     
@@ -1055,29 +1060,16 @@ function displayMediaPreview() {
             const mediaItem = document.createElement('div');
             mediaItem.className = 'media-item';
             
-            if (file.type.startsWith('video/')) {
-                mediaItem.innerHTML = `
-                    <video controls>
-                        <source src="${event.target.result}" type="${file.type}">
-                    </video>
-                    <div class="remove-media" data-index="${index}">
-                        <i class="fas fa-trash"></i>
-                    </div>
-                `;
-            } else {
-                mediaItem.innerHTML = `
-                    <img src="${event.target.result}" alt="Preview" loading="lazy">
-                    <div class="remove-media" data-index="${index}">
-                        <i class="fas fa-trash"></i>
-                    </div>
-                `;
-            }
+            mediaItem.innerHTML = file.type.startsWith('video/') ? `
+                <video controls><source src="${event.target.result}" type="${file.type}"></video>
+                <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
+            ` : `
+                <img src="${event.target.result}" alt="Preview">
+                <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
+            `;
             
             mediaGrid.appendChild(mediaItem);
-            mediaItem.querySelector('.remove-media').addEventListener('click', (e) => {
-                e.stopPropagation();
-                removeMediaItem(index);
-            });
+            mediaItem.querySelector('.remove-media').addEventListener('click', () => removeMediaItem(index));
         };
         
         reader.readAsDataURL(file);
@@ -1086,47 +1078,42 @@ function displayMediaPreview() {
     mediaPreview.style.display = uploadedFiles.length ? 'block' : 'none';
 }
 
+// Remove media item
 function removeMediaItem(index) {
     if (uploadedFiles[index].type.startsWith('video/')) videoCount--;
     uploadedFiles.splice(index, 1);
     displayMediaPreview();
 }
 
+// Handle post submission
 async function handlePost() {
     const content = postInput.value.trim();
     
     if (!content && !uploadedFiles.length) {
-        showError("Please add text or media to your post");
+        showError("Please add some content or media to your post");
         return;
     }
     
+    // Set loading state
     setLoadingState(true);
     
     try {
+        // Upload media files to Cloudinary
         const mediaUrls = [];
         
-        // Upload media to Cloudinary
         if (uploadedFiles.length > 0) {
             for (const file of uploadedFiles) {
                 const formData = new FormData();
                 formData.append('file', file);
-                formData.append('upload_preset', uploadPreset);
-                formData.append('cloud_name', cloudName);
+                formData.append('upload_preset', 'your_cloudinary_upload_preset'); // Replace with your upload preset
                 
-                // Add optimization parameters
-                if (file.type.startsWith('image/')) {
-                    formData.append('transformation', 'f_auto,q_auto:low');
-                } else if (file.type.startsWith('video/')) {
-                    formData.append('resource_type', 'video');
-                    formData.append('transformation', 'f_auto,q_auto:low');
-                }
-                
-                const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+                const response = await fetch('https://api.cloudinary.com/v1_1/your_cloud_name/upload', {
                     method: 'POST',
                     body: formData
                 });
                 
                 const data = await response.json();
+                
                 mediaUrls.push({
                     url: data.secure_url,
                     type: file.type.startsWith('video/') ? 'video' : 'image'
@@ -1151,7 +1138,7 @@ async function handlePost() {
         
         if (insertError) throw insertError;
         
-        // Redirect to home page
+        // Redirect to home page after successful post
         window.location.href = 'index.html';
         
     } catch (error) {
@@ -1161,6 +1148,7 @@ async function handlePost() {
     }
 }
 
+// Set loading state for buttons
 function setLoadingState(isLoading) {
     if (isLoading) {
         postButton.innerHTML = '<div class="spinner"></div>';
@@ -1175,13 +1163,13 @@ function setLoadingState(isLoading) {
     }
 }
 
+// Show error message
 function showError(message) {
     errorMessage.textContent = message;
     errorMessage.style.display = 'block';
-    setTimeout(() => errorMessage.style.display = 'none', 5000);
 }
 
-// Initialize
+// Initialize the page when loaded
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
