@@ -503,6 +503,7 @@ function createPostElement(post, currentUserId) {
                             ${post.profiles.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
                         </div>
                         <div class="post-username">@${post.profiles.username}</div>
+                        <div class="post-time">${formatTime(post.created_at)}</div>
                     </a>
                 </div>
                 ${!isOwner ? `<button class="follow-btn" data-user-id="${post.user_id}">Follow</button>` : ''}
