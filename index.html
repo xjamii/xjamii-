@@ -1912,6 +1912,31 @@
 .copy-feedback.show {
     opacity: 1;
 }
+
+        .header-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+.help-icon {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.help-icon i {
+    font-size: 20px;
+    color: #1DA1F2; /* Twitter Blue */
+    transition: color 0.3s ease;
+}
+
+.help-icon i:hover {
+    color: #0d8ddb;
+    cursor: pointer;
+}
     </style>
 </head>
 <body>
@@ -1920,32 +1945,37 @@
         <div class="refresh-spinner"></div>
     </div>
 
-    <!-- New Header -->
     <div class="top-header">
-        <div class="header-top-row">
-            <div class="top-header-left">
-                <div class="three-dots" onclick="toggleMenu()">
-                    <i class="fas fa-ellipsis"></i>
-                </div>
+    <div class="header-top-row">
+        <div class="top-header-left">
+            <div class="three-dots" onclick="toggleMenu()">
+                <i class="fas fa-ellipsis"></i>
             </div>
-            <div class="logo-container" onclick="window.location.href='index.html'">
-                <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png' class="logo"/>
-            </div>
-            
         </div>
-        
-        <div class="header-bottom-row">
-            <div class="search-bar" onclick="window.location.href='search.html'">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search" readonly>
-            </div>
-            
-            <div class="tabs">
-                <div class="tab active">For you</div>
-                <div class="tab">Following</div>
-            </div>
+        <div class="logo-container" onclick="window.location.href='index.html'">
+            <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png' class="logo"/>
+        </div>
+
+        <!-- Help Icon (Top Right) -->
+        <div class="help-icon">
+            <a href="help.html" title="Help">
+                <i class="fas fa-question-circle"></i>
+            </a>
         </div>
     </div>
+
+    <div class="header-bottom-row">
+        <div class="search-bar" onclick="window.location.href='search.html'">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search" readonly>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active">For you</div>
+            <div class="tab">Following</div>
+        </div>
+    </div>
+</div>
     
     <div class="main-content">
         <!-- Posts Container -->
