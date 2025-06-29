@@ -854,7 +854,7 @@
 
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script>
-  // DOM Elements
+// DOM Elements
 const userInfoContainer = document.getElementById('user-info-container');
 const postInput = document.getElementById('post-content');
 const postButton = document.getElementById('submit-post');
@@ -885,7 +885,7 @@ async function init() {
         
         currentUser = user;
         
-        // Load user data using the same method as post feed
+        // Load user data - now using only auth.users table
         await loadUserData();
         
         // Set up event listeners
@@ -898,50 +898,31 @@ async function init() {
     }
 }
 
-// Load user data using the same join pattern as post feed
+// Load user data from auth.users table only
 async function loadUserData() {
     try {
         showSkeletonLoader();
         
-        // Method 1: Try through posts join (like your feed)
-        let { data: posts, error } = await supabase
-            .from('posts')
-            .select(`
-                user:user_id (
-                    username,
-                    full_name,
-                    avatar_url,
-                    is_verified
-                )
-            `)
-            .eq('user_id', currentUser.id)
-            .limit(1);
+        // Get the minimal required user data
+        const { data: userData, error } = await supabase
+            .from('users')
+            .select('id, email, raw_user_meta_data')
+            .eq('id', currentUser.id)
+            .single();
         
         if (error) throw error;
+
+        // Extract profile information from raw_user_meta_data or use email as fallback
+        const metaData = userData.raw_user_meta_data || {};
+        const emailPrefix = userData.email.split('@')[0];
         
-        // If successful, use this data
-        if (posts && posts.length > 0) {
-            currentProfile = posts[0].user;
-        } 
-        // Fallback: Try direct users table access
-        else {
-            const { data: userData, error: userError } = await supabase
-                .from('users')
-                .select(`
-                    username,
-                    full_name,
-                    avatar_url,
-                    is_verified
-                `)
-                .eq('id', currentUser.id)
-                .single();
-            
-            if (userError) throw userError;
-            currentProfile = userData;
-        }
-        
-        console.log("User profile data:", currentProfile); // Debug
-        
+        currentProfile = {
+            username: metaData.username || metaData.name || emailPrefix,
+            full_name: metaData.full_name || metaData.name || emailPrefix,
+            avatar_url: metaData.avatar_url || metaData.picture || null
+        };
+
+        console.log("Loaded user profile:", currentProfile);
         displayUserProfile(currentProfile);
         
     } catch (error) {
@@ -953,21 +934,14 @@ async function loadUserData() {
 
 // Display user profile with avatar
 function displayUserProfile(user) {
-    // Get avatar URL - checking multiple possible column names
-    const avatarUrl = user?.avatar_url || user?.avatar || user?.profile_picture;
+    // Get display name and username
+    const displayName = user?.full_name || 'User';
+    const username = user?.username || displayName.toLowerCase().replace(/\s+/g, '');
     
-    // Get display name
-    const displayName = user?.full_name || user?.username || 'User';
-    
-    // Create avatar content
-    const avatarContent = avatarUrl 
-        ? `<img src="${avatarUrl}" alt="${displayName}" onerror="handleAvatarError(this)">`
+    // Create avatar content - use initial if no avatar_url
+    const avatarContent = user?.avatar_url 
+        ? `<img src="${user.avatar_url}" alt="${displayName}" onerror="handleAvatarError(this)">`
         : createInitialAvatar(displayName);
-    
-    // Verified badge
-    const verifiedBadge = user?.is_verified 
-        ? '<i class="fas fa-check-circle verified-badge"></i>' 
-        : '';
     
     userInfoContainer.innerHTML = `
         <div class="loaded-user-info">
@@ -977,9 +951,8 @@ function displayUserProfile(user) {
             <div class="user-details">
                 <div class="user-name">
                     ${displayName}
-                    ${verifiedBadge}
                 </div>
-                <div class="user-username">@${user?.username || 'user'}</div>
+                <div class="user-username">@${username}</div>
             </div>
         </div>
     `;
@@ -1017,20 +990,21 @@ function handleAvatarError(imgElement) {
 
 // Display default profile
 function displayDefaultProfile() {
+    const defaultName = currentUser?.email?.split('@')[0] || 'User';
     userInfoContainer.innerHTML = `
         <div class="loaded-user-info">
             <div class="user-avatar">
-                ${createInitialAvatar('U')}
+                ${createInitialAvatar(defaultName)}
             </div>
             <div class="user-details">
-                <div class="user-name">User</div>
-                <div class="user-username">@user</div>
+                <div class="user-name">${defaultName}</div>
+                <div class="user-username">@${defaultName.toLowerCase()}</div>
             </div>
         </div>
     `;
 }
 
-// Rest of your existing functions remain exactly the same...
+// Set up event listeners
 function setupEventListeners() {
     mediaButton.addEventListener('click', () => mediaUpload.click());
     mediaUpload.addEventListener('change', handleMediaUpload);
@@ -1041,6 +1015,7 @@ function setupEventListeners() {
     });
 }
 
+// Handle media upload
 function handleMediaUpload(e) {
     const newFiles = Array.from(e.target.files);
     
@@ -1071,6 +1046,7 @@ function handleMediaUpload(e) {
     displayMediaPreview();
 }
 
+// Display media preview
 function displayMediaPreview() {
     mediaGrid.innerHTML = '';
     
@@ -1099,12 +1075,14 @@ function displayMediaPreview() {
     mediaPreview.style.display = uploadedFiles.length ? 'block' : 'none';
 }
 
+// Remove media item
 function removeMediaItem(index) {
     if (uploadedFiles[index].type.startsWith('video/')) videoCount--;
     uploadedFiles.splice(index, 1);
     displayMediaPreview();
 }
 
+// Handle post submission
 async function handlePost() {
     const content = postInput.value.trim();
     
@@ -1162,6 +1140,7 @@ async function handlePost() {
     }
 }
 
+// Set loading state for buttons
 function setLoadingState(isLoading) {
     if (isLoading) {
         postButton.innerHTML = '<div class="spinner"></div>';
@@ -1176,6 +1155,7 @@ function setLoadingState(isLoading) {
     }
 }
 
+// Show error message
 function showError(message) {
     errorMessage.textContent = message;
     errorMessage.style.display = 'block';
