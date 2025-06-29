@@ -854,6 +854,8 @@
 
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script>
+                            
+
 // DOM Elements
 const userInfoContainer = document.getElementById('user-info-container');
 const postInput = document.getElementById('post-content');
@@ -885,8 +887,8 @@ async function init() {
         
         currentUser = user;
         
-        // Load user data - now using only auth.users table
-        await loadUserData();
+        // Load user profile data from profiles table
+        await loadProfileData();
         
         // Set up event listeners
         setupEventListeners();
@@ -898,36 +900,32 @@ async function init() {
     }
 }
 
-// Load user data from auth.users table only
-async function loadUserData() {
+// Load user data from profiles table
+async function loadProfileData() {
     try {
         showSkeletonLoader();
         
-        // Get the minimal required user data
-        const { data: userData, error } = await supabase
-            .from('users')
-            .select('id, email, raw_user_meta_data')
+        // Get profile data from profiles table
+        const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('username, full_name, avatar_url')
             .eq('id', currentUser.id)
             .single();
         
         if (error) throw error;
 
-        // Extract profile information from raw_user_meta_data or use email as fallback
-        const metaData = userData.raw_user_meta_data || {};
-        const emailPrefix = userData.email.split('@')[0];
-        
         currentProfile = {
-            username: metaData.username || metaData.name || emailPrefix,
-            full_name: metaData.full_name || metaData.name || emailPrefix,
-            avatar_url: metaData.avatar_url || metaData.picture || null
+            username: profileData?.username || currentUser.email.split('@')[0],
+            full_name: profileData?.full_name || currentUser.email.split('@')[0],
+            avatar_url: profileData?.avatar_url || null
         };
 
         console.log("Loaded user profile:", currentProfile);
         displayUserProfile(currentProfile);
         
     } catch (error) {
-        console.error("Error loading user data:", error);
-        showError("Failed to load user data. Please try again.");
+        console.error("Error loading profile data:", error);
+        showError("Failed to load profile data. Please try again.");
         displayDefaultProfile();
     }
 }
