@@ -3,7 +3,7 @@ async function copyPostLink(postId) {
     const postUrl = `${window.location.origin}/post.html?id=${postId}`;
     try {
         await navigator.clipboard.writeText(postUrl);
-        showFeedback('Link copied!');
+        showFeedback('Link copied to clipboard!');
     } catch (err) {
         console.error('Failed to copy link:', err);
         showFeedback('Failed to copy link');
@@ -158,9 +158,7 @@ async function showLikesPopup(postId) {
                 ${likes.map(like => `
                     <div class="like-item">
                         <a href="profile.html?user_id=${like.user_id}" class="like-avatar-link">
-                            <div class="like-avatar">
-                                ${getInitials(like.profiles.full_name || like.profiles.username)}
-                            </div>
+                            <div class="like-avatar">${getInitials(like.profiles.full_name || like.profiles.username)}</div>
                         </a>
                         <div class="like-user-info">
                             <a href="profile.html?user_id=${like.user_id}" class="like-user-link">
@@ -187,7 +185,7 @@ async function showLikesPopup(postId) {
         
     } catch (error) {
         console.error("Error loading likes:", error);
-        alert("Failed to load likes. Please try again.");
+        showFeedback("Failed to load likes. Please check your connection.");
     }
 }
 
@@ -248,9 +246,9 @@ async function toggleLike(postId, isLiked) {
         // Show specific error message
         let errorMessage = "Failed to update like. Please try again.";
         if (error.message.includes('policy')) {
-            errorMessage = "Like failed due to privacy settings. You may not have permission to like this post.";
+            errorMessage = "Like failed due to privacy settings.";
         } else if (error.message.includes('network')) {
-            errorMessage = "Network error. Please check your internet connection.";
+            errorMessage = "Network error. Please check your connection.";
         }
         showFeedback(errorMessage);
     }
@@ -461,13 +459,6 @@ function createPostElement(post, currentUserId) {
     // Process content for mentions, hashtags, and links
     const processedContent = processPostContent(post.content || '');
 
-    // Create follow button only if not the owner
-    const followButton = !isOwner ? `
-        <button class="follow-btn" data-user-id="${post.user_id}">
-            ${post.is_following ? 'Following' : 'Follow'}
-        </button>
-    ` : '';
-
     // Create more options menu based on ownership
     const moreOptionsMenu = isOwner ? `
         <div class="post-more-menu">
@@ -509,11 +500,11 @@ function createPostElement(post, currentUserId) {
                             ${post.profiles.full_name || post.profiles.username}
                             ${post.profiles.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
                         </div>
-                        <div class="post-username">${post.profiles.full_name || post.profiles.username} @${post.profiles.username}</div>
+                        <div class="post-username">@${post.profiles.username}</div>
                     </a>
                 </div>
+                ${!isOwner ? `<button class="follow-btn" data-user-id="${post.user_id}">${post.is_following ? 'Following' : 'Follow'}</button>` : ''}
                 <div class="post-time">${formatTime(post.created_at)}</div>
-                ${!isOwner ? followButton : ''}
                 <div class="post-more">
                     <i class="fas fa-ellipsis-h"></i>
                 </div>
@@ -616,9 +607,9 @@ async function toggleFollow(userId, isFollowing) {
         // Show specific error message
         let errorMessage = "Failed to update follow status. Please try again.";
         if (error.message.includes('policy')) {
-            errorMessage = "Follow failed due to privacy settings. You may not have permission to follow this user.";
+            errorMessage = "Follow action restricted by privacy settings.";
         } else if (error.message.includes('network')) {
-            errorMessage = "Network error. Please check your internet connection.";
+            errorMessage = "Network issue. Please check your connection.";
         }
         showFeedback(errorMessage);
     }
@@ -635,11 +626,9 @@ async function deletePost(postId) {
         
         if (error) throw error;
         
-        // The post will be removed via real-time update
-        
     } catch (error) {
         console.error("Error deleting post:", error);
-        alert("Failed to delete post. Please try again.");
+        showFeedback("Failed to delete post. Please try again.");
     }
 }
 
@@ -666,11 +655,11 @@ async function reportPost(postId) {
             reportBtn.style.pointerEvents = 'none';
         }
         
-        alert("Thank you for reporting. We'll review this post.");
+        showFeedback("Thank you for reporting. We'll review this post.");
         
     } catch (error) {
         console.error("Error reporting post:", error);
-        alert("Failed to report post. Please try again.");
+        showFeedback("Failed to report post. Please try again.");
     }
 }
 
@@ -731,9 +720,9 @@ async function addComment(postId, content) {
         // Show specific error message
         let errorMessage = "Failed to add comment. Please try again.";
         if (error.message.includes('policy')) {
-            errorMessage = "Comment failed due to privacy settings. You may not have permission to comment on this post.";
+            errorMessage = "Commenting restricted by privacy settings.";
         } else if (error.message.includes('network')) {
-            errorMessage = "Network error. Please check your internet connection.";
+            errorMessage = "Network issue. Please check your connection.";
         } else if (error.message.includes('content')) {
             errorMessage = "Comment cannot be empty or too long.";
         }
@@ -758,7 +747,7 @@ function createCommentElement(comment) {
                         <div class="comment-user">
                             ${comment.profiles.full_name || comment.profiles.username}
                         </div>
-                        <div class="comment-username">${comment.profiles.full_name || comment.profiles.username} @${comment.profiles.username}</div>
+                        <div class="comment-username">@${comment.profiles.username}</div>
                     </a>
                 </div>
                 <div class="comment-time">${formatTime(comment.created_at)}</div>
