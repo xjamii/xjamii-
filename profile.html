@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="theme-color" content="#ECEFF1">
+    <meta name="theme-color" content="#0066cc">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile | X-Aviation</title>
+    <title>Profile | Xjamii</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
@@ -1986,658 +1986,289 @@
 <div class="more-menu-overlay"></div>
 
         
-   
-
-    <script>
-    // Global Variables
-    let currentUser = null;
-    let profileUser = null;
-    let isFollowing = false;
-    let isBlocked = false;
-    let lastPost = null;
-    let loadingMore = false;
-    let allPostsLoaded = false;
-
-    // DOM Elements
-    const skeletonPreloader = document.querySelector('.skeleton-preloader');
-    const profileAvatar = document.getElementById('profile-avatar');
-    const profileName = document.getElementById('profile-name');
-    const profileUsername = document.getElementById('profile-username');
-    const profileBio = document.getElementById('profile-bio');
-    const profileWebsite = document.getElementById('profile-website');
-    const postsCount = document.getElementById('posts-count').querySelector('.stat-number');
-    const followersCount = document.getElementById('followers-count').querySelector('.stat-number');
-    const followingCount = document.getElementById('following-count').querySelector('.stat-number');
-    const editProfileBtn = document.getElementById('edit-profile-btn');
-    const messageBtn = document.getElementById('message-btn');
-    const followBtn = document.getElementById('follow-btn');
-    const moreBtn = document.getElementById('more-btn');
-    const profilePosts = document.getElementById('profile-posts');
-
-    // Initialize the page
-    async function init() {
-        // Get profile user from URL
-        const username = window.location.pathname.split('/').pop();
+<script>
+    // Wait for the DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Get the skeleton preloader element
+        const skeletonPreloader = document.querySelector('.skeleton-preloader');
         
-        // Check auth state
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error || !user) {
-            window.location.href = 'login.html';
-            return;
+        // Function to show the skeleton preloader
+        function showSkeleton() {
+            skeletonPreloader.style.display = 'flex';
         }
         
-        currentUser = user;
-        
-        if (!username || username === 'profile.html') {
-            // Viewing own profile
-            await loadProfile(user.id);
-            setupUIForOwner();
-        } else {
-            // Viewing someone else's profile
-            await loadProfileByUsername(username);
-            setupUIForVisitor();
-        }
-
-        // Add scroll event listener for infinite scroll
-        window.addEventListener('scroll', () => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                if (profileUser && !loadingMore && !allPostsLoaded) {
-                    loadUserPosts(profileUser.id, true);
-                }
-            }
-        });
-    }
-
-    // Load profile data
-    async function loadProfile(userId) {
-        try {
-            // Reset pagination variables when loading a new profile
-            lastPost = null;
-            loadingMore = false;
-            allPostsLoaded = false;
-
-            const { data: userData, error: userError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
-
-            const { count: postCount, error: postError } = await supabase
-                .from('posts')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId);
-
-            if (userError || postError) throw userError || postError;
-
-            if (userData) {
-                profileUser = userData;
-                renderProfile();
-                
-                // Set total post count
-                postsCount.textContent = postCount || 0;
-                
-                // Load initial data in parallel
-                await Promise.all([
-                    loadUserPosts(userId),
-                    loadFollowStats(userId),
-                    currentUser && currentUser.id !== userId ? checkFollowStatus() : Promise.resolve(),
-                    currentUser && currentUser.id !== userId ? checkBlockStatus() : Promise.resolve()
-                ]);
-            } else {
-                console.log("No such user!");
-                showErrorState();
-            }
-        } catch (error) {
-            console.error("Error loading profile:", error);
-            showErrorState();
-        } finally {
-            hideSkeleton();
-        }
-    }
-
-    // Load profile by username
-    async function loadProfileByUsername(username) {
-        try {
-            // Reset pagination variables when loading a new profile
-            lastPost = null;
-            loadingMore = false;
-            allPostsLoaded = false;
-
-            const { data: userData, error: userError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('username', username.toLowerCase())
-                .single();
-            
-            if (userError) throw userError;
-
-            if (userData) {
-                profileUser = userData;
-                renderProfile();
-                
-                // Load all data in parallel
-                const { count: postCount, error: postError } = await supabase
-                    .from('posts')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', userData.id);
-
-                if (postError) throw postError;
-                
-                await Promise.all([
-                    loadUserPosts(userData.id),
-                    loadFollowStats(userData.id),
-                    currentUser && currentUser.id !== userData.id ? checkFollowStatus() : Promise.resolve(),
-                    currentUser && currentUser.id !== userData.id ? checkBlockStatus() : Promise.resolve()
-                ]);
-                
-                // Set total post count
-                postsCount.textContent = postCount || 0;
-            } else {
-                console.log("No user found with that username");
-                showErrorState();
-            }
-        } catch (error) {
-            console.error("Error loading profile by username:", error);
-            showErrorState();
-        } finally {
-            hideSkeleton();
-        }
-    }
-
-    // Hide skeleton loader with fade-out effect
-    function hideSkeleton() {
-        skeletonPreloader.style.opacity = '0';
-        setTimeout(() => {
+        // Function to hide the skeleton preloader
+        function hideSkeleton() {
             skeletonPreloader.style.display = 'none';
-        }, 300);
-    }
-
-    // Show error state
-    function showErrorState() {
-        profilePosts.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">
-                    <i class="fas fa-exclamation-circle"></i>
-                </div>
-                <div class="empty-state-text">
-                    Error loading profile. Please try again later.
-                </div>
-            </div>
-        `;
-    }
-
-    // Render profile data
-    function renderProfile() {
-        // Avatar
-        if (profileUser.avatar_url) {
-            profileAvatar.innerHTML = `<img src="${profileUser.avatar_url}" alt="${profileUser.full_name}">`;
-        } else {
-            const initial = profileUser.full_name?.charAt(0).toUpperCase() || 'U';
-            profileAvatar.textContent = initial;
         }
         
-        // Name and verification
-        profileName.innerHTML = profileUser.full_name || 'User';
-        if (profileUser.verified) {
-            profileName.innerHTML += '<i class="fas fa-check-circle verified-badge"></i>';
-        }
-        
-        // Username
-        profileUsername.textContent = `@${profileUser.username || 'user'}`;
-        
-        // Bio
-        profileBio.textContent = profileUser.bio || '';
-        
-        // Website
-        if (profileUser.website) {
-            profileWebsite.innerHTML = `<i class="fas fa-link"></i> ${profileUser.website.replace(/^https?:\/\//, '')}`;
-            profileWebsite.href = profileUser.website.startsWith('http') ? profileUser.website : `https://${profileUser.website}`;
-            profileWebsite.style.display = 'inline-block';
-        } else {
-            profileWebsite.style.display = 'none';
-        }
-
-        // Set message button data attributes
-        if (messageBtn && profileUser) {
-            messageBtn.dataset.user = JSON.stringify({
-                id: profileUser.id,
-                full_name: profileUser.full_name || 'User',
-                username: profileUser.username || 'user',
-                verified: profileUser.verified || false,
-                avatar_url: profileUser.avatar_url || ''
-            });
-        }
-    }
-
-    // Load user posts with pagination
-    async function loadUserPosts(userId, loadMore = false) {
-        if (loadingMore || allPostsLoaded) return;
-        loadingMore = true;
-        
-        try {
-            // Show spinner when loading more
-            if (loadMore) {
-                document.getElementById('load-more-spinner').style.display = 'flex';
-            }
-
-            let query = supabase
-                .from('posts')
-                .select('*')
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false })
-                .limit(5);
-
-            if (loadMore && lastPost) {
-                query = query.lt('created_at', lastPost.created_at);
-            }
-
-            const { data: posts, error } = await query;
+        // Function to load profile data from Supabase
+        async function loadProfileData() {
+            showSkeleton(); // Show loading state
             
-            if (error) throw error;
-            
-            // Update last post for pagination
-            if (posts && posts.length > 0) {
-                lastPost = posts[posts.length - 1];
-            } else if (loadMore) {
-                allPostsLoaded = true;
-                document.getElementById('load-more-spinner').style.display = 'none';
-                loadingMore = false;
-                return;
-            }
-
-            // Only clear posts on initial load
-            if (!loadMore) {
-                profilePosts.innerHTML = '';
+            try {
+                // Get the current user's session
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
                 
-                if (!posts || posts.length === 0) {
-                    profilePosts.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">
-                                <i class="far fa-newspaper"></i>
-                            </div>
-                            <div class="empty-state-text">
-                                There are no posts to show yet.
-                            </div>
-                        </div>
-                    `;
-                    loadingMore = false;
+                if (authError || !user) {
+                    // If not logged in, redirect to login page
+                    window.location.href = 'login.html';
                     return;
                 }
-            }
-
-            // Process posts
-            const postsWithUser = posts.map(post => {
-                return {
-                    ...post,
-                    user: profileUser
-                };
-            });
-            
-            // Render posts
-            postsWithUser.forEach(post => {
-                const postEl = document.createElement('div');
-                postEl.className = 'post';
-                postEl.innerHTML = `
-                    <div class="post-header">
-                        <div class="post-avatar" onclick="navigateToProfile('${post.user.username}')">
-                            ${post.user.avatar_url ? `<img src="${post.user.avatar_url}">` : post.user.full_name?.charAt(0) || 'U'}
+                
+                // Get the username from the URL (you'll need to implement this)
+                const username = getUsernameFromUrl(); // Implement this function
+                
+                // Fetch profile data from Supabase
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('username', username)
+                    .single();
+                
+                if (profileError) throw profileError;
+                
+                // Fetch counts from Supabase
+                const [
+                    { count: postsCount },
+                    { count: followersCount },
+                    { count: followingCount }
+                ] = await Promise.all([
+                    supabase
+                        .from('posts')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', profile.id),
+                    supabase
+                        .from('followers')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('following_id', profile.id),
+                    supabase
+                        .from('followers')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('follower_id', profile.id)
+                ]);
+                
+                // Check if current user is following this profile
+                let isFollowing = false;
+                if (user.id !== profile.id) {
+                    const { count } = await supabase
+                        .from('followers')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('follower_id', user.id)
+                        .eq('following_id', profile.id);
+                    
+                    isFollowing = count > 0;
+                }
+                
+                // Populate profile data
+                document.getElementById('profile-name').innerHTML = 
+                    `${profile.full_name} ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}`;
+                document.getElementById('profile-username').textContent = `@${profile.username}`;
+                document.getElementById('profile-bio').textContent = profile.bio || '';
+                
+                if (profile.website) {
+                    document.getElementById('profile-website').textContent = profile.website;
+                    document.getElementById('profile-website').href = profile.website.startsWith('http') ? 
+                        profile.website : `https://${profile.website}`;
+                    document.getElementById('profile-website').style.display = 'inline-block';
+                } else {
+                    document.getElementById('profile-website').style.display = 'none';
+                }
+                
+                // Set avatar
+                const avatar = document.getElementById('profile-avatar');
+                if (profile.avatar_url) {
+                    avatar.style.backgroundImage = `url('${profile.avatar_url}')`;
+                    avatar.style.backgroundSize = 'cover';
+                } else {
+                    // Create initials avatar if no avatar_url
+                    const initials = profile.full_name ? 
+                        profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 
+                        profile.username.substring(0, 2).toUpperCase();
+                    
+                    const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
+                    const colorIndex = initials.charCodeAt(0) % colors.length;
+                    const color = colors[colorIndex];
+                    
+                    avatar.style.backgroundImage = 'none';
+                    avatar.style.backgroundColor = color;
+                    avatar.innerHTML = initials;
+                    avatar.style.display = 'flex';
+                    avatar.style.alignItems = 'center';
+                    avatar.style.justifyContent = 'center';
+                    avatar.style.color = 'white';
+                    avatar.style.fontWeight = 'bold';
+                    avatar.style.fontSize = '36px';
+                }
+                
+                // Update stats
+                document.querySelector('#posts-count .stat-number').textContent = postsCount || 0;
+                document.querySelector('#followers-count .stat-number').textContent = followersCount || 0;
+                document.querySelector('#following-count .stat-number').textContent = followingCount || 0;
+                
+                // Show appropriate buttons based on whether it's the current user's profile
+                const profileActions = document.getElementById('profile-actions');
+                if (user.id === profile.id) {
+                    // Current user's profile - show edit button
+                    profileActions.innerHTML = `
+                        <div class="edit-profile-btn" id="edit-profile-btn">
+                            <i class="fas fa-pen"></i>
                         </div>
-                        <div class="post-user-info">
-                            <div class="post-user" onclick="navigateToProfile('${post.user.username}')">
-                                ${post.user.full_name}
-                                ${post.user.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-                            </div>
-                            <div class="post-username" onclick="navigateToProfile('${post.user.username}')">
-                                @${post.user.username}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="post-content">${formatPostContent(post.content)}</div>
-                    ${post.media_url ? createMediaContent(post) : ''}
-                    <div class="post-time">${formatTime(new Date(post.created_at))}</div>
-                `;
-                profilePosts.appendChild(postEl);
-            });
-
-            document.getElementById('load-more-spinner').style.display = 'none';
-            
-        } catch (error) {
-            console.error("Error loading user posts:", error);
-            document.getElementById('load-more-spinner').style.display = 'none';
-            
-            if (!loadMore) {
-                profilePosts.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-exclamation-circle"></i>
-                        </div>
-                        <div class="empty-state-text">
-                            Error loading posts. Please try again later.
-                        </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    // Other user's profile - show follow/message buttons
+                    profileActions.innerHTML = `
+                        <button class="profile-btn primary message-btn" id="message-btn">
+                            <i class="fas fa-paper-plane"></i> Message
+                        </button>
+                        <button class="profile-btn secondary follow-btn ${isFollowing ? 'following' : ''}" id="follow-btn">
+                            <i class="fas fa-${isFollowing ? 'check' : 'user-plus'}"></i> ${isFollowing ? 'Following' : 'Follow'}
+                        </button>
+                        <button class="profile-btn secondary more-btn" id="more-btn">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    `;
+                }
+                
+                // Hide skeleton and show content
+                hideSkeleton();
+                
+            } catch (error) {
+                console.error('Error loading profile data:', error);
+                hideSkeleton();
+                // You could show an error message here
             }
         }
         
-        loadingMore = false;
-    }
-
-    // Format post content
-    function formatPostContent(text) {
-        if (!text) return '';
+        // Helper function to get username from URL
+        function getUsernameFromUrl() {
+            // Implement logic to extract username from URL
+            // For example, if URL is /profile/username, you might do:
+            const pathParts = window.location.pathname.split('/');
+            return pathParts[pathParts.length - 1];
+        }
         
-        text = text.replace(/(https?:\/\/[^\s]+)/g, url => {
-            return `<a href="${url}" target="_blank">${url}</a>`;
+        // Load the profile data
+        loadProfileData();
+        
+        // Event listeners for other interactive elements
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#edit-profile-btn')) {
+                document.querySelector('.edit-profile-container').style.display = 'block';
+            }
+            
+            if (e.target.closest('.edit-profile-back')) {
+                e.preventDefault();
+                document.querySelector('.edit-profile-container').style.display = 'none';
+            }
+            
+            // Follow/Following toggle
+            if (e.target.closest('#follow-btn')) {
+                const followBtn = e.target.closest('#follow-btn');
+                const isFollowing = followBtn.classList.contains('following');
+                
+                // Update UI immediately for better UX
+                followBtn.classList.toggle('following');
+                followBtn.innerHTML = isFollowing ? 
+                    '<i class="fas fa-user-plus"></i> Follow' : 
+                    '<i class="fas fa-check"></i> Following';
+                
+                // Update followers count
+                const followersCount = document.querySelector('#followers-count .stat-number');
+                if (followersCount) {
+                    const current = parseInt(followersCount.textContent);
+                    followersCount.textContent = isFollowing ? current - 1 : current + 1;
+                }
+                
+                // Call API to update follow status
+                updateFollowStatus(!isFollowing);
+            }
         });
         
-        text = text.replace(/#(\w+)/g, '<a href="/hashtag/$1" class="hashtag">#$1</a>');
-        text = text.replace(/@(\w+)/g, '<a href="/profile/$1" class="mention">@$1</a>');
-        
-        return text;
-    }
-
-    // Format time
-    function formatTime(date) {
-        if (!date) return '';
-        const now = new Date();
-        const diff = now - date;
-        
-        const minute = 60 * 1000;
-        const hour = minute * 60;
-        const day = hour * 24;
-        
-        if (diff < minute) return 'Just now';
-        if (diff < hour) return `${Math.floor(diff / minute)}m`;
-        if (diff < day) return `${Math.floor(diff / hour)}h`;
-        if (diff < day * 7) return `${Math.floor(diff / day)}d`;
-        return date.toLocaleDateString();
-    }
-
-    // Create media content
-    function createMediaContent(post) {
-        if (!post.media_url) return '';
-        
-        if (post.media_type === 'video') {
-            return `
-                <div class="video-container">
-                    <video controls>
-                        <source src="${post.media_url}" type="video/mp4">
-                    </video>
-                </div>
-            `;
-        }
-        
-        return `
-            <div class="single-image-container">
-                <img src="${post.media_url}" loading="lazy">
-            </div>
-        `;
-    }
-
-    // Load follow stats
-    async function loadFollowStats(userId) {
-        try {
-            const { count: followersCount, error: followersError } = await supabase
-                .from('followers')
-                .select('*', { count: 'exact', head: true })
-                .eq('following_id', userId);
-
-            const { count: followingCount, error: followingError } = await supabase
-                .from('followers')
-                .select('*', { count: 'exact', head: true })
-                .eq('follower_id', userId);
-
-            if (followersError || followingError) throw followersError || followingError;
-            
-            followersCount.textContent = followersCount || 0;
-            followingCount.textContent = followingCount || 0;
-            
-        } catch (error) {
-            console.error("Error loading follow stats:", error);
-        }
-    }
-
-    // Check follow status
-    async function checkFollowStatus() {
-        if (!currentUser || !profileUser) return;
-        
-        try {
-            const { data, error } = await supabase
-                .from('followers')
-                .select('*')
-                .eq('follower_id', currentUser.id)
-                .eq('following_id', profileUser.id)
-                .single();
-            
-            if (error && error.code !== 'PGRST116') throw error; // Ignore "No rows found" error
-            
-            isFollowing = !!data;
-            updateFollowButton();
-        } catch (error) {
-            console.error("Error checking follow status:", error);
-        }
-    }
-
-    // Update follow button UI
-    function updateFollowButton() {
-        if (isFollowing) {
-            followBtn.innerHTML = '<i class="fas fa-check"></i> Following';
-            followBtn.classList.add('following');
-        } else {
-            followBtn.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
-            followBtn.classList.remove('following');
-        }
-    }
-
-    // Check block status
-    async function checkBlockStatus() {
-        if (!currentUser || !profileUser) return;
-        
-        try {
-            const { data, error } = await supabase
-                .from('blocks')
-                .select('*')
-                .eq('blocker_id', currentUser.id)
-                .eq('blocked_id', profileUser.id)
-                .single();
-            
-            if (error && error.code !== 'PGRST116') throw error; // Ignore "No rows found" error
-            
-            isBlocked = !!data;
-            updateBlockButton();
-        } catch (error) {
-            console.error("Error checking block status:", error);
-        }
-    }
-
-    // Update block button UI
-    function updateBlockButton() {
-        const blockOption = document.querySelector('.more-menu-option:first-child');
-        if (isBlocked) {
-            blockOption.innerHTML = '<i class="fas fa-ban"></i> <span>Unblock</span>';
-        } else {
-            blockOption.innerHTML = '<i class="fas fa-ban"></i> <span>Block</span>';
-        }
-    }
-
-    // Setup UI for profile owner
-    function setupUIForOwner() {
-        editProfileBtn.style.display = 'flex';
-        if (messageBtn) messageBtn.style.display = 'none';
-        followBtn.style.display = 'none';
-        moreBtn.style.display = 'none';
-    }
-
-    // Setup UI for visitor
-    function setupUIForVisitor() {
-        editProfileBtn.style.display = 'none';
-        if (messageBtn) messageBtn.style.display = 'inline-block';
-        followBtn.style.display = 'inline-block';
-        moreBtn.style.display = 'inline-block';
-    }
-
-    // Follow button handler
-    followBtn.addEventListener('click', async () => {
-        if (!currentUser) {
-            window.location.href = 'login.html';
-            return;
-        }
-        
-        try {
-            if (isFollowing) {
-                // Unfollow
-                const { error } = await supabase
-                    .from('followers')
-                    .delete()
-                    .eq('follower_id', currentUser.id)
-                    .eq('following_id', profileUser.id);
+        // Update follow status in Supabase
+        async function updateFollowStatus(shouldFollow) {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const username = getUsernameFromUrl();
                 
-                if (error) throw error;
+                // Get the profile ID of the user being followed/unfollowed
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('username', username)
+                    .single();
                 
-                isFollowing = false;
-            } else {
-                // Follow
-                const { error } = await supabase
-                    .from('followers')
-                    .insert({
-                        follower_id: currentUser.id,
-                        following_id: profileUser.id,
-                        created_at: new Date().toISOString()
-                    });
+                if (shouldFollow) {
+                    // Follow the user
+                    const { error } = await supabase
+                        .from('followers')
+                        .insert({
+                            follower_id: user.id,
+                            following_id: profile.id
+                        });
+                    
+                    if (error) throw error;
+                } else {
+                    // Unfollow the user
+                    const { error } = await supabase
+                        .from('followers')
+                        .delete()
+                        .eq('follower_id', user.id)
+                        .eq('following_id', profile.id);
+                    
+                    if (error) throw error;
+                }
+            } catch (error) {
+                console.error('Error updating follow status:', error);
+                // Revert UI changes if API call fails
+                const followBtn = document.getElementById('follow-btn');
+                const isFollowing = followBtn.classList.contains('following');
                 
-                if (error) throw error;
+                followBtn.classList.toggle('following');
+                followBtn.innerHTML = isFollowing ? 
+                    '<i class="fas fa-user-plus"></i> Follow' : 
+                    '<i class="fas fa-check"></i> Following';
                 
-                isFollowing = true;
+                const followersCount = document.querySelector('#followers-count .stat-number');
+                if (followersCount) {
+                    const current = parseInt(followersCount.textContent);
+                    followersCount.textContent = isFollowing ? current + 1 : current - 1;
+                }
             }
-            
-            updateFollowButton();
-            loadFollowStats(profileUser.id);
-        } catch (error) {
-            console.error("Error toggling follow:", error);
-            alert('Failed to update follow status');
-        }
-    });
-
-    // Block button handler
-    document.querySelector('.more-menu-option:first-child').addEventListener('click', async () => {
-        if (!currentUser) {
-            window.location.href = 'login.html';
-            return;
         }
         
-        try {
-            if (isBlocked) {
-                // Unblock
-                const { error } = await supabase
-                    .from('blocks')
-                    .delete()
-                    .eq('blocker_id', currentUser.id)
-                    .eq('blocked_id', profileUser.id);
-                
-                if (error) throw error;
-                
-                isBlocked = false;
-            } else {
-                // Block
-                const { error } = await supabase
-                    .from('blocks')
-                    .insert({
-                        blocker_id: currentUser.id,
-                        blocked_id: profileUser.id,
-                        created_at: new Date().toISOString()
-                    });
-                
-                if (error) throw error;
-                
-                isBlocked = true;
-            }
+        // More menu toggle
+        const moreBtn = document.getElementById('more-btn');
+        const moreMenu = document.querySelector('.more-menu');
+        const moreMenuOverlay = document.querySelector('.more-menu-overlay');
+        
+        if (moreBtn && moreMenu && moreMenuOverlay) {
+            moreBtn.addEventListener('click', function() {
+                moreMenu.classList.add('show');
+                moreMenuOverlay.classList.add('show');
+            });
             
-            updateBlockButton();
-            
-            if (isBlocked) {
-                document.querySelector('.more-menu').classList.remove('show');
-                document.querySelector('.more-menu-overlay').classList.remove('show');
-                
-                alert(`You've blocked @${profileUser.username}. You won't see their content.`);
-                setTimeout(() => {
-                    window.location.href = 'index.html';
+            moreMenuOverlay.addEventListener('click', function() {
+                moreMenu.classList.remove('show');
+                moreMenuOverlay.classList.remove('show');
+            });
+        }
+        
+        // Copy profile link function
+        window.copyProfileLink = function() {
+            const profileLink = document.querySelector('.profile-link-url').textContent;
+            navigator.clipboard.writeText(profileLink).then(function() {
+                const feedback = document.querySelector('.copy-feedback');
+                feedback.style.display = 'block';
+                setTimeout(function() {
+                    feedback.style.display = 'none';
                 }, 2000);
-            }
-        } catch (error) {
-            console.error("Error toggling block:", error);
-            alert('Failed to update block status');
-        }
+            });
+        };
     });
-
-    // Report button handler
-    document.querySelector('.more-menu-option:last-child').addEventListener('click', async () => {
-        if (!currentUser) {
-            window.location.href = 'login.html';
-            return;
-        }
-        
-        const reportOption = document.querySelector('.more-menu-option:last-child span');
-        reportOption.textContent = 'Report Sent';
-        
-        setTimeout(() => {
-            document.querySelector('.more-menu').classList.remove('show');
-            document.querySelector('.more-menu-overlay').classList.remove('show');
-            reportOption.textContent = 'Report';
-        }, 1500);
-        
-        try {
-            const { error } = await supabase
-                .from('reports')
-                .insert({
-                    reporter_id: currentUser.id,
-                    reported_id: profileUser.id,
-                    created_at: new Date().toISOString(),
-                    status: 'pending'
-                });
-            
-            if (error) throw error;
-        } catch (error) {
-            console.error("Error sending report:", error);
-        }
-    });
-
-    // Initialize the page
-    document.addEventListener('DOMContentLoaded', init);
-
-    // Navigation function
-    window.navigateToProfile = function(username) {
-        window.location.href = `/profile/${username}`;
-    };
-
-    // More button click handler
-    moreBtn.addEventListener('click', (e) => {
-        if (!currentUser) {
-            window.location.href = 'login.html';
-            return;
-        }
-        e.stopPropagation();
-        document.querySelector('.more-menu').classList.add('show');
-        document.querySelector('.more-menu-overlay').classList.add('show');
-    });
-
-    // Close menu when clicking overlay
-    document.querySelector('.more-menu-overlay').addEventListener('click', () => {
-        document.querySelector('.more-menu').classList.remove('show');
-        document.querySelector('.more-menu-overlay').classList.remove('show');
-    });
-
-    // Close menu when clicking anywhere else
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.more-menu') && !e.target.closest('.more-btn')) {
-            document.querySelector('.more-menu').classList.remove('show');
-            document.querySelector('.more-menu-overlay').classList.remove('show');
-        }
-    });
-    
-    
-
-
 </script>
+
+   
 <script src="message.js"></script>
 </body>
 </html>
