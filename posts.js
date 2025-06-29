@@ -1,4 +1,7 @@
 
+// Global variables
+let currentUserId = null;
+let currentPopup = null;
 
 // Load posts when page loads
 document.addEventListener('DOMContentLoaded', async () => {
