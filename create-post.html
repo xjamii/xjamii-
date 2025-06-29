@@ -855,6 +855,8 @@
     <script>
         // DOM Elements
                                
+                    
+
                     // DOM Elements
 const userInfoContainer = document.getElementById('user-info-container');
 const postInput = document.getElementById('post-content');
@@ -908,16 +910,23 @@ async function loadUserProfile() {
         // Get user profile from profiles table
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('*')
+            .select('username, full_name, avatar_url, is_verified')
             .eq('id', currentUser.id)
             .single();
         
         if (profileError) throw profileError;
         
-        currentProfile = profile;
+        currentProfile = {
+            username: profile?.username || currentUser.email.split('@')[0],
+            full_name: profile?.full_name || currentUser.email.split('@')[0],
+            avatar_url: profile?.avatar_url || null,
+            is_verified: profile?.is_verified || false
+        };
+        
+        console.log("Loaded profile data:", currentProfile); // Debug log
         
         // Display the user profile
-        displayUserProfile(profile);
+        displayUserProfile(currentProfile);
         
     } catch (error) {
         console.error("Error loading profile:", error);
@@ -941,9 +950,12 @@ function showSkeletonLoader() {
 
 // Display user profile with actual data
 function displayUserProfile(profile) {
+    const displayName = profile.full_name || profile.username;
+    const username = profile.username || displayName.toLowerCase().replace(/\s+/g, '');
+    
     const avatarContent = profile.avatar_url 
-        ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}" onerror="handleAvatarError(this)">`
-        : createInitialAvatar(profile.full_name || profile.username);
+        ? `<img src="${profile.avatar_url}" alt="${displayName}" onerror="handleAvatarError(this)">`
+        : createInitialAvatar(displayName);
     
     const verifiedBadge = profile.is_verified 
         ? '<i class="fas fa-check-circle verified-badge"></i>' 
@@ -956,10 +968,10 @@ function displayUserProfile(profile) {
             </div>
             <div class="user-details">
                 <div class="user-name">
-                    ${profile.full_name || profile.username}
+                    ${displayName}
                     ${verifiedBadge}
                 </div>
-                <div class="user-username">@${profile.username}</div>
+                <div class="user-username">@${username}</div>
             </div>
         </div>
     `;
@@ -982,20 +994,22 @@ function createInitialAvatar(name) {
 
 // Handle avatar image loading errors
 function handleAvatarError(imgElement) {
+    console.log("Avatar image failed to load, using initial instead");
     const displayName = imgElement.alt || 'User';
     imgElement.replaceWith(createInitialAvatar(displayName));
 }
 
 // Display default profile if loading fails
 function displayDefaultProfile() {
+    const defaultName = currentUser?.email?.split('@')[0] || 'User';
     userInfoContainer.innerHTML = `
         <div class="loaded-user-info">
             <div class="user-avatar">
-                ${createInitialAvatar('User')}
+                ${createInitialAvatar(defaultName)}
             </div>
             <div class="user-details">
-                <div class="user-name">User</div>
-                <div class="user-username">@user</div>
+                <div class="user-name">${defaultName}</div>
+                <div class="user-username">@${defaultName.toLowerCase()}</div>
             </div>
         </div>
     `;
