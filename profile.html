@@ -1998,285 +1998,275 @@
 
         
 <script>
-    // Wait for the DOM to be fully loaded
-    document.addEventListener('DOMContentLoaded', async function() {
-        // Get the skeleton preloader element
-        const skeletonPreloader = document.querySelector('.skeleton-preloader');
-        
-        // Function to show the skeleton preloader
-        function showSkeleton() {
-            skeletonPreloader.style.display = 'flex';
-        }
-        
-        // Function to hide the skeleton preloader
-        function hideSkeleton() {
-            skeletonPreloader.style.display = 'none';
-        }
-        
-        // Function to load profile data from Supabase
-        async function loadProfileData() {
-            showSkeleton(); // Show loading state
-            
-            try {
-                // Get the current user's session
-                const { data: { user }, error: authError } = await supabase.auth.getUser();
-                
-                if (authError || !user) {
-                    // If not logged in, redirect to login page
-                    window.location.href = 'login.html';
-                    return;
-                }
-                
-                // Get the username from the URL (you'll need to implement this)
-                const username = getUsernameFromUrl(); // Implement this function
-                
-                // Fetch profile data from Supabase
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('username', username)
-                    .single();
-                
-                if (profileError) throw profileError;
-                
-                // Fetch counts from Supabase
-                const [
-                    { count: postsCount },
-                    { count: followersCount },
-                    { count: followingCount }
-                ] = await Promise.all([
-                    supabase
-                        .from('posts')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('user_id', profile.id),
-                    supabase
-                        .from('followers')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('following_id', profile.id),
-                    supabase
-                        .from('followers')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('follower_id', profile.id)
-                ]);
-                
-                // Check if current user is following this profile
-                let isFollowing = false;
-                if (user.id !== profile.id) {
-                    const { count } = await supabase
-                        .from('followers')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('follower_id', user.id)
-                        .eq('following_id', profile.id);
                     
-                    isFollowing = count > 0;
-                }
                 
-                // Populate profile data
-                document.getElementById('profile-name').innerHTML = 
-                    `${profile.full_name} ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}`;
-                document.getElementById('profile-username').textContent = `@${profile.username}`;
-                document.getElementById('profile-bio').textContent = profile.bio || '';
-                
-                if (profile.website) {
-                    document.getElementById('profile-website').textContent = profile.website;
-                    document.getElementById('profile-website').href = profile.website.startsWith('http') ? 
-                        profile.website : `https://${profile.website}`;
-                    document.getElementById('profile-website').style.display = 'inline-block';
-                } else {
-                    document.getElementById('profile-website').style.display = 'none';
-                }
-                
-                // Set avatar
-                const avatar = document.getElementById('profile-avatar');
-                if (profile.avatar_url) {
-                    avatar.style.backgroundImage = `url('${profile.avatar_url}')`;
-                    avatar.style.backgroundSize = 'cover';
-                } else {
-                    // Create initials avatar if no avatar_url
-                    const initials = profile.full_name ? 
-                        profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 
-                        profile.username.substring(0, 2).toUpperCase();
-                    
-                    const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
-                    const colorIndex = initials.charCodeAt(0) % colors.length;
-                    const color = colors[colorIndex];
-                    
-                    avatar.style.backgroundImage = 'none';
-                    avatar.style.backgroundColor = color;
-                    avatar.innerHTML = initials;
-                    avatar.style.display = 'flex';
-                    avatar.style.alignItems = 'center';
-                    avatar.style.justifyContent = 'center';
-                    avatar.style.color = 'white';
-                    avatar.style.fontWeight = 'bold';
-                    avatar.style.fontSize = '36px';
-                }
-                
-                // Update stats
-                document.querySelector('#posts-count .stat-number').textContent = postsCount || 0;
-                document.querySelector('#followers-count .stat-number').textContent = followersCount || 0;
-                document.querySelector('#following-count .stat-number').textContent = followingCount || 0;
-                
-                // Show appropriate buttons based on whether it's the current user's profile
-                const profileActions = document.getElementById('profile-actions');
-                if (user.id === profile.id) {
-                    // Current user's profile - show edit button
-                    profileActions.innerHTML = `
-                        <div class="edit-profile-btn" id="edit-profile-btn">
-                            <i class="fas fa-pen"></i>
-                        </div>
-                    `;
-                } else {
-                    // Other user's profile - show follow/message buttons
-                    profileActions.innerHTML = `
-                        <button class="profile-btn primary message-btn" id="message-btn">
-                            <i class="fas fa-paper-plane"></i> Message
-                        </button>
-                        <button class="profile-btn secondary follow-btn ${isFollowing ? 'following' : ''}" id="follow-btn">
-                            <i class="fas fa-${isFollowing ? 'check' : 'user-plus'}"></i> ${isFollowing ? 'Following' : 'Follow'}
-                        </button>
-                        <button class="profile-btn secondary more-btn" id="more-btn">
-                            <i class="fas fa-ellipsis-h"></i>
-                        </button>
-                    `;
-                }
-                
-                // Hide skeleton and show content
-                hideSkeleton();
-                
-            } catch (error) {
-                console.error('Error loading profile data:', error);
-                hideSkeleton();
-                // You could show an error message here
-            }
+// DOM Elements
+const skeletonPreloader = document.querySelector('.skeleton-preloader');
+const profileAvatar = document.getElementById('profile-avatar');
+const profileName = document.getElementById('profile-name');
+const profileUsername = document.getElementById('profile-username');
+const profileBio = document.getElementById('profile-bio');
+const profileWebsite = document.getElementById('profile-website');
+const postsCount = document.querySelector('#posts-count .stat-number');
+const followersCount = document.querySelector('#followers-count .stat-number');
+const followingCount = document.querySelector('#following-count .stat-number');
+const profileActions = document.getElementById('profile-actions');
+const followBtn = document.getElementById('follow-btn');
+const moreBtn = document.getElementById('more-btn');
+const moreMenu = document.querySelector('.more-menu');
+const moreMenuOverlay = document.querySelector('.more-menu-overlay');
+
+// Main function to load profile
+async function loadProfile() {
+    showSkeletonLoader();
+    
+    try {
+        // 1. Get current user session
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+            window.location.href = 'login.html';
+            return;
         }
         
-        // Helper function to get username from URL
-        function getUsernameFromUrl() {
-            // Implement logic to extract username from URL
-            // For example, if URL is /profile/username, you might do:
-            const pathParts = window.location.pathname.split('/');
-            return pathParts[pathParts.length - 1];
+        // 2. Get username from URL (example: /profile/username)
+        const username = window.location.pathname.split('/').pop();
+        if (!username) {
+            throw new Error('No username in URL');
         }
         
-        // Load the profile data
-        loadProfileData();
+        // 3. Fetch profile data
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('username', username)
+            .single();
         
-        // Event listeners for other interactive elements
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('#edit-profile-btn')) {
-                document.querySelector('.edit-profile-container').style.display = 'block';
-            }
-            
-            if (e.target.closest('.edit-profile-back')) {
-                e.preventDefault();
-                document.querySelector('.edit-profile-container').style.display = 'none';
-            }
-            
-            // Follow/Following toggle
-            if (e.target.closest('#follow-btn')) {
-                const followBtn = e.target.closest('#follow-btn');
-                const isFollowing = followBtn.classList.contains('following');
-                
-                // Update UI immediately for better UX
-                followBtn.classList.toggle('following');
-                followBtn.innerHTML = isFollowing ? 
-                    '<i class="fas fa-user-plus"></i> Follow' : 
-                    '<i class="fas fa-check"></i> Following';
-                
-                // Update followers count
-                const followersCount = document.querySelector('#followers-count .stat-number');
-                if (followersCount) {
-                    const current = parseInt(followersCount.textContent);
-                    followersCount.textContent = isFollowing ? current - 1 : current + 1;
-                }
-                
-                // Call API to update follow status
-                updateFollowStatus(!isFollowing);
-            }
+        if (profileError) throw profileError;
+        
+        // 4. Fetch counts (posts, followers, following)
+        const [
+            { count: posts },
+            { count: followers },
+            { count: following }
+        ] = await Promise.all([
+            supabase
+                .from('posts')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', profile.id),
+            supabase
+                .from('followers')
+                .select('*', { count: 'exact', head: true })
+                .eq('following_id', profile.id),
+            supabase
+                .from('followers')
+                .select('*', { count: 'exact', head: true })
+                .eq('follower_id', profile.id)
+        ]);
+        
+        // 5. Check if current user follows this profile
+        let isFollowing = false;
+        if (user.id !== profile.id) {
+            const { count } = await supabase
+                .from('followers')
+                .select('*', { count: 'exact', head: true })
+                .eq('follower_id', user.id)
+                .eq('following_id', profile.id);
+            isFollowing = count > 0;
+        }
+        
+        // 6. Update UI with profile data
+        updateProfileUI(profile, {
+            posts: posts || 0,
+            followers: followers || 0,
+            following: following || 0,
+            isCurrentUser: user.id === profile.id,
+            isFollowing
         });
         
-        // Update follow status in Supabase
-        async function updateFollowStatus(shouldFollow) {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                const username = getUsernameFromUrl();
-                
-                // Get the profile ID of the user being followed/unfollowed
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('username', username)
-                    .single();
-                
-                if (shouldFollow) {
-                    // Follow the user
-                    const { error } = await supabase
-                        .from('followers')
-                        .insert({
-                            follower_id: user.id,
-                            following_id: profile.id
-                        });
-                    
-                    if (error) throw error;
-                } else {
-                    // Unfollow the user
-                    const { error } = await supabase
-                        .from('followers')
-                        .delete()
-                        .eq('follower_id', user.id)
-                        .eq('following_id', profile.id);
-                    
-                    if (error) throw error;
-                }
-            } catch (error) {
-                console.error('Error updating follow status:', error);
-                // Revert UI changes if API call fails
-                const followBtn = document.getElementById('follow-btn');
-                const isFollowing = followBtn.classList.contains('following');
-                
-                followBtn.classList.toggle('following');
-                followBtn.innerHTML = isFollowing ? 
-                    '<i class="fas fa-user-plus"></i> Follow' : 
-                    '<i class="fas fa-check"></i> Following';
-                
-                const followersCount = document.querySelector('#followers-count .stat-number');
-                if (followersCount) {
-                    const current = parseInt(followersCount.textContent);
-                    followersCount.textContent = isFollowing ? current + 1 : current - 1;
-                }
-            }
+    } catch (error) {
+        console.error('Profile load error:', error);
+        showError('Failed to load profile');
+    } finally {
+        hideSkeletonLoader();
+    }
+}
+
+// Update UI with profile data
+function updateProfileUI(profile, stats) {
+    // Avatar
+    if (profile.avatar_url) {
+        profileAvatar.style.backgroundImage = `url('${profile.avatar_url}')`;
+        profileAvatar.style.backgroundSize = 'cover';
+        profileAvatar.textContent = '';
+    } else {
+        // Create initials avatar
+        const initials = (profile.full_name || profile.username)
+            .split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        const color = getColorFromInitials(initials);
+        
+        profileAvatar.style.backgroundImage = 'none';
+        profileAvatar.style.backgroundColor = color;
+        profileAvatar.textContent = initials;
+        profileAvatar.style.display = 'flex';
+        profileAvatar.style.alignItems = 'center';
+        profileAvatar.style.justifyContent = 'center';
+        profileAvatar.style.color = 'white';
+        profileAvatar.style.fontWeight = 'bold';
+        profileAvatar.style.fontSize = '36px';
+    }
+    
+    // Name and username
+    profileName.innerHTML = `
+        ${profile.full_name || profile.username}
+        ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+    `;
+    profileUsername.textContent = `@${profile.username}`;
+    
+    // Bio and website
+    profileBio.textContent = profile.bio || 'No bio yet';
+    if (profile.website) {
+        profileWebsite.textContent = profile.website;
+        profileWebsite.href = profile.website.startsWith('http') ? 
+            profile.website : `https://${profile.website}`;
+        profileWebsite.style.display = 'inline-block';
+    } else {
+        profileWebsite.style.display = 'none';
+    }
+    
+    // Stats
+    postsCount.textContent = stats.posts;
+    followersCount.textContent = stats.followers;
+    followingCount.textContent = stats.following;
+    
+    // Action buttons
+    updateActionButtons(stats.isCurrentUser, stats.isFollowing);
+}
+
+// Update action buttons based on user relationship
+function updateActionButtons(isCurrentUser, isFollowing) {
+    if (isCurrentUser) {
+        profileActions.innerHTML = `
+            <div class="edit-profile-btn" id="edit-profile-btn">
+                <i class="fas fa-pen"></i>
+            </div>
+        `;
+    } else {
+        profileActions.innerHTML = `
+            <button class="profile-btn primary" id="message-btn">
+                <i class="fas fa-paper-plane"></i> Message
+            </button>
+            <button class="profile-btn ${isFollowing ? 'secondary following' : 'primary'}" id="follow-btn">
+                <i class="fas fa-${isFollowing ? 'check' : 'user-plus'}"></i> ${isFollowing ? 'Following' : 'Follow'}
+            </button>
+            <button class="profile-btn secondary" id="more-btn">
+                <i class="fas fa-ellipsis-h"></i>
+            </button>
+        `;
+        
+        // Reattach event listeners for the new buttons
+        document.getElementById('follow-btn')?.addEventListener('click', toggleFollow);
+        document.getElementById('more-btn')?.addEventListener('click', toggleMoreMenu);
+    }
+}
+
+// Toggle follow status
+async function toggleFollow() {
+    const followBtn = this;
+    const isFollowing = followBtn.classList.contains('following');
+    const username = window.location.pathname.split('/').pop();
+    
+    try {
+        // 1. Get profile ID of user being followed/unfollowed
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('username', username)
+            .single();
+        
+        if (profileError) throw profileError;
+        
+        // 2. Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // 3. Update follow status in database
+        if (isFollowing) {
+            // Unfollow
+            const { error } = await supabase
+                .from('followers')
+                .delete()
+                .eq('follower_id', user.id)
+                .eq('following_id', profile.id);
+            if (error) throw error;
+        } else {
+            // Follow
+            const { error } = await supabase
+                .from('followers')
+                .insert({
+                    follower_id: user.id,
+                    following_id: profile.id,
+                    created_at: new Date().toISOString()
+                });
+            if (error) throw error;
         }
         
-        // More menu toggle
-        const moreBtn = document.getElementById('more-btn');
-        const moreMenu = document.querySelector('.more-menu');
-        const moreMenuOverlay = document.querySelector('.more-menu-overlay');
+        // 4. Update UI
+        followBtn.classList.toggle('following');
+        followBtn.innerHTML = isFollowing ? 
+            '<i class="fas fa-user-plus"></i> Follow' : 
+            '<i class="fas fa-check"></i> Following';
         
-        if (moreBtn && moreMenu && moreMenuOverlay) {
-            moreBtn.addEventListener('click', function() {
-                moreMenu.classList.add('show');
-                moreMenuOverlay.classList.add('show');
-            });
-            
-            moreMenuOverlay.addEventListener('click', function() {
-                moreMenu.classList.remove('show');
-                moreMenuOverlay.classList.remove('show');
-            });
+        // Update followers count
+        const currentFollowers = parseInt(followersCount.textContent);
+        followersCount.textContent = isFollowing ? currentFollowers - 1 : currentFollowers + 1;
+        
+    } catch (error) {
+        console.error('Follow toggle error:', error);
+        alert('Failed to update follow status');
+    }
+}
+
+// Toggle more menu
+function toggleMoreMenu() {
+    moreMenu.classList.toggle('show');
+    moreMenuOverlay.classList.toggle('show');
+}
+
+// Helper functions
+function showSkeletonLoader() {
+    skeletonPreloader.style.display = 'flex';
+}
+
+function hideSkeletonLoader() {
+    skeletonPreloader.style.display = 'none';
+}
+
+function showError(message) {
+    // You could implement a proper error display here
+    console.error(message);
+}
+
+function getColorFromInitials(initials) {
+    const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
+    const index = initials.charCodeAt(0) % colors.length;
+    return colors[index];
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Load profile data
+    loadProfile();
+    
+    // Event listeners
+    moreMenuOverlay.addEventListener('click', toggleMoreMenu);
+    
+    // Edit profile button (if it's the current user's profile)
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#edit-profile-btn')) {
+            document.querySelector('.edit-profile-container').style.display = 'block';
         }
-        
-        // Copy profile link function
-        window.copyProfileLink = function() {
-            const profileLink = document.querySelector('.profile-link-url').textContent;
-            navigator.clipboard.writeText(profileLink).then(function() {
-                const feedback = document.querySelector('.copy-feedback');
-                feedback.style.display = 'block';
-                setTimeout(function() {
-                    feedback.style.display = 'none';
-                }, 2000);
-            });
-        };
     });
+});
 </script>
 
    
