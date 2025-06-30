@@ -1890,7 +1890,7 @@
     </div>
 </div>
 
-        <!-- Header -->
+    <!-- Header -->
     <header>
         <a href="index.html" class="back-btn">
             <i class="fas fa-arrow-left"></i>
@@ -1950,16 +1950,14 @@
             </div>
             
             <div class="profile-actions" id="profile-actions">
-    <!-- Buttons will be shown/hidden based on auth -->
-    <a href="#" class="profile-btn primary message-btn" id="message-btn"
-       data-user='{"uid":"${profileUser.uid}","displayName":"${profileUser.displayName}","username":"${profileUser.username}","verified":${profileUser.verified || false}}'>
-        <i class="fas fa-paper-plane"></i> Message
-    </a>
-</div>
-                <button class="profile-btn secondary follow-btn" id="follow-btn">
+                <!-- Buttons will be shown/hidden based on auth -->
+                <button class="profile-btn primary" id="message-btn">
+                    <i class="fas fa-paper-plane"></i> Message
+                </button>
+                <button class="profile-btn secondary" id="follow-btn">
                     <i class="fas fa-user-plus"></i> Follow
                 </button>
-                <button class="profile-btn secondary more-btn" id="more-btn">
+                <button class="profile-btn secondary" id="more-btn">
                     <i class="fas fa-ellipsis-h"></i>
                 </button>
             </div>
@@ -1974,302 +1972,412 @@
         
         <!-- Posts Container -->
         <div class="profile-posts" id="profile-posts">
-    <!-- Posts will be loaded here -->
-    <div class="load-more-spinner" id="load-more-spinner" style="display: none;">
-        <div class="spinner"></div>
-        <span>Loading more posts...</span>
+            <!-- Posts will be loaded here -->
+            <div class="load-more-spinner" id="load-more-spinner" style="display: none;">
+                <div class="spinner"></div>
+                <span>Loading more posts...</span>
+            </div>
+        </div>
     </div>
-</div>
 
     <!-- More Menu (hidden by default) -->
-<div class="more-menu">
-    <div class="more-menu-option" id="block-option">
-        <i class="fas fa-ban"></i>
-        <span>Block</span>
+    <div class="more-menu">
+        <div class="more-menu-option" id="block-option">
+            <i class="fas fa-ban"></i>
+            <span>Block</span>
+        </div>
+        <div class="more-menu-option destructive" id="report-option">
+            <i class="fas fa-flag"></i>
+            <span>Report</span>
+        </div>
     </div>
-    <div class="more-menu-option destructive" id="report-option">
-        <i class="fas fa-flag"></i>
-        <span>Report</span>
-    </div>
-</div>
 
-<!-- Overlay for More Menu -->
-<div class="more-menu-overlay"></div>
+    <!-- Overlay for More Menu -->
+    <div class="more-menu-overlay"></div>
 
-        
-<script>
-                    
+    <script>
+        // DOM Elements
+        const skeletonPreloader = document.querySelector('.skeleton-preloader');
+        const profileAvatar = document.getElementById('profile-avatar');
+        const profileName = document.getElementById('profile-name');
+        const profileUsername = document.getElementById('profile-username');
+        const profileBio = document.getElementById('profile-bio');
+        const profileWebsite = document.getElementById('profile-website');
+        const postsCount = document.querySelector('#posts-count .stat-number');
+        const followersCount = document.querySelector('#followers-count .stat-number');
+        const followingCount = document.querySelector('#following-count .stat-number');
+        const profileActions = document.getElementById('profile-actions');
+        const followBtn = document.getElementById('follow-btn');
+        const moreBtn = document.getElementById('more-btn');
+        const moreMenu = document.querySelector('.more-menu');
+        const moreMenuOverlay = document.querySelector('.more-menu-overlay');
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+        const messageBtn = document.getElementById('message-btn');
+
+        // Main function to load profile
+        async function loadProfile() {
+            showSkeletonLoader();
+            
+            try {
+                // 1. Get current user session
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
                 
-// DOM Elements
-const skeletonPreloader = document.querySelector('.skeleton-preloader');
-const profileAvatar = document.getElementById('profile-avatar');
-const profileName = document.getElementById('profile-name');
-const profileUsername = document.getElementById('profile-username');
-const profileBio = document.getElementById('profile-bio');
-const profileWebsite = document.getElementById('profile-website');
-const postsCount = document.querySelector('#posts-count .stat-number');
-const followersCount = document.querySelector('#followers-count .stat-number');
-const followingCount = document.querySelector('#following-count .stat-number');
-const profileActions = document.getElementById('profile-actions');
-const followBtn = document.getElementById('follow-btn');
-const moreBtn = document.getElementById('more-btn');
-const moreMenu = document.querySelector('.more-menu');
-const moreMenuOverlay = document.querySelector('.more-menu-overlay');
-
-// Main function to load profile
-async function loadProfile() {
-    showSkeletonLoader();
-    
-    try {
-        // 1. Get current user session
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError || !user) {
-            window.location.href = 'login.html';
-            return;
-        }
-        
-        // 2. Get username from URL (example: /profile/username)
-        const username = window.location.pathname.split('/').pop();
-        if (!username) {
-            throw new Error('No username in URL');
-        }
-        
-        // 3. Fetch profile data
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('username', username)
-            .single();
-        
-        if (profileError) throw profileError;
-        
-        // 4. Fetch counts (posts, followers, following)
-        const [
-            { count: posts },
-            { count: followers },
-            { count: following }
-        ] = await Promise.all([
-            supabase
-                .from('posts')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', profile.id),
-            supabase
-                .from('followers')
-                .select('*', { count: 'exact', head: true })
-                .eq('following_id', profile.id),
-            supabase
-                .from('followers')
-                .select('*', { count: 'exact', head: true })
-                .eq('follower_id', profile.id)
-        ]);
-        
-        // 5. Check if current user follows this profile
-        let isFollowing = false;
-        if (user.id !== profile.id) {
-            const { count } = await supabase
-                .from('followers')
-                .select('*', { count: 'exact', head: true })
-                .eq('follower_id', user.id)
-                .eq('following_id', profile.id);
-            isFollowing = count > 0;
-        }
-        
-        // 6. Update UI with profile data
-        updateProfileUI(profile, {
-            posts: posts || 0,
-            followers: followers || 0,
-            following: following || 0,
-            isCurrentUser: user.id === profile.id,
-            isFollowing
-        });
-        
-    } catch (error) {
-        console.error('Profile load error:', error);
-        showError('Failed to load profile');
-    } finally {
-        hideSkeletonLoader();
-    }
-}
-
-// Update UI with profile data
-function updateProfileUI(profile, stats) {
-    // Avatar
-    if (profile.avatar_url) {
-        profileAvatar.style.backgroundImage = `url('${profile.avatar_url}')`;
-        profileAvatar.style.backgroundSize = 'cover';
-        profileAvatar.textContent = '';
-    } else {
-        // Create initials avatar
-        const initials = (profile.full_name || profile.username)
-            .split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-        const color = getColorFromInitials(initials);
-        
-        profileAvatar.style.backgroundImage = 'none';
-        profileAvatar.style.backgroundColor = color;
-        profileAvatar.textContent = initials;
-        profileAvatar.style.display = 'flex';
-        profileAvatar.style.alignItems = 'center';
-        profileAvatar.style.justifyContent = 'center';
-        profileAvatar.style.color = 'white';
-        profileAvatar.style.fontWeight = 'bold';
-        profileAvatar.style.fontSize = '36px';
-    }
-    
-    // Name and username
-    profileName.innerHTML = `
-        ${profile.full_name || profile.username}
-        ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-    `;
-    profileUsername.textContent = `@${profile.username}`;
-    
-    // Bio and website
-    profileBio.textContent = profile.bio || 'No bio yet';
-    if (profile.website) {
-        profileWebsite.textContent = profile.website;
-        profileWebsite.href = profile.website.startsWith('http') ? 
-            profile.website : `https://${profile.website}`;
-        profileWebsite.style.display = 'inline-block';
-    } else {
-        profileWebsite.style.display = 'none';
-    }
-    
-    // Stats
-    postsCount.textContent = stats.posts;
-    followersCount.textContent = stats.followers;
-    followingCount.textContent = stats.following;
-    
-    // Action buttons
-    updateActionButtons(stats.isCurrentUser, stats.isFollowing);
-}
-
-// Update action buttons based on user relationship
-function updateActionButtons(isCurrentUser, isFollowing) {
-    if (isCurrentUser) {
-        profileActions.innerHTML = `
-            <div class="edit-profile-btn" id="edit-profile-btn">
-                <i class="fas fa-pen"></i>
-            </div>
-        `;
-    } else {
-        profileActions.innerHTML = `
-            <button class="profile-btn primary" id="message-btn">
-                <i class="fas fa-paper-plane"></i> Message
-            </button>
-            <button class="profile-btn ${isFollowing ? 'secondary following' : 'primary'}" id="follow-btn">
-                <i class="fas fa-${isFollowing ? 'check' : 'user-plus'}"></i> ${isFollowing ? 'Following' : 'Follow'}
-            </button>
-            <button class="profile-btn secondary" id="more-btn">
-                <i class="fas fa-ellipsis-h"></i>
-            </button>
-        `;
-        
-        // Reattach event listeners for the new buttons
-        document.getElementById('follow-btn')?.addEventListener('click', toggleFollow);
-        document.getElementById('more-btn')?.addEventListener('click', toggleMoreMenu);
-    }
-}
-
-// Toggle follow status
-async function toggleFollow() {
-    const followBtn = this;
-    const isFollowing = followBtn.classList.contains('following');
-    const username = window.location.pathname.split('/').pop();
-    
-    try {
-        // 1. Get profile ID of user being followed/unfollowed
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('username', username)
-            .single();
-        
-        if (profileError) throw profileError;
-        
-        // 2. Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        // 3. Update follow status in database
-        if (isFollowing) {
-            // Unfollow
-            const { error } = await supabase
-                .from('followers')
-                .delete()
-                .eq('follower_id', user.id)
-                .eq('following_id', profile.id);
-            if (error) throw error;
-        } else {
-            // Follow
-            const { error } = await supabase
-                .from('followers')
-                .insert({
-                    follower_id: user.id,
-                    following_id: profile.id,
-                    created_at: new Date().toISOString()
+                if (authError || !user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // 2. Get username from URL (example: /profile/username)
+                const pathParts = window.location.pathname.split('/');
+                const username = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2];
+                
+                if (!username) {
+                    throw new Error('No username in URL');
+                }
+                
+                // 3. Fetch profile data
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('username', username)
+                    .single();
+                
+                if (profileError) throw profileError;
+                
+                // 4. Fetch counts (posts, followers, following)
+                const [
+                    { count: posts },
+                    { count: followers },
+                    { count: following }
+                ] = await Promise.all([
+                    supabase
+                        .from('posts')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', profile.id),
+                    supabase
+                        .from('followers')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('following_id', profile.id),
+                    supabase
+                        .from('followers')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('follower_id', profile.id)
+                ]);
+                
+                // 5. Check if current user follows this profile
+                let isFollowing = false;
+                if (user.id !== profile.id) {
+                    const { count } = await supabase
+                        .from('followers')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('follower_id', user.id)
+                        .eq('following_id', profile.id);
+                    isFollowing = count > 0;
+                }
+                
+                // 6. Update UI with profile data
+                updateProfileUI(profile, {
+                    posts: posts || 0,
+                    followers: followers || 0,
+                    following: following || 0,
+                    isCurrentUser: user.id === profile.id,
+                    isFollowing
                 });
-            if (error) throw error;
+                
+                // 7. Load user posts
+                loadUserPosts(profile.id);
+                
+            } catch (error) {
+                console.error('Profile load error:', error);
+                showError('Failed to load profile');
+            } finally {
+                hideSkeletonLoader();
+            }
         }
-        
-        // 4. Update UI
-        followBtn.classList.toggle('following');
-        followBtn.innerHTML = isFollowing ? 
-            '<i class="fas fa-user-plus"></i> Follow' : 
-            '<i class="fas fa-check"></i> Following';
-        
-        // Update followers count
-        const currentFollowers = parseInt(followersCount.textContent);
-        followersCount.textContent = isFollowing ? currentFollowers - 1 : currentFollowers + 1;
-        
-    } catch (error) {
-        console.error('Follow toggle error:', error);
-        alert('Failed to update follow status');
-    }
-}
 
-// Toggle more menu
-function toggleMoreMenu() {
-    moreMenu.classList.toggle('show');
-    moreMenuOverlay.classList.toggle('show');
-}
-
-// Helper functions
-function showSkeletonLoader() {
-    skeletonPreloader.style.display = 'flex';
-}
-
-function hideSkeletonLoader() {
-    skeletonPreloader.style.display = 'none';
-}
-
-function showError(message) {
-    // You could implement a proper error display here
-    console.error(message);
-}
-
-function getColorFromInitials(initials) {
-    const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
-    const index = initials.charCodeAt(0) % colors.length;
-    return colors[index];
-}
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Load profile data
-    loadProfile();
-    
-    // Event listeners
-    moreMenuOverlay.addEventListener('click', toggleMoreMenu);
-    
-    // Edit profile button (if it's the current user's profile)
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('#edit-profile-btn')) {
-            document.querySelector('.edit-profile-container').style.display = 'block';
+        // Update UI with profile data
+        function updateProfileUI(profile, stats) {
+            // Avatar
+            if (profile.avatar_url) {
+                profileAvatar.style.backgroundImage = `url('${profile.avatar_url}')`;
+                profileAvatar.style.backgroundSize = 'cover';
+                profileAvatar.textContent = '';
+            } else {
+                // Create initials avatar
+                const initials = (profile.full_name || profile.username)
+                    .split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                const color = getColorFromInitials(initials);
+                
+                profileAvatar.style.backgroundImage = 'none';
+                profileAvatar.style.backgroundColor = color;
+                profileAvatar.textContent = initials;
+                profileAvatar.style.display = 'flex';
+                profileAvatar.style.alignItems = 'center';
+                profileAvatar.style.justifyContent = 'center';
+                profileAvatar.style.color = 'white';
+                profileAvatar.style.fontWeight = 'bold';
+                profileAvatar.style.fontSize = '36px';
+            }
+            
+            // Name and username
+            profileName.innerHTML = `
+                ${profile.full_name || profile.username}
+                ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+            `;
+            profileUsername.textContent = `@${profile.username}`;
+            
+            // Bio and website
+            profileBio.textContent = profile.bio || 'No bio yet';
+            if (profile.website) {
+                profileWebsite.textContent = profile.website;
+                profileWebsite.href = profile.website.startsWith('http') ? 
+                    profile.website : `https://${profile.website}`;
+                profileWebsite.style.display = 'inline-block';
+            } else {
+                profileWebsite.style.display = 'none';
+            }
+            
+            // Stats
+            postsCount.textContent = stats.posts;
+            followersCount.textContent = stats.followers;
+            followingCount.textContent = stats.following;
+            
+            // Action buttons
+            updateActionButtons(stats.isCurrentUser, stats.isFollowing);
         }
-    });
-});
-</script>
 
-   
-<script src="message.js"></script>
+        // Update action buttons based on user relationship
+        function updateActionButtons(isCurrentUser, isFollowing) {
+            if (isCurrentUser) {
+                profileActions.innerHTML = `
+                    <div class="edit-profile-btn" id="edit-profile-btn">
+                        <i class="fas fa-pen"></i>
+                    </div>
+                `;
+                
+                // Add event listener for edit button
+                document.getElementById('edit-profile-btn').addEventListener('click', () => {
+                    document.querySelector('.edit-profile-container').style.display = 'block';
+                });
+            } else {
+                profileActions.innerHTML = `
+                    <button class="profile-btn primary" id="message-btn">
+                        <i class="fas fa-paper-plane"></i> Message
+                    </button>
+                    <button class="profile-btn ${isFollowing ? 'secondary following' : 'primary'}" id="follow-btn">
+                        <i class="fas fa-${isFollowing ? 'check' : 'user-plus'}"></i> ${isFollowing ? 'Following' : 'Follow'}
+                    </button>
+                    <button class="profile-btn secondary" id="more-btn">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                `;
+                
+                // Reattach event listeners for the new buttons
+                document.getElementById('follow-btn').addEventListener('click', toggleFollow);
+                document.getElementById('more-btn').addEventListener('click', toggleMoreMenu);
+                document.getElementById('message-btn').addEventListener('click', () => {
+                    document.querySelector('.message-page').style.display = 'block';
+                });
+            }
+        }
+
+        // Toggle follow status
+        async function toggleFollow() {
+            const followBtn = this;
+            const isFollowing = followBtn.classList.contains('following');
+            const username = window.location.pathname.split('/').pop();
+            
+            try {
+                // 1. Get profile ID of user being followed/unfollowed
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('username', username)
+                    .single();
+                
+                if (profileError) throw profileError;
+                
+                // 2. Get current user
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                // 3. Update follow status in database
+                if (isFollowing) {
+                    // Unfollow
+                    const { error } = await supabase
+                        .from('followers')
+                        .delete()
+                        .eq('follower_id', user.id)
+                        .eq('following_id', profile.id);
+                    if (error) throw error;
+                } else {
+                    // Follow
+                    const { error } = await supabase
+                        .from('followers')
+                        .insert({
+                            follower_id: user.id,
+                            following_id: profile.id,
+                            created_at: new Date().toISOString()
+                        });
+                    if (error) throw error;
+                }
+                
+                // 4. Update UI
+                followBtn.classList.toggle('following');
+                followBtn.innerHTML = isFollowing ? 
+                    '<i class="fas fa-user-plus"></i> Follow' : 
+                    '<i class="fas fa-check"></i> Following';
+                
+                // Update followers count
+                const currentFollowers = parseInt(followersCount.textContent);
+                followersCount.textContent = isFollowing ? currentFollowers - 1 : currentFollowers + 1;
+                
+            } catch (error) {
+                console.error('Follow toggle error:', error);
+                alert('Failed to update follow status');
+            }
+        }
+
+        // Load user posts
+        async function loadUserPosts(userId) {
+            try {
+                const { data: posts, error } = await supabase
+                    .from('posts')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                displayPosts(posts);
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                showError('Failed to load posts');
+            }
+        }
+
+        // Display posts
+        function displayPosts(posts) {
+            const postsContainer = document.getElementById('profile-posts');
+            
+            if (posts.length === 0) {
+                postsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="far fa-newspaper"></i>
+                        </div>
+                        <div class="empty-state-text">No posts yet</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            postsContainer.innerHTML = posts.map(post => createPostElement(post)).join('');
+        }
+
+        // Create post HTML element
+        function createPostElement(post) {
+            return `
+                <div class="post">
+                    <div class="post-header">
+                        <div class="post-avatar">${post.user_id.substring(0, 2).toUpperCase()}</div>
+                        <div class="post-user-info">
+                            <div class="post-user">
+                                ${post.user_id.substring(0, 8)}
+                            </div>
+                            <div class="post-time">${formatDate(post.created_at)}</div>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        ${post.content || ''}
+                    </div>
+                    ${post.image_url ? `<img src="${post.image_url}" style="width: 100%; border-radius: 8px; margin-top: 10px;">` : ''}
+                    ${post.video_url ? `
+                        <video controls style="width: 100%; border-radius: 8px; margin-top: 10px;">
+                            <source src="${post.video_url}" type="video/mp4">
+                        </video>
+                    ` : ''}
+                    <div class="post-stats">
+                        <span>${post.like_count || 0} likes</span>
+                        <span>${post.comment_count || 0} comments</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        // Toggle more menu
+        function toggleMoreMenu() {
+            moreMenu.classList.toggle('show');
+            moreMenuOverlay.classList.toggle('show');
+        }
+
+        // Helper functions
+        function showSkeletonLoader() {
+            skeletonPreloader.style.display = 'flex';
+        }
+
+        function hideSkeletonLoader() {
+            skeletonPreloader.style.display = 'none';
+        }
+
+        function showError(message) {
+            // You could implement a proper error display here
+            console.error(message);
+        }
+
+        function getColorFromInitials(initials) {
+            const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
+            const index = initials.charCodeAt(0) % colors.length;
+            return colors[index];
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load profile data
+            loadProfile();
+            
+            // Event listeners
+            moreMenuOverlay.addEventListener('click', toggleMoreMenu);
+            
+            // Close edit profile when clicking back button
+            document.querySelector('.edit-profile-back')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelector('.edit-profile-container').style.display = 'none';
+            });
+            
+            // Close message page when clicking back button
+            document.querySelector('.message-back')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelector('.message-page').style.display = 'none';
+            });
+            
+            // Close follow page when clicking back button
+            document.querySelector('.follow-back')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelector('.follow-page').style.display = 'none';
+            });
+            
+            // Follow tab switching
+            document.querySelectorAll('.follow-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.follow-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.follow-list').forEach(l => l.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(`${tab.dataset.tab}-list`).classList.add('active');
+                });
+            });
+        });
+    </script>
+<script src="posts.js"></script>
 </body>
 </html>
