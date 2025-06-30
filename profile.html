@@ -53,6 +53,7 @@
             color: #000;
             font-size: 20px;
             text-decoration: none;
+            margin-right: 15px;
         }
 
         .dark-mode .back-button {
@@ -62,9 +63,21 @@
         .header-title {
             font-weight: 700;
             font-size: 18px;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .header-button {
+            color: #000;
+            font-size: 20px;
+            text-decoration: none;
+        }
+
+        .dark-mode .header-button {
+            color: #e4e6eb;
         }
 
         .profile-container {
@@ -89,11 +102,15 @@
             padding: 16px;
             position: relative;
             margin-top: -50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
         }
 
         .profile-avatar-container {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             border: 4px solid white;
             background-color: white;
@@ -119,6 +136,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            justify-content: center;
         }
 
         .dark-mode .profile-name {
@@ -129,6 +147,7 @@
             font-size: 16px;
             color: #777;
             margin-bottom: 12px;
+            text-align: center;
         }
 
         .dark-mode .profile-username {
@@ -138,6 +157,8 @@
         .profile-bio {
             margin-bottom: 16px;
             line-height: 1.4;
+            text-align: center;
+            max-width: 80%;
         }
 
         .dark-mode .profile-bio {
@@ -148,11 +169,13 @@
             display: flex;
             gap: 16px;
             margin-bottom: 16px;
+            justify-content: center;
         }
 
         .profile-stat {
             display: flex;
             flex-direction: column;
+            align-items: center;
         }
 
         .stat-number {
@@ -177,6 +200,7 @@
             display: flex;
             gap: 8px;
             margin-bottom: 16px;
+            justify-content: center;
         }
 
         .action-button {
@@ -187,6 +211,7 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
+            max-width: 150px;
         }
 
         .follow-button {
@@ -215,6 +240,8 @@
             flex-direction: column;
             gap: 16px;
             padding: 16px;
+            align-items: center;
+            text-align: center;
         }
 
         .skeleton-banner {
@@ -222,6 +249,7 @@
             background-color: #e0e0e0;
             border-radius: 0;
             animation: pulse 1.5s infinite;
+            width: 100%;
         }
 
         .dark-mode .skeleton-banner {
@@ -229,8 +257,8 @@
         }
 
         .skeleton-avatar {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             background-color: #e0e0e0;
             margin-top: -50px;
@@ -269,7 +297,7 @@
         }
 
         .skeleton-bio {
-            width: 100%;
+            width: 80%;
             height: 16px;
             background-color: #e0e0e0;
             border-radius: 4px;
@@ -282,13 +310,14 @@
         }
 
         .skeleton-bio.short {
-            width: 80%;
+            width: 60%;
         }
 
         .skeleton-stats {
             display: flex;
             gap: 16px;
             margin-bottom: 16px;
+            justify-content: center;
         }
 
         .skeleton-stat {
@@ -306,10 +335,11 @@
         .skeleton-actions {
             display: flex;
             gap: 8px;
+            justify-content: center;
         }
 
         .skeleton-action {
-            flex: 1;
+            width: 150px;
             height: 40px;
             background-color: #e0e0e0;
             border-radius: 8px;
@@ -334,8 +364,8 @@
         /* TikTok-style avatar */
         .tiktok-avatar {
             position: relative;
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             border: 4px solid white;
             background-color: white;
@@ -393,10 +423,20 @@
 <body>
     <!-- Header -->
     <header class="profile-header">
-        <a href="index.html" class="back-button">
-            <i class="fas fa-arrow-left"></i>
-        </a>
-        <div class="header-title">Profile</div>
+        <div style="display: flex; align-items: center;">
+            <a href="index.html" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="header-title" id="header-title">Profile</div>
+        </div>
+        <div class="header-actions">
+            <a href="search.html" class="header-button">
+                <i class="fas fa-search"></i>
+            </a>
+            <a href="#" class="header-button" id="edit-button">
+                <i class="fas fa-edit"></i>
+            </a>
+        </div>
     </header>
 
     <!-- Profile Content -->
@@ -482,6 +522,8 @@
         const verifiedBadge = document.getElementById('verified-badge');
         const followButton = document.getElementById('follow-button');
         const messageButton = document.getElementById('message-button');
+        const headerTitle = document.getElementById('header-title');
+        const editButton = document.getElementById('edit-button');
 
         // State variables
         let currentUser = null;
@@ -565,6 +607,9 @@
             // Set names
             profileDisplayName.textContent = profile.full_name || profile.username;
             profileUsername.textContent = `@${profile.username}`;
+            
+            // Update header title
+            headerTitle.textContent = profile.full_name || profile.username;
             
             // Set bio
             profileBio.textContent = profile.bio || "No bio yet";
@@ -664,6 +709,12 @@
             } else {
                 followerCount.textContent = formatNumber(parseInt(followerCount.textContent) - 1);
             }
+        });
+
+        // Edit button click handler
+        editButton.addEventListener('click', () => {
+            // In a real app, this would open an edit profile page/modal
+            alert('Edit profile functionality would go here');
         });
     </script>
 </body>
