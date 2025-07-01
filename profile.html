@@ -967,448 +967,453 @@
     </div>
 
     <script>
-        // DOM Elements
-        const skeletonLoader = document.getElementById('skeleton-loader');
-        const profileContent = document.getElementById('profile-content');
-        const profileBanner = document.getElementById('profile-banner');
-        const profileAvatar = document.getElementById('profile-avatar');
-        const profileDisplayName = document.getElementById('profile-display-name');
-        const profileUsername = document.getElementById('profile-username');
-        const profileCategory = document.getElementById('profile-category');
-        const profileBio = document.getElementById('profile-bio');
-        const profileWebsite = document.getElementById('profile-website');
-        const followerCount = document.getElementById('follower-count');
-        const followingCount = document.getElementById('following-count');
-        const postCount = document.getElementById('post-count');
-        const verifiedBadge = document.getElementById('verified-badge');
-        const followButton = document.getElementById('follow-button');
-        const messageButton = document.getElementById('message-button');
-        const moreButton = document.getElementById('more-button');
-        const moreOptions = document.getElementById('more-options');
-        const reportOption = document.getElementById('report-option');
-        const blockOption = document.getElementById('block-option');
-        const postsGrid = document.getElementById('posts-grid');
-        const headerTitle = document.getElementById('header-title');
-        const editProfileButton = document.getElementById('edit-profile-button');
-        const editModal = document.getElementById('edit-modal');
-        const editModalClose = document.getElementById('edit-modal-close');
-        const editModalCancel = document.getElementById('edit-modal-cancel');
-        const editModalSave = document.getElementById('edit-modal-save');
-        const editAvatarPreview = document.getElementById('edit-avatar-preview');
-        const editAvatarButton = document.getElementById('edit-avatar-button');
-        const avatarUpload = document.getElementById('avatar-upload');
-        const editName = document.getElementById('edit-name');
-        const editUsername = document.getElementById('edit-username');
-        const editCategory = document.getElementById('edit-category');
-        const editBio = document.getElementById('edit-bio');
-        const editWebsite = document.getElementById('edit-website');
-        const copyProfileLink = document.getElementById('copy-profile-link');
+                    
+            
+            // DOM Elements
+const skeletonLoader = document.getElementById('skeleton-loader');
+const profileContent = document.getElementById('profile-content');
+const profileBanner = document.getElementById('profile-banner');
+const profileAvatar = document.getElementById('profile-avatar');
+const profileDisplayName = document.getElementById('profile-display-name');
+const profileUsername = document.getElementById('profile-username');
+const profileCategory = document.getElementById('profile-category');
+const profileBio = document.getElementById('profile-bio');
+const profileWebsite = document.getElementById('profile-website');
+const followerCount = document.getElementById('follower-count');
+const followingCount = document.getElementById('following-count');
+const postCount = document.getElementById('post-count');
+const verifiedBadge = document.getElementById('verified-badge');
+const followButton = document.getElementById('follow-button');
+const messageButton = document.getElementById('message-button');
+const moreButton = document.getElementById('more-button');
+const moreOptions = document.getElementById('more-options');
+const reportOption = document.getElementById('report-option');
+const blockOption = document.getElementById('block-option');
+const postsGrid = document.getElementById('posts-grid');
+const headerTitle = document.getElementById('header-title');
+const editProfileButton = document.getElementById('edit-profile-button');
+const editModal = document.getElementById('edit-modal');
+const editModalClose = document.getElementById('edit-modal-close');
+const editModalCancel = document.getElementById('edit-modal-cancel');
+const editModalSave = document.getElementById('edit-modal-save');
+const editAvatarPreview = document.getElementById('edit-avatar-preview');
+const editAvatarButton = document.getElementById('edit-avatar-button');
+const avatarUpload = document.getElementById('avatar-upload');
+const editName = document.getElementById('edit-name');
+const editUsername = document.getElementById('edit-username');
+const editCategory = document.getElementById('edit-category');
+const editBio = document.getElementById('edit-bio');
+const editWebsite = document.getElementById('edit-website');
+const copyProfileLink = document.getElementById('copy-profile-link');
 
-        // State variables
-        let currentUser = null;
-        let profileData = null;
-        let isFollowing = false;
-        let userPosts = [];
+// State variables
+let currentUser = null;
+let profileData = null;
+let isFollowing = false;
+let userPosts = [];
 
-        // Initialize the page
-        async function init() {
-            try {
-                // Check if user is logged in
-                const { data: { user }, error: authError } = await supabase.auth.getUser();
-                
-                if (authError || !user) {
-                    window.location.href = 'login.html';
-                    return;
-                }
-                
-                currentUser = user;
-                
-                // Load profile data (in a real app, you'd get the profile ID from URL params)
-                await loadProfileData(user.id);
-                
-                // Set up event listeners
-                setupEventListeners();
-                
-            } catch (error) {
-                console.error("Initialization error:", error);
-                displayErrorState();
-            }
+// Initialize the page
+async function init() {
+    try {
+        // Check if user is logged in
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+            window.location.href = 'login.html';
+            return;
         }
+        
+        currentUser = user;
+        
+        // Load profile data (in a real app, you'd get the profile ID from URL params)
+        await loadProfileData(user.id);
+        
+        // Set up event listeners
+        setupEventListeners();
+        
+    } catch (error) {
+        console.error("Initialization error:", error);
+        displayErrorState();
+    }
+}
 
-        // Load profile data from Supabase
-        async function loadProfileData(profileId) {
-            try {
-                // Show skeleton loader
-                skeletonLoader.style.display = 'block';
-                profileContent.style.display = 'none';
-                
-                // Get profile data
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', profileId)
-                    .single();
-                
-                if (profileError) throw profileError;
-                
-                profileData = profile;
-                
-                // Get stats (in a real app, you'd have these in your database)
-                const followers = profile.followers || 0;
-                const following = profile.following || 0;
-                
-                // Get real post count
-                const { count: postsCount, error: postsError } = await supabase
-                    .from('posts')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', profileId);
-                
-                const posts = postsError ? 0 : postsCount;
-                
-                // Check if current user follows this profile
-                isFollowing = false; // In a real app, you'd check this
-                
-                // Load user posts
-                await loadUserPosts(profileId);
-                
-                // Display the profile
-                displayProfile(profile, followers, following, posts);
-                
-            } catch (error) {
-                console.error("Error loading profile:", error);
-                displayErrorState();
-            }
-        }
-
+// Load profile data from Supabase
+async function loadProfileData(profileId) {
+    try {
+        // Show skeleton loader
+        skeletonLoader.style.display = 'block';
+        profileContent.style.display = 'none';
+        
+        // Get profile data
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', profileId)
+            .single();
+        
+        if (profileError) throw profileError;
+        
+        profileData = profile;
+        
+        // Get stats (in a real app, you'd have these in your database)
+        const followers = profile.followers || 0;
+        const following = profile.following || 0;
+        
+        // Get real post count
+        const { count: postsCount, error: postsError } = await supabase
+            .from('posts')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', profileId);
+        
+        const posts = postsError ? 0 : postsCount;
+        
+        // Check if current user follows this profile
+        isFollowing = false; // In a real app, you'd check this
+        
         // Load user posts
-        async function loadUserPosts(userId) {
-            try {
-                const { data: posts, error } = await supabase
-                    .from('posts')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                
-                userPosts = posts || [];
-                
-            } catch (error) {
-                console.error("Error loading posts:", error);
-                userPosts = [];
-            }
-        }
+        await loadUserPosts(profileId);
+        
+        // Display the profile
+        displayProfile(profile, followers, following, posts);
+        
+    } catch (error) {
+        console.error("Error loading profile:", error);
+        displayErrorState();
+    }
+}
 
-        // Display the profile with data
-        function displayProfile(profile, followers, following, posts) {
-            // Set banner (if available)
-            if (profile.banner_url) {
-                profileBanner.style.backgroundImage = `url(${profile.banner_url})`;
-                profileBanner.style.backgroundSize = 'cover';
-                profileBanner.style.backgroundPosition = 'center';
-            }
-            
-            // Set avatar
-            if (profile.avatar_url) {
-                profileAvatar.src = profile.avatar_url;
-                editAvatarPreview.src = profile.avatar_url;
-            } else {
-                // Create initial avatar if no image
-                profileAvatar.replaceWith(createInitialAvatar(profile.full_name || profile.username));
-            }
-            
-            // Set names
-            profileDisplayName.textContent = profile.full_name || profile.username;
-            profileUsername.textContent = `@${profile.username}`;
-            editName.value = profile.full_name || '';
-            editUsername.value = profile.username || '';
-            
-            // Update header title
-            headerTitle.textContent = profile.full_name || profile.username;
-            
-            // Set category
-            if (profile.category) {
-                profileCategory.textContent = profile.category;
-            } else {
-                profileCategory.textContent = "No category";
-                profileCategory.style.color = '#777';
-                profileCategory.style.fontStyle = 'italic';
-            }
-            editCategory.value = profile.category || '';
-            
-            // Set bio
-            if (profile.bio) {
-                profileBio.textContent = profile.bio;
-                profileBio.style.display = 'block';
-            } else {
-                profileBio.style.display = 'none';
-            }
-            editBio.value = profile.bio || '';
-            
-            // Set website
-            if (profile.website) {
-                profileWebsite.href = profile.website;
-                profileWebsite.textContent = profile.website.replace(/^https?:\/\//, '');
-                profileWebsite.style.display = 'inline';
-            } else {
-                profileWebsite.style.display = 'none';
-            }
-            editWebsite.value = profile.website || '';
-            
-            // Set verification badge
-            if (profile.is_verified) {
-                verifiedBadge.style.display = 'inline';
-            }
-            
-            // Set stats
-            followerCount.textContent = formatNumber(followers);
-            followingCount.textContent = formatNumber(following);
-            postCount.textContent = formatNumber(posts);
-            
-            // Set follow button state
-            updateFollowButton();
-            
-            // Display posts
-            displayPosts();
-            
-            // Hide skeleton and show content
-            skeletonLoader.style.display = 'none';
-            profileContent.style.display = 'block';
-        }
+// Load user posts
+async function loadUserPosts(userId) {
+    try {
+        const { data: posts, error } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        userPosts = posts || [];
+        displayPosts();
+        
+    } catch (error) {
+        console.error("Error loading posts:", error);
+        userPosts = [];
+        displayPosts();
+    }
+}
 
-        // Display user posts
-        function displayPosts() {
-            postsGrid.innerHTML = '';
-            
-            if (userPosts.length === 0) {
-                const emptyMessage = document.createElement('div');
-                emptyMessage.textContent = 'No posts yet';
-                emptyMessage.style.textAlign = 'center';
-                emptyMessage.style.gridColumn = '1 / -1';
-                emptyMessage.style.padding = '20px';
-                emptyMessage.style.color = '#777';
-                postsGrid.appendChild(emptyMessage);
-                return;
-            }
-            
-            userPosts.forEach(post => {
-                const postItem = document.createElement('div');
-                postItem.className = 'post-item';
-                
-                if (post.image_url) {
-                    postItem.innerHTML = `<img src="${post.image_url}" alt="Post">`;
-                } else if (post.video_url) {
-                    postItem.innerHTML = `
-                        <div style="position: relative; width: 100%; height: 100%;">
-                            <video style="width: 100%; height: 100%; object-fit: cover;">
-                                <source src="${post.video_url}" type="video/mp4">
-                            </video>
-                            <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 5px; border-radius: 4px; font-size: 12px;">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    postItem.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #f0f0f0; color: #777; padding: 10px; text-align: center;">
-                            ${post.content || 'Post'}
-                        </div>
-                    `;
-                }
-                
-                postsGrid.appendChild(postItem);
-            });
-        }
-
-        // Create initial avatar with colored background
-        function createInitialAvatar(name) {
-            if (!name) name = 'User';
-            const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-            const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
-            const colorIndex = initials.charCodeAt(0) % colors.length;
-            const color = colors[colorIndex];
-            
-            const avatarDiv = document.createElement('div');
-            avatarDiv.className = 'tiktok-avatar';
-            avatarDiv.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: ${color}; color: white; font-weight: bold; font-size: 50px;">
-                    ${initials}
+// Display user posts
+function displayPosts() {
+    postsGrid.innerHTML = '';
+    
+    if (userPosts.length === 0) {
+        const emptyMessage = document.createElement('div');
+        emptyMessage.textContent = 'No posts yet';
+        emptyMessage.style.textAlign = 'center';
+        emptyMessage.style.gridColumn = '1 / -1';
+        emptyMessage.style.padding = '20px';
+        emptyMessage.style.color = '#777';
+        postsGrid.appendChild(emptyMessage);
+        return;
+    }
+    
+    userPosts.forEach(post => {
+        const postItem = document.createElement('div');
+        postItem.className = 'post-item';
+        
+        if (post.image_url) {
+            postItem.innerHTML = `<img src="${post.image_url}" alt="Post">`;
+        } else if (post.video_url) {
+            postItem.innerHTML = `
+                <div style="position: relative; width: 100%; height: 100%;">
+                    <video style="width: 100%; height: 100%; object-fit: cover;">
+                        <source src="${post.video_url}" type="video/mp4">
+                    </video>
+                    <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 5px; border-radius: 4px; font-size: 12px;">
+                        <i class="fas fa-play"></i>
+                    </div>
                 </div>
             `;
-            
-            return avatarDiv;
+        } else {
+            postItem.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #f0f0f0; color: #777; padding: 10px; text-align: center;">
+                    ${post.content || 'Post'}
+                </div>
+            `;
         }
+        
+        postItem.addEventListener('click', () => {
+            window.location.href = `post.html?id=${post.id}`;
+        });
+        
+        postsGrid.appendChild(postItem);
+    });
+}
 
-        // Handle avatar image loading errors
-        function handleAvatarError(imgElement) {
-            const displayName = profileData?.full_name || profileData?.username || 'User';
-            imgElement.replaceWith(createInitialAvatar(displayName));
+// Display the profile with data
+function displayProfile(profile, followers, following, posts) {
+    // Set banner (if available)
+    if (profile.banner_url) {
+        profileBanner.style.backgroundImage = `url(${profile.banner_url})`;
+        profileBanner.style.backgroundSize = 'cover';
+        profileBanner.style.backgroundPosition = 'center';
+    }
+    
+    // Set avatar
+    if (profile.avatar_url) {
+        profileAvatar.src = profile.avatar_url;
+        editAvatarPreview.src = profile.avatar_url;
+    } else {
+        // Create initial avatar if no image
+        profileAvatar.replaceWith(createInitialAvatar(profile.full_name || profile.username));
+    }
+    
+    // Set names
+    profileDisplayName.textContent = profile.full_name || profile.username;
+    profileUsername.textContent = `@${profile.username}`;
+    editName.value = profile.full_name || '';
+    editUsername.value = profile.username || '';
+    
+    // Update header title
+    headerTitle.textContent = profile.full_name || profile.username;
+    
+    // Set category
+    if (profile.category) {
+        profileCategory.textContent = profile.category;
+    } else {
+        profileCategory.textContent = "No category";
+        profileCategory.style.color = '#777';
+        profileCategory.style.fontStyle = 'italic';
+    }
+    editCategory.value = profile.category || '';
+    
+    // Set bio
+    if (profile.bio) {
+        profileBio.textContent = profile.bio;
+        profileBio.style.display = 'block';
+    } else {
+        profileBio.style.display = 'none';
+    }
+    editBio.value = profile.bio || '';
+    
+    // Set website
+    if (profile.website) {
+        profileWebsite.href = profile.website;
+        profileWebsite.textContent = profile.website.replace(/^https?:\/\//, '');
+        profileWebsite.style.display = 'inline';
+    } else {
+        profileWebsite.style.display = 'none';
+    }
+    editWebsite.value = profile.website || '';
+    
+    // Set verification badge
+    if (profile.is_verified) {
+        verifiedBadge.style.display = 'inline';
+    }
+    
+    // Set stats
+    followerCount.textContent = formatNumber(followers);
+    followingCount.textContent = formatNumber(following);
+    postCount.textContent = formatNumber(posts);
+    
+    // Set follow button state
+    updateFollowButton();
+    
+    // Hide skeleton and show content
+    skeletonLoader.style.display = 'none';
+    profileContent.style.display = 'block';
+}
+
+// Create initial avatar with colored background
+function createInitialAvatar(name) {
+    if (!name) name = 'User';
+    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
+    const colorIndex = initials.charCodeAt(0) % colors.length;
+    const color = colors[colorIndex];
+    
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'tiktok-avatar';
+    avatarDiv.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: ${color}; color: white; font-weight: bold; font-size: 50px;">
+            ${initials}
+        </div>
+    `;
+    
+    return avatarDiv;
+}
+
+// Handle avatar image loading errors
+function handleAvatarError(imgElement) {
+    const displayName = profileData?.full_name || profileData?.username || 'User';
+    imgElement.replaceWith(createInitialAvatar(displayName));
+}
+
+// Format large numbers
+function formatNumber(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+}
+
+// Update follow button based on current state
+function updateFollowButton() {
+    if (isFollowing) {
+        followButton.textContent = 'Following';
+        followButton.classList.add('following');
+    } else {
+        followButton.textContent = 'Follow';
+        followButton.classList.remove('following');
+    }
+}
+
+// Display error state
+function displayErrorState() {
+    skeletonLoader.style.display = 'none';
+    profileContent.style.display = 'block';
+    
+    // Set error states
+    profileDisplayName.textContent = 'Error loading profile';
+    profileUsername.textContent = '@error';
+    profileBio.textContent = 'Failed to load profile data. Please try again later.';
+    profileBio.style.color = '#ff4444';
+}
+
+// Set up event listeners
+function setupEventListeners() {
+    // Follow button
+    followButton.addEventListener('click', () => {
+        isFollowing = !isFollowing;
+        updateFollowButton();
+        
+        // In a real app, you would update the database here
+        if (isFollowing) {
+            followerCount.textContent = formatNumber(parseInt(followerCount.textContent) + 1);
+        } else {
+            followerCount.textContent = formatNumber(parseInt(followerCount.textContent) - 1);
         }
-
-        // Format large numbers
-        function formatNumber(num) {
-            if (num >= 1000000) {
-                return (num / 1000000).toFixed(1) + 'M';
-            }
-            if (num >= 1000) {
-                return (num / 1000).toFixed(1) + 'K';
-            }
-            return num.toString();
+    });
+    
+    // More options button
+    moreButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        moreOptions.classList.toggle('show');
+    });
+    
+    // Close more options when clicking elsewhere
+    document.addEventListener('click', () => {
+        moreOptions.classList.remove('show');
+    });
+    
+    // Report option
+    reportOption.addEventListener('click', () => {
+        alert('Report functionality would go here');
+        moreOptions.classList.remove('show');
+    });
+    
+    // Block option
+    blockOption.addEventListener('click', () => {
+        alert('Block functionality would go here');
+        moreOptions.classList.remove('show');
+    });
+    
+    // Edit profile button
+    editProfileButton.addEventListener('click', () => {
+        editModal.classList.add('show');
+    });
+    
+    // Close modal buttons
+    editModalClose.addEventListener('click', () => {
+        editModal.classList.remove('show');
+    });
+    
+    editModalCancel.addEventListener('click', () => {
+        editModal.classList.remove('show');
+    });
+    
+    // Save changes button
+    editModalSave.addEventListener('click', async () => {
+        // In a real app, you would save the changes to the database here
+        const newName = editName.value.trim();
+        const newUsername = editUsername.value.trim();
+        const newCategory = editCategory.value.trim();
+        const newBio = editBio.value.trim();
+        const newWebsite = editWebsite.value.trim();
+        
+        if (newName) {
+            profileDisplayName.textContent = newName;
+            headerTitle.textContent = newName;
         }
-
-        // Update follow button based on current state
-        function updateFollowButton() {
-            if (isFollowing) {
-                followButton.textContent = 'Following';
-                followButton.classList.add('following');
-            } else {
-                followButton.textContent = 'Follow';
-                followButton.classList.remove('following');
-            }
+        
+        if (newUsername) {
+            profileUsername.textContent = `@${newUsername}`;
         }
-
-        // Display error state
-        function displayErrorState() {
-            skeletonLoader.style.display = 'none';
-            profileContent.style.display = 'block';
-            
-            // Set error states
-            profileDisplayName.textContent = 'Error loading profile';
-            profileUsername.textContent = '@error';
-            profileBio.textContent = 'Failed to load profile data. Please try again later.';
-            profileBio.style.color = '#ff4444';
+        
+        if (newCategory) {
+            profileCategory.textContent = newCategory;
+            profileCategory.style.color = '';
+            profileCategory.style.fontStyle = '';
+        } else {
+            profileCategory.textContent = "No category";
+            profileCategory.style.color = '#777';
+            profileCategory.style.fontStyle = 'italic';
         }
-
-        // Set up event listeners
-        function setupEventListeners() {
-            // Follow button
-            followButton.addEventListener('click', () => {
-                isFollowing = !isFollowing;
-                updateFollowButton();
-                
-                // In a real app, you would update the database here
-                if (isFollowing) {
-                    followerCount.textContent = formatNumber(parseInt(followerCount.textContent) + 1);
-                } else {
-                    followerCount.textContent = formatNumber(parseInt(followerCount.textContent) - 1);
-                }
-            });
-            
-            // More options button
-            moreButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                moreOptions.classList.toggle('show');
-            });
-            
-            // Close more options when clicking elsewhere
-            document.addEventListener('click', () => {
-                moreOptions.classList.remove('show');
-            });
-            
-            // Report option
-            reportOption.addEventListener('click', () => {
-                alert('Report functionality would go here');
-                moreOptions.classList.remove('show');
-            });
-            
-            // Block option
-            blockOption.addEventListener('click', () => {
-                alert('Block functionality would go here');
-                moreOptions.classList.remove('show');
-            });
-            
-            // Edit profile button
-            editProfileButton.addEventListener('click', () => {
-                editModal.classList.add('show');
-            });
-            
-            // Close modal buttons
-            editModalClose.addEventListener('click', () => {
-                editModal.classList.remove('show');
-            });
-            
-            editModalCancel.addEventListener('click', () => {
-                editModal.classList.remove('show');
-            });
-            
-            // Save changes button
-            editModalSave.addEventListener('click', async () => {
-                // In a real app, you would save the changes to the database here
-                const newName = editName.value.trim();
-                const newUsername = editUsername.value.trim();
-                const newCategory = editCategory.value.trim();
-                const newBio = editBio.value.trim();
-                const newWebsite = editWebsite.value.trim();
-                
-                if (newName) {
-                    profileDisplayName.textContent = newName;
-                    headerTitle.textContent = newName;
-                }
-                
-                if (newUsername) {
-                    profileUsername.textContent = `@${newUsername}`;
-                }
-                
-                if (newCategory) {
-                    profileCategory.textContent = newCategory;
-                    profileCategory.style.color = '';
-                    profileCategory.style.fontStyle = '';
-                } else {
-                    profileCategory.textContent = "No category";
-                    profileCategory.style.color = '#777';
-                    profileCategory.style.fontStyle = 'italic';
-                }
-                
-                if (newBio) {
-                    profileBio.textContent = newBio;
-                    profileBio.style.display = 'block';
-                    profileBio.style.color = '';
-                    profileBio.style.fontStyle = '';
-                } else {
-                    profileBio.style.display = 'none';
-                }
-                
-                if (newWebsite) {
-                    profileWebsite.href = newWebsite;
-                    profileWebsite.textContent = newWebsite.replace(/^https?:\/\//, '');
-                    profileWebsite.style.display = 'inline';
-                } else {
-                    profileWebsite.style.display = 'none';
-                }
-                
-                editModal.classList.remove('show');
-                alert('Profile updated successfully!');
-            });
-            
-            // Change avatar button
-            editAvatarButton.addEventListener('click', () => {
-                avatarUpload.click();
-            });
-            
-            // Avatar upload
-            avatarUpload.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        editAvatarPreview.src = event.target.result;
-                        profileAvatar.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-            
-            // Copy profile link
-            copyProfileLink.addEventListener('click', () => {
-                const profileLink = `${window.location.origin}/profile.html?user=${profileData.username}`;
-                navigator.clipboard.writeText(profileLink).then(() => {
-                    alert('Profile link copied to clipboard!');
-                });
-            });
+        
+        if (newBio) {
+            profileBio.textContent = newBio;
+            profileBio.style.display = 'block';
+            profileBio.style.color = '';
+            profileBio.style.fontStyle = '';
+        } else {
+            profileBio.style.display = 'none';
         }
+        
+        if (newWebsite) {
+            profileWebsite.href = newWebsite;
+            profileWebsite.textContent = newWebsite.replace(/^https?:\/\//, '');
+            profileWebsite.style.display = 'inline';
+        } else {
+            profileWebsite.style.display = 'none';
+        }
+        
+        editModal.classList.remove('show');
+        alert('Profile updated successfully!');
+    });
+    
+    // Change avatar button
+    editAvatarButton.addEventListener('click', () => {
+        avatarUpload.click();
+    });
+    
+    // Avatar upload
+    avatarUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                editAvatarPreview.src = event.target.result;
+                profileAvatar.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Copy profile link
+    copyProfileLink.addEventListener('click', () => {
+        const profileLink = `${window.location.origin}/profile.html?user=${profileData.username}`;
+        navigator.clipboard.writeText(profileLink).then(() => {
+            alert('Profile link copied to clipboard!');
+        });
+    });
+}
 
-        // Initialize the page when loaded
-        document.addEventListener('DOMContentLoaded', init);
+// Initialize the page when loaded
+document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
