@@ -23,13 +23,15 @@
         body {
             background-color: #ECEFF1;
             padding-bottom: 80px;
+            transition: background-color 0.3s;
         }
 
         .dark-mode {
-            background-color: #18191a;
+            background-color: #000;
             color: #e4e6eb;
         }
 
+        /* Header Styles */
         .profile-header {
             position: fixed;
             top: 0;
@@ -38,36 +40,30 @@
             background-color: white;
             padding: 15px 20px;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             border-bottom: 1px solid #e0e0e0;
             z-index: 100;
         }
 
         .dark-mode .profile-header {
-            background-color: #242526;
-            border-bottom-color: #3e4042;
-        }
-
-        .back-button {
-            color: #000;
-            font-size: 20px;
-            text-decoration: none;
-            margin-right: 15px;
-        }
-
-        .dark-mode .back-button {
-            color: #e4e6eb;
+            background-color: #000;
+            border-bottom-color: #333;
         }
 
         .header-title {
             font-weight: 700;
             font-size: 18px;
+            text-align: center;
+        }
+
+        .dark-mode .header-title {
+            color: #e4e6eb;
         }
 
         .header-actions {
-            display: flex;
-            gap: 15px;
+            position: absolute;
+            right: 20px;
         }
 
         .header-button {
@@ -81,7 +77,7 @@
         }
 
         .profile-container {
-            margin-top: 70px;
+            margin-top: 60px;
             padding: 0;
             width: 100%;
         }
@@ -97,7 +93,7 @@
             background-color: #3a3b3c;
         }
 
-        /* Profile Info Section */
+        /* Profile Info Section - TikTok Style */
         .profile-info {
             padding: 16px;
             position: relative;
@@ -108,87 +104,56 @@
             text-align: center;
         }
 
+        /* TikTok-style avatar */
         .profile-avatar-container {
-            width: 220px;
-            height: 220px;
+            position: relative;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            border: 4px solid white;
+            border: 2px solid white;
             background-color: white;
             overflow: hidden;
             margin-bottom: 16px;
         }
 
+        .profile-avatar-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff0050, #ff0050, #00f2ea, #00f2ea);
+            z-index: -1;
+        }
+
         .dark-mode .profile-avatar-container {
-            border-color: #242526;
-            background-color: #242526;
+            border-color: #000;
+            background-color: #000;
         }
 
         .profile-avatar {
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-
-        .profile-name {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .dark-mode .profile-name {
-            color: #e4e6eb;
+            border-radius: 50%;
         }
 
         .profile-username {
-            font-size: 16px;
-            color: #777;
+            font-size: 18px;
+            font-weight: 700;
             margin-bottom: 12px;
             text-align: center;
         }
 
         .dark-mode .profile-username {
-            color: #b0b3b8;
-        }
-
-        .profile-category {
-            margin-bottom: 12px;
-            line-height: 1.4;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .dark-mode .profile-category {
             color: #e4e6eb;
-        }
-
-        .profile-bio {
-            margin-bottom: 8px;
-            line-height: 1.4;
-            text-align: center;
-            max-width: 80%;
-        }
-
-        .dark-mode .profile-bio {
-            color: #e4e6eb;
-        }
-
-        .profile-website {
-            margin-bottom: 16px;
-            color: #00B0FF;
-            text-decoration: none;
-            word-break: break-all;
-        }
-
-        .profile-website:hover {
-            text-decoration: underline;
         }
 
         .profile-stats {
             display: flex;
-            gap: 16px;
+            gap: 20px;
             margin-bottom: 16px;
             justify-content: center;
         }
@@ -223,31 +188,32 @@
             margin-bottom: 16px;
             justify-content: center;
             position: relative;
+            width: 100%;
         }
 
         .action-button {
-            padding: 10px 16px;
+            padding: 8px 16px;
             border-radius: 8px;
             font-weight: 600;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
             border: none;
+            font-size: 14px;
         }
 
         .follow-button {
-            background-color: #000;
+            background-color: #fe2c55;
             color: white;
-        }
-
-        .dark-mode .follow-button {
-            background-color: white;
-            color: #000;
+            flex: 1;
+            max-width: 150px;
         }
 
         .message-button {
             background-color: #f0f0f0;
             color: #000;
+            flex: 1;
+            max-width: 150px;
         }
 
         .dark-mode .message-button {
@@ -319,6 +285,43 @@
             text-align: center;
         }
 
+        .profile-bio {
+            margin-bottom: 8px;
+            line-height: 1.4;
+            text-align: center;
+            max-width: 80%;
+            font-size: 14px;
+        }
+
+        .dark-mode .profile-bio {
+            color: #e4e6eb;
+        }
+
+        .profile-website {
+            margin-bottom: 16px;
+            color: #00B0FF;
+            text-decoration: none;
+            word-break: break-all;
+            font-size: 14px;
+        }
+
+        .profile-website:hover {
+            text-decoration: underline;
+        }
+
+        .profile-category {
+            margin-bottom: 12px;
+            line-height: 1.4;
+            text-align: center;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .dark-mode .profile-category {
+            color: #e4e6eb;
+        }
+
+        /* Posts Section */
         .posts-section {
             margin-top: 20px;
             width: 100%;
@@ -339,9 +342,15 @@
             font-weight: 600;
             cursor: pointer;
             position: relative;
+            flex: 1;
+            text-align: center;
         }
 
         .post-tab.active {
+            color: #00B0FF;
+        }
+
+        .dark-mode .post-tab.active {
             color: #00B0FF;
         }
 
@@ -349,10 +358,11 @@
             content: '';
             position: absolute;
             bottom: -1px;
-            left: 0;
-            right: 0;
+            left: 20%;
+            right: 20%;
             height: 2px;
             background-color: #00B0FF;
+            border-radius: 2px;
         }
 
         .posts-grid {
@@ -376,6 +386,74 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+        }
+
+        /* Bottom Navigation */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: white;
+            border-top: 1px solid #e6ecf0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            padding: 0 20px;
+        }
+
+        .dark-mode .footer {
+            background-color: #000;
+            border-top-color: #333;
+        }
+
+        .footer-icon {
+            color: #657786;
+            font-size: 22px;
+            cursor: pointer;
+            transition: color 0.2s;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        .dark-mode .footer-icon {
+            color: #888;
+        }
+
+        .footer-icon:hover {
+            color: #1da1f2;
+        }
+
+        .footer-icon.active {
+            color: #1da1f2;
+        }
+
+        .create-post-btn {
+            position: absolute;
+            left: 50%;
+            top: -30px;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #1d9bf0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+            border: none;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .create-post-btn:hover {
+            background-color: #1a8cd8;
         }
 
         /* Edit Modal */
@@ -565,30 +643,18 @@
         }
 
         .skeleton-avatar {
-            width: 220px;
-            height: 220px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             background-color: #e0e0e0;
             margin-top: -50px;
-            border: 4px solid white;
+            border: 2px solid white;
             animation: pulse 1.5s infinite;
         }
 
         .dark-mode .skeleton-avatar {
             background-color: #3a3b3c;
-            border-color: #242526;
-        }
-
-        .skeleton-name {
-            width: 60%;
-            height: 28px;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dark-mode .skeleton-name {
-            background-color: #3a3b3c;
+            border-color: #000;
         }
 
         .skeleton-username {
@@ -604,22 +670,9 @@
             background-color: #3a3b3c;
         }
 
-        .skeleton-category {
-            width: 50%;
-            height: 18px;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            margin-bottom: 12px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dark-mode .skeleton-category {
-            background-color: #3a3b3c;
-        }
-
         .skeleton-stats {
             display: flex;
-            gap: 16px;
+            gap: 20px;
             margin-bottom: 16px;
             justify-content: center;
         }
@@ -636,45 +689,21 @@
             background-color: #3a3b3c;
         }
 
-        .skeleton-bio {
-            width: 80%;
-            height: 16px;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dark-mode .skeleton-bio {
-            background-color: #3a3b3c;
-        }
-
-        .skeleton-website {
-            width: 60%;
-            height: 16px;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            margin-bottom: 16px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dark-mode .skeleton-website {
-            background-color: #3a3b3c;
-        }
-
         .skeleton-actions {
             display: flex;
             gap: 8px;
             margin-bottom: 16px;
             justify-content: center;
+            width: 100%;
         }
 
         .skeleton-action {
-            width: 80px;
             height: 40px;
             background-color: #e0e0e0;
             border-radius: 8px;
             animation: pulse 1.5s infinite;
+            flex: 1;
+            max-width: 150px;
         }
 
         .dark-mode .skeleton-action {
@@ -738,172 +767,30 @@
             font-size: 16px;
         }
 
-        /* TikTok-style avatar */
-        .tiktok-avatar {
-            position: relative;
-            width: 220px;
-            height: 220px;
-            border-radius: 50%;
-            border: 4px solid white;
-            background-color: white;
-            overflow: hidden;
-            margin-bottom: 16px;
-        }
-
-        .tiktok-avatar::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #ff0050, #ff0050, #00f2ea, #00f2ea);
-            z-index: -1;
-        }
-
-        .dark-mode .tiktok-avatar {
-            border-color: #242526;
-            background-color: #242526;
-        }
-
-        .tiktok-avatar img {
+        /* Initials Avatar */
+        .initials-avatar {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 40px;
+            background-color: #00B0FF;
             border-radius: 50%;
         }
 
-        /* TikTok-style follow button */
-        .tiktok-follow-button {
-            background-color: #fe2c55;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+        .dark-mode .initials-avatar {
+            background-color: #1DA1F2;
         }
-
-        .tiktok-follow-button.following {
-            background-color: #f0f0f0;
-            color: #000;
-        }
-
-        .dark-mode .tiktok-follow-button.following {
-            background-color: #3a3b3c;
-            color: #e4e6eb;
-        }
-
-        /* Posts Section */
-.posts-section {
-    margin-top: 20px;
-    width: 100%;
-}
-
-.posts-tabs {
-    display: flex;
-    border-bottom: 1px solid #e0e0e0;
-    margin-bottom: 16px;
-}
-
-.dark-mode .posts-tabs {
-    border-bottom-color: #3e4042;
-}
-
-.post-tab {
-    padding: 12px 16px;
-    font-weight: 600;
-    cursor: pointer;
-    position: relative;
-}
-
-.post-tab.active {
-    color: #00B0FF;
-}
-
-.dark-mode .post-tab.active {
-    color: #00B0FF;
-}
-
-.post-tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 20%;
-    right: 20%;
-    height: 2px;
-    background-color: #00B0FF;
-    border-radius: 2px;
-}
-
-.posts-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-}
-
-.post-item {
-    aspect-ratio: 1/1;
-    background-color: #f0f0f0;
-    position: relative;
-    overflow: hidden;
-}
-
-.dark-mode .post-item {
-    background-color: #3a3b3c;
-}
-
-.post-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-        /* Skeleton Posts */
-.skeleton-posts-header {
-    width: 100%;
-    height: 40px;
-    background-color: #e0e0e0;
-    border-radius: 4px;
-    margin-bottom: 16px;
-    animation: pulse 1.5s infinite;
-}
-
-.dark-mode .skeleton-posts-header {
-    background-color: #3a3b3c;
-}
-
-.skeleton-posts-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-}
-
-.skeleton-post {
-    aspect-ratio: 1/1;
-    background-color: #e0e0e0;
-    animation: pulse 1.5s infinite;
-}
-
-.dark-mode .skeleton-post {
-    background-color: #3a3b3c;
-}
     </style>
 </head>
 <body>
     <!-- Header -->
     <header class="profile-header">
-        <div style="display: flex; align-items: center;">
-            <a href="index.html" class="back-button">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <div class="header-title" id="header-title">Profile</div>
-        </div>
+        <div class="header-title" id="header-title">Profile</div>
         <div class="header-actions">
-            <a href="search.html" class="header-button">
-                <i class="fas fa-search"></i>
-            </a>
             <a href="#" class="header-button" id="edit-profile-button">
                 <i class="fas fa-edit"></i>
             </a>
@@ -916,16 +803,12 @@
         <div class="skeleton-loader" id="skeleton-loader">
             <div class="skeleton-banner"></div>
             <div class="skeleton-avatar"></div>
-            <div class="skeleton-name"></div>
             <div class="skeleton-username"></div>
-            <div class="skeleton-category"></div>
             <div class="skeleton-stats">
                 <div class="skeleton-stat"></div>
                 <div class="skeleton-stat"></div>
                 <div class="skeleton-stat"></div>
             </div>
-            <div class="skeleton-bio"></div>
-            <div class="skeleton-website"></div>
             <div class="skeleton-actions">
                 <div class="skeleton-action"></div>
                 <div class="skeleton-action"></div>
@@ -949,18 +832,11 @@
 
             <!-- Profile Info -->
             <div class="profile-info">
-                <div class="tiktok-avatar">
+                <div class="profile-avatar-container">
                     <img id="profile-avatar" src="" alt="Profile Avatar" onerror="handleAvatarError(this)">
                 </div>
 
-                <h1 class="profile-name">
-                    <span id="profile-display-name">Loading...</span>
-                    <span id="verified-badge" style="display: none;">
-                        <i class="fas fa-check-circle verified-badge"></i>
-                    </span>
-                </h1>
-                <div class="profile-username" id="profile-username">@loading</div>
-                <div class="profile-category" id="profile-category">No category</div>
+                <div class="profile-username" id="profile-username">@username</div>
 
                 <div class="profile-stats">
                     <div class="profile-stat">
@@ -977,11 +853,8 @@
                     </div>
                 </div>
 
-                <div class="profile-bio" id="profile-bio"></div>
-                <a href="#" class="profile-website" id="profile-website" target="_blank" style="display: none;"></a>
-
                 <div class="profile-actions">
-                    <button class="action-button follow-button tiktok-follow-button" id="follow-button">
+                    <button class="action-button follow-button" id="follow-button">
                         Follow
                     </button>
                     <button class="action-button message-button" id="message-button">
@@ -1001,12 +874,18 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="profile-category" id="profile-category">No category</div>
+                <div class="profile-bio" id="profile-bio"></div>
+                <a href="#" class="profile-website" id="profile-website" target="_blank" style="display: none;"></a>
             </div>
 
             <!-- Posts Section -->
             <div class="posts-section">
                 <div class="posts-tabs">
                     <div class="post-tab active">Posts</div>
+                    <div class="post-tab">Likes</div>
+                    <div class="post-tab">Saved</div>
                 </div>
                 <div class="posts-grid" id="posts-grid">
                     <!-- Posts will be loaded here -->
@@ -1014,6 +893,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Bottom Navigation -->
+    <footer class="footer">
+        <div class="footer-icon" onclick="window.location.href='index.html'">
+            <i class="fas fa-home"></i>
+        </div>
+        <div class="footer-icon" onclick="window.location.href='search.html'">
+            <i class="fas fa-search"></i>
+        </div>
+        <div class="footer-icon" onclick="window.location.href='notifications.html'">
+            <i class="fas fa-bell"></i>
+        </div>
+        <div class="footer-icon" onclick="window.location.href='profile.html'">
+            <i class="fas fa-user"></i>
+        </div>
+        <button class="create-post-btn" onclick="window.location.href='create-post.html'">
+            <i class="fas fa-plus"></i>
+        </button>
+    </footer>
 
     <!-- Edit Profile Modal -->
     <div class="edit-modal" id="edit-modal">
@@ -1061,454 +959,445 @@
     </div>
 
     <script>
-                    
-            
-            // DOM Elements
-const skeletonLoader = document.getElementById('skeleton-loader');
-const profileContent = document.getElementById('profile-content');
-const profileBanner = document.getElementById('profile-banner');
-const profileAvatar = document.getElementById('profile-avatar');
-const profileDisplayName = document.getElementById('profile-display-name');
-const profileUsername = document.getElementById('profile-username');
-const profileCategory = document.getElementById('profile-category');
-const profileBio = document.getElementById('profile-bio');
-const profileWebsite = document.getElementById('profile-website');
-const followerCount = document.getElementById('follower-count');
-const followingCount = document.getElementById('following-count');
-const postCount = document.getElementById('post-count');
-const verifiedBadge = document.getElementById('verified-badge');
-const followButton = document.getElementById('follow-button');
-const messageButton = document.getElementById('message-button');
-const moreButton = document.getElementById('more-button');
-const moreOptions = document.getElementById('more-options');
-const reportOption = document.getElementById('report-option');
-const blockOption = document.getElementById('block-option');
-const postsGrid = document.getElementById('posts-grid');
-const headerTitle = document.getElementById('header-title');
-const editProfileButton = document.getElementById('edit-profile-button');
-const editModal = document.getElementById('edit-modal');
-const editModalClose = document.getElementById('edit-modal-close');
-const editModalCancel = document.getElementById('edit-modal-cancel');
-const editModalSave = document.getElementById('edit-modal-save');
-const editAvatarPreview = document.getElementById('edit-avatar-preview');
-const editAvatarButton = document.getElementById('edit-avatar-button');
-const avatarUpload = document.getElementById('avatar-upload');
-const editName = document.getElementById('edit-name');
-const editUsername = document.getElementById('edit-username');
-const editCategory = document.getElementById('edit-category');
-const editBio = document.getElementById('edit-bio');
-const editWebsite = document.getElementById('edit-website');
-const copyProfileLink = document.getElementById('copy-profile-link');
+        // DOM Elements
+        const skeletonLoader = document.getElementById('skeleton-loader');
+        const profileContent = document.getElementById('profile-content');
+        const profileBanner = document.getElementById('profile-banner');
+        const profileAvatar = document.getElementById('profile-avatar');
+        const profileUsername = document.getElementById('profile-username');
+        const profileCategory = document.getElementById('profile-category');
+        const profileBio = document.getElementById('profile-bio');
+        const profileWebsite = document.getElementById('profile-website');
+        const followerCount = document.getElementById('follower-count');
+        const followingCount = document.getElementById('following-count');
+        const postCount = document.getElementById('post-count');
+        const followButton = document.getElementById('follow-button');
+        const messageButton = document.getElementById('message-button');
+        const moreButton = document.getElementById('more-button');
+        const moreOptions = document.getElementById('more-options');
+        const reportOption = document.getElementById('report-option');
+        const blockOption = document.getElementById('block-option');
+        const postsGrid = document.getElementById('posts-grid');
+        const headerTitle = document.getElementById('header-title');
+        const editProfileButton = document.getElementById('edit-profile-button');
+        const editModal = document.getElementById('edit-modal');
+        const editModalClose = document.getElementById('edit-modal-close');
+        const editModalCancel = document.getElementById('edit-modal-cancel');
+        const editModalSave = document.getElementById('edit-modal-save');
+        const editAvatarPreview = document.getElementById('edit-avatar-preview');
+        const editAvatarButton = document.getElementById('edit-avatar-button');
+        const avatarUpload = document.getElementById('avatar-upload');
+        const editName = document.getElementById('edit-name');
+        const editUsername = document.getElementById('edit-username');
+        const editCategory = document.getElementById('edit-category');
+        const editBio = document.getElementById('edit-bio');
+        const editWebsite = document.getElementById('edit-website');
+        const copyProfileLink = document.getElementById('copy-profile-link');
 
-// State variables
-let currentUser = null;
-let profileData = null;
-let isFollowing = false;
-let userPosts = [];
+        // State variables
+        let currentUser = null;
+        let profileData = null;
+        let isFollowing = false;
+        let userPosts = [];
 
-// Initialize the page
-async function init() {
-    try {
-        // Check if user is logged in
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError || !user) {
-            window.location.href = 'login.html';
-            return;
+        // Initialize the page
+        async function init() {
+            try {
+                // Check if user is logged in
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                currentUser = user;
+                
+                // Load profile data (in a real app, you'd get the profile ID from URL params)
+                await loadProfileData(user.id);
+                
+                // Set up event listeners
+                setupEventListeners();
+                
+                // Check for dark mode preference
+                if (localStorage.getItem('darkMode') === 'true') {
+                    document.body.classList.add('dark-mode');
+                }
+                
+            } catch (error) {
+                console.error("Initialization error:", error);
+                displayErrorState();
+            }
         }
-        
-        currentUser = user;
-        
-        // Load profile data (in a real app, you'd get the profile ID from URL params)
-        await loadProfileData(user.id);
-        
-        // Set up event listeners
-        setupEventListeners();
-        
-    } catch (error) {
-        console.error("Initialization error:", error);
-        displayErrorState();
-    }
-}
 
-// Load profile data from Supabase
-async function loadProfileData(profileId) {
-    try {
-        // Show skeleton loader
-        skeletonLoader.style.display = 'block';
-        profileContent.style.display = 'none';
-        
-        // Get profile data
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', profileId)
-            .single();
-        
-        if (profileError) throw profileError;
-        
-        profileData = profile;
-        
-        // Get stats (in a real app, you'd have these in your database)
-        const followers = profile.followers || 0;
-        const following = profile.following || 0;
-        
-        // Get real post count
-        const { count: postsCount, error: postsError } = await supabase
-            .from('posts')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', profileId);
-        
-        const posts = postsError ? 0 : postsCount;
-        
-        // Check if current user follows this profile
-        isFollowing = false; // In a real app, you'd check this
-        
+        // Load profile data from Supabase
+        async function loadProfileData(profileId) {
+            try {
+                // Show skeleton loader
+                skeletonLoader.style.display = 'block';
+                profileContent.style.display = 'none';
+                
+                // Get profile data
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', profileId)
+                    .single();
+                
+                if (profileError) throw profileError;
+                
+                profileData = profile;
+                
+                // Get stats (in a real app, you'd have these in your database)
+                const followers = profile.followers || 0;
+                const following = profile.following || 0;
+                
+                // Get real post count
+                const { count: postsCount, error: postsError } = await supabase
+                    .from('posts')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', profileId);
+                
+                const posts = postsError ? 0 : postsCount;
+                
+                // Check if current user follows this profile
+                isFollowing = false; // In a real app, you'd check this
+                
+                // Load user posts
+                await loadUserPosts(profileId);
+                
+                // Display the profile
+                displayProfile(profile, followers, following, posts);
+                
+            } catch (error) {
+                console.error("Error loading profile:", error);
+                displayErrorState();
+            }
+        }
+
         // Load user posts
-        await loadUserPosts(profileId);
-        
-        // Display the profile
-        displayProfile(profile, followers, following, posts);
-        
-    } catch (error) {
-        console.error("Error loading profile:", error);
-        displayErrorState();
-    }
-}
+        async function loadUserPosts(userId) {
+            try {
+                const { data: posts, error } = await supabase
+                    .from('posts')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                userPosts = posts || [];
+                displayPosts();
+                
+            } catch (error) {
+                console.error("Error loading posts:", error);
+                userPosts = [];
+                displayPosts();
+            }
+        }
 
-// Load user posts
-async function loadUserPosts(userId) {
-    try {
-        const { data: posts, error } = await supabase
-            .from('posts')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        userPosts = posts || [];
-        displayPosts();
-        
-    } catch (error) {
-        console.error("Error loading posts:", error);
-        userPosts = [];
-        displayPosts();
-    }
-}
+        // Display user posts
+        function displayPosts() {
+            postsGrid.innerHTML = '';
+            
+            if (userPosts.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.textContent = 'No posts yet';
+                emptyMessage.style.textAlign = 'center';
+                emptyMessage.style.gridColumn = '1 / -1';
+                emptyMessage.style.padding = '20px';
+                emptyMessage.style.color = '#777';
+                postsGrid.appendChild(emptyMessage);
+                return;
+            }
+            
+            userPosts.forEach(post => {
+                const postItem = document.createElement('div');
+                postItem.className = 'post-item';
+                
+                if (post.image_url) {
+                    postItem.innerHTML = `<img src="${post.image_url}" alt="Post">`;
+                } else if (post.video_url) {
+                    postItem.innerHTML = `
+                        <div style="position: relative; width: 100%; height: 100%;">
+                            <video style="width: 100%; height: 100%; object-fit: cover;">
+                                <source src="${post.video_url}" type="video/mp4">
+                            </video>
+                            <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 5px; border-radius: 4px; font-size: 12px;">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    postItem.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #f0f0f0; color: #777; padding: 10px; text-align: center;">
+                            ${post.content || 'Post'}
+                        </div>
+                    `;
+                }
+                
+                postItem.addEventListener('click', () => {
+                    window.location.href = `post.html?id=${post.id}`;
+                });
+                
+                postsGrid.appendChild(postItem);
+            });
+        }
 
-// Display user posts
-function displayPosts() {
-    postsGrid.innerHTML = '';
-    
-    if (userPosts.length === 0) {
-        const emptyMessage = document.createElement('div');
-        emptyMessage.textContent = 'No posts yet';
-        emptyMessage.style.textAlign = 'center';
-        emptyMessage.style.gridColumn = '1 / -1';
-        emptyMessage.style.padding = '20px';
-        emptyMessage.style.color = '#777';
-        postsGrid.appendChild(emptyMessage);
-        return;
-    }
-    
-    userPosts.forEach(post => {
-        const postItem = document.createElement('div');
-        postItem.className = 'post-item';
-        
-        if (post.image_url) {
-            postItem.innerHTML = `<img src="${post.image_url}" alt="Post">`;
-        } else if (post.video_url) {
-            postItem.innerHTML = `
-                <div style="position: relative; width: 100%; height: 100%;">
-                    <video style="width: 100%; height: 100%; object-fit: cover;">
-                        <source src="${post.video_url}" type="video/mp4">
-                    </video>
-                    <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 5px; border-radius: 4px; font-size: 12px;">
-                        <i class="fas fa-play"></i>
-                    </div>
+        // Display the profile with data
+        function displayProfile(profile, followers, following, posts) {
+            // Set banner (if available)
+            if (profile.banner_url) {
+                profileBanner.style.backgroundImage = `url(${profile.banner_url})`;
+                profileBanner.style.backgroundSize = 'cover';
+                profileBanner.style.backgroundPosition = 'center';
+            }
+            
+            // Set avatar
+            if (profile.avatar_url) {
+                profileAvatar.src = profile.avatar_url;
+                editAvatarPreview.src = profile.avatar_url;
+            } else {
+                // Create initial avatar if no image
+                profileAvatar.replaceWith(createInitialAvatar(profile.full_name || profile.username));
+            }
+            
+            // Set names
+            profileUsername.textContent = `@${profile.username}`;
+            editName.value = profile.full_name || '';
+            editUsername.value = profile.username || '';
+            
+            // Update header title
+            headerTitle.textContent = profile.full_name || profile.username;
+            
+            // Set category
+            if (profile.category) {
+                profileCategory.textContent = profile.category;
+            } else {
+                profileCategory.textContent = "No category";
+                profileCategory.style.color = '#777';
+                profileCategory.style.fontStyle = 'italic';
+            }
+            editCategory.value = profile.category || '';
+            
+            // Set bio
+            if (profile.bio) {
+                profileBio.textContent = profile.bio;
+                profileBio.style.display = 'block';
+            } else {
+                profileBio.style.display = 'none';
+            }
+            editBio.value = profile.bio || '';
+            
+            // Set website
+            if (profile.website) {
+                profileWebsite.href = profile.website;
+                profileWebsite.textContent = profile.website.replace(/^https?:\/\//, '');
+                profileWebsite.style.display = 'inline';
+            } else {
+                profileWebsite.style.display = 'none';
+            }
+            editWebsite.value = profile.website || '';
+            
+            // Set stats
+            followerCount.textContent = formatNumber(followers);
+            followingCount.textContent = formatNumber(following);
+            postCount.textContent = formatNumber(posts);
+            
+            // Set follow button state
+            updateFollowButton();
+            
+            // Hide skeleton and show content
+            skeletonLoader.style.display = 'none';
+            profileContent.style.display = 'block';
+        }
+
+        // Create initial avatar with colored background
+        function createInitialAvatar(name) {
+            if (!name) name = 'User';
+            const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'profile-avatar-container';
+            avatarDiv.innerHTML = `
+                <div class="initials-avatar">
+                    ${initials}
                 </div>
             `;
-        } else {
-            postItem.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #f0f0f0; color: #777; padding: 10px; text-align: center;">
-                    ${post.content || 'Post'}
-                </div>
-            `;
+            
+            return avatarDiv;
         }
-        
-        postItem.addEventListener('click', () => {
-            window.location.href = `post.html?id=${post.id}`;
-        });
-        
-        postsGrid.appendChild(postItem);
-    });
-}
 
-// Display the profile with data
-function displayProfile(profile, followers, following, posts) {
-    // Set banner (if available)
-    if (profile.banner_url) {
-        profileBanner.style.backgroundImage = `url(${profile.banner_url})`;
-        profileBanner.style.backgroundSize = 'cover';
-        profileBanner.style.backgroundPosition = 'center';
-    }
-    
-    // Set avatar
-    if (profile.avatar_url) {
-        profileAvatar.src = profile.avatar_url;
-        editAvatarPreview.src = profile.avatar_url;
-    } else {
-        // Create initial avatar if no image
-        profileAvatar.replaceWith(createInitialAvatar(profile.full_name || profile.username));
-    }
-    
-    // Set names
-    profileDisplayName.textContent = profile.full_name || profile.username;
-    profileUsername.textContent = `@${profile.username}`;
-    editName.value = profile.full_name || '';
-    editUsername.value = profile.username || '';
-    
-    // Update header title
-    headerTitle.textContent = profile.full_name || profile.username;
-    
-    // Set category
-    if (profile.category) {
-        profileCategory.textContent = profile.category;
-    } else {
-        profileCategory.textContent = "No category";
-        profileCategory.style.color = '#777';
-        profileCategory.style.fontStyle = 'italic';
-    }
-    editCategory.value = profile.category || '';
-    
-    // Set bio
-    if (profile.bio) {
-        profileBio.textContent = profile.bio;
-        profileBio.style.display = 'block';
-    } else {
-        profileBio.style.display = 'none';
-    }
-    editBio.value = profile.bio || '';
-    
-    // Set website
-    if (profile.website) {
-        profileWebsite.href = profile.website;
-        profileWebsite.textContent = profile.website.replace(/^https?:\/\//, '');
-        profileWebsite.style.display = 'inline';
-    } else {
-        profileWebsite.style.display = 'none';
-    }
-    editWebsite.value = profile.website || '';
-    
-    // Set verification badge
-    if (profile.is_verified) {
-        verifiedBadge.style.display = 'inline';
-    }
-    
-    // Set stats
-    followerCount.textContent = formatNumber(followers);
-    followingCount.textContent = formatNumber(following);
-    postCount.textContent = formatNumber(posts);
-    
-    // Set follow button state
-    updateFollowButton();
-    
-    // Hide skeleton and show content
-    skeletonLoader.style.display = 'none';
-    profileContent.style.display = 'block';
-}
-
-// Create initial avatar with colored background
-function createInitialAvatar(name) {
-    if (!name) name = 'User';
-    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
-    const colorIndex = initials.charCodeAt(0) % colors.length;
-    const color = colors[colorIndex];
-    
-    const avatarDiv = document.createElement('div');
-    avatarDiv.className = 'tiktok-avatar';
-    avatarDiv.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: ${color}; color: white; font-weight: bold; font-size: 50px;">
-            ${initials}
-        </div>
-    `;
-    
-    return avatarDiv;
-}
-
-// Handle avatar image loading errors
-function handleAvatarError(imgElement) {
-    const displayName = profileData?.full_name || profileData?.username || 'User';
-    imgElement.replaceWith(createInitialAvatar(displayName));
-}
-
-// Format large numbers
-function formatNumber(num) {
-    if (num >= 1000000) {
-        return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-}
-
-// Update follow button based on current state
-function updateFollowButton() {
-    if (isFollowing) {
-        followButton.textContent = 'Following';
-        followButton.classList.add('following');
-    } else {
-        followButton.textContent = 'Follow';
-        followButton.classList.remove('following');
-    }
-}
-
-// Display error state
-function displayErrorState() {
-    skeletonLoader.style.display = 'none';
-    profileContent.style.display = 'block';
-    
-    // Set error states
-    profileDisplayName.textContent = 'Error loading profile';
-    profileUsername.textContent = '@error';
-    profileBio.textContent = 'Failed to load profile data. Please try again later.';
-    profileBio.style.color = '#ff4444';
-}
-
-// Set up event listeners
-function setupEventListeners() {
-    // Follow button
-    followButton.addEventListener('click', () => {
-        isFollowing = !isFollowing;
-        updateFollowButton();
-        
-        // In a real app, you would update the database here
-        if (isFollowing) {
-            followerCount.textContent = formatNumber(parseInt(followerCount.textContent) + 1);
-        } else {
-            followerCount.textContent = formatNumber(parseInt(followerCount.textContent) - 1);
+        // Handle avatar image loading errors
+        function handleAvatarError(imgElement) {
+            const displayName = profileData?.full_name || profileData?.username || 'User';
+            imgElement.replaceWith(createInitialAvatar(displayName));
         }
-    });
-    
-    // More options button
-    moreButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        moreOptions.classList.toggle('show');
-    });
-    
-    // Close more options when clicking elsewhere
-    document.addEventListener('click', () => {
-        moreOptions.classList.remove('show');
-    });
-    
-    // Report option
-    reportOption.addEventListener('click', () => {
-        alert('Report functionality would go here');
-        moreOptions.classList.remove('show');
-    });
-    
-    // Block option
-    blockOption.addEventListener('click', () => {
-        alert('Block functionality would go here');
-        moreOptions.classList.remove('show');
-    });
-    
-    // Edit profile button
-    editProfileButton.addEventListener('click', () => {
-        editModal.classList.add('show');
-    });
-    
-    // Close modal buttons
-    editModalClose.addEventListener('click', () => {
-        editModal.classList.remove('show');
-    });
-    
-    editModalCancel.addEventListener('click', () => {
-        editModal.classList.remove('show');
-    });
-    
-    // Save changes button
-    editModalSave.addEventListener('click', async () => {
-        // In a real app, you would save the changes to the database here
-        const newName = editName.value.trim();
-        const newUsername = editUsername.value.trim();
-        const newCategory = editCategory.value.trim();
-        const newBio = editBio.value.trim();
-        const newWebsite = editWebsite.value.trim();
-        
-        if (newName) {
-            profileDisplayName.textContent = newName;
-            headerTitle.textContent = newName;
-        }
-        
-        if (newUsername) {
-            profileUsername.textContent = `@${newUsername}`;
-        }
-        
-        if (newCategory) {
-            profileCategory.textContent = newCategory;
-            profileCategory.style.color = '';
-            profileCategory.style.fontStyle = '';
-        } else {
-            profileCategory.textContent = "No category";
-            profileCategory.style.color = '#777';
-            profileCategory.style.fontStyle = 'italic';
-        }
-        
-        if (newBio) {
-            profileBio.textContent = newBio;
-            profileBio.style.display = 'block';
-            profileBio.style.color = '';
-            profileBio.style.fontStyle = '';
-        } else {
-            profileBio.style.display = 'none';
-        }
-        
-        if (newWebsite) {
-            profileWebsite.href = newWebsite;
-            profileWebsite.textContent = newWebsite.replace(/^https?:\/\//, '');
-            profileWebsite.style.display = 'inline';
-        } else {
-            profileWebsite.style.display = 'none';
-        }
-        
-        editModal.classList.remove('show');
-        alert('Profile updated successfully!');
-    });
-    
-    // Change avatar button
-    editAvatarButton.addEventListener('click', () => {
-        avatarUpload.click();
-    });
-    
-    // Avatar upload
-    avatarUpload.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                editAvatarPreview.src = event.target.result;
-                profileAvatar.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    
-    // Copy profile link
-    copyProfileLink.addEventListener('click', () => {
-        const profileLink = `${window.location.origin}/profile.html?user=${profileData.username}`;
-        navigator.clipboard.writeText(profileLink).then(() => {
-            alert('Profile link copied to clipboard!');
-        });
-    });
-}
 
-// Initialize the page when loaded
-document.addEventListener('DOMContentLoaded', init);
+        // Format large numbers
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        // Update follow button based on current state
+        function updateFollowButton() {
+            if (isFollowing) {
+                followButton.textContent = 'Following';
+                followButton.style.backgroundColor = '#f0f0f0';
+                followButton.style.color = '#000';
+            } else {
+                followButton.textContent = 'Follow';
+                followButton.style.backgroundColor = '#fe2c55';
+                followButton.style.color = 'white';
+            }
+        }
+
+        // Display error state
+        function displayErrorState() {
+            skeletonLoader.style.display = 'none';
+            profileContent.style.display = 'block';
+            
+            // Set error states
+            profileUsername.textContent = '@error';
+            profileBio.textContent = 'Failed to load profile data. Please try again later.';
+            profileBio.style.color = '#ff4444';
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Follow button
+            followButton.addEventListener('click', () => {
+                isFollowing = !isFollowing;
+                updateFollowButton();
+                
+                // In a real app, you would update the database here
+                if (isFollowing) {
+                    followerCount.textContent = formatNumber(parseInt(followerCount.textContent) + 1);
+                } else {
+                    followerCount.textContent = formatNumber(parseInt(followerCount.textContent) - 1);
+                }
+            });
+            
+            // More options button
+            moreButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                moreOptions.classList.toggle('show');
+            });
+            
+            // Close more options when clicking elsewhere
+            document.addEventListener('click', () => {
+                moreOptions.classList.remove('show');
+            });
+            
+            // Report option
+            reportOption.addEventListener('click', () => {
+                alert('Report functionality would go here');
+                moreOptions.classList.remove('show');
+            });
+            
+            // Block option
+            blockOption.addEventListener('click', () => {
+                alert('Block functionality would go here');
+                moreOptions.classList.remove('show');
+            });
+            
+            // Edit profile button
+            editProfileButton.addEventListener('click', () => {
+                editModal.classList.add('show');
+            });
+            
+            // Close modal buttons
+            editModalClose.addEventListener('click', () => {
+                editModal.classList.remove('show');
+            });
+            
+            editModalCancel.addEventListener('click', () => {
+                editModal.classList.remove('show');
+            });
+            
+            // Save changes button
+            editModalSave.addEventListener('click', async () => {
+                // In a real app, you would save the changes to the database here
+                const newName = editName.value.trim();
+                const newUsername = editUsername.value.trim();
+                const newCategory = editCategory.value.trim();
+                const newBio = editBio.value.trim();
+                const newWebsite = editWebsite.value.trim();
+                
+                if (newName) {
+                    headerTitle.textContent = newName;
+                }
+                
+                if (newUsername) {
+                    profileUsername.textContent = `@${newUsername}`;
+                }
+                
+                if (newCategory) {
+                    profileCategory.textContent = newCategory;
+                    profileCategory.style.color = '';
+                    profileCategory.style.fontStyle = '';
+                } else {
+                    profileCategory.textContent = "No category";
+                    profileCategory.style.color = '#777';
+                    profileCategory.style.fontStyle = 'italic';
+                }
+                
+                if (newBio) {
+                    profileBio.textContent = newBio;
+                    profileBio.style.display = 'block';
+                    profileBio.style.color = '';
+                    profileBio.style.fontStyle = '';
+                } else {
+                    profileBio.style.display = 'none';
+                }
+                
+                if (newWebsite) {
+                    profileWebsite.href = newWebsite;
+                    profileWebsite.textContent = newWebsite.replace(/^https?:\/\//, '');
+                    profileWebsite.style.display = 'inline';
+                } else {
+                    profileWebsite.style.display = 'none';
+                }
+                
+                editModal.classList.remove('show');
+                alert('Profile updated successfully!');
+            });
+            
+            // Change avatar button
+            editAvatarButton.addEventListener('click', () => {
+                avatarUpload.click();
+            });
+            
+            // Avatar upload
+            avatarUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        editAvatarPreview.src = event.target.result;
+                        profileAvatar.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Copy profile link
+            copyProfileLink.addEventListener('click', () => {
+                const profileLink = `${window.location.origin}/profile.html?user=${profileData.username}`;
+                navigator.clipboard.writeText(profileLink).then(() => {
+                    alert('Profile link copied to clipboard!');
+                });
+            });
+        }
+
+        // Initialize the page when loaded
+        document.addEventListener('DOMContentLoaded', init);
     </script>
-    <script src="posts.js"></script>
 </body>
 </html>
