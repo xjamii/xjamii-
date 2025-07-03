@@ -21,10 +21,10 @@
         }
 
         body {
-            background-color: #000;
+            background-color: #fff;
             padding-bottom: 80px;
             transition: background-color 0.3s;
-            color: #fff;
+            color: #000;
         }
 
         .dark-mode {
@@ -38,25 +38,25 @@
             top: 0;
             left: 0;
             width: 100%;
-            background-color: #000;
+            background-color: #fff;
             padding: 15px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #e5e5e5;
             z-index: 100;
         }
 
         .dark-mode .profile-header {
             background-color: #000;
-            border-bottom-color: #000;
+            border-bottom-color: #333;
         }
 
         .header-title {
             font-weight: 700;
             font-size: 18px;
             text-align: center;
-            color: #fff;
+            color: #000;
         }
 
         .dark-mode .header-title {
@@ -69,7 +69,7 @@
         }
 
         .header-button {
-            color: #fff;
+            color: #000;
             font-size: 20px;
             text-decoration: none;
         }
@@ -87,7 +87,7 @@
         /* Profile Banner */
         .profile-banner {
             height: 50px;
-            background-color: #3a3b3c;
+            background-color: #f8f8f8;
             position: relative;
         }
 
@@ -98,9 +98,8 @@
         /* Profile Info Section - TikTok Style */
         .profile-info {
             padding: 16px;
-            
             position: relative;
-            margin-top: -60px; /* Moved up 10px more */
+            margin-top: -60px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -113,8 +112,8 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            border: 2px solid #000;
-            background-color: #000;
+            border: 2px solid #fff;
+            background-color: #fff;
             overflow: hidden;
             margin-bottom: 16px;
         }
@@ -148,7 +147,7 @@
             font-weight: 700;
             margin-bottom: 12px;
             text-align: center;
-            color: #fff;
+            color: #000;
         }
 
         .dark-mode .profile-username {
@@ -157,8 +156,8 @@
 
         .profile-stats {
             display: flex;
-            gap: 30px; /* Increased gap between stats */
-            margin-bottom: 16px;
+            gap: 40px; /* Increased gap between stats */
+            margin-bottom: 20px; /* Increased margin */
             justify-content: center;
         }
 
@@ -170,8 +169,8 @@
 
         .stat-number {
             font-weight: 700;
-            font-size: 18px; /* Increased font size */
-            color: #fff;
+            font-size: 20px; /* Increased font size */
+            color: #000;
         }
 
         .dark-mode .stat-number {
@@ -179,8 +178,8 @@
         }
 
         .stat-label {
-            font-size: 14px;
-            color: #b0b3b8;
+            font-size: 16px; /* Increased font size */
+            color: #666;
         }
 
         .dark-mode .stat-label {
@@ -190,7 +189,7 @@
         .profile-actions {
             display: flex;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 20px; /* Increased margin */
             justify-content: center;
             position: relative;
             width: 100%;
@@ -208,15 +207,20 @@
         }
 
         .edit-profile-button {
-            background-color: #3a3b3c;
-            color: #fff;
+            background-color: #f0f0f0;
+            color: #000;
             width: 100%;
             max-width: 200px;
         }
 
-        .more-button {
+        .dark-mode .edit-profile-button {
             background-color: #3a3b3c;
             color: #fff;
+        }
+
+        .more-button {
+            background-color: #f0f0f0;
+            color: #000;
             width: 40px;
             display: flex;
             align-items: center;
@@ -234,9 +238,9 @@
             position: absolute;
             bottom: 50px;
             right: 0;
-            background-color: #242526;
+            background-color: #fff;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             width: 150px;
             z-index: 100;
             overflow: hidden;
@@ -259,7 +263,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            color: #e4e6eb;
+            color: #333;
         }
 
         .dark-mode .more-option {
@@ -267,7 +271,7 @@
         }
 
         .more-option:hover {
-            background-color: #3a3b3c;
+            background-color: #f5f5f5;
         }
 
         .dark-mode .more-option:hover {
@@ -280,12 +284,12 @@
         }
 
         .profile-bio {
-            margin-bottom: 8px;
+            margin-bottom: 12px; /* Increased margin */
             line-height: 1.4;
             text-align: center;
             max-width: 80%;
             font-size: 14px;
-            color: #fff;
+            color: #333;
         }
 
         .dark-mode .profile-bio {
@@ -305,16 +309,16 @@
         }
 
         .profile-category {
-            margin-bottom: 12px;
+            margin-bottom: 16px; /* Increased margin */
             line-height: 1.4;
             text-align: center;
             font-weight: 500;
             font-size: 14px;
-            color: #fff;
+            color: #666;
         }
 
         .dark-mode .profile-category {
-            color: #e4e6eb;
+            color: #b0b3b8;
         }
 
         /* Posts Section */
@@ -325,7 +329,7 @@
 
         .posts-tabs {
             display: flex;
-            border-bottom: 1px solid #3e4042;
+            border-bottom: 1px solid #e5e5e5;
             margin-bottom: 16px;
         }
 
@@ -340,11 +344,11 @@
             position: relative;
             flex: 1;
             text-align: center;
-            color: #b0b3b8;
+            color: #999;
         }
 
         .post-tab.active {
-            color: #fff;
+            color: #000;
         }
 
         .dark-mode .post-tab.active {
@@ -358,8 +362,12 @@
             left: 20%;
             right: 20%;
             height: 2px;
-            background-color: #fff;
+            background-color: #000;
             border-radius: 2px;
+        }
+
+        .dark-mode .post-tab.active::after {
+            background-color: #fff;
         }
 
         .post-tab i {
@@ -374,7 +382,7 @@
 
         .post-item {
             aspect-ratio: 1/1;
-            background-color: #3a3b3c;
+            background-color: #f0f0f0;
             position: relative;
             overflow: hidden;
         }
@@ -396,8 +404,8 @@
             left: 0;
             right: 0;
             height: 60px;
-            background-color: #000;
-            border-top: 1px solid #333;
+            background-color: #fff;
+            border-top: 1px solid #e5e5e5;
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -440,7 +448,7 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background-color: #fe2c55; /* TikTok's follow button color */
+            background-color: #fe2c55;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -476,7 +484,7 @@
         }
 
         .edit-modal-content {
-            background-color: #242526;
+            background-color: #fff;
             width: 90%;
             max-width: 500px;
             border-radius: 12px;
@@ -494,7 +502,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #3e4042;
+            border-bottom: 1px solid #e5e5e5;
         }
 
         .dark-mode .edit-modal-header {
@@ -504,6 +512,10 @@
         .edit-modal-title {
             font-weight: 700;
             font-size: 18px;
+            color: #000;
+        }
+
+        .dark-mode .edit-modal-title {
             color: #fff;
         }
 
@@ -512,6 +524,10 @@
             border: none;
             font-size: 20px;
             cursor: pointer;
+            color: #000;
+        }
+
+        .dark-mode .edit-modal-close {
             color: #fff;
         }
 
@@ -527,17 +543,21 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
+            color: #000;
+        }
+
+        .dark-mode .form-label {
             color: #fff;
         }
 
         .form-input {
             width: 100%;
             padding: 10px;
-            border: 1px solid #3e4042;
+            border: 1px solid #e5e5e5;
             border-radius: 8px;
             font-size: 16px;
-            background-color: #3a3b3c;
-            color: #e4e6eb;
+            background-color: #fff;
+            color: #000;
         }
 
         .dark-mode .form-input {
@@ -562,8 +582,8 @@
         }
 
         .edit-avatar-button {
-            background-color: #3a3b3c;
-            color: #e4e6eb;
+            background-color: #f0f0f0;
+            color: #000;
             border: none;
             border-radius: 8px;
             padding: 8px 16px;
@@ -580,16 +600,17 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background-color: #3a3b3c;
+            background-color: #f0f0f0;
             padding: 8px 16px;
             border-radius: 8px;
             margin-top: 8px;
             cursor: pointer;
-            color: #fff;
+            color: #000;
         }
 
         .dark-mode .copy-profile-link {
             background-color: #3a3b3c;
+            color: #fff;
         }
 
         .edit-modal-footer {
@@ -597,7 +618,7 @@
             display: flex;
             justify-content: flex-end;
             gap: 8px;
-            border-top: 1px solid #3e4042;
+            border-top: 1px solid #e5e5e5;
         }
 
         .dark-mode .edit-modal-footer {
@@ -613,8 +634,8 @@
         }
 
         .edit-modal-cancel {
-            background-color: #3a3b3c;
-            color: #e4e6eb;
+            background-color: #f0f0f0;
+            color: #000;
         }
 
         .dark-mode .edit-modal-cancel {
@@ -627,22 +648,66 @@
             color: white;
         }
 
-        /* Skeleton Loader */
+        /* Full Page Skeleton Loader */
         .skeleton-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #fff;
+            z-index: 1000;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            padding-top: 50px; /* Space for header */
+        }
+
+        .dark-mode .skeleton-loader {
+            background-color: #000;
+        }
+
+        .skeleton-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dark-mode .skeleton-header {
+            background-color: #3a3b3c;
+        }
+
+        .skeleton-header-title {
+            width: 100px;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .dark-mode .skeleton-header-title {
+            background-color: #4e4e4e;
+        }
+
+        .skeleton-content {
+            flex: 1;
             padding: 16px;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             text-align: center;
         }
 
         .skeleton-banner {
-            height: 150px;
-            background-color: #3a3b3c;
-            border-radius: 0;
-            animation: pulse 1.5s infinite;
+            height: 50px;
+            background-color: #f0f0f0;
             width: 100%;
+            animation: pulse 1.5s infinite;
         }
 
         .dark-mode .skeleton-banner {
@@ -653,23 +718,22 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background-color: #3a3b3c;
+            background-color: #f0f0f0;
             margin-top: -50px;
-            border: 2px solid #000;
+            margin-bottom: 16px;
             animation: pulse 1.5s infinite;
         }
 
         .dark-mode .skeleton-avatar {
             background-color: #3a3b3c;
-            border-color: #000;
         }
 
         .skeleton-username {
-            width: 40%;
+            width: 120px;
             height: 20px;
-            background-color: #3a3b3c;
+            background-color: #f0f0f0;
             border-radius: 4px;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
             animation: pulse 1.5s infinite;
         }
 
@@ -679,34 +743,53 @@
 
         .skeleton-stats {
             display: flex;
-            gap: 30px;
-            margin-bottom: 16px;
+            gap: 40px;
+            margin-bottom: 20px;
             justify-content: center;
         }
 
         .skeleton-stat {
-            width: 50px;
-            height: 40px;
-            background-color: #3a3b3c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .skeleton-stat-number {
+            width: 40px;
+            height: 20px;
+            background-color: #f0f0f0;
             border-radius: 4px;
             animation: pulse 1.5s infinite;
         }
 
-        .dark-mode .skeleton-stat {
+        .dark-mode .skeleton-stat-number {
+            background-color: #3a3b3c;
+        }
+
+        .skeleton-stat-label {
+            width: 60px;
+            height: 16px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .dark-mode .skeleton-stat-label {
             background-color: #3a3b3c;
         }
 
         .skeleton-actions {
             display: flex;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             justify-content: center;
             width: 100%;
         }
 
         .skeleton-action {
             height: 40px;
-            background-color: #3a3b3c;
+            background-color: #f0f0f0;
             border-radius: 8px;
             animation: pulse 1.5s infinite;
             flex: 1;
@@ -717,28 +800,42 @@
             background-color: #3a3b3c;
         }
 
-        .skeleton-more {
-            width: 40px;
-            height: 40px;
-            background-color: #3a3b3c;
-            border-radius: 8px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dark-mode .skeleton-more {
-            background-color: #3a3b3c;
-        }
-
-        .skeleton-posts-header {
-            width: 100%;
-            height: 40px;
-            background-color: #3a3b3c;
+        .skeleton-category {
+            width: 80px;
+            height: 16px;
+            background-color: #f0f0f0;
             border-radius: 4px;
             margin-bottom: 16px;
             animation: pulse 1.5s infinite;
         }
 
-        .dark-mode .skeleton-posts-header {
+        .dark-mode .skeleton-category {
+            background-color: #3a3b3c;
+        }
+
+        .skeleton-bio {
+            width: 80%;
+            height: 40px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .dark-mode .skeleton-bio {
+            background-color: #3a3b3c;
+        }
+
+        .skeleton-tabs {
+            width: 100%;
+            height: 40px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .dark-mode .skeleton-tabs {
             background-color: #3a3b3c;
         }
 
@@ -746,11 +843,12 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 2px;
+            width: 100%;
         }
 
         .skeleton-post {
             aspect-ratio: 1/1;
-            background-color: #3a3b3c;
+            background-color: #f0f0f0;
             animation: pulse 1.5s infinite;
         }
 
@@ -806,27 +904,43 @@
 
     <!-- Profile Content -->
     <div class="profile-container">
-        <!-- Skeleton Loader (shown while loading) -->
+        <!-- Full Page Skeleton Loader (shown while loading) -->
         <div class="skeleton-loader" id="skeleton-loader">
-            <div class="skeleton-banner"></div>
-            <div class="skeleton-avatar"></div>
-            <div class="skeleton-username"></div>
-            <div class="skeleton-stats">
-                <div class="skeleton-stat"></div>
-                <div class="skeleton-stat"></div>
-                <div class="skeleton-stat"></div>
+            <div class="skeleton-header">
+                <div class="skeleton-header-title"></div>
             </div>
-            <div class="skeleton-actions">
-                <div class="skeleton-action"></div>
-            </div>
-            <div class="skeleton-posts-header"></div>
-            <div class="skeleton-posts-grid">
-                <div class="skeleton-post"></div>
-                <div class="skeleton-post"></div>
-                <div class="skeleton-post"></div>
-                <div class="skeleton-post"></div>
-                <div class="skeleton-post"></div>
-                <div class="skeleton-post"></div>
+            <div class="skeleton-content">
+                <div class="skeleton-banner"></div>
+                <div class="skeleton-avatar"></div>
+                <div class="skeleton-username"></div>
+                <div class="skeleton-stats">
+                    <div class="skeleton-stat">
+                        <div class="skeleton-stat-number"></div>
+                        <div class="skeleton-stat-label"></div>
+                    </div>
+                    <div class="skeleton-stat">
+                        <div class="skeleton-stat-number"></div>
+                        <div class="skeleton-stat-label"></div>
+                    </div>
+                    <div class="skeleton-stat">
+                        <div class="skeleton-stat-number"></div>
+                        <div class="skeleton-stat-label"></div>
+                    </div>
+                </div>
+                <div class="skeleton-actions">
+                    <div class="skeleton-action"></div>
+                </div>
+                <div class="skeleton-category"></div>
+                <div class="skeleton-bio"></div>
+                <div class="skeleton-tabs"></div>
+                <div class="skeleton-posts-grid">
+                    <div class="skeleton-post"></div>
+                    <div class="skeleton-post"></div>
+                    <div class="skeleton-post"></div>
+                    <div class="skeleton-post"></div>
+                    <div class="skeleton-post"></div>
+                    <div class="skeleton-post"></div>
+                </div>
             </div>
         </div>
 
@@ -838,7 +952,7 @@
             <!-- Profile Info -->
             <div class="profile-info">
                 <div class="profile-avatar-container">
-                    <img id="profile-avatar" src="" alt="Profile Avatar" onerror="handleAvatarError(this)">
+                    <div id="profile-avatar" class="initials-avatar"></div>
                 </div>
 
                 <div class="profile-username" id="profile-username">@username</div>
@@ -872,11 +986,14 @@
             <!-- Posts Section -->
             <div class="posts-section">
                 <div class="posts-tabs">
-                    <div class="post-tab active"><i class="fas fa-table-cells-large"></i></div>
-                    <div class="post-tab"><i class="fas fa-heart"></i></div>
+                    <div class="post-tab active" data-tab="posts"><i class="fas fa-table-cells-large"></i></div>
+                    <div class="post-tab" data-tab="liked"><i class="fas fa-heart"></i></div>
                 </div>
                 <div class="posts-grid" id="posts-grid">
                     <!-- Posts will be loaded here -->
+                </div>
+                <div class="posts-grid" id="liked-posts-grid" style="display: none;">
+                    <!-- Liked posts will be loaded here -->
                 </div>
             </div>
         </div>
@@ -910,7 +1027,7 @@
             </div>
             <div class="edit-modal-body">
                 <div class="edit-avatar-container">
-                    <img id="edit-avatar-preview" class="edit-avatar" src="" alt="Profile Avatar">
+                    <div id="edit-avatar-preview" class="initials-avatar"></div>
                     <button class="edit-avatar-button" id="edit-avatar-button">Change Photo</button>
                     <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
                 </div>
@@ -961,6 +1078,7 @@
         const postCount = document.getElementById('post-count');
         const editProfileButton = document.getElementById('edit-profile-button');
         const postsGrid = document.getElementById('posts-grid');
+        const likedPostsGrid = document.getElementById('liked-posts-grid');
         const headerTitle = document.getElementById('header-title');
         const editModal = document.getElementById('edit-modal');
         const editModalClose = document.getElementById('edit-modal-close');
@@ -975,15 +1093,22 @@
         const editBio = document.getElementById('edit-bio');
         const editWebsite = document.getElementById('edit-website');
         const copyProfileLink = document.getElementById('copy-profile-link');
+        const postTabs = document.querySelectorAll('.post-tab');
 
         // State variables
         let currentUser = null;
         let profileData = null;
         let userPosts = [];
+        let likedPosts = [];
 
         // Initialize the page
         async function init() {
             try {
+                // Check dark mode before showing preloader
+                if (localStorage.getItem('darkMode') === 'true') {
+                    document.body.classList.add('dark-mode');
+                }
+                
                 // Check if user is logged in
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
                 
@@ -1000,11 +1125,6 @@
                 // Set up event listeners
                 setupEventListeners();
                 
-                // Check for dark mode preference
-                if (localStorage.getItem('darkMode') === 'true') {
-                    document.body.classList.add('dark-mode');
-                }
-                
             } catch (error) {
                 console.error("Initialization error:", error);
                 displayErrorState();
@@ -1015,7 +1135,7 @@
         async function loadProfileData(profileId) {
             try {
                 // Show skeleton loader
-                skeletonLoader.style.display = 'block';
+                skeletonLoader.style.display = 'flex';
                 profileContent.style.display = 'none';
                 
                 // Get profile data
@@ -1044,6 +1164,9 @@
                 // Load user posts
                 await loadUserPosts(profileId);
                 
+                // Load liked posts
+                await loadLikedPosts(profileId);
+                
                 // Display the profile
                 displayProfile(profile, followers, following, posts);
                 
@@ -1071,6 +1194,40 @@
                 console.error("Error loading posts:", error);
                 userPosts = [];
                 displayPosts();
+            }
+        }
+
+        // Load liked posts
+        async function loadLikedPosts(userId) {
+            try {
+                const { data: likes, error: likesError } = await supabase
+                    .from('likes')
+                    .select('post_id')
+                    .eq('user_id', userId);
+                
+                if (likesError) throw likesError;
+                
+                if (likes.length > 0) {
+                    const postIds = likes.map(like => like.post_id);
+                    const { data: posts, error: postsError } = await supabase
+                        .from('posts')
+                        .select('*')
+                        .in('id', postIds)
+                        .order('created_at', { ascending: false });
+                    
+                    if (postsError) throw postsError;
+                    
+                    likedPosts = posts || [];
+                } else {
+                    likedPosts = [];
+                }
+                
+                displayLikedPosts();
+                
+            } catch (error) {
+                console.error("Error loading liked posts:", error);
+                likedPosts = [];
+                displayLikedPosts();
             }
         }
 
@@ -1108,7 +1265,7 @@
                     `;
                 } else {
                     postItem.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #3a3b3c; color: #777; padding: 10px; text-align: center;">
+                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #f0f0f0; color: #777; padding: 10px; text-align: center;">
                             ${post.content || 'Post'}
                         </div>
                     `;
@@ -1122,6 +1279,54 @@
             });
         }
 
+        // Display liked posts
+        function displayLikedPosts() {
+            likedPostsGrid.innerHTML = '';
+            
+            if (likedPosts.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.textContent = 'No liked posts yet';
+                emptyMessage.style.textAlign = 'center';
+                emptyMessage.style.gridColumn = '1 / -1';
+                emptyMessage.style.padding = '20px';
+                emptyMessage.style.color = '#777';
+                likedPostsGrid.appendChild(emptyMessage);
+                return;
+            }
+            
+            likedPosts.forEach(post => {
+                const postItem = document.createElement('div');
+                postItem.className = 'post-item';
+                
+                if (post.image_url) {
+                    postItem.innerHTML = `<img src="${post.image_url}" alt="Post">`;
+                } else if (post.video_url) {
+                    postItem.innerHTML = `
+                        <div style="position: relative; width: 100%; height: 100%;">
+                            <video style="width: 100%; height: 100%; object-fit: cover;">
+                                <source src="${post.video_url}" type="video/mp4">
+                            </video>
+                            <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 5px; border-radius: 4px; font-size: 12px;">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    postItem.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #f0f0f0; color: #777; padding: 10px; text-align: center;">
+                            ${post.content || 'Post'}
+                        </div>
+                    `;
+                }
+                
+                postItem.addEventListener('click', () => {
+                    window.location.href = `post.html?id=${post.id}`;
+                });
+                
+                likedPostsGrid.appendChild(postItem);
+            });
+        }
+
         // Display the profile with data
         function displayProfile(profile, followers, following, posts) {
             // Set banner (if available)
@@ -1131,14 +1336,11 @@
                 profileBanner.style.backgroundPosition = 'center';
             }
             
-            // Set avatar
-            if (profile.avatar_url) {
-                profileAvatar.src = profile.avatar_url;
-                editAvatarPreview.src = profile.avatar_url;
-            } else {
-                // Create initial avatar if no image
-                profileAvatar.replaceWith(createInitialAvatar(profile.full_name || profile.username));
-            }
+            // Set avatar based on username's first letter
+            const displayName = profile.full_name || profile.username || 'User';
+            const firstLetter = displayName.charAt(0).toUpperCase();
+            profileAvatar.textContent = firstLetter;
+            editAvatarPreview.textContent = firstLetter;
             
             // Set names
             profileUsername.textContent = `@${profile.username}`;
@@ -1187,28 +1389,6 @@
             profileContent.style.display = 'block';
         }
 
-        // Create initial avatar with colored background
-        function createInitialAvatar(name) {
-            if (!name) name = 'User';
-            const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-            
-            const avatarDiv = document.createElement('div');
-            avatarDiv.className = 'profile-avatar-container';
-            avatarDiv.innerHTML = `
-                <div class="initials-avatar">
-                    ${initials}
-                </div>
-            `;
-            
-            return avatarDiv;
-        }
-
-        // Handle avatar image loading errors
-        function handleAvatarError(imgElement) {
-            const displayName = profileData?.full_name || profileData?.username || 'User';
-            imgElement.replaceWith(createInitialAvatar(displayName));
-        }
-
         // Format large numbers
         function formatNumber(num) {
             if (num >= 1000000) {
@@ -1229,6 +1409,25 @@
             profileUsername.textContent = '@error';
             profileBio.textContent = 'Failed to load profile data. Please try again later.';
             profileBio.style.color = '#ff4444';
+        }
+
+        // Handle tab switching
+        function handleTabClick(tab) {
+            // Remove active class from all tabs
+            postTabs.forEach(t => t.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            tab.classList.add('active');
+            
+            // Show the corresponding content
+            const tabType = tab.getAttribute('data-tab');
+            if (tabType === 'posts') {
+                postsGrid.style.display = 'grid';
+                likedPostsGrid.style.display = 'none';
+            } else if (tabType === 'liked') {
+                postsGrid.style.display = 'none';
+                likedPostsGrid.style.display = 'grid';
+            }
         }
 
         // Set up event listeners
@@ -1306,8 +1505,32 @@
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (event) => {
-                        editAvatarPreview.src = event.target.result;
-                        profileAvatar.src = event.target.result;
+                        // In a real app, you would upload this to storage
+                        // For now, we'll just update the preview
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        img.className = 'profile-avatar';
+                        img.alt = 'Profile Avatar';
+                        
+                        // Replace initials avatar with image
+                        if (profileAvatar.classList.contains('initials-avatar')) {
+                            profileAvatar.replaceWith(img);
+                            profileAvatar = img;
+                        } else {
+                            profileAvatar.src = event.target.result;
+                        }
+                        
+                        // Update edit modal preview
+                        if (editAvatarPreview.classList.contains('initials-avatar')) {
+                            const imgPreview = document.createElement('img');
+                            imgPreview.src = event.target.result;
+                            imgPreview.className = 'edit-avatar';
+                            imgPreview.alt = 'Profile Avatar';
+                            editAvatarPreview.replaceWith(imgPreview);
+                            editAvatarPreview = imgPreview;
+                        } else {
+                            editAvatarPreview.src = event.target.result;
+                        }
                     };
                     reader.readAsDataURL(file);
                 }
@@ -1319,6 +1542,11 @@
                 navigator.clipboard.writeText(profileLink).then(() => {
                     alert('Profile link copied to clipboard!');
                 });
+            });
+            
+            // Post tabs
+            postTabs.forEach(tab => {
+                tab.addEventListener('click', () => handleTabClick(tab));
             });
         }
 
