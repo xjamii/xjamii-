@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="theme-color" content="#0066cc">
+    <meta name="theme-color" content="#000000">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile | X-Jamii</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,9 +21,10 @@
         }
 
         body {
-            background-color: #ECEFF1;
+            background-color: #000;
             padding-bottom: 80px;
             transition: background-color 0.3s;
+            color: #fff;
         }
 
         .dark-mode {
@@ -37,12 +38,12 @@
             top: 0;
             left: 0;
             width: 100%;
-            background-color: white;
+            background-color: #000;
             padding: 15px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #333;
             z-index: 100;
         }
 
@@ -55,6 +56,7 @@
             font-weight: 700;
             font-size: 18px;
             text-align: center;
+            color: #fff;
         }
 
         .dark-mode .header-title {
@@ -67,7 +69,7 @@
         }
 
         .header-button {
-            color: #000;
+            color: #fff;
             font-size: 20px;
             text-decoration: none;
         }
@@ -85,7 +87,7 @@
         /* Profile Banner */
         .profile-banner {
             height: 150px;
-            background-color: #f0f0f0;
+            background-color: #3a3b3c;
             position: relative;
         }
 
@@ -97,7 +99,7 @@
         .profile-info {
             padding: 16px;
             position: relative;
-            margin-top: -50px;
+            margin-top: -60px; /* Moved up 10px more */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -110,8 +112,8 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            border: 2px solid white;
-            background-color: white;
+            border: 2px solid #000;
+            background-color: #000;
             overflow: hidden;
             margin-bottom: 16px;
         }
@@ -145,6 +147,7 @@
             font-weight: 700;
             margin-bottom: 12px;
             text-align: center;
+            color: #fff;
         }
 
         .dark-mode .profile-username {
@@ -153,7 +156,7 @@
 
         .profile-stats {
             display: flex;
-            gap: 20px;
+            gap: 30px; /* Increased gap between stats */
             margin-bottom: 16px;
             justify-content: center;
         }
@@ -166,7 +169,8 @@
 
         .stat-number {
             font-weight: 700;
-            font-size: 16px;
+            font-size: 18px; /* Increased font size */
+            color: #fff;
         }
 
         .dark-mode .stat-number {
@@ -175,7 +179,7 @@
 
         .stat-label {
             font-size: 14px;
-            color: #777;
+            color: #b0b3b8;
         }
 
         .dark-mode .stat-label {
@@ -202,28 +206,16 @@
             font-size: 14px;
         }
 
-        .follow-button {
-            background-color: #fe2c55;
-            color: white;
-            flex: 1;
-            max-width: 150px;
-        }
-
-        .message-button {
-            background-color: #f0f0f0;
-            color: #000;
-            flex: 1;
-            max-width: 150px;
-        }
-
-        .dark-mode .message-button {
+        .edit-profile-button {
             background-color: #3a3b3c;
-            color: #e4e6eb;
+            color: #fff;
+            width: 100%;
+            max-width: 200px;
         }
 
         .more-button {
-            background-color: #f0f0f0;
-            color: #000;
+            background-color: #3a3b3c;
+            color: #fff;
             width: 40px;
             display: flex;
             align-items: center;
@@ -241,9 +233,9 @@
             position: absolute;
             bottom: 50px;
             right: 0;
-            background-color: white;
+            background-color: #242526;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
             width: 150px;
             z-index: 100;
             overflow: hidden;
@@ -266,6 +258,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            color: #e4e6eb;
         }
 
         .dark-mode .more-option {
@@ -273,7 +266,7 @@
         }
 
         .more-option:hover {
-            background-color: #f0f2f5;
+            background-color: #3a3b3c;
         }
 
         .dark-mode .more-option:hover {
@@ -291,6 +284,7 @@
             text-align: center;
             max-width: 80%;
             font-size: 14px;
+            color: #fff;
         }
 
         .dark-mode .profile-bio {
@@ -315,6 +309,7 @@
             text-align: center;
             font-weight: 500;
             font-size: 14px;
+            color: #fff;
         }
 
         .dark-mode .profile-category {
@@ -329,7 +324,7 @@
 
         .posts-tabs {
             display: flex;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #3e4042;
             margin-bottom: 16px;
         }
 
@@ -344,14 +339,15 @@
             position: relative;
             flex: 1;
             text-align: center;
+            color: #b0b3b8;
         }
 
         .post-tab.active {
-            color: #00B0FF;
+            color: #fff;
         }
 
         .dark-mode .post-tab.active {
-            color: #00B0FF;
+            color: #fff;
         }
 
         .post-tab.active::after {
@@ -361,8 +357,12 @@
             left: 20%;
             right: 20%;
             height: 2px;
-            background-color: #00B0FF;
+            background-color: #fff;
             border-radius: 2px;
+        }
+
+        .post-tab i {
+            font-size: 20px;
         }
 
         .posts-grid {
@@ -373,7 +373,7 @@
 
         .post-item {
             aspect-ratio: 1/1;
-            background-color: #f0f0f0;
+            background-color: #3a3b3c;
             position: relative;
             overflow: hidden;
         }
@@ -395,8 +395,8 @@
             left: 0;
             right: 0;
             height: 60px;
-            background-color: white;
-            border-top: 1px solid #e6ecf0;
+            background-color: #000;
+            border-top: 1px solid #333;
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -410,7 +410,7 @@
         }
 
         .footer-icon {
-            color: #657786;
+            color: #888;
             font-size: 22px;
             cursor: pointer;
             transition: color 0.2s;
@@ -439,21 +439,21 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background-color: #1d9bf0;
+            background-color: #fe2c55; /* TikTok's follow button color */
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 24px;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+            box-shadow: 0 4px 12px rgba(254, 44, 85, 0.3);
             border: none;
             outline: none;
             transition: all 0.2s;
         }
 
         .create-post-btn:hover {
-            background-color: #1a8cd8;
+            background-color: #e0254a;
         }
 
         /* Edit Modal */
@@ -475,7 +475,7 @@
         }
 
         .edit-modal-content {
-            background-color: white;
+            background-color: #242526;
             width: 90%;
             max-width: 500px;
             border-radius: 12px;
@@ -493,7 +493,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #3e4042;
         }
 
         .dark-mode .edit-modal-header {
@@ -503,6 +503,7 @@
         .edit-modal-title {
             font-weight: 700;
             font-size: 18px;
+            color: #fff;
         }
 
         .edit-modal-close {
@@ -510,6 +511,7 @@
             border: none;
             font-size: 20px;
             cursor: pointer;
+            color: #fff;
         }
 
         .edit-modal-body {
@@ -524,14 +526,17 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
+            color: #fff;
         }
 
         .form-input {
             width: 100%;
             padding: 10px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #3e4042;
             border-radius: 8px;
             font-size: 16px;
+            background-color: #3a3b3c;
+            color: #e4e6eb;
         }
 
         .dark-mode .form-input {
@@ -556,8 +561,8 @@
         }
 
         .edit-avatar-button {
-            background-color: #f0f0f0;
-            color: #000;
+            background-color: #3a3b3c;
+            color: #e4e6eb;
             border: none;
             border-radius: 8px;
             padding: 8px 16px;
@@ -574,11 +579,12 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background-color: #f0f0f0;
+            background-color: #3a3b3c;
             padding: 8px 16px;
             border-radius: 8px;
             margin-top: 8px;
             cursor: pointer;
+            color: #fff;
         }
 
         .dark-mode .copy-profile-link {
@@ -590,7 +596,7 @@
             display: flex;
             justify-content: flex-end;
             gap: 8px;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid #3e4042;
         }
 
         .dark-mode .edit-modal-footer {
@@ -606,8 +612,8 @@
         }
 
         .edit-modal-cancel {
-            background-color: #f0f0f0;
-            color: #000;
+            background-color: #3a3b3c;
+            color: #e4e6eb;
         }
 
         .dark-mode .edit-modal-cancel {
@@ -632,7 +638,7 @@
 
         .skeleton-banner {
             height: 150px;
-            background-color: #e0e0e0;
+            background-color: #3a3b3c;
             border-radius: 0;
             animation: pulse 1.5s infinite;
             width: 100%;
@@ -646,9 +652,9 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background-color: #e0e0e0;
+            background-color: #3a3b3c;
             margin-top: -50px;
-            border: 2px solid white;
+            border: 2px solid #000;
             animation: pulse 1.5s infinite;
         }
 
@@ -660,7 +666,7 @@
         .skeleton-username {
             width: 40%;
             height: 20px;
-            background-color: #e0e0e0;
+            background-color: #3a3b3c;
             border-radius: 4px;
             margin-bottom: 12px;
             animation: pulse 1.5s infinite;
@@ -672,7 +678,7 @@
 
         .skeleton-stats {
             display: flex;
-            gap: 20px;
+            gap: 30px;
             margin-bottom: 16px;
             justify-content: center;
         }
@@ -680,7 +686,7 @@
         .skeleton-stat {
             width: 50px;
             height: 40px;
-            background-color: #e0e0e0;
+            background-color: #3a3b3c;
             border-radius: 4px;
             animation: pulse 1.5s infinite;
         }
@@ -699,11 +705,11 @@
 
         .skeleton-action {
             height: 40px;
-            background-color: #e0e0e0;
+            background-color: #3a3b3c;
             border-radius: 8px;
             animation: pulse 1.5s infinite;
             flex: 1;
-            max-width: 150px;
+            max-width: 200px;
         }
 
         .dark-mode .skeleton-action {
@@ -713,7 +719,7 @@
         .skeleton-more {
             width: 40px;
             height: 40px;
-            background-color: #e0e0e0;
+            background-color: #3a3b3c;
             border-radius: 8px;
             animation: pulse 1.5s infinite;
         }
@@ -725,7 +731,7 @@
         .skeleton-posts-header {
             width: 100%;
             height: 40px;
-            background-color: #e0e0e0;
+            background-color: #3a3b3c;
             border-radius: 4px;
             margin-bottom: 16px;
             animation: pulse 1.5s infinite;
@@ -743,7 +749,7 @@
 
         .skeleton-post {
             aspect-ratio: 1/1;
-            background-color: #e0e0e0;
+            background-color: #3a3b3c;
             animation: pulse 1.5s infinite;
         }
 
@@ -777,7 +783,7 @@
             color: white;
             font-weight: bold;
             font-size: 40px;
-            background-color: #00B0FF;
+            background-color: #1DA1F2;
             border-radius: 50%;
         }
 
@@ -791,8 +797,8 @@
     <header class="profile-header">
         <div class="header-title" id="header-title">Profile</div>
         <div class="header-actions">
-            <a href="#" class="header-button" id="edit-profile-button">
-                <i class="fas fa-edit"></i>
+            <a href="search.html" class="header-button" id="search-button">
+                <i class="fas fa-search"></i>
             </a>
         </div>
     </header>
@@ -811,8 +817,6 @@
             </div>
             <div class="skeleton-actions">
                 <div class="skeleton-action"></div>
-                <div class="skeleton-action"></div>
-                <div class="skeleton-more"></div>
             </div>
             <div class="skeleton-posts-header"></div>
             <div class="skeleton-posts-grid">
@@ -854,25 +858,9 @@
                 </div>
 
                 <div class="profile-actions">
-                    <button class="action-button follow-button" id="follow-button">
-                        Follow
+                    <button class="action-button edit-profile-button" id="edit-profile-button">
+                        Edit Profile
                     </button>
-                    <button class="action-button message-button" id="message-button">
-                        Message
-                    </button>
-                    <div class="more-button" id="more-button">
-                        <i class="fas fa-ellipsis-h"></i>
-                    </div>
-                    <div class="more-options" id="more-options">
-                        <div class="more-option" id="report-option">
-                            <i class="fas fa-flag"></i>
-                            <span>Report</span>
-                        </div>
-                        <div class="more-option" id="block-option">
-                            <i class="fas fa-ban"></i>
-                            <span>Block</span>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="profile-category" id="profile-category">No category</div>
@@ -883,9 +871,8 @@
             <!-- Posts Section -->
             <div class="posts-section">
                 <div class="posts-tabs">
-                    <div class="post-tab active">Posts</div>
-                    <div class="post-tab">Likes</div>
-                    <div class="post-tab">Saved</div>
+                    <div class="post-tab active"><i class="fas fa-table-cells-large"></i></div>
+                    <div class="post-tab"><i class="fas fa-heart"></i></div>
                 </div>
                 <div class="posts-grid" id="posts-grid">
                     <!-- Posts will be loaded here -->
@@ -971,15 +958,9 @@
         const followerCount = document.getElementById('follower-count');
         const followingCount = document.getElementById('following-count');
         const postCount = document.getElementById('post-count');
-        const followButton = document.getElementById('follow-button');
-        const messageButton = document.getElementById('message-button');
-        const moreButton = document.getElementById('more-button');
-        const moreOptions = document.getElementById('more-options');
-        const reportOption = document.getElementById('report-option');
-        const blockOption = document.getElementById('block-option');
+        const editProfileButton = document.getElementById('edit-profile-button');
         const postsGrid = document.getElementById('posts-grid');
         const headerTitle = document.getElementById('header-title');
-        const editProfileButton = document.getElementById('edit-profile-button');
         const editModal = document.getElementById('edit-modal');
         const editModalClose = document.getElementById('edit-modal-close');
         const editModalCancel = document.getElementById('edit-modal-cancel');
@@ -997,7 +978,6 @@
         // State variables
         let currentUser = null;
         let profileData = null;
-        let isFollowing = false;
         let userPosts = [];
 
         // Initialize the page
@@ -1059,9 +1039,6 @@
                     .eq('user_id', profileId);
                 
                 const posts = postsError ? 0 : postsCount;
-                
-                // Check if current user follows this profile
-                isFollowing = false; // In a real app, you'd check this
                 
                 // Load user posts
                 await loadUserPosts(profileId);
@@ -1130,7 +1107,7 @@
                     `;
                 } else {
                     postItem.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #f0f0f0; color: #777; padding: 10px; text-align: center;">
+                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #3a3b3c; color: #777; padding: 10px; text-align: center;">
                             ${post.content || 'Post'}
                         </div>
                     `;
@@ -1204,9 +1181,6 @@
             followingCount.textContent = formatNumber(following);
             postCount.textContent = formatNumber(posts);
             
-            // Set follow button state
-            updateFollowButton();
-            
             // Hide skeleton and show content
             skeletonLoader.style.display = 'none';
             profileContent.style.display = 'block';
@@ -1245,19 +1219,6 @@
             return num.toString();
         }
 
-        // Update follow button based on current state
-        function updateFollowButton() {
-            if (isFollowing) {
-                followButton.textContent = 'Following';
-                followButton.style.backgroundColor = '#f0f0f0';
-                followButton.style.color = '#000';
-            } else {
-                followButton.textContent = 'Follow';
-                followButton.style.backgroundColor = '#fe2c55';
-                followButton.style.color = 'white';
-            }
-        }
-
         // Display error state
         function displayErrorState() {
             skeletonLoader.style.display = 'none';
@@ -1271,42 +1232,6 @@
 
         // Set up event listeners
         function setupEventListeners() {
-            // Follow button
-            followButton.addEventListener('click', () => {
-                isFollowing = !isFollowing;
-                updateFollowButton();
-                
-                // In a real app, you would update the database here
-                if (isFollowing) {
-                    followerCount.textContent = formatNumber(parseInt(followerCount.textContent) + 1);
-                } else {
-                    followerCount.textContent = formatNumber(parseInt(followerCount.textContent) - 1);
-                }
-            });
-            
-            // More options button
-            moreButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                moreOptions.classList.toggle('show');
-            });
-            
-            // Close more options when clicking elsewhere
-            document.addEventListener('click', () => {
-                moreOptions.classList.remove('show');
-            });
-            
-            // Report option
-            reportOption.addEventListener('click', () => {
-                alert('Report functionality would go here');
-                moreOptions.classList.remove('show');
-            });
-            
-            // Block option
-            blockOption.addEventListener('click', () => {
-                alert('Block functionality would go here');
-                moreOptions.classList.remove('show');
-            });
-            
             // Edit profile button
             editProfileButton.addEventListener('click', () => {
                 editModal.classList.add('show');
