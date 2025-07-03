@@ -1,5 +1,5 @@
 
-    <script>
+    
         // DOM Elements
         const skeletonLoader = document.getElementById('skeleton-loader');
         const profileContent = document.getElementById('profile-content');
