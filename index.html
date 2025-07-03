@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <head>
   <!-- Other meta tags -->
+<link rel="stylesheet" href="profile.css">
+
   
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1940,67 +1942,200 @@
     </style>
 </head>
 <body>
-    <!-- Pull to Refresh Container -->
-    <div id="refresh-container">
-        <div class="refresh-spinner"></div>
-    </div>
-
+      <!-- Main Header -->
     <div class="top-header">
-    <div class="header-top-row">
-        <div class="top-header-left">
-            <div class="three-dots" onclick="toggleMenu()">
-                <i class="fas fa-ellipsis"></i>
+        <div class="header-top-row">
+            <div class="top-header-left">
+                <div class="three-dots" onclick="toggleMenu()">
+                    <i class="fas fa-ellipsis"></i>
+                </div>
+            </div>
+            <div class="logo-container" onclick="window.location.href='index.html'">
+                <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png' class="logo"/>
+            </div>
+            <div class="help-icon">
+                <a href="help.html" title="Help">
+                    <i class="fas fa-question-circle"></i>
+                </a>
             </div>
         </div>
-        <div class="logo-container" onclick="window.location.href='index.html'">
-            <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png' class="logo"/>
-        </div>
-
-        <!-- Help Icon (Top Right) -->
-        <div class="help-icon">
-            <a href="help.html" title="Help">
-                <i class="fas fa-question-circle"></i>
-            </a>
+        <div class="header-bottom-row">
+            <div class="search-bar" onclick="window.location.href='search.html'">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search" readonly>
+            </div>
         </div>
     </div>
-
-    <div class="header-bottom-row">
-        <div class="search-bar" onclick="window.location.href='search.html'">
-            <i class="fas fa-search"></i>
-            <input type="text" placeholder="Search" readonly>
-        </div>
-
-        
-        </div>
-    </div>
-</div>
     
+    <!-- Main Content -->
     <div class="main-content">
-        <!-- Posts Container -->
         <div class="posts-container" id="posts-container">
             <!-- Posts will be loaded here -->
         </div>
     </div>
-    
-    <!-- New Footer -->
+
+    <!-- Profile Section (Hidden by default) -->
+    <div id="profileSection" style="display:none;">
+        <!-- Profile Header -->
+        <header class="profile-header">
+            <div class="header-title" id="header-title">Profile</div>
+            <div class="header-actions">
+                <a href="search.html" class="header-button" id="search-button">
+                    <i class="fas fa-search"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- Profile Content -->
+        <div class="profile-container">
+            <!-- Skeleton Loader -->
+            <div class="skeleton-loader" id="skeleton-loader">
+                <div class="skeleton-header">
+                    <div class="skeleton-header-title"></div>
+                </div>
+                <div class="skeleton-content">
+                    <div class="skeleton-banner"></div>
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-username"></div>
+                    <div class="skeleton-stats">
+                        <div class="skeleton-stat">
+                            <div class="skeleton-stat-number"></div>
+                            <div class="skeleton-stat-label"></div>
+                        </div>
+                        <div class="skeleton-stat">
+                            <div class="skeleton-stat-number"></div>
+                            <div class="skeleton-stat-label"></div>
+                        </div>
+                        <div class="skeleton-stat">
+                            <div class="skeleton-stat-number"></div>
+                            <div class="skeleton-stat-label"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-actions">
+                        <div class="skeleton-action"></div>
+                    </div>
+                    <div class="skeleton-category"></div>
+                    <div class="skeleton-bio"></div>
+                    <div class="skeleton-tabs"></div>
+                    <div class="skeleton-posts-grid">
+                        <div class="skeleton-post"></div>
+                        <div class="skeleton-post"></div>
+                        <div class="skeleton-post"></div>
+                        <div class="skeleton-post"></div>
+                        <div class="skeleton-post"></div>
+                        <div class="skeleton-post"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actual Profile Content -->
+            <div id="profile-content" style="display: none;">
+                <div class="profile-banner" id="profile-banner"></div>
+                <div class="profile-info">
+                    <div class="profile-avatar-container">
+                        <div id="profile-avatar" class="initials-avatar"></div>
+                    </div>
+                    <div class="profile-username" id="profile-username">@username</div>
+                    <div class="profile-stats">
+                        <div class="profile-stat">
+                            <span class="stat-number" id="follower-count">0</span>
+                            <span class="stat-label">Followers</span>
+                        </div>
+                        <div class="profile-stat">
+                            <span class="stat-number" id="following-count">0</span>
+                            <span class="stat-label">Following</span>
+                        </div>
+                        <div class="profile-stat">
+                            <span class="stat-number" id="post-count">0</span>
+                            <span class="stat-label">Posts</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="action-button edit-profile-button" id="edit-profile-button">
+                            Edit Profile
+                        </button>
+                    </div>
+                    <div class="profile-category" id="profile-category">No category</div>
+                    <div class="profile-bio" id="profile-bio"></div>
+                    <a href="#" class="profile-website" id="profile-website" target="_blank" style="display: none;"></a>
+                </div>
+                <div class="posts-section">
+                    <div class="posts-tabs">
+                        <div class="post-tab active" data-tab="posts"><i class="fas fa-table-cells-large"></i></div>
+                        <div class="post-tab" data-tab="liked"><i class="fas fa-heart"></i></div>
+                    </div>
+                    <div class="posts-grid" id="posts-grid"></div>
+                    <div class="posts-grid" id="liked-posts-grid" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="edit-modal" id="edit-modal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <div class="edit-modal-title">Edit Profile</div>
+                <button class="edit-modal-close" id="edit-modal-close">&times;</button>
+            </div>
+            <div class="edit-modal-body">
+                <div class="edit-avatar-container">
+                    <div id="edit-avatar-preview" class="initials-avatar"></div>
+                    <button class="edit-avatar-button" id="edit-avatar-button">Change Photo</button>
+                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <label for="edit-name" class="form-label">Name</label>
+                    <input type="text" id="edit-name" class="form-input" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label for="edit-username" class="form-label">Username</label>
+                    <input type="text" id="edit-username" class="form-input" placeholder="username">
+                </div>
+                <div class="form-group">
+                    <label for="edit-category" class="form-label">Category</label>
+                    <input type="text" id="edit-category" class="form-input" placeholder="e.g. Photographer, Artist">
+                </div>
+                <div class="form-group">
+                    <label for="edit-bio" class="form-label">Bio</label>
+                    <textarea id="edit-bio" class="form-input" rows="3" placeholder="Tell about yourself"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-website" class="form-label">Website</label>
+                    <input type="url" id="edit-website" class="form-input" placeholder="https://example.com">
+                </div>
+                <div class="copy-profile-link" id="copy-profile-link">
+                    <i class="fas fa-link"></i>
+                    <span>Copy Profile Link</span>
+                </div>
+            </div>
+            <div class="edit-modal-footer">
+                <button class="edit-modal-button edit-modal-cancel" id="edit-modal-cancel">Cancel</button>
+                <button class="edit-modal-button edit-modal-save" id="edit-modal-save">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
     <footer class="footer">
-        <div class="footer-icon" onclick="window.location.href='index.html'">
+        <div class="footer-icon" onclick="showFeed()">
             <i class="fas fa-home"></i>
         </div>
         <div class="footer-icon" onclick="window.location.href='search.html'">
             <i class="fas fa-search"></i>
         </div>
         <div class="footer-icon" onclick="showNotifications()">
-    <i class="fas fa-bell"></i>
-    <span class="badge" id="notificationBadge" style="display: none;"></span>
-</div>
-        <div class="footer-icon" onclick="window.location.href='profile.html'">
+            <i class="fas fa-bell"></i>
+            <span class="badge" id="notificationBadge" style="display: none;"></span>
+        </div>
+        <div class="footer-icon" onclick="showProfile()">
             <i class="fas fa-user"></i>
         </div>
         <button class="create-post-btn" onclick="window.location.href='create-post.html'">
             <i class="fas fa-plus"></i>
         </button>
     </footer>
+
 
     <!-- Menu Page -->
     <div class="menu-page" id="menuPage">
@@ -2157,266 +2292,347 @@
         </div>
     </div>
 
-    <script>
-     // Notification System
-let notificationAlert = null;
-let notificationChannel = null;
-
-// Initialize notification system
-document.addEventListener('DOMContentLoaded', async () => {
-    await checkUsername();
-    setupNotificationListener();
-    loadUnreadNotificationsCount();
-});
-
-// Check if user is logged in and has username
-async function checkUsername() {
-    try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) throw error;
-        
-        if (user) {
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('username, full_name, avatar_url')
-                .eq('id', user.id)
-                .single();
-            
-            if (profileError || !profile || !profile.username) {
-                window.location.href = 'create-username.html';
-            } else {
-                setProfilePicture(profile);
-            }
-        }
-    } catch (error) {
-        console.error("Error checking username:", error);
-    }
-}
-
-// Set profile picture or initials
-function setProfilePicture(profile) {
-    const profilePic = document.getElementById('profilePic');
-    if (profile.avatar_url) {
-        profilePic.innerHTML = `<img src="${profile.avatar_url}" alt="Profile">`;
-    } else {
-        const initials = getInitials(profile.full_name || 'User');
-        profilePic.textContent = initials;
-        profilePic.classList.add('initials');
-    }
-}
-
-// Get initials from full name
-function getInitials(name) {
-    return name.split(' ')
-        .map(part => part.charAt(0).toUpperCase())
-        .join('')
-        .substring(0, 2);
-}
-
-// Notification badge and alert system
-async function loadUnreadNotificationsCount() {
-    try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-        
-        const { count, error } = await supabase
-            .from('notifications')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('read', false);
-        
-        if (error) throw error;
-        
-        const badge = document.getElementById('notificationBadge');
-        if (count > 0) {
-            badge.textContent = count > 9 ? '9+' : count;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Error loading notifications count:', error);
-    }
-}
-
-// Real-time notification listener
-async function setupNotificationListener() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) return;
-
-    // Unsubscribe from any existing channel
-    if (notificationChannel) {
-        supabase.removeChannel(notificationChannel);
-    }
-
-    notificationChannel = supabase
-        .channel('notifications')
-        .on(
-            'postgres_changes',
-            {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'notifications',
-                filter: `user_id=eq.${user.id}`
-            },
-            (payload) => {
-                loadUnreadNotificationsCount();
-                showNotificationAlert(payload.new.message || 'You have a new notification');
-            }
-        )
-        .subscribe();
-}
-
-// Show notification alert
-function showNotificationAlert(message) {
-    // Remove existing alert if any
-    if (notificationAlert) {
-        notificationAlert.remove();
-    }
     
-    // Create new alert element
-    notificationAlert = document.createElement('div');
-    notificationAlert.className = 'notification-alert';
-    notificationAlert.innerHTML = `
-        <div class="notification-alert-content">
-            <i class="fas fa-bell"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(notificationAlert);
-    
-    // Show alert with animation
-    setTimeout(() => {
-        notificationAlert.classList.add('show');
-    }, 10);
-    
-    // Hide after 3 seconds
-    setTimeout(() => {
-        notificationAlert.classList.remove('show');
-        setTimeout(() => {
-            notificationAlert.remove();
-            notificationAlert = null;
-        }, 300);
-    }, 3000);
-}
+   <script>
+    // Notification System
+    let notificationAlert = null;
+    let notificationChannel = null;
 
-// Notifications page functionality
-async function loadNotifications() {
-    try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-        
-        document.getElementById('notificationsSkeleton').style.display = 'block';
-        document.getElementById('notificationsContainer').style.display = 'none';
-        
-        const { data: notifications, error } = await supabase
-            .from('notifications')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        // Hide skeleton and show notifications
-        document.getElementById('notificationsSkeleton').style.display = 'none';
-        const container = document.getElementById('notificationsContainer');
-        container.style.display = 'block';
-        
-        // Render notifications
-        if (notifications.length === 0) {
-            container.innerHTML = '<div class="no-notifications">No notifications yet</div>';
-        } else {
-            container.innerHTML = notifications.map(notification => `
-                <div class="notification-item ${notification.read ? '' : 'unread'}">
-                    <div class="notification-avatar initials">
-                        ${getInitials(notification.sender_name || 'User')}
-                    </div>
-                    <div class="notification-content">
-                        <div class="notification-text">
-                            <strong>${notification.sender_name}</strong> ${notification.message}
-                        </div>
-                        <div class="notification-time">
-                            ${formatNotificationTime(notification.created_at)}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        // Mark notifications as read
-        await supabase
-            .from('notifications')
-            .update({ read: true })
-            .eq('user_id', user.id)
-            .eq('read', false);
-        
-        // Update badge
+    // Initialize notification system
+    document.addEventListener('DOMContentLoaded', async () => {
+        await checkUsername();
+        setupNotificationListener();
         loadUnreadNotificationsCount();
-    } catch (error) {
-        console.error('Error loading notifications:', error);
-        document.getElementById('notificationsSkeleton').style.display = 'none';
-        document.getElementById('notificationsContainer').innerHTML = 
-            '<div class="no-notifications">Error loading notifications</div>';
-        document.getElementById('notificationsContainer').style.display = 'block';
+        
+        // Initialize with feed visible
+        showFeed();
+    });
+
+    // Toggle between feed and profile views
+    function showFeed() {
+        document.getElementById('profileSection').style.display = 'none';
+        document.querySelector('.main-content').style.display = 'block';
+        document.querySelector('.top-header').style.display = 'flex';
+        document.title = 'X-Jamii';
+        
+        // Highlight active footer icon
+        document.querySelectorAll('.footer-icon').forEach(icon => {
+            icon.classList.remove('active');
+        });
+        document.querySelector('.footer-icon:nth-child(1)').classList.add('active');
     }
-}
 
-// Format notification time (e.g., "2 minutes ago")
-function formatNotificationTime(dateString) {
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    return date.toLocaleDateString();
-}
-
-// Toggle Menu
-function toggleMenu() {
-    const menuPage = document.getElementById('menuPage');
-    menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
-}
-
-// Show Notifications Page
-function showNotifications() {
-    const notificationsPage = document.getElementById('notificationsPage');
-    notificationsPage.style.display = 'block';
-    loadNotifications();
-}
-
-// Hide Notifications Page
-function hideNotifications() {
-    document.getElementById('notificationsPage').style.display = 'none';
-}
-
-// Logout function
-async function logout() {
-    try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        window.location.href = 'welcome.html';
-    } catch (error) {
-        console.error('Error logging out:', error);
-        alert('Failed to log out. Please try again.');
+    async function showProfile() {
+        document.querySelector('.main-content').style.display = 'none';
+        document.querySelector('.top-header').style.display = 'none';
+        document.getElementById('profileSection').style.display = 'block';
+        document.title = 'Profile | X-Jamii';
+        
+        // Highlight active footer icon
+        document.querySelectorAll('.footer-icon').forEach(icon => {
+            icon.classList.remove('active');
+        });
+        document.querySelector('.footer-icon:nth-child(4)').classList.add('active');
+        
+        // Load profile data if not already loaded
+        if (!document.getElementById('profile-content').style.display === 'block') {
+            await loadProfileData();
+        }
     }
-}
 
-// Dark Mode Toggle
-const darkModeToggle = document.getElementById('darkModeToggle');
-darkModeToggle.addEventListener('change', function() {
-    document.body.classList.toggle('dark-mode', this.checked);
-    localStorage.setItem('darkMode', this.checked);
-});
+    // Profile data loading function
+    async function loadProfileData() {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error) throw error;
+            
+            // Show skeleton loader
+            document.getElementById('skeleton-loader').style.display = 'flex';
+            document.getElementById('profile-content').style.display = 'none';
+            
+            // Simulate loading delay
+            setTimeout(async () => {
+                // Get profile data
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (profileError) throw profileError;
+                
+                // Update profile UI
+                const displayName = profile.full_name || profile.username || 'User';
+                document.getElementById('profile-avatar').textContent = displayName.charAt(0).toUpperCase();
+                document.getElementById('profile-username').textContent = `@${profile.username}`;
+                document.getElementById('header-title').textContent = displayName;
+                
+                // Hide skeleton and show content
+                document.getElementById('skeleton-loader').style.display = 'none';
+                document.getElementById('profile-content').style.display = 'block';
+                
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error loading profile:', error);
+            document.getElementById('skeleton-loader').style.display = 'none';
+            document.getElementById('profile-content').innerHTML = 
+                '<div class="error-message">Error loading profile</div>';
+            document.getElementById('profile-content').style.display = 'block';
+        }
+    }
 
-// Initialize dark mode preference
-if (localStorage.getItem('darkMode') === 'true') {
-    document.body.classList.add('dark-mode');
-    darkModeToggle.checked = true;
+    // Rest of your existing JavaScript code remains unchanged...
+    // Check if user is logged in and has username
+    async function checkUsername() {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error) throw error;
+            
+            if (user) {
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('username, full_name, avatar_url')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (profileError || !profile || !profile.username) {
+                    window.location.href = 'create-username.html';
+                } else {
+                    setProfilePicture(profile);
+                }
+            }
+        } catch (error) {
+            console.error("Error checking username:", error);
+        }
+    }
+
+    // Set profile picture or initials
+    function setProfilePicture(profile) {
+        const profilePic = document.getElementById('profilePic');
+        if (profile.avatar_url) {
+            profilePic.innerHTML = `<img src="${profile.avatar_url}" alt="Profile">`;
+        } else {
+            const initials = getInitials(profile.full_name || 'User');
+            profilePic.textContent = initials;
+            profilePic.classList.add('initials');
+        }
+    }
+
+    // Get initials from full name
+    function getInitials(name) {
+        return name.split(' ')
+            .map(part => part.charAt(0).toUpperCase())
+            .join('')
+            .substring(0, 2);
+    }
+
+    // Notification badge and alert system
+    async function loadUnreadNotificationsCount() {
+        try {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError) throw authError;
+            
+            const { count, error } = await supabase
+                .from('notifications')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id)
+                .eq('read', false);
+            
+            if (error) throw error;
+            
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error loading notifications count:', error);
+        }
+    }
+
+    // Real-time notification listener
+    async function setupNotificationListener() {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) return;
+
+        // Unsubscribe from any existing channel
+        if (notificationChannel) {
+            supabase.removeChannel(notificationChannel);
+        }
+
+        notificationChannel = supabase
+            .channel('notifications')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `user_id=eq.${user.id}`
+                },
+                (payload) => {
+                    loadUnreadNotificationsCount();
+                    showNotificationAlert(payload.new.message || 'You have a new notification');
+                }
+            )
+            .subscribe();
+    }
+
+    // Show notification alert
+    function showNotificationAlert(message) {
+        // Remove existing alert if any
+        if (notificationAlert) {
+            notificationAlert.remove();
+        }
+        
+        // Create new alert element
+        notificationAlert = document.createElement('div');
+        notificationAlert.className = 'notification-alert';
+        notificationAlert.innerHTML = `
+            <div class="notification-alert-content">
+                <i class="fas fa-bell"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notificationAlert);
+        
+        // Show alert with animation
+        setTimeout(() => {
+            notificationAlert.classList.add('show');
+        }, 10);
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            notificationAlert.classList.remove('show');
+            setTimeout(() => {
+                notificationAlert.remove();
+                notificationAlert = null;
+            }, 300);
+        }, 3000);
+    }
+
+    // Notifications page functionality
+    async function loadNotifications() {
+        try {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError) throw authError;
+            
+            document.getElementById('notificationsSkeleton').style.display = 'block';
+            document.getElementById('notificationsContainer').style.display = 'none';
+            
+            const { data: notifications, error } = await supabase
+                .from('notifications')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            
+            // Hide skeleton and show notifications
+            document.getElementById('notificationsSkeleton').style.display = 'none';
+            const container = document.getElementById('notificationsContainer');
+            container.style.display = 'block';
+            
+            // Render notifications
+            if (notifications.length === 0) {
+                container.innerHTML = '<div class="no-notifications">No notifications yet</div>';
+            } else {
+                container.innerHTML = notifications.map(notification => `
+                    <div class="notification-item ${notification.read ? '' : 'unread'}">
+                        <div class="notification-avatar initials">
+                            ${getInitials(notification.sender_name || 'User')}
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-text">
+                                <strong>${notification.sender_name}</strong> ${notification.message}
+                            </div>
+                            <div class="notification-time">
+                                ${formatNotificationTime(notification.created_at)}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Mark notifications as read
+            await supabase
+                .from('notifications')
+                .update({ read: true })
+                .eq('user_id', user.id)
+                .eq('read', false);
+            
+            // Update badge
+            loadUnreadNotificationsCount();
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            document.getElementById('notificationsSkeleton').style.display = 'none';
+            document.getElementById('notificationsContainer').innerHTML = 
+                '<div class="no-notifications">Error loading notifications</div>';
+            document.getElementById('notificationsContainer').style.display = 'block';
+        }
+    }
+
+    // Format notification time (e.g., "2 minutes ago")
+    function formatNotificationTime(dateString) {
+        const now = new Date();
+        const date = new Date(dateString);
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+        return date.toLocaleDateString();
+    }
+
+    // Toggle Menu
+    function toggleMenu() {
+        const menuPage = document.getElementById('menuPage');
+        menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Show Notifications Page
+    function showNotifications() {
+        const notificationsPage = document.getElementById('notificationsPage');
+        notificationsPage.style.display = 'block';
+        loadNotifications();
+    }
+
+    // Hide Notifications Page
+    function hideNotifications() {
+        document.getElementById('notificationsPage').style.display = 'none';
+    }
+
+    // Logout function
+    async function logout() {
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            window.location.href = 'welcome.html';
+        } catch (error) {
+            console.error('Error logging out:', error);
+            alert('Failed to log out. Please try again.');
+        }
+    }
+
+    // Dark Mode Toggle
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    darkModeToggle.addEventListener('change', function() {
+        document.body.classList.toggle('dark-mode', this.checked);
+        localStorage.setItem('darkMode', this.checked);
+    });
+
+    // Initialize dark mode preference
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+        darkModeToggle.checked = true;
+    }
 }
     </script>
+<script src="profile.js"></script>
     <script src="suggestions.js"></script>
     <!-- Notifications JS (standalone file) -->
     <script src="notifications.js"></script>
