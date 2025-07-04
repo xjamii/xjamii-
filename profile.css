@@ -134,13 +134,14 @@
             display: flex;
             gap: 80px; /* Increased gap between stats */
             margin-bottom: 20px; /* Increased margin */
-            justify-content: center;
+            justify-content: space-between;
         }
 
         .profile-stat {
             display: flex;
             flex-direction: column;
             align-items: center;
+            flex: 1;
         }
 
         .stat-number {
