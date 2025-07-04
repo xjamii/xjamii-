@@ -876,12 +876,23 @@ body {
     color: #000;
     font-weight: bold;
     font-size: 40px;
-    background-color: #fff;
+    
     border-radius: 50%;
 }
 
+.initials-avatar {
+    background-color: #f0f0f0;
+    box-shadow: 
+        5px 5px 10px #d9d9d9,
+        -5px -5px 10px #ffffff;
+    color: #4a5568;
+}
+
 .dark-mode .initials-avatar {
-    background-color: #fff;
+    background-color: #2d3748;
+    box-shadow: 
+        5px 5px 10px #1a202c,
+        -5px -5px 10px #4a5568;
 }
 
 /* Add margin-top to push the actions down below the stats */
