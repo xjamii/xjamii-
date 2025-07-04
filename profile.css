@@ -874,3 +874,13 @@ body {
 .dark-mode .initials-avatar {
     background-color: #1DA1F2;
 }
+
+/* Add margin-top to push the actions down below the stats */
+.profile-actions {
+    display: flex;
+    gap: 8px;
+    margin: 30px 0 20px 0; /* Added top margin (30px) to push it down */
+    justify-content: center;
+    width: 100%;
+    position: relative; /* Keep this if needed for the more-options dropdown */
+}
