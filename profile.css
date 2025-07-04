@@ -69,7 +69,7 @@ body {
     width: 100%;
 }
 
-/* Profile Info Section - TikTok Style */
+/* Profile Info Section */
 .profile-info {
     padding: 16px;
     position: relative;
@@ -79,7 +79,7 @@ body {
     text-align: center;
 }
 
-/* TikTok-style avatar */
+/* Avatar Styles */
 .profile-avatar-container {
     position: relative;
     width: 100px;
@@ -127,13 +127,13 @@ body {
     color: #e4e6eb;
 }
 
-/* Updated Profile Stats - TikTok Style */
+/* Updated Profile Stats - Fixed TikTok Style */
 .profile-stats {
     display: flex;
     justify-content: space-between;
     width: 100%;
     max-width: 300px;
-    margin: 0 auto 20px auto;
+    margin: 0 auto 15px auto;
     position: relative;
 }
 
@@ -141,24 +141,14 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 80px;
+    flex: 1;
 }
 
-/* Position each stat */
-.profile-stat:nth-child(1) { /* Posts */
-    position: absolute;
-    left: 0;
-}
-
-.profile-stat:nth-child(2) { /* Following - center */
-    position: absolute;
+/* Center the following stat */
+.profile-stat:nth-child(2) {
+    position: relative;
     left: 50%;
     transform: translateX(-50%);
-}
-
-.profile-stat:nth-child(3) { /* Followers */
-    position: absolute;
-    right: 0;
 }
 
 .stat-number {
@@ -180,13 +170,14 @@ body {
     color: #b0b3b8;
 }
 
+/* Profile Actions - Fixed spacing */
 .profile-actions {
     display: flex;
     gap: 8px;
-    margin-bottom: 20px;
+    margin: 20px 0;
     justify-content: center;
-    position: relative;
     width: 100%;
+    position: relative;
 }
 
 .action-button {
@@ -642,7 +633,7 @@ body {
     color: white;
 }
 
-/* Full Page Skeleton Loader */
+/* Skeleton Loader Styles */
 .skeleton-loader {
     position: fixed;
     top: 0;
