@@ -1,13 +1,16 @@
-/* Highlights Section */
+/* HIGHLIGHTS SECTION - STANDALONE CSS */
 .highlights-section {
     padding: 16px 0;
-    margin-top: 16px;
-    border-top: 1px solid #e5e5e5;
-    border-bottom: 1px solid #e5e5e5;
+    margin: 16px 0;
+    border-top: 1px solid #dbdbdb;
+    border-bottom: 1px solid #dbdbdb;
+    background: transparent;
+    width: 100%;
+    overflow: hidden;
 }
 
 .dark-mode .highlights-section {
-    border-color: #333;
+    border-color: #363636;
 }
 
 .highlights-container {
@@ -16,6 +19,7 @@
     padding: 0 16px;
     overflow-x: auto;
     scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
 }
 
 .highlights-container::-webkit-scrollbar {
@@ -28,50 +32,100 @@
     align-items: center;
     min-width: 80px;
     cursor: pointer;
+    position: relative;
 }
 
 .highlight-circle {
-    width: 80px;
-    height: 80px;
+    width: 78px;
+    height: 78px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(45deg, #ff0050, #00f2ea);
+    background: linear-gradient(45deg, #ffdc80, #fcaf45, #f77737, #f56040, #fd1d1d, #e1306c, #c13584, #833ab4);
     position: relative;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    padding: 2px;
+}
+
+.highlight-circle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    background: white;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.dark-mode .highlight-circle::after {
+    background: #000;
+}
+
+.highlight-circle img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    position: relative;
+    z-index: 2;
+    border: 2px solid white;
+}
+
+.dark-mode .highlight-circle img {
+    border-color: #000;
 }
 
 .highlight-item.add-new .highlight-circle {
     background: #f1f1f2;
-    border: 1px dashed #ccc;
+    border: 1px dashed #a8a8a8;
+    padding: 0;
+}
+
+.highlight-item.add-new .highlight-circle::after {
+    display: none;
 }
 
 .dark-mode .highlight-item.add-new .highlight-circle {
-    background: #2c2c2e;
-    border-color: #444;
+    background: #262626;
+    border-color: #555;
 }
 
-.highlight-circle img {
-    width: 74px;
-    height: 74px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid white;
+.highlight-item.add-new .highlight-circle i {
+    color: #262626;
+    font-size: 24px;
+    z-index: 2;
+}
+
+.dark-mode .highlight-item.add-new .highlight-circle i {
+    color: #f1f1f1;
 }
 
 .highlight-title {
     font-size: 12px;
-    color: #161823;
+    font-weight: 500;
+    color: #262626;
     text-align: center;
-    max-width: 80px;
+    max-width: 78px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.3;
 }
 
 .dark-mode .highlight-title {
-    color: #e4e6eb;
+    color: #f1f1f1;
+}
+
+.highlight-item.empty .highlight-circle {
+    background: #f1f1f2;
+    border: none;
+}
+
+.dark-mode .highlight-item.empty .highlight-circle {
+    background: #262626;
 }
 
 /* Highlight Modal Styles */
@@ -81,7 +135,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.8);
     z-index: 1000;
     display: none;
     align-items: center;
@@ -91,25 +145,50 @@
 .highlight-modal-content {
     background-color: #fff;
     width: 90%;
-    max-width: 500px;
+    max-width: 400px;
     border-radius: 12px;
     overflow: hidden;
+    animation: modalFadeIn 0.3s ease-out;
 }
 
 .dark-mode .highlight-modal-content {
-    background-color: #242526;
+    background-color: #262626;
 }
 
 .highlight-modal-header {
-    padding: 16px;
+    padding: 14px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid #dbdbdb;
 }
 
 .dark-mode .highlight-modal-header {
-    border-bottom-color: #3e4042;
+    border-bottom-color: #363636;
+}
+
+.highlight-modal-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: #262626;
+}
+
+.dark-mode .highlight-modal-title {
+    color: #f1f1f1;
+}
+
+.highlight-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #262626;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.dark-mode .highlight-modal-close {
+    color: #f1f1f1;
 }
 
 .highlight-modal-body {
@@ -119,15 +198,24 @@
 .highlight-preview {
     width: 100%;
     height: 300px;
-    background-color: #f1f1f2;
+    background-color: #fafafa;
     border-radius: 8px;
     margin-bottom: 16px;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: relative;
 }
 
 .dark-mode .highlight-preview {
-    background-color: #2c2c2e;
+    background-color: #121212;
+}
+
+.highlight-preview.empty::before {
+    content: 'No image selected';
+    color: #8e8e8e;
+    font-size: 14px;
 }
 
 .highlight-preview img {
@@ -136,16 +224,100 @@
     object-fit: cover;
 }
 
-.highlight-caption {
+.highlight-upload-btn {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #e5e5e5;
+    padding: 12px;
+    background-color: #0095f6;
+    color: white;
+    border: none;
     border-radius: 8px;
-    margin-bottom: 16px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 8px;
+    text-align: center;
 }
 
-.dark-mode .highlight-caption {
-    border-color: #3e4042;
-    background-color: #3a3b3c;
-    color: #e4e6eb;
+.highlight-upload-btn:hover {
+    background-color: #0080e6;
+}
+
+.highlight-upload-input {
+    display: none;
+}
+
+.highlight-form-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    background-color: #fafafa;
+}
+
+.dark-mode .highlight-form-input {
+    background-color: #121212;
+    border-color: #363636;
+    color: #f1f1f1;
+}
+
+.highlight-form-input::placeholder {
+    color: #8e8e8e;
+}
+
+.highlight-save-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #0095f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 8px;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.highlight-save-btn.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Empty State Placeholders */
+.highlight-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+}
+
+.highlight-placeholder-circle {
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    background-color: #f1f1f2;
+    margin-bottom: 6px;
+}
+
+.dark-mode .highlight-placeholder-circle {
+    background-color: #363636;
+}
+
+.highlight-placeholder-title {
+    width: 60px;
+    height: 12px;
+    background-color: #f1f1f2;
+    border-radius: 4px;
+}
+
+.dark-mode .highlight-placeholder-title {
+    background-color: #363636;
 }
