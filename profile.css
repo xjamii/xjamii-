@@ -132,7 +132,7 @@
 
         .profile-stats {
             display: flex;
-            gap: 80px; /* Increased gap between stats */
+            gap: 40px; /* Increased gap between stats */
             margin-bottom: 20px; /* Increased margin */
             justify-content: center;
         }
