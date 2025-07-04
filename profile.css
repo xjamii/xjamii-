@@ -873,15 +873,15 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: #000;
     font-weight: bold;
     font-size: 40px;
-    background-color: #1DA1F2;
+    background-color: #fff;
     border-radius: 50%;
 }
 
 .dark-mode .initials-avatar {
-    background-color: #1DA1F2;
+    background-color: #fff;
 }
 
 /* Add margin-top to push the actions down below the stats */
