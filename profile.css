@@ -54,7 +54,7 @@ body {
 }
 
 .header-button {
-    color: #161823;
+    color: #657786;
     font-size: 20px;
     text-decoration: none;
 }
@@ -120,7 +120,7 @@ body {
     font-weight: 700;
     margin-bottom: 12px;
     text-align: center;
-    color: #161823;
+    color: #657786;
 }
 
 .dark-mode .profile-username {
@@ -202,7 +202,7 @@ body {
 
 .edit-profile-button {
     background-color: #f0f0f0;
-    color: #161823;
+    color: #657786;
     width: 100%;
     max-width: 200px;
 }
@@ -214,7 +214,7 @@ body {
 
 .more-button {
     background-color: #f0f0f0;
-    color: #161823;
+    color: #657786;
     width: 40px;
     display: flex;
     align-items: center;
@@ -897,7 +897,7 @@ body {
 /* Add this to your CSS */
 .share-profile-button {
     background-color: #f0f0f0;
-    color: #161823;
+    color: #657786;
     width: 40px;
     display: flex;
     align-items: center;
