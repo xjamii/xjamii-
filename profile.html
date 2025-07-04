@@ -63,9 +63,16 @@
             color: #e4e6eb;
         }
 
+        .header-back {
+            position: absolute;
+            left: 20px;
+        }
+
         .header-actions {
             position: absolute;
             right: 20px;
+            display: flex;
+            gap: 15px;
         }
 
         .header-button {
@@ -197,16 +204,32 @@
             font-size: 14px;
         }
 
-        .edit-profile-button {
-            background-color: #f0f0f0;
-            color: #000;
+        .follow-button {
+            background-color: #000;
+            color: #fff;
             width: 100%;
             max-width: 200px;
         }
 
-        .dark-mode .edit-profile-button {
+        .dark-mode .follow-button {
+            background-color: #fff;
+            color: #000;
+        }
+
+        .message-button {
+            background-color: #f0f0f0;
+            color: #000;
+            width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .dark-mode .message-button {
             background-color: #3a3b3c;
-            color: #fff;
+            color: #e4e6eb;
         }
 
         .more-button {
@@ -386,257 +409,6 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-
-        /* Bottom Navigation */
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background-color: #fff;
-            border-top: 1px solid #e5e5e5;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 1000;
-            padding: 0 20px;
-        }
-
-        .dark-mode .footer {
-            background-color: #000;
-            border-top-color: #333;
-        }
-
-        .footer-icon {
-            color: #888;
-            font-size: 22px;
-            cursor: pointer;
-            transition: color 0.2s;
-            flex: 1;
-            display: flex;
-            justify-content: center;
-        }
-
-        .dark-mode .footer-icon {
-            color: #888;
-        }
-
-        .footer-icon:hover {
-            color: #1da1f2;
-        }
-
-        .footer-icon.active {
-            color: #1da1f2;
-        }
-
-        .create-post-btn {
-            position: absolute;
-            left: 50%;
-            top: -30px;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #fe2c55;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(254, 44, 85, 0.3);
-            border: none;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .create-post-btn:hover {
-            background-color: #e0254a;
-        }
-
-        /* Edit Modal */
-        .edit-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .edit-modal.show {
-            display: flex;
-        }
-
-        .edit-modal-content {
-            background-color: #fff;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 12px;
-            overflow: hidden;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .dark-mode .edit-modal-content {
-            background-color: #242526;
-        }
-
-        .edit-modal-header {
-            padding: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .dark-mode .edit-modal-header {
-            border-bottom-color: #3e4042;
-        }
-
-        .edit-modal-title {
-            font-weight: 700;
-            font-size: 18px;
-            color: #000;
-        }
-
-        .dark-mode .edit-modal-title {
-            color: #fff;
-        }
-
-        .edit-modal-close {
-            background: none;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            color: #000;
-        }
-
-        .dark-mode .edit-modal-close {
-            color: #fff;
-        }
-
-        .edit-modal-body {
-            padding: 16px;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #000;
-        }
-
-        .dark-mode .form-label {
-            color: #fff;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #e5e5e5;
-            border-radius: 8px;
-            font-size: 16px;
-            background-color: #fff;
-            color: #000;
-        }
-
-        .dark-mode .form-input {
-            background-color: #3a3b3c;
-            border-color: #3e4042;
-            color: #e4e6eb;
-        }
-
-        .edit-avatar-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .edit-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 8px;
-        }
-
-        .edit-avatar-button {
-            background-color: #f0f0f0;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .dark-mode .edit-avatar-button {
-            background-color: #3a3b3c;
-            color: #e4e6eb;
-        }
-
-        .copy-profile-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background-color: #f0f0f0;
-            padding: 8px 16px;
-            border-radius: 8px;
-            margin-top: 8px;
-            cursor: pointer;
-            color: #000;
-        }
-
-        .dark-mode .copy-profile-link {
-            background-color: #3a3b3c;
-            color: #fff;
-        }
-
-        .edit-modal-footer {
-            padding: 16px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            border-top: 1px solid #e5e5e5;
-        }
-
-        .dark-mode .edit-modal-footer {
-            border-top-color: #3e4042;
-        }
-
-        .edit-modal-button {
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-        }
-
-        .edit-modal-cancel {
-            background-color: #f0f0f0;
-            color: #000;
-        }
-
-        .dark-mode .edit-modal-cancel {
-            background-color: #3a3b3c;
-            color: #e4e6eb;
-        }
-
-        .edit-modal-save {
-            background-color: #00B0FF;
-            color: white;
         }
 
         /* Full Page Skeleton Loader */
@@ -885,6 +657,11 @@
 <body>
     <!-- Header -->
     <header class="profile-header">
+        <div class="header-back">
+            <a href="index.html" class="header-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        </div>
         <div class="header-title" id="header-title">Profile</div>
         <div class="header-actions">
             <a href="search.html" class="header-button" id="search-button">
@@ -964,9 +741,25 @@
                 </div>
 
                 <div class="profile-actions">
-                    <button class="action-button edit-profile-button" id="edit-profile-button">
-                        Edit Profile
+                    <button class="action-button follow-button" id="follow-button">
+                        Follow
                     </button>
+                    <button class="message-button" id="message-button">
+                        <i class="fas fa-envelope"></i>
+                    </button>
+                    <button class="more-button" id="more-button">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                    <div class="more-options" id="more-options">
+                        <div class="more-option">
+                            <i class="fas fa-ban"></i>
+                            <span>Block</span>
+                        </div>
+                        <div class="more-option">
+                            <i class="fas fa-flag"></i>
+                            <span>Report</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="profile-category" id="profile-category">No category</div>
@@ -990,70 +783,6 @@
         </div>
     </div>
 
-    <!-- Bottom Navigation -->
-    <footer class="footer">
-        <div class="footer-icon" onclick="window.location.href='index.html'">
-            <i class="fas fa-home"></i>
-        </div>
-        <div class="footer-icon" onclick="window.location.href='search.html'">
-            <i class="fas fa-search"></i>
-        </div>
-        <div class="footer-icon" onclick="window.location.href='notifications.html'">
-            <i class="fas fa-bell"></i>
-        </div>
-        <div class="footer-icon" onclick="window.location.href='profile.html'">
-            <i class="fas fa-user"></i>
-        </div>
-        <button class="create-post-btn" onclick="window.location.href='create-post.html'">
-            <i class="fas fa-plus"></i>
-        </button>
-    </footer>
-
-    <!-- Edit Profile Modal -->
-    <div class="edit-modal" id="edit-modal">
-        <div class="edit-modal-content">
-            <div class="edit-modal-header">
-                <div class="edit-modal-title">Edit Profile</div>
-                <button class="edit-modal-close" id="edit-modal-close">&times;</button>
-            </div>
-            <div class="edit-modal-body">
-                <div class="edit-avatar-container">
-                    <div id="edit-avatar-preview" class="initials-avatar"></div>
-                    <button class="edit-avatar-button" id="edit-avatar-button">Change Photo</button>
-                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
-                </div>
-                <div class="form-group">
-                    <label for="edit-name" class="form-label">Name</label>
-                    <input type="text" id="edit-name" class="form-input" placeholder="Your name">
-                </div>
-                <div class="form-group">
-                    <label for="edit-username" class="form-label">Username</label>
-                    <input type="text" id="edit-username" class="form-input" placeholder="username">
-                </div>
-                <div class="form-group">
-                    <label for="edit-category" class="form-label">Category</label>
-                    <input type="text" id="edit-category" class="form-input" placeholder="e.g. Photographer, Artist">
-                </div>
-                <div class="form-group">
-                    <label for="edit-bio" class="form-label">Bio</label>
-                    <textarea id="edit-bio" class="form-input" rows="3" placeholder="Tell about yourself"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="edit-website" class="form-label">Website</label>
-                    <input type="url" id="edit-website" class="form-input" placeholder="https://example.com">
-                </div>
-                <div class="copy-profile-link" id="copy-profile-link">
-                    <i class="fas fa-link"></i>
-                    <span>Copy Profile Link</span>
-                </div>
-            </div>
-            <div class="edit-modal-footer">
-                <button class="edit-modal-button edit-modal-cancel" id="edit-modal-cancel">Cancel</button>
-                <button class="edit-modal-button edit-modal-save" id="edit-modal-save">Save Changes</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         // DOM Elements
         const skeletonLoader = document.getElementById('skeleton-loader');
@@ -1067,23 +796,13 @@
         const followerCount = document.getElementById('follower-count');
         const followingCount = document.getElementById('following-count');
         const postCount = document.getElementById('post-count');
-        const editProfileButton = document.getElementById('edit-profile-button');
+        const followButton = document.getElementById('follow-button');
+        const messageButton = document.getElementById('message-button');
+        const moreButton = document.getElementById('more-button');
+        const moreOptions = document.getElementById('more-options');
         const postsGrid = document.getElementById('posts-grid');
         const likedPostsGrid = document.getElementById('liked-posts-grid');
         const headerTitle = document.getElementById('header-title');
-        const editModal = document.getElementById('edit-modal');
-        const editModalClose = document.getElementById('edit-modal-close');
-        const editModalCancel = document.getElementById('edit-modal-cancel');
-        const editModalSave = document.getElementById('edit-modal-save');
-        const editAvatarPreview = document.getElementById('edit-avatar-preview');
-        const editAvatarButton = document.getElementById('edit-avatar-button');
-        const avatarUpload = document.getElementById('avatar-upload');
-        const editName = document.getElementById('edit-name');
-        const editUsername = document.getElementById('edit-username');
-        const editCategory = document.getElementById('edit-category');
-        const editBio = document.getElementById('edit-bio');
-        const editWebsite = document.getElementById('edit-website');
-        const copyProfileLink = document.getElementById('copy-profile-link');
         const postTabs = document.querySelectorAll('.post-tab');
 
         // State variables
@@ -1091,6 +810,7 @@
         let profileData = null;
         let userPosts = [];
         let likedPosts = [];
+        let isFollowing = false;
 
         // Initialize the page
         async function init() {
@@ -1110,8 +830,12 @@
                 
                 currentUser = user;
                 
-                // Load profile data (in a real app, you'd get the profile ID from URL params)
-                await loadProfileData(user.id);
+                // Get profile ID from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const profileId = urlParams.get('id') || user.id;
+                
+                // Load profile data
+                await loadProfileData(profileId);
                 
                 // Set up event listeners
                 setupEventListeners();
@@ -1140,9 +864,46 @@
                 
                 profileData = profile;
                 
-                // Get stats (in a real app, you'd have these in your database)
-                const followers = profile.followers || 0;
-                const following = profile.following || 0;
+                // Check if current user is following this profile
+                if (currentUser.id !== profileId) {
+                    const { data: follow, error: followError } = await supabase
+                        .from('followers')
+                        .select('*')
+                        .eq('follower_id', currentUser.id)
+                        .eq('following_id', profileId)
+                        .single();
+                    
+                    isFollowing = !!follow && !followError;
+                    
+                    // Update follow button
+                    if (isFollowing) {
+                        followButton.textContent = 'Following';
+                        followButton.style.backgroundColor = '#f0f0f0';
+                        followButton.style.color = '#000';
+                        
+                        if (document.body.classList.contains('dark-mode')) {
+                            followButton.style.backgroundColor = '#3a3b3c';
+                            followButton.style.color = '#e4e6eb';
+                        }
+                    }
+                } else {
+                    // Hide follow button if it's the current user's profile
+                    followButton.style.display = 'none';
+                }
+                
+                // Get stats
+                const { count: followersCount, error: followersError } = await supabase
+                    .from('followers')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('following_id', profileId);
+                
+                const { count: followingCount, error: followingError } = await supabase
+                    .from('followers')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('follower_id', profileId);
+                
+                const followers = followersError ? 0 : followersCount;
+                const following = followingError ? 0 : followingCount;
                 
                 // Get real post count
                 const { count: postsCount, error: postsError } = await supabase
@@ -1325,18 +1086,16 @@
                 profileBanner.style.backgroundImage = `url(${profile.banner_url})`;
                 profileBanner.style.backgroundSize = 'cover';
                 profileBanner.style.backgroundPosition = 'center';
+                profileBanner.style.height = '150px';
             }
             
             // Set avatar based on username's first letter
             const displayName = profile.full_name || profile.username || 'User';
             const firstLetter = displayName.charAt(0).toUpperCase();
             profileAvatar.textContent = firstLetter;
-            editAvatarPreview.textContent = firstLetter;
             
             // Set names
             profileUsername.textContent = `@${profile.username}`;
-            editName.value = profile.full_name || '';
-            editUsername.value = profile.username || '';
             
             // Update header title
             headerTitle.textContent = profile.full_name || profile.username;
@@ -1349,7 +1108,6 @@
                 profileCategory.style.color = '#777';
                 profileCategory.style.fontStyle = 'italic';
             }
-            editCategory.value = profile.category || '';
             
             // Set bio
             if (profile.bio) {
@@ -1358,7 +1116,6 @@
             } else {
                 profileBio.style.display = 'none';
             }
-            editBio.value = profile.bio || '';
             
             // Set website
             if (profile.website) {
@@ -1368,7 +1125,6 @@
             } else {
                 profileWebsite.style.display = 'none';
             }
-            editWebsite.value = profile.website || '';
             
             // Set stats
             followerCount.textContent = formatNumber(followers);
@@ -1421,118 +1177,87 @@
             }
         }
 
+        // Toggle follow status
+        async function toggleFollow() {
+            if (!profileData || currentUser.id === profileData.id) return;
+            
+            try {
+                if (isFollowing) {
+                    // Unfollow
+                    const { error } = await supabase
+                        .from('followers')
+                        .delete()
+                        .eq('follower_id', currentUser.id)
+                        .eq('following_id', profileData.id);
+                    
+                    if (error) throw error;
+                    
+                    isFollowing = false;
+                    followButton.textContent = 'Follow';
+                    followButton.style.backgroundColor = '#000';
+                    followButton.style.color = '#fff';
+                    
+                    if (document.body.classList.contains('dark-mode')) {
+                        followButton.style.backgroundColor = '#fff';
+                        followButton.style.color = '#000';
+                    }
+                    
+                    // Update follower count
+                    followerCount.textContent = formatNumber(parseInt(followerCount.textContent) - 1);
+                } else {
+                    // Follow
+                    const { error } = await supabase
+                        .from('followers')
+                        .insert([
+                            { follower_id: currentUser.id, following_id: profileData.id }
+                        ]);
+                    
+                    if (error) throw error;
+                    
+                    isFollowing = true;
+                    followButton.textContent = 'Following';
+                    followButton.style.backgroundColor = '#f0f0f0';
+                    followButton.style.color = '#000';
+                    
+                    if (document.body.classList.contains('dark-mode')) {
+                        followButton.style.backgroundColor = '#3a3b3c';
+                        followButton.style.color = '#e4e6eb';
+                    }
+                    
+                    // Update follower count
+                    followerCount.textContent = formatNumber(parseInt(followerCount.textContent) + 1);
+                }
+            } catch (error) {
+                console.error("Error toggling follow:", error);
+                alert("Failed to update follow status. Please try again.");
+            }
+        }
+
         // Set up event listeners
         function setupEventListeners() {
-            // Edit profile button
-            editProfileButton.addEventListener('click', () => {
-                editModal.classList.add('show');
+            // Follow button
+            followButton.addEventListener('click', toggleFollow);
+            
+            // Message button
+            messageButton.addEventListener('click', () => {
+                // In a real app, this would open a chat with the user
+                alert(`Messaging ${profileData.username}`);
             });
             
-            // Close modal buttons
-            editModalClose.addEventListener('click', () => {
-                editModal.classList.remove('show');
+            // More options button
+            moreButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                moreOptions.classList.toggle('show');
             });
             
-            editModalCancel.addEventListener('click', () => {
-                editModal.classList.remove('show');
+            // Close more options when clicking outside
+            document.addEventListener('click', () => {
+                moreOptions.classList.remove('show');
             });
             
-            // Save changes button
-            editModalSave.addEventListener('click', async () => {
-                // In a real app, you would save the changes to the database here
-                const newName = editName.value.trim();
-                const newUsername = editUsername.value.trim();
-                const newCategory = editCategory.value.trim();
-                const newBio = editBio.value.trim();
-                const newWebsite = editWebsite.value.trim();
-                
-                if (newName) {
-                    headerTitle.textContent = newName;
-                }
-                
-                if (newUsername) {
-                    profileUsername.textContent = `@${newUsername}`;
-                }
-                
-                if (newCategory) {
-                    profileCategory.textContent = newCategory;
-                    profileCategory.style.color = '';
-                    profileCategory.style.fontStyle = '';
-                } else {
-                    profileCategory.textContent = "No category";
-                    profileCategory.style.color = '#777';
-                    profileCategory.style.fontStyle = 'italic';
-                }
-                
-                if (newBio) {
-                    profileBio.textContent = newBio;
-                    profileBio.style.display = 'block';
-                    profileBio.style.color = '';
-                    profileBio.style.fontStyle = '';
-                } else {
-                    profileBio.style.display = 'none';
-                }
-                
-                if (newWebsite) {
-                    profileWebsite.href = newWebsite;
-                    profileWebsite.textContent = newWebsite.replace(/^https?:\/\//, '');
-                    profileWebsite.style.display = 'inline';
-                } else {
-                    profileWebsite.style.display = 'none';
-                }
-                
-                editModal.classList.remove('show');
-                alert('Profile updated successfully!');
-            });
-            
-            // Change avatar button
-            editAvatarButton.addEventListener('click', () => {
-                avatarUpload.click();
-            });
-            
-            // Avatar upload
-            avatarUpload.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        // In a real app, you would upload this to storage
-                        // For now, we'll just update the preview
-                        const img = document.createElement('img');
-                        img.src = event.target.result;
-                        img.className = 'profile-avatar';
-                        img.alt = 'Profile Avatar';
-                        
-                        // Replace initials avatar with image
-                        if (profileAvatar.classList.contains('initials-avatar')) {
-                            profileAvatar.replaceWith(img);
-                            profileAvatar = img;
-                        } else {
-                            profileAvatar.src = event.target.result;
-                        }
-                        
-                        // Update edit modal preview
-                        if (editAvatarPreview.classList.contains('initials-avatar')) {
-                            const imgPreview = document.createElement('img');
-                            imgPreview.src = event.target.result;
-                            imgPreview.className = 'edit-avatar';
-                            imgPreview.alt = 'Profile Avatar';
-                            editAvatarPreview.replaceWith(imgPreview);
-                            editAvatarPreview = imgPreview;
-                        } else {
-                            editAvatarPreview.src = event.target.result;
-                        }
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-            
-            // Copy profile link
-            copyProfileLink.addEventListener('click', () => {
-                const profileLink = `${window.location.origin}/profile.html?user=${profileData.username}`;
-                navigator.clipboard.writeText(profileLink).then(() => {
-                    alert('Profile link copied to clipboard!');
-                });
+            // Prevent more options from closing when clicking inside
+            moreOptions.addEventListener('click', (e) => {
+                e.stopPropagation();
             });
             
             // Post tabs
