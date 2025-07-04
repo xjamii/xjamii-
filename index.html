@@ -9,7 +9,6 @@
     <head>
   <!-- Other meta tags -->
 <link rel="stylesheet" href="profile.css">
-<link rel="stylesheet" href="hinglights.css">
 
   
   <!-- Supabase -->
@@ -2035,108 +2034,135 @@
             </div>
 
             <!-- Actual Profile Content -->
-            <div id="profile-content" style="display: none;">
-                <div class="profile-banner" id="profile-banner"></div>
-                <div class="profile-info">
-                    <div class="profile-avatar-container">
-                        <div id="profile-avatar" class="initials-avatar"></div>
-                    </div>
-                    <div class="profile-username" id="profile-username">@username</div>
-                    <div class="profile-stats">
-    <div class="profile-stat">
-        <span class="stat-number" id="likes-count">0</span>
-        <span class="stat-label">Likes</span>
-    </div>
-    <div class="profile-stat">
-        <span class="stat-number" id="following-count">0</span>
-        <span class="stat-label">Following</span>
-    </div>
-    <div class="profile-stat">
-        <span class="stat-number" id="follower-count">0</span>
-        <span class="stat-label">Followers</span>
-    </div>
-</div>
-<div class="profile-actions">
-    <button class="action-button edit-profile-button" id="edit-profile-button">
-        Edit Profile
-    </button>
-    <button class="action-button share-profile-button" id="share-profile-button">
-        <i class="fas fa-share-nodes"></i> <!-- TikTok-like share icon -->
-    </button>
-</div>
-                    <div class="profile-category" id="profile-category">No category</div>
-                    <div class="profile-bio" id="profile-bio"></div>
-                    <a href="#" class="profile-website" id="profile-website" target="_blank" style="display: none;"></a>
-                </div>
-
-                <!-- Add this after the profile-website link -->
-<div class="highlights-section">
-    <div class="highlights-container" id="highlights-container">
-        <!-- Empty state - will be populated via JS -->
-        <div class="highlight-item add-new">
-            <div class="highlight-circle">
-                <i class="fas fa-plus"></i>
-            </div>
-            <span class="highlight-title">New</span>
+<div id="profile-content" style="display: none;">
+    <div class="profile-banner" id="profile-banner"></div>
+    <div class="profile-info">
+        <div class="profile-avatar-container">
+            <div id="profile-avatar" class="initials-avatar"></div>
         </div>
-    </div>
-</div>
-                <div class="posts-section">
-                    <div class="posts-tabs">
-                        <div class="post-tab active" data-tab="posts"><i class="fas fa-table-cells-large"></i></div>
-                        <div class="post-tab" data-tab="liked"><i class="fas fa-heart"></i></div>
+        <div class="profile-username" id="profile-username">@username</div>
+        <div class="profile-stats">
+            <div class="profile-stat">
+                <span class="stat-number" id="likes-count">0</span>
+                <span class="stat-label">Likes</span>
+            </div>
+            <div class="profile-stat">
+                <span class="stat-number" id="following-count">0</span>
+                <span class="stat-label">Following</span>
+            </div>
+            <div class="profile-stat">
+                <span class="stat-number" id="follower-count">0</span>
+                <span class="stat-label">Followers</span>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <button class="action-button edit-profile-button" id="edit-profile-button">
+                Edit Profile
+            </button>
+            <button class="action-button share-profile-button" id="share-profile-button">
+                <i class="fas fa-share-nodes"></i>
+            </button>
+        </div>
+        <div class="profile-category" id="profile-category">No category</div>
+        <div class="profile-bio" id="profile-bio"></div>
+        <a href="#" class="profile-website" id="profile-website" target="_blank" style="display: none;"></a>
+        
+        <!-- Highlights Section Added Here -->
+        <div class="highlights-section">
+            <div class="highlights-container" id="highlights-container">
+                <!-- Empty state - will be populated via JS -->
+                <div class="highlight-item add-new">
+                    <div class="highlight-circle">
+                        <i class="fas fa-plus"></i>
                     </div>
-                    <div class="posts-grid" id="posts-grid"></div>
-                    <div class="posts-grid" id="liked-posts-grid" style="display: none;"></div>
+                    <span class="highlight-title">New</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Profile Modal -->
-    <div class="edit-modal" id="edit-modal">
-        <div class="edit-modal-content">
-            <div class="edit-modal-header">
-                <div class="edit-modal-title">Edit Profile</div>
-                <button class="edit-modal-close" id="edit-modal-close">&times;</button>
+    <div class="posts-section">
+        <div class="posts-tabs">
+            <div class="post-tab active" data-tab="posts"><i class="fas fa-table-cells-large"></i></div>
+            <div class="post-tab" data-tab="liked"><i class="fas fa-heart"></i></div>
+        </div>
+        <div class="posts-grid" id="posts-grid"></div>
+        <div class="posts-grid" id="liked-posts-grid" style="display: none;"></div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="edit-modal" id="edit-modal">
+    <div class="edit-modal-content">
+        <div class="edit-modal-header">
+            <div class="edit-modal-title">Edit Profile</div>
+            <button class="edit-modal-close" id="edit-modal-close">&times;</button>
+        </div>
+        <div class="edit-modal-body">
+            <div class="edit-avatar-container">
+                <div id="edit-avatar-preview" class="initials-avatar"></div>
+                <button class="edit-avatar-button" id="edit-avatar-button">Change Photo</button>
+                <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
             </div>
-            <div class="edit-modal-body">
-                <div class="edit-avatar-container">
-                    <div id="edit-avatar-preview" class="initials-avatar"></div>
-                    <button class="edit-avatar-button" id="edit-avatar-button">Change Photo</button>
-                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
-                </div>
-                <div class="form-group">
-                    <label for="edit-name" class="form-label">Name</label>
-                    <input type="text" id="edit-name" class="form-input" placeholder="Your name">
-                </div>
-                <div class="form-group">
-                    <label for="edit-username" class="form-label">Username</label>
-                    <input type="text" id="edit-username" class="form-input" placeholder="username">
-                </div>
-                <div class="form-group">
-                    <label for="edit-category" class="form-label">Category</label>
-                    <input type="text" id="edit-category" class="form-input" placeholder="e.g. Photographer, Artist">
-                </div>
-                <div class="form-group">
-                    <label for="edit-bio" class="form-label">Bio</label>
-                    <textarea id="edit-bio" class="form-input" rows="3" placeholder="Tell about yourself"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="edit-website" class="form-label">Website</label>
-                    <input type="url" id="edit-website" class="form-input" placeholder="https://example.com">
-                </div>
-                <div class="copy-profile-link" id="copy-profile-link">
-                    <i class="fas fa-link"></i>
-                    <span>Copy Profile Link</span>
-                </div>
+            <div class="form-group">
+                <label for="edit-name" class="form-label">Name</label>
+                <input type="text" id="edit-name" class="form-input" placeholder="Your name">
             </div>
-            <div class="edit-modal-footer">
-                <button class="edit-modal-button edit-modal-cancel" id="edit-modal-cancel">Cancel</button>
-                <button class="edit-modal-button edit-modal-save" id="edit-modal-save">Save Changes</button>
+            <div class="form-group">
+                <label for="edit-username" class="form-label">Username</label>
+                <input type="text" id="edit-username" class="form-input" placeholder="username">
+            </div>
+            <div class="form-group">
+                <label for="edit-category" class="form-label">Category</label>
+                <input type="text" id="edit-category" class="form-input" placeholder="e.g. Photographer, Artist">
+            </div>
+            <div class="form-group">
+                <label for="edit-bio" class="form-label">Bio</label>
+                <textarea id="edit-bio" class="form-input" rows="3" placeholder="Tell about yourself"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="edit-website" class="form-label">Website</label>
+                <input type="url" id="edit-website" class="form-input" placeholder="https://example.com">
+            </div>
+            <div class="copy-profile-link" id="copy-profile-link">
+                <i class="fas fa-link"></i>
+                <span>Copy Profile Link</span>
             </div>
         </div>
+        <div class="edit-modal-footer">
+            <button class="edit-modal-button edit-modal-cancel" id="edit-modal-cancel">Cancel</button>
+            <button class="edit-modal-button edit-modal-save" id="edit-modal-save">Save Changes</button>
+        </div>
     </div>
+</div>
+
+<!-- New Highlight Creation Modal -->
+<div class="highlight-modal" id="highlight-modal" style="display: none;">
+    <div class="highlight-modal-content">
+        <div class="highlight-modal-header">
+            <div class="highlight-modal-title">New Highlight</div>
+            <button class="highlight-modal-close">&times;</button>
+        </div>
+        <div class="highlight-modal-body">
+            <div class="highlight-preview" id="highlight-preview"></div>
+            <div class="form-group">
+                <label for="highlight-name" class="form-label">Highlight Name</label>
+                <input type="text" id="highlight-name" class="form-input" placeholder="Give your highlight a name">
+            </div>
+            <div class="form-group">
+                <label for="highlight-caption" class="form-label">Caption (Optional)</label>
+                <textarea id="highlight-caption" class="form-input" rows="2" placeholder="Add a caption"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="highlight-link" class="form-label">Link (Optional)</label>
+                <input type="url" id="highlight-link" class="form-input" placeholder="https://example.com">
+            </div>
+            <button class="action-button" id="upload-highlight-btn">Select Photo</button>
+            <input type="file" id="highlight-upload" accept="image/*" style="display: none;">
+            <button class="action-button edit-modal-save" id="save-highlight-btn" style="display: none; margin-top: 16px;">Create Highlight</button>
+        </div>
+    </div>
+</div>
 
     <!-- Bottom Navigation -->
     <footer class="footer">
@@ -2638,7 +2664,7 @@ if (localStorage.getItem('darkMode') === 'true') {
 
     </script>
 <script src="profile.js"></script>
-    <script src="hinglights.js"></script>
+    <script src="suggestions.js"></script>
     <!-- Notifications JS (standalone file) -->
     <script src="notifications.js"></script>
     <script src="posts.js"></script>
