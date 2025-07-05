@@ -312,19 +312,16 @@ async function handlePostChange(payload) {
 
 // Handle comment changes in real-time
 function handleCommentChange(payload) {
-    // Implement comment real-time updates as needed
     console.log('Comment change:', payload);
 }
 
 // Handle follow changes in real-time
 function handleFollowChange(payload) {
-    // Implement follow real-time updates as needed
     console.log('Follow change:', payload);
 }
 
 // Handle report changes in real-time
 function handleReportChange(payload) {
-    // Implement report real-time updates as needed
     console.log('Report change:', payload);
 }
 
@@ -432,22 +429,18 @@ function createPostElement(post, currentUserId) {
         }
     }
 
+    // Media content rendering
     const mediaContent = post.video_url 
-        ? `<video controls><source src="${post.video_url}" type="video/mp4"></video>`
+        ? `<div class="post-media-container">
+              <video controls class="post-video">
+                <source src="${post.video_url}" type="video/mp4">
+              </video>
+           </div>`
         : post.image_url 
-        ? `<img src="${post.image_url}" alt="Post image">`
+        ? `<div class="post-media-container">
+              <img src="${post.image_url}" class="post-image" alt="Post image">
+           </div>`
         : '';
-
-    const mediaSwiper = post.image_url ? `
-        <div class="swiper-container">
-            <div class="swiper-wrapper">
-                <div class="swiper-slide">
-                    <img src="${post.image_url}" alt="Post image">
-                </div>
-            </div>
-            <div class="photo-counter">1/1</div>
-        </div>
-    ` : '';
 
     // Process content for mentions, hashtags, and links
     const processedContent = processPostContent(post.content || '');
@@ -482,53 +475,53 @@ function createPostElement(post, currentUserId) {
     `;
 
     return `
-        <div class="post" data-post-id="${post.id}">
-            <div class="post-header">
-                <a href="profile.html?user_id=${post.user_id}" class="post-avatar-link">
-                    <div class="post-avatar">${getInitials(post.profiles.full_name || post.profiles.username)}</div>
-                </a>
-                <div class="post-user-info">
+    <div class="post" data-post-id="${post.id}">
+        <div class="post-header">
+            <a href="profile.html?user_id=${post.user_id}" class="post-avatar-link">
+                <div class="post-avatar">${getInitials(post.profiles.full_name || post.profiles.username)}</div>
+            </a>
+            <div class="post-user-info">
+                <div class="post-user-line">
                     <a href="profile.html?user_id=${post.user_id}" class="post-user-link">
-                        <div class="post-user">
-                            ${post.profiles.full_name || post.profiles.username}
-                            ${post.profiles.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-                        </div>
-                        <div class="post-username">@${post.profiles.username}</div>
+                        <span class="post-user">${post.profiles.full_name || post.profiles.username}</span>
+                        ${post.profiles.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+                        <span class="post-username">@${post.profiles.username}</span>
                     </a>
-                </div>
-                ${!isOwner ? `<button class="follow-btn" data-user-id="${post.user_id}">${post.is_following ? 'Following' : 'Follow'}</button>` : ''}
-                <div class="post-time">${formatTime(post.created_at)}</div>
-                <div class="post-more">
-                    <i class="fas fa-ellipsis-h"></i>
+                    <div class="post-top-right">
+                        ${!isOwner ? `<button class="follow-btn" data-user-id="${post.user_id}">${post.is_following ? 'Following' : 'Follow'}</button>` : ''}
+                        <span class="post-time">${formatTime(post.created_at)}</span>
+                        <div class="post-more">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </div>
+                    </div>
                 </div>
                 ${moreOptionsMenu}
             </div>
-            <div class="post-content" data-full-text="${post.content || ''}">
-                ${processedContent}
-            </div>
-            ${mediaSwiper || mediaContent}
-            <div class="post-stats">
-                <div class="likes-count">${likesPreview}</div>
-                <div class="post-viewers">
-                    <i class="fas fa-eye viewers-icon"></i>
-                    <span>${post.views || 0} views</span>
-                </div>
-            </div>
-            <div class="post-actions">
-                <div class="post-action like-btn ${isLiked ? 'liked' : ''}" data-post-id="${post.id}">
-                    <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
-                    <span class="like-count">${likeCount}</span>
-                </div>
-                <div class="post-action comment-btn" data-post-id="${post.id}">
-                    <i class="far fa-comment"></i>
-                    <span class="comment-count">${post.comment_count || 0}</span>
-                </div>
-                <div class="post-action share-btn" data-post-id="${post.id}">
-                    <i class="fas fa-share"></i>
-                    <span>Share</span>
-                </div>
+        </div>
+        <div class="post-content">${processedContent}</div>
+        ${mediaContent}
+        <div class="post-stats">
+            <div class="likes-count">${likesPreview}</div>
+            <div class="post-viewers">
+                <i class="fas fa-eye viewers-icon"></i>
+                <span>${post.views || 0} views</span>
             </div>
         </div>
+        <div class="post-actions">
+            <div class="post-action like-btn ${isLiked ? 'liked' : ''}" data-post-id="${post.id}">
+                <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+                <span class="like-count">${likeCount}</span>
+            </div>
+            <div class="post-action comment-btn" data-post-id="${post.id}">
+                <i class="far fa-comment"></i>
+                <span class="comment-count">${post.comment_count || 0}</span>
+            </div>
+            <div class="post-action share-btn" data-post-id="${post.id}">
+                <i class="fas fa-share"></i>
+                <span>Share</span>
+            </div>
+        </div>
+    </div>
     `;
 }
 
