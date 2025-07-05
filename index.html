@@ -2210,67 +2210,7 @@
     color: #0d8ddb;
     cursor: pointer;
 }
-
-        .post-header {
-    display: flex;
-    align-items: flex-start;
-    padding: 12px 16px 0;
-    position: relative; /* Added for absolute positioning of elements */
-}
-
-.post-top-right {
-    display: flex;
-    align-items: center;
-    gap: 12px; /* Space between time and three-dot menu */
-    margin-left: auto; /* Pushes everything to the right */
-    padding-left: 12px; /* Space between follow button and time */
-}
-
-.follow-btn {
-    margin-left: 12px; /* Space between user info and follow button */
-    order: 1; /* Ensures follow button comes before time and menu */
-}
-
-.post-time {
-    order: 2; /* Places time after follow button */
-    color: #536471;
-    font-size: 15px;
-}
-
-.post-more {
-    order: 3; /* Places three-dot menu last */
-    color: #536471;
-    cursor: pointer;
-    padding: 4px;
-    margin-left: 4px; /* Small space between time and menu */
-}
-
-/* Adjust the menu positioning */
-.post-more-menu {
-    position: absolute;
-    right: 16px;
-    top: 40px; /* Position below the header */
-    background-color: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    width: 200px;
-    z-index: 100;
-    overflow: hidden;
-    display: none;
-}
-
-.dark-mode .post-more-menu {
-    background-color: #000;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    border: 1px solid #333;
-}
-
-.post-more-menu.show {
-    display: block;
-}
-
-        
-/* ===== Twitter-like Text Positioning ===== */
+        /* ===== Twitter-like Text Alignment ===== */
 .post-header {
     display: flex;
     align-items: flex-start;
@@ -2278,34 +2218,45 @@
     position: relative;
 }
 
+.post-avatar {
+    width: 48px;
+    height: 48px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
 .post-user-info {
     flex-grow: 1;
-    margin-right: 12px; /* Add space before follow button */
+    min-width: 0; /* Allows text truncation */
 }
 
 .post-content {
-    padding: 0 16px 12px 68px; /* 68px left padding aligns with username */
+    padding: 0 16px 12px 0; /* No left padding - text starts after avatar */
+    margin-left: 60px; /* 48px avatar + 12px margin */
     margin-top: -8px; /* Pull text closer to username */
     line-height: 1.5;
     font-size: 15px;
-    color: #0f1419; /* Twitter text color */
+    color: #0f1419;
 }
 
-.dark-mode .post-content {
-    color: #e7e9ea; /* Dark mode text color */
+/* Media container alignment */
+.post-media-container {
+    margin: 12px 0 0 60px; /* Same as text alignment */
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #eff3f4;
 }
 
+/* Right-aligned elements */
 .post-top-right {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-left: auto; /* Push to far right */
+    margin-left: auto;
+    padding-left: 12px;
 }
 
-/* Keep all other existing styles the same */
-
-
-    </style>
+            </style>
 </head>
 <body>
 
