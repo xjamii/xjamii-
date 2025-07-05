@@ -219,7 +219,7 @@ async function toggleLike(postId, isLiked) {
             setTimeout(() => likeAnim.remove(), 800);
         }
         
-        // Update database
+        // Update database using RPC
         const { error } = await supabase.rpc(isLiked ? 'unlike_post' : 'like_post', {
             post_id: postId,
             user_id: user.id
@@ -232,16 +232,23 @@ async function toggleLike(postId, isLiked) {
         
         // Revert optimistic update
         const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
-        const likeCountEl = likeBtn.querySelector('.like-count');
-        const likesCountEl = likeBtn.closest('.post').querySelector('.likes-count');
-        
-        likeBtn.classList.toggle('liked');
-        const currentCount = parseInt(likeCountEl.textContent);
-        likeCountEl.textContent = isLiked ? currentCount + 1 : currentCount - 1;
-        likesCountEl.textContent = isLiked ? `${currentCount + 1} likes` : `${currentCount - 1} likes`;
-        
-        const heartIcon = likeBtn.querySelector('i');
-        heartIcon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
+        if (likeBtn) {
+            const likeCountEl = likeBtn.querySelector('.like-count');
+            const likesCountEl = likeBtn.closest('.post')?.querySelector('.likes-count');
+            
+            likeBtn.classList.toggle('liked');
+            const currentCount = parseInt(likeCountEl.textContent);
+            likeCountEl.textContent = isLiked ? currentCount + 1 : currentCount - 1;
+            
+            if (likesCountEl) {
+                likesCountEl.textContent = isLiked 
+                    ? `${currentCount + 1} ${currentCount + 1 === 1 ? 'like' : 'likes'}` 
+                    : `${currentCount - 1} ${currentCount - 1 === 1 ? 'like' : 'likes'}`;
+            }
+            
+            const heartIcon = likeBtn.querySelector('i');
+            heartIcon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
+        }
         
         showFeedback('Failed to update like');
     }
@@ -690,11 +697,11 @@ function createCommentElement(comment) {
     return `
         <div class="comment" data-comment-id="${comment.id}">
             <div class="comment-header">
-                <a href="profile.html?user_id=${comment.user_id}" class="comment-avatar-link">
+                <a href="profile.html?user_id="${comment.user_id}" class="comment-avatar-link">
                     <div class="comment-avatar">${getInitials(comment.profiles.full_name || comment.profiles.username)}</div>
                 </a>
                 <div class="comment-user-info">
-                    <a href="profile.html?user_id=${comment.user_id}" class="comment-user-link">
+                    <a href="profile.html?user_id="${comment.user_id}" class="comment-user-link">
                         <div class="comment-user">
                             ${comment.profiles.full_name || comment.profiles.username}
                         </div>
