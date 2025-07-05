@@ -2270,7 +2270,39 @@
 }
 
         
+/* ===== Twitter-like Text Positioning ===== */
+.post-header {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 16px 0;
+    position: relative;
+}
 
+.post-user-info {
+    flex-grow: 1;
+    margin-right: 12px; /* Add space before follow button */
+}
+
+.post-content {
+    padding: 0 16px 12px 68px; /* 68px left padding aligns with username */
+    margin-top: -8px; /* Pull text closer to username */
+    line-height: 1.5;
+    font-size: 15px;
+    color: #0f1419; /* Twitter text color */
+}
+
+.dark-mode .post-content {
+    color: #e7e9ea; /* Dark mode text color */
+}
+
+.post-top-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto; /* Push to far right */
+}
+
+/* Keep all other existing styles the same */
 
 
     </style>
