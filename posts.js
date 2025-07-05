@@ -360,7 +360,8 @@ async function loadPosts() {
                     full_name,
                     avatar_url,
                     is_verified
-                )
+                ),
+                post_likes!left (user_id)
             `)
             .order('created_at', { ascending: false });
 
@@ -379,7 +380,18 @@ async function loadPosts() {
             return;
         }
 
-        postsContainer.innerHTML = posts.map(post => createPostElement(post, user.id)).join('');
+        // Process posts to check if current user liked them
+        const processedPosts = posts.map(post => {
+            const likers = post.post_likes?.map(like => like.user_id) || [];
+            return {
+                ...post,
+                likers,
+                is_liked: likers.includes(user.id),
+                like_count: post.post_likes?.length || 0
+            };
+        });
+
+        postsContainer.innerHTML = processedPosts.map(post => createPostElement(post, user.id)).join('');
         
         // Initialize Swiper for each post with media
         document.querySelectorAll('.swiper-container').forEach(container => {
@@ -400,7 +412,7 @@ async function loadPosts() {
         setupPostInteractions();
 
         // Track views for visible posts
-        posts.forEach(post => {
+        processedPosts.forEach(post => {
             trackPostView(post.id);
         });
 
@@ -415,7 +427,7 @@ async function loadPosts() {
 }
 
 function createPostElement(post, currentUserId) {
-    const isLiked = post.likers && post.likers.includes(currentUserId);
+    const isLiked = post.likers?.includes(currentUserId) || false;
     const isOwner = post.user_id === currentUserId;
     const likeCount = post.like_count || 0;
     
@@ -488,7 +500,7 @@ function createPostElement(post, currentUserId) {
                         <span class="post-username">@${post.profiles.username}</span>
                     </a>
                     <div class="post-top-right">
-                        ${!isOwner ? `<button class="follow-btn" data-user-id="${post.user_id}">${post.is_following ? 'Following' : 'Follow'}</button>` : ''}
+                        ${!isOwner ? `<button class="follow-btn" data-user-id="${post.user_id}">Follow</button>` : ''}
                         <span class="post-time">${formatTime(post.created_at)}</span>
                         <div class="post-more">
                             <i class="fas fa-ellipsis-h"></i>
@@ -603,6 +615,9 @@ async function deletePost(postId) {
             .eq('id', postId);
         
         if (error) throw error;
+        
+        // Remove post from DOM
+        document.querySelector(`.post[data-post-id="${postId}"]`)?.remove();
         
     } catch (error) {
         console.error("Error deleting post:", error);
@@ -839,10 +854,10 @@ function setupPostInteractions() {
     // Show more/less for long content
     document.querySelectorAll('.post-content').forEach(content => {
         const fullText = content.getAttribute('data-full-text');
-        if (fullText.length > 200) {
+        if (fullText && fullText.length > 200) {
             content.innerHTML = `${fullText.substring(0, 200)}... <span class="see-more">See more</span>`;
             
-            content.querySelector('.see-more').addEventListener('click', function(e) {
+            content.querySelector('.see-more')?.addEventListener('click', function(e) {
                 e.stopPropagation();
                 content.innerHTML = fullText;
             });
@@ -908,3 +923,15 @@ function showSharePopup(postId) {
         });
     }
 }
+
+// Initialize
+let currentUserId = null;
+
+async function init() {
+    const { data: { user } } = await supabase.auth.getUser();
+    currentUserId = user?.id;
+    await loadPosts();
+    setupRealTimeUpdates();
+}
+
+document.addEventListener('DOMContentLoaded', init);
