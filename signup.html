@@ -49,7 +49,7 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #1a4b8c; /* Changed to blue */
+            background: #000;
             animation: spinner-bounce 1.4s infinite ease-in-out both;
         }
 
@@ -92,14 +92,13 @@
         .logo {
             height: 60px;
             width: auto;
-            filter: brightness(0) saturate(100%) invert(22%) sepia(55%) saturate(1553%) hue-rotate(194deg) brightness(93%) contrast(91%); /* Makes logo blue */
         }
 
         .title {
             font-size: 28px;
             font-weight: bold;
             margin: 0 0 40px;
-            color: #1a4b8c; /* Changed to blue */
+            color: #000;
             text-align: left;
         }
 
@@ -126,7 +125,7 @@
 
         .input-field:focus {
             outline: none;
-            border-color: #1a4b8c; /* Changed to blue */
+            border-color: #000;
         }
 
         .input-label {
@@ -166,14 +165,14 @@
 
         .back-button {
             background-color: #ECEFF1;
-            color: #1a4b8c; /* Changed to blue */
-            border: 2px solid #1a4b8c; /* Changed to blue */
+            color: #000;
+            border: 2px solid #000;
         }
 
         .continue-button {
-            background-color: #1a4b8c; /* Changed to blue */
+            background-color: #000;
             color: #fff;
-            border: 2px solid #1a4b8c; /* Changed to blue */
+            border: 2px solid #000;
         }
 
         .back-button:hover {
@@ -181,7 +180,7 @@
         }
 
         .continue-button:hover {
-            background-color: #0d2d59; /* Darker blue */
+            background-color: #333;
         }
 
         /* Spinner */
@@ -255,8 +254,8 @@
     <div class="main-content">
         <div class="logo-container">
             <img 
-                src="https://i.postimg.cc/gkL0Qdsw/file-00000000000061f8b89b5a1f67f8b937.png" 
-                alt="Aviationin Logo" 
+                src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" 
+                alt="X-Aviation Logo" 
                 class="logo" 
                 loading="eager"
                 width="60"
@@ -276,16 +275,6 @@
                 <input type="email" class="input-field" id="email" placeholder="Email">
                 <div class="error-message" id="email-error"></div>
             </div>
-            
-            <div class="input-container">
-                <input type="text" class="input-field" id="company" placeholder="Company (optional)">
-                <div class="error-message" id="company-error"></div>
-            </div>
-            
-            <div class="input-container">
-                <input type="url" class="input-field" id="website" placeholder="Website (optional) e.g. example.com">
-                <div class="error-message" id="website-error"></div>
-            </div>
         </div>
     </div>
 
@@ -294,10 +283,10 @@
         <button class="action-button back-button" id="back-btn">
             <span class="btn-text">Back</span>
             <span class="spinner" style="display: none;">
-                <span class="spinner-dot" style="color: #1a4b8c;"></span>
-                <span class="spinner-dot" style="color: #1a4b8c;"></span>
-                <span class="spinner-dot" style="color: #1a4b8c;"></span>
-                <span class="spinner-dot" style="color: #1a4b8c;"></span>
+                <span class="spinner-dot" style="color: #000;"></span>
+                <span class="spinner-dot" style="color: #000;"></span>
+                <span class="spinner-dot" style="color: #000;"></span>
+                <span class="spinner-dot" style="color: #000;"></span>
             </span>
         </button>
         <button class="action-button continue-button" id="continue-btn">
@@ -311,12 +300,13 @@
         </button>
     </div>
 <script>
+        
+
+
 // DOM Elements
 const continueBtn = document.getElementById('continue-btn');
 const nameInput = document.getElementById('name');
 const emailInput = document.getElementById('email');
-const companyInput = document.getElementById('company');
-const websiteInput = document.getElementById('website');
 const nameError = document.getElementById('name-error');
 const emailError = document.getElementById('email-error');
 
@@ -336,23 +326,6 @@ function validateEmail(email) {
         return { valid: false, message: 'Invalid email format' };
     }
     return { valid: true };
-}
-
-function validateWebsite(url) {
-    url = url.trim();
-    if (!url) return { valid: true }; // Optional field
-    
-    // Add http:// if missing
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
-    }
-    
-    try {
-        new URL(url);
-        return { valid: true, cleanedValue: url };
-    } catch (e) {
-        return { valid: false, message: 'Invalid website URL' };
-    }
 }
 
 // Email input handler
@@ -382,7 +355,6 @@ continueBtn.addEventListener('click', async function(e) {
     // Validate inputs
     const nameValidation = validateName(nameInput.value);
     const emailValidation = validateEmail(emailInput.value);
-    const websiteValidation = validateWebsite(websiteInput.value);
 
     if (!nameValidation.valid) {
         nameError.textContent = nameValidation.message;
@@ -396,23 +368,15 @@ continueBtn.addEventListener('click', async function(e) {
         return;
     }
 
-    if (!websiteValidation.valid) {
-        websiteError.textContent = websiteValidation.message;
-        websiteError.style.display = 'block';
-        return;
-    }
-
     // Show loading state
     btnText.style.display = 'none';
     spinner.style.display = 'block';
     btn.disabled = true;
 
     try {
-        // Store all data for next step
+        // Store data for next step
         localStorage.setItem('signup-name', nameInput.value.trim());
         localStorage.setItem('signup-email', emailInput.value.trim().toLowerCase());
-        localStorage.setItem('signup-company', companyInput.value.trim());
-        localStorage.setItem('signup-website', websiteValidation.cleanedValue || websiteInput.value.trim());
 
         // Proceed to password creation
         window.location.href = 'password.html';
