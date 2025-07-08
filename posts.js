@@ -3,36 +3,24 @@ async function copyPostLink(postId) {
     const postUrl = `${window.location.origin}/post.html?id=${postId}`;
     try {
         await navigator.clipboard.writeText(postUrl);
-        showFeedback('Link copied!', 'success');
+        showFeedback('Link copied!');
     } catch (err) {
         console.error('Failed to copy link:', err);
-        showFeedback('Failed to copy link', 'error');
+        showFeedback('Failed to copy link');
     }
 }
 
-/* ===== Feedback System ===== */
-function showFeedback(message, type = 'info') {
+function showFeedback(message) {
     const feedback = document.createElement('div');
-    feedback.className = `feedback-message feedback-${type}`;
-    feedback.innerHTML = `
-        <i class="fas ${{
-            'error': 'fa-exclamation-circle',
-            'success': 'fa-check-circle',
-            'info': 'fa-info-circle'
-        }[type]}"></i>
-        <span>${message}</span>
-    `;
-    
-    // Remove existing feedback first
-    document.querySelectorAll('.feedback-message').forEach(el => el.remove());
-    
+    feedback.className = 'copy-feedback';
+    feedback.textContent = message;
     document.body.appendChild(feedback);
     
     feedback.classList.add('show');
     setTimeout(() => {
         feedback.classList.remove('show');
-        setTimeout(() => feedback.remove(), 500);
-    }, 3000);
+        setTimeout(() => feedback.remove(), 300);
+    }, 1500);
 }
 
 /* ===== Popup Handling ===== */
@@ -139,127 +127,6 @@ function closePopup(popup, overlay) {
     }, 300);
 }
 
-/* ===== Like System with Comprehensive Error Handling ===== */
-async function toggleLike(postId, isLiked) {
-    try {
-        // 1. Authentication Check
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-            throw new Error('NOT_LOGGED_IN');
-        }
-
-        // 2. Input Validation
-        if (!validateUUID(postId)) {
-            throw new Error('INVALID_POST_ID');
-        }
-
-        // 3. Network Status Check
-        if (!navigator.onLine) {
-            throw new Error('NETWORK_OFFLINE');
-        }
-
-        // Optimistic UI Update
-        updateLikeUI(postId, isLiked, true);
-
-        // 4. Database Operation
-        const { error } = await supabase.rpc(isLiked ? 'unlike_post' : 'like_post', {
-            post_id: postId,
-            user_id: user.id
-        });
-
-        if (error) {
-            handleSupabaseError(error);
-            throw error;
-        }
-
-        // Success feedback
-        showFeedback(`Post ${isLiked ? 'unliked' : 'liked'}!`, 'success');
-
-    } catch (error) {
-        console.error("Like Error:", {
-            error: error,
-            postId: postId,
-            isLiked: isLiked,
-            time: new Date().toISOString()
-        });
-
-        // Revert UI on failure
-        updateLikeUI(postId, !isLiked, false);
-        
-        // Show user-friendly error
-        showLikeError(error);
-    }
-}
-
-function updateLikeUI(postId, isLiked, isOptimistic) {
-    const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
-    if (!likeBtn) return;
-
-    const likeCountEl = likeBtn.querySelector('.like-count');
-    const likesCountEl = likeBtn.closest('.post')?.querySelector('.likes-count');
-    
-    const currentCount = parseInt(likeCountEl.textContent) || 0;
-    const newCount = isLiked ? currentCount + 1 : Math.max(0, currentCount - 1);
-    
-    // Update UI
-    likeBtn.classList.toggle('liked', isLiked);
-    likeCountEl.textContent = newCount;
-    
-    if (likesCountEl) {
-        likesCountEl.textContent = newCount === 0 ? '' : `${newCount} ${newCount === 1 ? 'like' : 'likes'}`;
-    }
-    
-    const heartIcon = likeBtn.querySelector('i');
-    if (heartIcon) {
-        heartIcon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-    }
-    
-    // Animation for new likes
-    if (isOptimistic && isLiked) {
-        const likeAnim = document.createElement('div');
-        likeAnim.className = 'like-animation';
-        likeAnim.innerHTML = '❤️';
-        likeBtn.appendChild(likeAnim);
-        setTimeout(() => likeAnim.remove(), 800);
-    }
-}
-
-function handleSupabaseError(error) {
-    const errorMap = {
-        '42501': 'RLS_PERMISSION_DENIED',
-        'P0000': 'POST_NOT_FOUND_IN_DB',
-        'P0001': 'RPC_FUNCTION_MISSING',
-        '23505': 'DUPLICATE_LIKE'
-    };
-    
-    return errorMap[error.code] || error.message;
-}
-
-function showLikeError(error) {
-    const errorMessages = {
-        'NOT_LOGGED_IN': 'Please login to like posts',
-        'INVALID_POST_ID': 'Invalid post reference',
-        'NETWORK_OFFLINE': 'No internet connection',
-        'POST_NOT_FOUND': 'Post not found on this page',
-        'RLS_PERMISSION_DENIED': 'Permission denied (check RLS policies)',
-        'POST_NOT_FOUND_IN_DB': 'Post not found in database',
-        'RPC_FUNCTION_MISSING': 'Server function missing - contact support',
-        'DUPLICATE_LIKE': 'You already liked this post',
-        'JWT expired': 'Session expired - please refresh',
-        'NetworkError': 'Network error - try again'
-    };
-
-    const message = errorMessages[error.message] || 
-                   errorMessages[error.code] || 
-                   'Failed to update like';
-    
-    showFeedback(message, 'error');
-}
-
-function validateUUID(id) {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
-}
-
 /* ===== Like Count with Names ===== */
 async function showLikesPopup(postId) {
     try {
@@ -318,17 +185,167 @@ async function showLikesPopup(postId) {
         
     } catch (error) {
         console.error("Error loading likes:", error);
-        showFeedback('Failed to load likes', 'error');
+        showFeedback('Failed to load likes');
     }
 }
 
-/* ===== Post Loading and Display ===== */
+/* ===== Enhanced Like Function ===== */
+async function toggleLike(postId, isLiked) {
+    try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        
+        // Optimistic UI update
+        const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
+        const likeCountEl = likeBtn.querySelector('.like-count');
+        const likesCountEl = likeBtn.closest('.post').querySelector('.likes-count');
+        
+        const currentCount = parseInt(likeCountEl.textContent);
+        const newCount = isLiked ? currentCount - 1 : currentCount + 1;
+        
+        likeBtn.classList.toggle('liked', !isLiked);
+        likeCountEl.textContent = newCount;
+        likesCountEl.textContent = newCount === 0 ? '' : `${newCount} ${newCount === 1 ? 'like' : 'likes'}`;
+        
+        const heartIcon = likeBtn.querySelector('i');
+        heartIcon.className = !isLiked ? 'fas fa-heart' : 'far fa-heart';
+        
+        // Animation
+        if (!isLiked) {
+            const likeAnim = document.createElement('div');
+            likeAnim.className = 'like-animation';
+            likeAnim.innerHTML = '❤️';
+            likeBtn.appendChild(likeAnim);
+            setTimeout(() => likeAnim.remove(), 800);
+        }
+        
+        // Update database
+        const { error } = await supabase.rpc(isLiked ? 'unlike_post' : 'like_post', {
+            post_id: postId,
+            user_id: user.id
+        });
+        
+        if (error) throw error;
+        
+    } catch (error) {
+        console.error("Error toggling like:", error);
+        
+        // Revert optimistic update
+        const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
+        const likeCountEl = likeBtn.querySelector('.like-count');
+        const likesCountEl = likeBtn.closest('.post').querySelector('.likes-count');
+        
+        likeBtn.classList.toggle('liked');
+        const currentCount = parseInt(likeCountEl.textContent);
+        likeCountEl.textContent = isLiked ? currentCount + 1 : currentCount - 1;
+        likesCountEl.textContent = isLiked ? `${currentCount + 1} likes` : `${currentCount - 1} likes`;
+        
+        const heartIcon = likeBtn.querySelector('i');
+        heartIcon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
+        
+        showFeedback('Failed to update like');
+    }
+}
+
+// Load posts when page loads
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadPosts();
+    setupRealTimeUpdates();
+});
+
+// Set up real-time updates for posts
+function setupRealTimeUpdates() {
+    const postsChannel = supabase
+        .channel('posts_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, handlePostChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, handleCommentChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'follows' }, handleFollowChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, handleReportChange)
+        .subscribe();
+}
+
+// Handle post changes in real-time
+async function handlePostChange(payload) {
+    const postId = payload.new.id;
+    const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+    
+    if (!postElement) {
+        if (payload.eventType === 'INSERT') {
+            // New post added, reload posts
+            await loadPosts();
+        }
+        return;
+    }
+
+    if (payload.eventType === 'UPDATE') {
+        // Update like count
+        const likeCountEl = postElement.querySelector('.like-count');
+        if (likeCountEl) {
+            likeCountEl.textContent = payload.new.like_count || 0;
+        }
+        
+        // Update like button state
+        const { data: { user } } = await supabase.auth.getUser();
+        const isLiked = payload.new.likers && payload.new.likers.includes(user.id);
+        const likeBtn = postElement.querySelector('.like-btn');
+        if (likeBtn) {
+            likeBtn.classList.toggle('liked', isLiked);
+            const heartIcon = likeBtn.querySelector('i');
+            heartIcon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+        }
+        
+        // Update comment count
+        const commentCountEl = postElement.querySelector('.comment-count');
+        if (commentCountEl) {
+            commentCountEl.textContent = payload.new.comment_count || 0;
+        }
+        
+        // Update view count
+        const viewsEl = postElement.querySelector('.post-viewers span');
+        if (viewsEl) {
+            viewsEl.textContent = `${payload.new.views || 0} views`;
+        }
+    } else if (payload.eventType === 'DELETE') {
+        postElement.remove();
+    }
+}
+
+// Handle comment changes in real-time
+function handleCommentChange(payload) {
+    // Implement comment real-time updates as needed
+    console.log('Comment change:', payload);
+}
+
+// Handle follow changes in real-time
+function handleFollowChange(payload) {
+    // Implement follow real-time updates as needed
+    console.log('Follow change:', payload);
+}
+
+// Handle report changes in real-time
+function handleReportChange(payload) {
+    // Implement report real-time updates as needed
+    console.log('Report change:', payload);
+}
+
+// Track post views
+async function trackPostView(postId) {
+    try {
+        const { error } = await supabase.rpc('increment_post_views', { post_id: postId });
+        if (error) throw error;
+    } catch (error) {
+        console.error("Error tracking view:", error);
+    }
+}
+
 async function loadPosts() {
     try {
         // Show loading state
         document.getElementById('posts-container').innerHTML = `
             <div class="skeleton-loader">
-                ${Array(3).fill('<div class="skeleton-item"></div>').join('')}
+                <div style="height: 120px; background-color: #f0f0f0; border-radius: 12px; margin-bottom: 16px;"></div>
+                <div style="height: 120px; background-color: #f0f0f0; border-radius: 12px; margin-bottom: 16px;"></div>
+                <div style="height: 120px; background-color: #f0f0f0; border-radius: 12px; margin-bottom: 16px;"></div>
             </div>
         `;
 
@@ -358,7 +375,7 @@ async function loadPosts() {
         if (posts.length === 0) {
             postsContainer.innerHTML = `
                 <div class="no-posts">
-                    <i class="fas fa-newspaper"></i>
+                    <i class="fas fa-newspaper" style="font-size: 48px; margin-bottom: 16px;"></i>
                     <p>No posts yet. Be the first to post!</p>
                 </div>
             `;
@@ -368,7 +385,19 @@ async function loadPosts() {
         postsContainer.innerHTML = posts.map(post => createPostElement(post, user.id)).join('');
         
         // Initialize Swiper for each post with media
-        initializeSwipers();
+        document.querySelectorAll('.swiper-container').forEach(container => {
+            new Swiper(container, {
+                loop: true,
+                on: {
+                    slideChange: function() {
+                        const counter = this.el.querySelector('.photo-counter');
+                        if (counter) {
+                            counter.textContent = `${this.realIndex + 1}/${this.slides.length - 2}`;
+                        }
+                    },
+                },
+            });
+        });
         
         // Add event listeners for interactions
         setupPostInteractions();
@@ -380,37 +409,12 @@ async function loadPosts() {
 
     } catch (error) {
         console.error("Error loading posts:", error);
-        showFeedback('Failed to load posts', 'error');
-        renderErrorState();
+        document.getElementById('posts-container').innerHTML = `
+            <div class="error-message">
+                Failed to load posts. Please try again.
+            </div>
+        `;
     }
-}
-
-function initializeSwipers() {
-    document.querySelectorAll('.swiper-container').forEach(container => {
-        new Swiper(container, {
-            loop: true,
-            on: {
-                slideChange: function() {
-                    const counter = this.el.querySelector('.photo-counter');
-                    if (counter) {
-                        counter.textContent = `${this.realIndex + 1}/${this.slides.length - 2}`;
-                    }
-                },
-            },
-        });
-    });
-}
-
-function renderErrorState() {
-    document.getElementById('posts-container').innerHTML = `
-        <div class="error-state">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>Failed to load content</p>
-            <button class="retry-btn">Try Again</button>
-        </div>
-    `;
-    
-    document.querySelector('.retry-btn').addEventListener('click', loadPosts);
 }
 
 function createPostElement(post, currentUserId) {
@@ -528,7 +532,7 @@ function createPostElement(post, currentUserId) {
     `;
 }
 
-/* ===== Content Processing ===== */
+// Process post content for mentions, hashtags, and links
 function processPostContent(content) {
     if (!content) return '';
     
@@ -559,7 +563,6 @@ function formatTime(timestamp) {
     return `${Math.floor(diffInSeconds / 86400)}d`;
 }
 
-/* ===== User Interactions ===== */
 async function toggleFollow(userId, isFollowing) {
     try {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -588,14 +591,12 @@ async function toggleFollow(userId, isFollowing) {
         
         // Update UI
         const followBtn = document.querySelector(`.follow-btn[data-user-id="${userId}"]`);
-        if (followBtn) {
-            followBtn.textContent = isFollowing ? 'Follow' : 'Following';
-            followBtn.classList.toggle('following', !isFollowing);
-        }
+        followBtn.textContent = isFollowing ? 'Follow' : 'Following';
+        followBtn.classList.toggle('following', !isFollowing);
         
     } catch (error) {
         console.error("Error toggling follow:", error);
-        showFeedback('Failed to update follow status', 'error');
+        showFeedback('Failed to update follow status');
     }
 }
 
@@ -610,13 +611,9 @@ async function deletePost(postId) {
         
         if (error) throw error;
         
-        // Remove post from UI
-        document.querySelector(`.post[data-post-id="${postId}"]`)?.remove();
-        showFeedback('Post deleted', 'success');
-        
     } catch (error) {
         console.error("Error deleting post:", error);
-        showFeedback('Failed to delete post', 'error');
+        showFeedback('Failed to delete post');
     }
 }
 
@@ -643,15 +640,14 @@ async function reportPost(postId) {
             reportBtn.style.pointerEvents = 'none';
         }
         
-        showFeedback("Thank you for reporting", 'success');
+        showFeedback("Thank you for reporting");
         
     } catch (error) {
         console.error("Error reporting post:", error);
-        showFeedback('Failed to report post', 'error');
+        showFeedback('Failed to report post');
     }
 }
 
-/* ===== Comments System ===== */
 async function loadComments(postId, container) {
     try {
         const { data: comments, error } = await supabase
@@ -744,148 +740,6 @@ function createCommentElement(comment) {
     `;
 }
 
-/* ===== Real-time Updates ===== */
-function setupRealTimeUpdates() {
-    const postsChannel = supabase
-        .channel('posts_changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, handlePostChange)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, handleCommentChange)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'follows' }, handleFollowChange)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, handleReportChange)
-        .subscribe();
-
-    return () => supabase.removeChannel(postsChannel);
-}
-
-async function handlePostChange(payload) {
-    try {
-        const postId = payload.new.id;
-        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-        
-        if (!postElement) {
-            if (payload.eventType === 'INSERT') await loadPosts();
-            return;
-        }
-
-        if (payload.eventType === 'UPDATE') {
-            updatePostUI(postElement, payload.new);
-        } else if (payload.eventType === 'DELETE') {
-            postElement.remove();
-        }
-    } catch (error) {
-        console.error("Real-time Update Error:", error);
-    }
-}
-
-function updatePostUI(postElement, postData) {
-    // Update like count
-    const likeCountEl = postElement.querySelector('.like-count');
-    if (likeCountEl) likeCountEl.textContent = postData.like_count || 0;
-    
-    // Update like button state
-    const { data: { user } } = await supabase.auth.getUser();
-    const isLiked = postData.likers?.includes(user.id);
-    const likeBtn = postElement.querySelector('.like-btn');
-    if (likeBtn) {
-        likeBtn.classList.toggle('liked', isLiked);
-        likeBtn.querySelector('i').className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-    }
-    
-    // Update comment count
-    const commentCountEl = postElement.querySelector('.comment-count');
-    if (commentCountEl) commentCountEl.textContent = postData.comment_count || 0;
-    
-    // Update view count
-    const viewsEl = postElement.querySelector('.post-viewers span');
-    if (viewsEl) viewsEl.textContent = `${postData.views || 0} views`;
-}
-
-function handleCommentChange(payload) {
-    // Implement comment real-time updates as needed
-    console.log('Comment change:', payload);
-}
-
-function handleFollowChange(payload) {
-    // Implement follow real-time updates as needed
-    console.log('Follow change:', payload);
-}
-
-function handleReportChange(payload) {
-    // Implement report real-time updates as needed
-    console.log('Report change:', payload);
-}
-
-/* ===== Post Views Tracking ===== */
-async function trackPostView(postId) {
-    try {
-        const { error } = await supabase.rpc('increment_post_views', { post_id: postId });
-        if (error) throw error;
-    } catch (error) {
-        console.error("Error tracking view:", error);
-    }
-}
-
-/* ===== Share Functionality ===== */
-function showSharePopup(postId) {
-    // Create overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'popup-overlay';
-    document.body.appendChild(overlay);
-    
-    // Create popup
-    const popup = document.createElement('div');
-    popup.className = 'share-popup';
-    popup.innerHTML = `
-        <div class="popup-header">
-            <div class="popup-drag-handle"></div>
-            <h3>Share Post</h3>
-            <button class="popup-close-btn"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="popup-content">
-            <button class="share-option copy-link" data-post-id="${postId}">
-                <i class="fas fa-link"></i>
-                <span>Copy Link</span>
-            </button>
-            ${navigator.share ? `
-                <button class="share-option native-share" data-post-id="${postId}">
-                    <i class="fas fa-share-alt"></i>
-                    <span>Share via...</span>
-                </button>
-            ` : ''}
-        </div>
-    `;
-    
-    document.body.appendChild(popup);
-    currentPopup = popup;
-    
-    // Animate in
-    setTimeout(() => {
-        overlay.classList.add('active');
-        popup.style.transform = 'translateY(0)';
-    }, 10);
-    
-    // Setup event listeners
-    setupPopupInteractions(popup, overlay);
-    
-    // Copy link button
-    popup.querySelector('.copy-link').addEventListener('click', () => {
-        copyPostLink(postId);
-        closePopup(popup, overlay);
-    });
-    
-    // Native share button
-    if (navigator.share) {
-        popup.querySelector('.native-share').addEventListener('click', () => {
-            const postUrl = `${window.location.origin}/post.html?id=${postId}`;
-            navigator.share({
-                title: 'Check out this post',
-                url: postUrl
-            }).catch(err => console.error('Error sharing:', err));
-        });
-    }
-}
-
-/* ===== Post Interactions Setup ===== */
 function setupPostInteractions() {
     // Like buttons
     document.querySelectorAll('.like-btn').forEach(btn => {
@@ -1003,8 +857,61 @@ function setupPostInteractions() {
     });
 }
 
-/* ===== Initialize App ===== */
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadPosts();
-    setupRealTimeUpdates();
-});
+function showSharePopup(postId) {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'popup-overlay';
+    document.body.appendChild(overlay);
+    
+    // Create popup
+    const popup = document.createElement('div');
+    popup.className = 'share-popup';
+    popup.innerHTML = `
+        <div class="popup-header">
+            <div class="popup-drag-handle"></div>
+            <h3>Share Post</h3>
+            <button class="popup-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="popup-content">
+            <button class="share-option copy-link" data-post-id="${postId}">
+                <i class="fas fa-link"></i>
+                <span>Copy Link</span>
+            </button>
+            ${navigator.share ? `
+                <button class="share-option native-share" data-post-id="${postId}">
+                    <i class="fas fa-share-alt"></i>
+                    <span>Share via...</span>
+                </button>
+            ` : ''}
+        </div>
+    `;
+    
+    document.body.appendChild(popup);
+    currentPopup = popup;
+    
+    // Animate in
+    setTimeout(() => {
+        overlay.classList.add('active');
+        popup.style.transform = 'translateY(0)';
+    }, 10);
+    
+    // Setup event listeners
+    setupPopupInteractions(popup, overlay);
+    
+    // Copy link button
+    popup.querySelector('.copy-link').addEventListener('click', () => {
+        copyPostLink(postId);
+        closePopup(popup, overlay);
+    });
+    
+    // Native share button
+    if (navigator.share) {
+        popup.querySelector('.native-share').addEventListener('click', () => {
+            const postUrl = `${window.location.origin}/post.html?id=${postId}`;
+            navigator.share({
+                title: 'Check out this post',
+                url: postUrl
+            }).catch(err => console.error('Error sharing:', err));
+        });
+    }
+}
