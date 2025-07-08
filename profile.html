@@ -1,11 +1,10 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aviation Connect Pro | Professional Profile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #0056b3;
@@ -15,6 +14,7 @@
             --dark: #212529;
             --gray: #6c757d;
             --light-gray: #e9ecef;
+            --error: #dc3545;
         }
         
         * {
@@ -29,94 +29,7 @@
             color: #333;
             line-height: 1.6;
         }
-        /* [Keep all your existing CSS styles] */
-
-        /* Add these new styles for the focused skeleton loader */
-        .profile-details-skeleton {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            position: relative;
-            margin-top: 70px;
-        }
-
-        .skeleton-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background-color: #e0e0e0;
-            position: absolute;
-            top: -60px;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 5px solid white;
-        }
-
-        .skeleton-name {
-            width: 200px;
-            height: 30px;
-            background-color: #e0e0e0;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
-
-        .skeleton-username {
-            width: 150px;
-            height: 20px;
-            background-color: #e0e0e0;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-
-        .skeleton-bio {
-            width: 80%;
-            height: 60px;
-            background-color: #e0e0e0;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-
-        .skeleton-stats {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .skeleton-stat {
-            width: 60px;
-            height: 20px;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-        }
-
-        .skeleton-button {
-            width: 100px;
-            height: 40px;
-            background-color: #e0e0e0;
-            border-radius: 20px;
-            margin-bottom: 15px;
-        }
-
-        .skeleton-shimmer {
-            background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .error-message {
-            color: #ff4444;
-            text-align: center;
-            padding: 20px;
-            font-weight: 500;
-            display: none;
-        }
-
+        
         /* Header Styles */
         .profile-header {
             position: sticky;
@@ -166,7 +79,6 @@
         /* Profile Content */
         .profile-content {
             width: 100%;
-            display: none; /* Hidden until loaded */
         }
         
         .cover-photo {
@@ -403,21 +315,101 @@
             font-weight: 600;
         }
 
-        /* Animation for skeleton */
-        @keyframes shimmer {
-            0% { background-position: -468px 0 }
-            100% { background-position: 468px 0 }
+        /* Skeleton Loader */
+        .profile-details-skeleton {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            margin-top: 70px;
+            background: white;
+        }
+
+        .skeleton-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid white;
+        }
+
+        .skeleton-name {
+            width: 200px;
+            height: 30px;
+            background-color: #e0e0e0;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .skeleton-username {
+            width: 150px;
+            height: 20px;
+            background-color: #e0e0e0;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .skeleton-bio {
+            width: 80%;
+            height: 60px;
+            background-color: #e0e0e0;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .skeleton-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .skeleton-stat {
+            width: 60px;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .skeleton-button {
+            width: 100px;
+            height: 40px;
+            background-color: #e0e0e0;
+            border-radius: 20px;
+            margin-bottom: 15px;
         }
 
         .skeleton-shimmer {
-            animation-duration: 1.5s;
-            animation-fill-mode: forwards;
-            animation-iteration-count: infinite;
-            animation-name: shimmer;
-            animation-timing-function: linear;
-            background: linear-gradient(to right, #eeeeee 8%, #dddddd 18%, #eeeeee 33%);
-            background-size: 800px 104px;
-            position: relative;
+            background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Error Message */
+        .error-message {
+            color: var(--error);
+            text-align: center;
+            padding: 20px;
+            font-weight: 500;
+            display: none;
+            background: white;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid var(--error);
+        }
+
+        /* Visibility Helpers */
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
@@ -431,10 +423,10 @@
             <div class="header-name" id="profile-name">Profile</div>
         </div>
         <div class="header-actions">
-            <div class="edit-button" id="edit-button">
+            <div class="edit-button hidden" id="edit-button">
                 <i class="fas fa-pencil-alt"></i>
             </div>
-            <div class="more-options" onclick="toggleOptions()">
+            <div class="more-options">
                 <i class="fas fa-ellipsis-h"></i>
             </div>
         </div>
@@ -444,7 +436,7 @@
     <div class="profile-content">
         <div class="cover-photo" id="cover-photo"></div>
         
-        <!-- Skeleton Loader for Profile Details Only -->
+        <!-- Skeleton Loader -->
         <div class="profile-details-skeleton" id="profile-details-skeleton">
             <div class="skeleton-avatar skeleton-shimmer"></div>
             <div class="skeleton-name skeleton-shimmer"></div>
@@ -458,56 +450,56 @@
             <div class="skeleton-button skeleton-shimmer"></div>
         </div>
         
-        <!-- Error Message Container -->
+        <!-- Error Message -->
         <div class="error-message" id="error-message"></div>
         
-        <!-- Actual Profile Content (hidden initially) -->
-        <div class="profile-info" id="profile-info" style="display: none;">
+        <!-- Profile Info -->
+        <div class="profile-info hidden" id="profile-info">
             <img src="" alt="Profile Avatar" class="avatar" id="profile-avatar">
             <div class="profile-details">
                 <div class="profile-name">
-                    <h1 id="full-name">Loading...</h1>
+                    <h1 id="full-name">Full Name</h1>
                     <i class="fas fa-check-circle verified-badge" id="verified-badge"></i>
                 </div>
-                <div class="username" id="username">@loading</div>
+                <div class="username" id="username">@username</div>
                 <div class="connections">
                     <i class="fas fa-link"></i> <span id="connections-count">0</span> Connections
                 </div>
                 <p class="bio" id="bio">
-                    Loading profile information...
+                    Professional bio goes here...
                 </p>
-                <a href="#" class="website-link" id="website-link" style="display: none;"></a>
-                <div class="category-badge" id="category-badge" style="display: none;"></div>
+                <a href="#" class="website-link hidden" id="website-link">example.com</a>
+                <div class="category-badge hidden" id="category-badge">Category</div>
                 <div class="action-buttons">
-                    <button class="btn" id="connect-btn">Connect</button>
+                    <button class="btn btn-primary hidden" id="connect-btn">Connect</button>
                     <button class="btn btn-outline">Message</button>
-                    <button class="btn btn-outline" onclick="shareProfile()"><i class="fas fa-share"></i></button>
+                    <button class="btn btn-outline"><i class="fas fa-share"></i></button>
                 </div>
             </div>
         </div>
 
         <!-- Experience Section -->
-        <div class="experience-section" id="experience-section" style="display: none;">
+        <div class="experience-section hidden" id="experience-section">
             <h2 class="section-title"><i class="fas fa-briefcase"></i> Professional Experience</h2>
             <div id="experience-container">
                 <div class="experience-item">
                     <div class="experience-details">
-                        <div class="description" id="experience-text">Loading experience...</div>
+                        <div class="description">Experience details will appear here</div>
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- Skills Section -->
-        <div class="skills-section" id="skills-section" style="display: none;">
+        <div class="skills-section hidden" id="skills-section">
             <h2 class="section-title"><i class="fas fa-star"></i> Skills & Endorsements</h2>
             <div class="skills-list" id="skills-container">
-                <div class="skill-badge">Loading skills...</div>
+                <div class="skill-badge">Skill 1</div>
+                <div class="skill-badge">Skill 2</div>
             </div>
         </div>
     </div>
-
-    <script>
+<script>
         // Initialize Supabase
         const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
         const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
@@ -795,10 +787,6 @@
         // Initialize the page
         document.addEventListener('DOMContentLoaded', loadProfile);
     </script>
+    <!-- JavaScript would be included here in the actual implementation -->
 </body>
 </html>
-
-                                            
-        
-
-        
