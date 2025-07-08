@@ -42,7 +42,8 @@
             color: #e4e6eb;
         }
 
-        .footer {
+        
+         .footer {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -51,34 +52,20 @@
     background-color: white;
     border-top: 1px solid #e6ecf0;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-evenly; /* Changed from space-around to space-evenly */
     align-items: center;
     z-index: 1000;
-    padding: 0 20px;
+    padding: 0 10px; /* Reduced padding to allow more space for icons */
     box-shadow: 0 -2px 10px rgba(255, 255, 255, 0.9);
 }
 
-.footer-icon {
-    color: #657786;
-    font-size: 22px;
-    cursor: pointer;
-    transition: color 0.2s;
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    position: relative;
-    min-width: 0; /* Allows icons to shrink properly */
-}
-
 .create-post-btn {
-    position: absolute;
-    left: 50%;
-    top: -30px;
-    transform: translateX(-50%);
+    position: relative; /* Changed from absolute to relative */
+    transform: translateY(-20px); /* Lifts the button slightly above the others */
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background-color: #1d9bf0;
+    background-color: #1a4b8c;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -89,17 +76,31 @@
     border: none;
     outline: none;
     transition: all 0.2s;
-    z-index: 1001; /* Ensures it stays above other elements */
+    z-index: 1001;
+    margin: 0 5px; /* Added margin to ensure equal spacing */
 }
 
-/* Keep all your existing hover and dark mode styles */
-.create-post-btn:hover {
-    background-color: #1a8cd8;
+.footer-icon {
+    color: #657786;
+    font-size: 22px;
+    cursor: pointer;
+    transition: color 0.2s;
+    flex: 0 1 auto; /* Changed from flex: 1 to allow more control */
+    display: flex;
+    justify-content: center;
+    position: relative;
+    min-width: 0;
+    padding: 0 10px; /* Added padding to ensure equal spacing */
 }
 
-.dark-mode .create-post-btn {
-    background-color: #1d9bf0;
-}
+        /* Keep all your existing hover and dark mode styles */
+        .create-post-btn:hover {
+            background-color: #1a8cd8;
+        }
+
+        .dark-mode .create-post-btn {
+            background-color: #1d9bf0;
+        }
         /* Spinner Preloader */
         .spinner-preloader {
             position: fixed;
@@ -207,12 +208,12 @@
 
         .logo {
             height: 50px;
-            filter: brightness(0);
+            filter: brightness(0) saturate(100%) invert(22%) sepia(55%) saturate(1553%) hue-rotate(194deg) brightness(93%) contrast(91%);
             transition: filter 0.3s;
         }
 
         .dark-mode .logo {
-            filter: brightness(0) invert(1);
+            filter: brightness(0) saturate(100%) invert(22%) sepia(55%) saturate(1553%) hue-rotate(194deg) brightness(93%) contrast(91%) invert(1);
         }
 
         .profile-pic {
@@ -390,35 +391,6 @@
 
         .footer-icon.active {
             color: #1da1f2;
-        }
-
-        .create-post-btn {
-            position: absolute;
-            left: 50%;
-            top: -30px;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #1d9bf0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
-            border: none;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .create-post-btn:hover {
-            background-color: #1a73e8;
-        }
-
-        .dark-mode .create-post-btn {
-            background-color: #1d9bf0;
         }
 
         /* Menu Page Styles */
@@ -653,678 +625,7 @@
             background-color: rgba(255, 0, 0, 0.2);
         }
 
-        /* Notifications Page */
-        .notifications-page {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background-color: white;
-            z-index: 2000;
-            overflow-y: auto;
-        }
-
-        .dark-mode .notifications-page {
-            background-color: #000;
-        }
-
-        .notifications-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid #ddd;
-            position: sticky;
-            top: 0;
-            background-color: white;
-            z-index: 10;
-        }
-
-        .dark-mode .notifications-header {
-            border-bottom-color: #333;
-            background-color: #000;
-        }
-
-        .notifications-back-btn {
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .notifications-title {
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .notifications-search-btn {
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        /* Notification Items */
-        .notification-container {
-            padding: 0;
-            width: 100%;
-        }
-
-        .notification-item {
-            display: flex;
-            padding: 12px 16px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .dark-mode .notification-item {
-            border-bottom-color: #333;
-        }
-
-        .notification-item:hover {
-            background-color: #f5f5f5;
-        }
-
-        .dark-mode .notification-item:hover {
-            background-color: #222;
-        }
-
-        .notification-item.unread {
-            background-color: #f0f8ff;
-        }
-
-        .dark-mode .notification-item.unread {
-            background-color: #1a3a5a;
-        }
-
-        .notification-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f0f2f5;
-            color: #555;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .dark-mode .notification-avatar {
-            background-color: #333;
-            color: #e4e6eb;
-        }
-
-        .notification-avatar.initials {
-            background-color: #00B0FF;
-            color: white;
-        }
-
-        .dark-mode .notification-avatar.initials {
-            background-color: #1DA1F2;
-        }
-
-        .notification-content {
-            flex: 1;
-        }
-
-        .notification-text {
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-
-        .notification-text strong {
-            font-weight: 600;
-        }
-
-        .notification-time {
-            font-size: 12px;
-            color: #777;
-        }
-
-        .dark-mode .notification-time {
-            color: #888;
-        }
-
-        .notification-action {
-            margin-top: 4px;
-        }
-
-        .notification-action-btn {
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            background-color: #e4e6eb;
-        }
-
-        .dark-mode .notification-action-btn {
-            background-color: #333;
-            color: #e4e6eb;
-        }
-
-        .notification-action-btn.follow {
-            background-color: #1877f2;
-            color: white;
-        }
-
-        .notification-action-btn.view {
-            background-color: #42b72a;
-            color: white;
-        }
-
-        .no-notifications {
-            text-align: center;
-            padding: 50px 20px;
-            color: #777;
-            font-size: 16px;
-        }
-
-        .dark-mode .no-notifications {
-            color: #888;
-        }
-
-        /* Skeleton Preloader for Notifications */
-        .notifications-skeleton {
-            display: none;
-            padding: 20px;
-            height: calc(100vh - 56px); /* Full height minus header */
-            background-color: white;
-        }
-
-        .dark-mode .notifications-skeleton {
-            background-color: #000;
-        }
-
-        .notification-skeleton-item {
-            display: flex;
-            padding: 12px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .dark-mode .notification-skeleton-item {
-            border-bottom-color: #333;
-        }
-
-        .skeleton-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background-color: #f0f2f5;
-            margin-right: 12px;
-        }
-
-        .dark-mode .skeleton-avatar {
-            background-color: #333;
-        }
-
-        .skeleton-content {
-            flex: 1;
-        }
-
-        .skeleton-line {
-            height: 12px;
-            background-color: #f0f2f5;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        .dark-mode .skeleton-line {
-            background-color: #333;
-        }
-
-        .skeleton-line.short {
-            width: 60%;
-        }
-
-        .skeleton-line.medium {
-            width: 80%;
-        }
-
-        .skeleton-line.long {
-            width: 100%;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        /* Posts Styles */
-        .posts-container {
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .post {
-            background-color: white;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            position: relative;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .dark-mode .post {
-            background-color: #000;
-            border: 1px solid #333;
-        }
-
-        .post-header {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-        }
-
-        .post-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 12px;
-            background-color: #00B0FF;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        .post-user-info {
-            flex-grow: 1;
-        }
-
-        .post-user {
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .post-username {
-            color: #777;
-            font-size: 14px;
-            margin-top: 2px;
-        }
-
-        .dark-mode .post-username {
-            color: #888;
-        }
-
-        .post-time {
-            color: #777;
-            font-size: 12px;
-            margin-top: 2px;
-        }
-
-        .dark-mode .post-time {
-            color: #888;
-        }
-
-        .post-top-right {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .follow-btn {
-            background-color: #000;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            min-width: 80px;
-        }
-
-        .dark-mode .follow-btn {
-            background-color: white;
-            color: #000;
-        }
-
-        .follow-btn:hover {
-            background-color: #333;
-        }
-
-        .dark-mode .follow-btn:hover {
-            background-color: #f0f0f0;
-        }
-
-        .follow-btn.following {
-            background-color: #fff;
-            color: #000;
-            border: 1px solid #ddd;
-        }
-
-        .dark-mode .follow-btn.following {
-            background-color: #000;
-            color: #e4e6eb;
-            border-color: #333;
-        }
-
-        .post-time-right {
-            color: #777;
-            font-size: 12px;
-        }
-
-        .post-more {
-            color: #777;
-            cursor: pointer;
-            padding: 4px;
-        }
-
-        .post-more-menu {
-            position: absolute;
-            bottom: -100px;
-            right: 16px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: 200px;
-            z-index: 100;
-            overflow: hidden;
-            display: none;
-        }
-
-        .dark-mode .post-more-menu {
-            background-color: #000;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            border: 1px solid #333;
-        }
-
-        .post-more-menu.show {
-            display: block;
-        }
-
-        .post-more-option {
-            padding: 12px 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .dark-mode .post-more-option {
-            color: #e4e6eb;
-        }
-
-        .post-more-option:hover {
-            background-color: #f0f2f5;
-        }
-
-        .dark-mode .post-more-option:hover {
-            background-color: #333;
-        }
-
-        .post-more-option i {
-            width: 20px;
-            text-align: center;
-        }
-
-        .post-content {
-            padding: 0 16px 12px;
-            line-height: 1.5;
-        }
-
-        .post-content a {
-            color: #00B0FF;
-            text-decoration: none;
-        }
-
-        .post-content a:hover {
-            text-decoration: underline;
-        }
-
-        .post-stats {
-            display: flex;
-            justify-content: space-between;
-            padding: 0 16px;
-            color: #777;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .dark-mode .post-stats {
-            color: #888;
-        }
-
-        .post-viewers {
-            display: flex;
-            align-items: center;
-        }
-
-        .viewers-icon {
-            font-size: 16px;
-            margin-right: 4px;
-            color: #777;
-        }
-
-        .dark-mode .viewers-icon {
-            color: #888;
-        }
-
-        .post-actions {
-            display: flex;
-            justify-content: space-between;
-            border-top: 1px solid #eee;
-            padding: 8px 16px 0;
-        }
-
-        .dark-mode .post-actions {
-            border-top-color: #333;
-        }
-
-        .post-action {
-            display: flex;
-            align-items: center;
-            color: #555;
-            cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        .dark-mode .post-action {
-            color: #888;
-        }
-
-        .post-action:hover {
-            background-color: #f0f0f0;
-            color: #00B0FF;
-        }
-
-        .dark-mode .post-action:hover {
-            background-color: #333;
-        }
-
-        .post-action i {
-            margin-right: 6px;
-            font-size: 16px;
-        }
-
-        .post-action.liked {
-            color: #e0245e;
-        }
-
-        .post-action.liked i {
-            color: #e0245e;
-        }
-        
-        .like-animation {
-            position: absolute;
-            font-size: 80px;
-            opacity: 0;
-            pointer-events: none;
-            animation: likeZoom 0.8s forwards;
-            color: #ff0000;
-        }
-        
-        @keyframes likeZoom {
-            0% { transform: scale(0); opacity: 0; }
-            15% { transform: scale(1.2); opacity: 1; }
-            30% { transform: scale(0.95); }
-            45%, 80% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-
-        .swiper-container {
-            width: 100%;
-            height: 500px;
-            position: relative;
-            margin-bottom: 12px;
-        }
-
-        .swiper-slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .photo-counter {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            z-index: 10;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .swiper-container:hover .photo-counter,
-        .swiper-container:active .photo-counter {
-            opacity: 1;
-        }
-
-        /* Adjust post action sizes */
-        .post-actions .post-action i {
-            font-size: 20px;
-            margin-right: 8px;
-        }
-
-        .post-actions .post-action {
-            font-size: 16px;
-            padding: 8px 16px;
-        }
-
-        .like-animation {
-            font-size: 30px;
-        }
-
-        .post-actions {
-            padding: 8px 24px 0;
-        }
-
-        .no-posts {
-            text-align: center;
-            padding: 40px 20px;
-            color: #777;
-        }
-
-        .dark-mode .no-posts {
-            color: #888;
-        }
-
-        .skeleton-loader {
-            display: flex;
-            align-items: center;
-            width: 100%;
-        }
-
-        .skeleton-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: #e0e0e0;
-            margin-right: 12px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .skeleton-details {
-            flex: 1;
-        }
-
-        .skeleton-name {
-            width: 120px;
-            height: 16px;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .skeleton-username {
-            width: 80px;
-            height: 14px;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dark-mode .skeleton-avatar,
-        .dark-mode .skeleton-name,
-        .dark-mode .skeleton-username {
-            background-color: #333;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-        }
-
-        /* Responsive Design */
-        @media (min-width: 768px) {
-            .main-content {
-                max-width: 600px;
-                margin: 120px auto 0;
-            }
-
-            .menu-page, .notifications-page {
-                max-width: 500px;
-                right: 0;
-                left: auto;
-                border-left: 1px solid #ddd;
-            }
-
-            .dark-mode .menu-page, .dark-mode .notifications-page {
-                border-left-color: #333;
-            }
-        }
-
-        @media (min-width: 1024px) {
-            body {
-                display: grid;
-                grid-template-columns: 280px 600px 1fr;
-                gap: 20px;
-            }
-
-            .main-content {
-                grid-column: 2;
-                margin: 120px 0 0;
-            }
-        }
-
-           /* Notification Badge */
+        /* Notification Badge */
 .footer-icon {
     position: relative;
 }
@@ -1812,36 +1113,17 @@
     100% { transform: scale(0); opacity: 0; }
 }
 
-/* Responsive Adjustments */
-@media (max-width: 480px) {
-    .comment-popup,
-    .share-popup,
-    .likes-popup {
-        max-height: 90vh;
-        border-radius: 0;
-    }
-    
-    .post-more-menu,
-    .comment-more-menu {
-        width: 180px;
-    }
-}
-
-        /* ===== Enhanced Link Styling ===== */
+/* ===== Enhanced Link Styling ===== */
 .post-content a,
 .comment-content a {
     color: #1d9bf0; /* Twitter-like blue */
     text-decoration: none;
 }
 
-
-
 .dark-mode .post-content a,
 .dark-mode .comment-content a {
     color: #58a6ff; /* Slightly lighter blue for dark mode */
 }
-
-
 
 /* ===== Popup Enhancements ===== */
 .popup-overlay {
@@ -1951,8 +1233,6 @@
     color: #b0b3b8;
 }
 
-
-
 /* ===== Copy Link Feedback ===== */
 .copy-feedback {
     position: fixed;
@@ -2051,15 +1331,15 @@
         <div class="footer-icon" onclick="window.location.href='search.html'">
             <i class="fas fa-search"></i>
         </div>
+        <button class="create-post-btn" onclick="window.location.href='create-post.html'">
+            <i class="fas fa-plus"></i>
+        </button>
         <div class="footer-icon" onclick="window.location.href='notifications.html'">
             <i class="fas fa-bell"></i>
               </div>
         <div class="footer-icon" onclick="window.location.href='profile.html'">
             <i class="fas fa-user"></i>
         </div>
-        <button class="create-post-btn" onclick="window.location.href='create-post.html'">
-            <i class="fas fa-plus"></i>
-        </button>
     </footer>
 
 
