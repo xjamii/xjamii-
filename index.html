@@ -51,16 +51,30 @@
     background-color: white;
     border-top: 1px solid #e6ecf0;
     display: flex;
-     /* Changed from space-around to space-evenly */
+    justify-content: space-between; /* Changed to space-between */
     align-items: center;
     z-index: 1000;
-    padding: 0 10px; /* Reduced padding to allow more space for icons */
+    padding: 0 20px; /* Adjusted padding */
     box-shadow: 0 -2px 10px rgba(255, 255, 255, 0.9);
 }
 
+.footer-icon {
+    color: #657786;
+    font-size: 22px;
+    cursor: pointer;
+    transition: color 0.2s;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    min-width: 0;
+}
+
 .create-post-btn {
-    position: relative; /* Changed from absolute to relative */
-    /* Lifts the button slightly above the others */
+    position: absolute;
+    left: 50%;
+    bottom: 30px; /* Adjusted position */
+    transform: translateX(-50%);
     width: 60px;
     height: 60px;
     border-radius: 50%;
@@ -76,27 +90,7 @@
     outline: none;
     transition: all 0.2s;
     z-index: 1001;
-    /* Added margin to ensure equal spacing */
 }
-
-.footer-icon {
-    
-    padding: 0 10px; /* Added padding to ensure equal spacing */
-}
-
-        
-
-        .footer-icon {
-            color: #657786;
-            font-size: 22px;
-            cursor: pointer;
-            transition: color 0.2s;
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            position: relative;
-            min-width: 0; /* Allows icons to shrink properly */
-        }
 
         
 
