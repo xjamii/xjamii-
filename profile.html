@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviation Connect Pro | Professional Profile</title>
+    <title>Aviationin Profile</title>
+    <link rel="stylesheet" href="edit.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -439,6 +440,86 @@ body {
         </div>
     </div>
 
+    
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="edit-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Profile</h3>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-profile-form">
+                    <div class="form-group">
+                        <label for="edit-avatar">Profile Picture</label>
+                        <img id="avatar-preview" class="avatar-preview" src="" alt="Avatar Preview">
+                        <label for="edit-avatar-upload" class="file-input-label">
+                            <i class="fas fa-camera"></i> Change Photo
+                        </label>
+                        <input type="file" id="edit-avatar-upload" class="file-input" accept="image/*">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-cover">Cover Photo</label>
+                        <img id="cover-preview" class="cover-preview" src="" alt="Cover Preview">
+                        <label for="edit-cover-upload" class="file-input-label">
+                            <i class="fas fa-camera"></i> Change Cover
+                        </label>
+                        <input type="file" id="edit-cover-upload" class="file-input" accept="image/*">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-full-name">Full Name</label>
+                        <input type="text" id="edit-full-name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-username">Username</label>
+                        <input type="text" id="edit-username" required>
+                        <div class="username-availability" id="username-availability"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-bio">Bio</label>
+                        <textarea id="edit-bio"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-website">Website</label>
+                        <input type="url" id="edit-website" placeholder="https://example.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-category">Professional Category</label>
+                        <select id="edit-category">
+                            <option value="">Select Category</option>
+                            <option value="Pilot">Pilot</option>
+                            <option value="Flight Attendant">Flight Attendant</option>
+                            <option value="Engineer">Aircraft Engineer</option>
+                            <option value="Air Traffic Controller">Air Traffic Controller</option>
+                            <option value="Management">Management</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-experience">Professional Experience</label>
+                        <textarea id="edit-experience" placeholder="Describe your professional background"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-skills">Skills (comma separated)</label>
+                        <textarea id="edit-skills" placeholder="e.g., CRM, Flight Planning, Safety Management"></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" id="cancel-edit">Cancel</button>
+                        <button type="submit" class="btn btn-save">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <script>
         // Initialize Supabase
         const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
@@ -726,6 +807,9 @@ body {
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', loadProfile);
+ 
     </script>
+
+    <script src="edit.js"></script>
 </body>
 </html>
