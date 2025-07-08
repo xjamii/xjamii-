@@ -8,7 +8,345 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* [Keep all your existing CSS styles] */
+     /* Base Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+}
 
+/* Header Styles */
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.back-button {
+    color: #0056b3;
+    font-size: 18px;
+    text-decoration: none;
+}
+
+.header-name {
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.edit-button, .more-options {
+    color: #0056b3;
+    font-size: 16px;
+    cursor: pointer;
+    display: none;
+}
+
+/* Profile Content Styles */
+.profile-content {
+    margin-top: 60px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.cover-photo {
+    height: 150px;
+    background-color: #0056b3;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+/* Profile Info Styles */
+.profile-info {
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    margin-top: -70px;
+}
+
+.avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 5px solid white;
+    object-fit: cover;
+    margin-bottom: 15px;
+}
+
+.profile-details {
+    margin-top: 10px;
+}
+
+.profile-name {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.profile-name h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.verified-badge {
+    color: #0056b3;
+    font-size: 16px;
+    display: none;
+}
+
+.username {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.connections {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.bio {
+    color: #444;
+    font-size: 15px;
+    margin: 15px auto;
+    max-width: 80%;
+    line-height: 1.5;
+}
+
+.website-link {
+    color: #0056b3;
+    text-decoration: none;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.category-badge {
+    background-color: #e6f0ff;
+    color: #0056b3;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn {
+    background-color: #0056b3;
+    color: white;
+}
+
+.btn-outline {
+    background-color: white;
+    color: #0056b3;
+    border: 1px solid #0056b3;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* Experience Section */
+.experience-section, .skills-section {
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
+
+.section-title {
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.experience-item {
+    margin-bottom: 15px;
+}
+
+.experience-details {
+    margin-left: 10px;
+}
+
+.experience-details .description {
+    color: #444;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* Skills Section */
+.skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.skill-badge {
+    background-color: #f0f4f8;
+    color: #0056b3;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .profile-info {
+        padding: 15px;
+    }
+    
+    .bio {
+        max-width: 95%;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 200px;
+    }
+}
+
+/* [Keep all your existing skeleton loader styles here] */
+.profile-details-skeleton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    margin-top: 70px;
+}
+
+.skeleton-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid white;
+}
+
+.skeleton-name {
+    width: 200px;
+    height: 30px;
+    background-color: #e0e0e0;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.skeleton-username {
+    width: 150px;
+    height: 20px;
+    background-color: #e0e0e0;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.skeleton-bio {
+    width: 80%;
+    height: 60px;
+    background-color: #e0e0e0;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.skeleton-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.skeleton-stat {
+    width: 60px;
+    height: 20px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+}
+
+.skeleton-button {
+    width: 100px;
+    height: 40px;
+    background-color: #e0e0e0;
+    border-radius: 20px;
+    margin-bottom: 15px;
+}
+
+.skeleton-shimmer {
+    background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.error-message {
+    color: #ff4444;
+    text-align: center;
+    padding: 20px;
+    font-weight: 500;
+    display: none;
+}
         /* Add these new styles for the focused skeleton loader */
         .profile-details-skeleton {
             display: flex;
