@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="theme-color" content="#000000">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile | X-Jamii</title>
+    <title>Aviation Connect Pro | Professional Profile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -13,1261 +12,806 @@
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
     </script>
     <style>
+        :root {
+            --primary: #0056b3;
+            --primary-dark: #003d7a;
+            --secondary: #ffc107;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+        }
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
-        body {
-            background-color: #fff;
-            padding-bottom: 80px;
-            transition: background-color 0.3s;
-            color: #000;
-        }
-
-        .dark-mode {
-            background-color: #000;
-            color: #e4e6eb;
-        }
-
-        /* Header Styles */
-        .profile-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background-color: #fff;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-bottom: 1px solid #e5e5e5;
-            z-index: 100;
-        }
-
-        .dark-mode .profile-header {
-            background-color: #000;
-            border-bottom-color: #333;
-        }
-
-        .header-title {
-            font-weight: 700;
-            font-size: 18px;
-            text-align: center;
-            color: #000;
-        }
-
-        .dark-mode .header-title {
-            color: #e4e6eb;
-        }
-
-        .header-back {
-            position: absolute;
-            left: 20px;
-        }
-
-        .header-actions {
-            position: absolute;
-            right: 20px;
-            display: flex;
-            gap: 15px;
-        }
-
-        .header-button {
-            color: #000;
-            font-size: 20px;
-            text-decoration: none;
-        }
-
-        .dark-mode .header-button {
-            color: #e4e6eb;
-        }
-
-        .profile-container {
-            margin-top: 50px;
-            padding: 0;
-            width: 100%;
-        }
-
-        /* Profile Banner */
         
-        /* Profile Info Section - TikTok Style */
-        .profile-info {
-            padding: 16px;
-            position: relative;
-            
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        /* TikTok-style avatar */
-        .profile-avatar-container {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 2px solid #fff;
-            background-color: #fff;
-            overflow: hidden;
-            margin-bottom: 16px;
-        }
-
-        .profile-avatar-container::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #ff0050, #ff0050, #00f2ea, #00f2ea);
-            z-index: -1;
-        }
-
-        .dark-mode .profile-avatar-container {
-            border-color: #000;
-            background-color: #000;
-        }
-
-        .profile-avatar {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-        }
-
-        .profile-username {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            text-align: center;
-            color: #000;
-        }
-
-        .dark-mode .profile-username {
-            color: #e4e6eb;
-        }
-
-        .profile-stats {
-            display: flex;
-            gap: 40px; /* Increased gap between stats */
-            margin-bottom: 20px; /* Increased margin */
-            justify-content: center;
-        }
-
-        .profile-stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .stat-number {
-            font-weight: 700;
-            font-size: 20px; /* Increased font size */
-            color: #000;
-        }
-
-        .dark-mode .stat-number {
-            color: #e4e6eb;
-        }
-
-        .stat-label {
-            font-size: 16px; /* Increased font size */
-            color: #666;
-        }
-
-        .dark-mode .stat-label {
-            color: #b0b3b8;
-        }
-
-        .profile-actions {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px; /* Increased margin */
-            justify-content: center;
-            position: relative;
-            width: 100%;
-        }
-
-        .action-button {
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-            font-size: 14px;
-        }
-
-        .follow-button {
-            background-color: #000;
-            color: #fff;
-            width: 100%;
-            max-width: 200px;
-        }
-
-        .dark-mode .follow-button {
-            background-color: #fff;
-            color: #000;
-        }
-
-        .message-button {
-            background-color: #f0f0f0;
-            color: #000;
-            width: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .dark-mode .message-button {
-            background-color: #3a3b3c;
-            color: #e4e6eb;
-        }
-
-        .more-button {
-            background-color: #f0f0f0;
-            color: #000;
-            width: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .dark-mode .more-button {
-            background-color: #3a3b3c;
-            color: #e4e6eb;
-        }
-
-        .more-options {
-            position: absolute;
-            bottom: 50px;
-            right: 0;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: 150px;
-            z-index: 100;
-            overflow: hidden;
-            display: none;
-        }
-
-        .dark-mode .more-options {
-            background-color: #242526;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .more-options.show {
-            display: block;
-            animation: slideUp 0.3s ease-out;
-        }
-
-        .more-option {
-            padding: 12px 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #333;
-        }
-
-        .dark-mode .more-option {
-            color: #e4e6eb;
-        }
-
-        .more-option:hover {
+        body {
             background-color: #f5f5f5;
-        }
-
-        .dark-mode .more-option:hover {
-            background-color: #3a3b3c;
-        }
-
-        .more-option i {
-            width: 20px;
-            text-align: center;
-        }
-
-        .profile-bio {
-            margin-bottom: 12px; /* Increased margin */
-            line-height: 1.4;
-            text-align: center;
-            max-width: 80%;
-            font-size: 14px;
             color: #333;
+            line-height: 1.6;
         }
-
-        .dark-mode .profile-bio {
-            color: #e4e6eb;
-        }
-
-        .profile-website {
-            margin-bottom: 16px;
-            color: #00B0FF;
-            text-decoration: none;
-            word-break: break-all;
-            font-size: 14px;
-        }
-
-        .profile-website:hover {
-            text-decoration: underline;
-        }
-
-        .profile-category {
-            margin-bottom: 16px; /* Increased margin */
-            line-height: 1.4;
-            text-align: center;
-            font-weight: 500;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .dark-mode .profile-category {
-            color: #b0b3b8;
-        }
-
-        /* Posts Section */
-        .posts-section {
-            margin-top: 20px;
-            width: 100%;
-        }
-
-        .posts-tabs {
-            display: flex;
-            border-bottom: 1px solid #e5e5e5;
-            margin-bottom: 16px;
-        }
-
-        .dark-mode .posts-tabs {
-            border-bottom-color: #3e4042;
-        }
-
-        .post-tab {
-            padding: 12px 16px;
-            font-weight: 600;
-            cursor: pointer;
-            position: relative;
-            flex: 1;
-            text-align: center;
-            color: #999;
-        }
-
-        .post-tab.active {
-            color: #000;
-        }
-
-        .dark-mode .post-tab.active {
-            color: #fff;
-        }
-
-        .post-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 20%;
-            right: 20%;
-            height: 2px;
-            background-color: #000;
-            border-radius: 2px;
-        }
-
-        .dark-mode .post-tab.active::after {
-            background-color: #fff;
-        }
-
-        .post-tab i {
-            font-size: 20px;
-        }
-
-        .posts-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2px;
-        }
-
-        .post-item {
-            aspect-ratio: 1/1;
-            background-color: #f0f0f0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .dark-mode .post-item {
-            background-color: #3a3b3c;
-        }
-
-        .post-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Full Page Skeleton Loader */
-        .skeleton-loader {
+        
+        /* Skeleton Preloader */
+        .skeleton-preloader {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #fff;
+            width: 100%;
+            height: 100%;
+            background-color: white;
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            padding-top: 50px; /* Space for header */
         }
-
-        .dark-mode .skeleton-loader {
-            background-color: #000;
-        }
-
+        
         .skeleton-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 50px;
-            background-color: #f0f0f0;
+            height: 60px;
+            background-color: var(--light-gray);
             display: flex;
             align-items: center;
-            justify-content: center;
+            padding: 0 20px;
+            gap: 15px;
         }
-
-        .dark-mode .skeleton-header {
-            background-color: #3a3b3c;
+        
+        .skeleton-back {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #ddd;
         }
-
-        .skeleton-header-title {
-            width: 100px;
+        
+        .skeleton-title {
+            width: 150px;
             height: 20px;
-            background-color: #e0e0e0;
+            background-color: #ddd;
             border-radius: 4px;
-            animation: pulse 1.5s infinite;
         }
-
-        .dark-mode .skeleton-header-title {
-            background-color: #4e4e4e;
+        
+        .skeleton-cover {
+            height: 200px;
+            background-color: #ddd;
         }
-
-        .skeleton-content {
-            flex: 1;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        
+        .skeleton-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #ddd;
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid white;
+        }
+        
+        .skeleton-info {
+            padding: 80px 20px 20px;
+            position: relative;
             text-align: center;
         }
-
-        .skeleton-banner {
-            height: 50px;
-            background-color: #f0f0f0;
-            width: 100%;
-            animation: pulse 1.5s infinite;
+        
+        .skeleton-name {
+            width: 200px;
+            height: 30px;
+            background-color: #ddd;
+            margin: 0 auto 10px;
+            border-radius: 4px;
         }
-
-        .dark-mode .skeleton-banner {
-            background-color: #3a3b3c;
-        }
-
-        .skeleton-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background-color: #f0f0f0;
-            margin-top: -50px;
-            margin-bottom: 16px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dark-mode .skeleton-avatar {
-            background-color: #3a3b3c;
-        }
-
+        
         .skeleton-username {
             width: 120px;
-            height: 20px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-            margin-bottom: 16px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dark-mode .skeleton-username {
-            background-color: #3a3b3c;
-        }
-
-        .skeleton-stats {
-            display: flex;
-            gap: 40px;
-            margin-bottom: 20px;
-            justify-content: center;
-        }
-
-        .skeleton-stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .skeleton-stat-number {
-            width: 40px;
-            height: 20px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dark-mode .skeleton-stat-number {
-            background-color: #3a3b3c;
-        }
-
-        .skeleton-stat-label {
-            width: 60px;
             height: 16px;
-            background-color: #f0f0f0;
+            background-color: #ddd;
+            margin: 0 auto 15px;
             border-radius: 4px;
-            animation: pulse 1.5s infinite;
         }
-
-        .dark-mode .skeleton-stat-label {
-            background-color: #3a3b3c;
-        }
-
-        .skeleton-actions {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .skeleton-action {
-            height: 40px;
-            background-color: #f0f0f0;
-            border-radius: 8px;
-            animation: pulse 1.5s infinite;
-            flex: 1;
-            max-width: 200px;
-        }
-
-        .dark-mode .skeleton-action {
-            background-color: #3a3b3c;
-        }
-
-        .skeleton-category {
-            width: 80px;
-            height: 16px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-            margin-bottom: 16px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .dark-mode .skeleton-category {
-            background-color: #3a3b3c;
-        }
-
+        
         .skeleton-bio {
-            width: 80%;
-            height: 40px;
-            background-color: #f0f0f0;
+            width: 90%;
+            height: 60px;
+            background-color: #ddd;
+            margin: 0 auto 15px;
             border-radius: 4px;
-            margin-bottom: 16px;
-            animation: pulse 1.5s infinite;
         }
-
-        .dark-mode .skeleton-bio {
-            background-color: #3a3b3c;
-        }
-
-        .skeleton-tabs {
-            width: 100%;
+        
+        .skeleton-button {
+            width: 100px;
             height: 40px;
-            background-color: #f0f0f0;
+            background-color: #ddd;
+            margin: 0 auto;
+            border-radius: 20px;
+        }
+        
+        .skeleton-section {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+        }
+        
+        .skeleton-section-title {
+            width: 180px;
+            height: 24px;
+            background-color: #ddd;
+            margin-bottom: 20px;
             border-radius: 4px;
-            margin-bottom: 16px;
-            animation: pulse 1.5s infinite;
         }
-
-        .dark-mode .skeleton-tabs {
-            background-color: #3a3b3c;
-        }
-
-        .skeleton-posts-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2px;
+        
+        .skeleton-experience {
             width: 100%;
+            height: 80px;
+            background-color: #ddd;
+            margin-bottom: 15px;
+            border-radius: 4px;
         }
-
-        .skeleton-post {
-            aspect-ratio: 1/1;
-            background-color: #f0f0f0;
-            animation: pulse 1.5s infinite;
+        
+        .skeleton-skill {
+            width: 80px;
+            height: 30px;
+            background-color: #ddd;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            border-radius: 15px;
         }
-
-        .dark-mode .skeleton-post {
-            background-color: #3a3b3c;
+        
+        /* Header Styles */
+        .profile-header {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--light-gray);
+            z-index: 100;
         }
-
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
-
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        
+        .back-button {
+            color: var(--primary);
+            font-size: 20px;
+            text-decoration: none;
         }
-
-        .verified-badge {
-            color: #00B0FF;
-            font-size: 16px;
+        
+        .header-name {
+            font-weight: 600;
+            font-size: 18px;
         }
-
-        /* Initials Avatar */
-        .initials-avatar {
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .edit-button, .more-options {
+            color: var(--gray);
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .edit-button:hover, .more-options:hover {
+            color: var(--primary);
+        }
+        
+        /* Profile Content */
+        .profile-content {
             width: 100%;
-            height: 100%;
+            display: none; /* Hidden until loaded */
+        }
+        
+        .cover-photo {
+            height: 200px;
+            background: linear-gradient(rgba(0, 86, 179, 0.7), rgba(0, 86, 179, 0.7)), 
+                        var(--light-gray) no-repeat center center/cover;
+        }
+        
+        .profile-info {
+            padding: 20px;
+            background: white;
+            position: relative;
+            text-align: center;
+        }
+        
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 5px solid white;
+            object-fit: cover;
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .profile-details {
+            margin-top: 70px;
+        }
+        
+        .profile-name {
             display: flex;
             align-items: center;
             justify-content: center;
+            margin-bottom: 5px;
+        }
+        
+        .profile-name h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-right: 8px;
+        }
+        
+        .verified-badge {
+            color: var(--primary);
+            font-size: 20px;
+            margin-right: 10px;
+            display: none;
+        }
+        
+        .username {
+            color: var(--gray);
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .connections {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+        
+        .connections i {
+            margin-right: 5px;
+            color: var(--primary);
+        }
+        
+        .bio {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: var(--dark);
+            text-align: center;
+        }
+        
+        .website-link {
+            display: inline-block;
+            color: var(--primary);
+            text-decoration: none;
+            margin-bottom: 15px;
+            font-weight: 500;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .website-link:hover {
+            text-decoration: underline;
+        }
+        
+        .category-badge {
+            display: inline-block;
+            background-color: var(--light-gray);
+            color: var(--dark);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
             color: white;
-            font-weight: bold;
-            font-size: 40px;
-            background-color: #1DA1F2;
-            border-radius: 50%;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: rgba(0, 86, 179, 0.1);
+        }
+        
+        /* Experience Section */
+        .experience-section {
+            background: white;
+            padding: 25px;
+            margin-top: 10px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        .experience-item {
+            display: flex;
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .experience-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .company-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-right: 20px;
+        }
+        
+        .experience-details h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+        
+        .experience-details .company {
+            font-size: 16px;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .experience-details .duration {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 10px;
+        }
+        
+        .experience-details .description {
+            font-size: 15px;
+            color: var(--dark);
+        }
+        
+        .experience-details .description ul {
+            margin-left: 20px;
+        }
+        
+        .experience-details .description li {
+            margin-bottom: 5px;
+        }
+        
+        /* Skills Section */
+        .skills-section {
+            background: white;
+            padding: 25px;
+            margin-top: 10px;
+        }
+        
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .skill-badge {
+            background-color: var(--light-gray);
+            color: var(--dark);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
         }
 
-        .dark-mode .initials-avatar {
-            background-color: #1DA1F2;
+        /* Animation for skeleton */
+        @keyframes shimmer {
+            0% { background-position: -468px 0 }
+            100% { background-position: 468px 0 }
+        }
+
+        .skeleton-shimmer {
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards;
+            animation-iteration-count: infinite;
+            animation-name: shimmer;
+            animation-timing-function: linear;
+            background: linear-gradient(to right, #eeeeee 8%, #dddddd 18%, #eeeeee 33%);
+            background-size: 800px 104px;
+            position: relative;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="profile-header">
-        <div class="header-back">
-            <a href="index.html" class="header-button">
-                <i class="fas fa-arrow-left"></i>
-            </a>
+    <!-- Skeleton Preloader -->
+    <div class="skeleton-preloader" id="skeleton-preloader">
+        <div class="skeleton-header">
+            <div class="skeleton-back skeleton-shimmer"></div>
+            <div class="skeleton-title skeleton-shimmer"></div>
         </div>
-        <div class="header-title" id="header-title">Profile</div>
-        <div class="header-actions">
-            <a href="search.html" class="header-button" id="search-button">
-                <i class="fas fa-search"></i>
-            </a>
+        <div class="skeleton-cover skeleton-shimmer"></div>
+        <div class="skeleton-info">
+            <div class="skeleton-avatar skeleton-shimmer"></div>
+            <div class="skeleton-name skeleton-shimmer"></div>
+            <div class="skeleton-username skeleton-shimmer"></div>
+            <div class="skeleton-bio skeleton-shimmer"></div>
+            <div class="skeleton-button skeleton-shimmer"></div>
         </div>
-    </header>
+        <div class="skeleton-section">
+            <div class="skeleton-section-title skeleton-shimmer"></div>
+            <div class="skeleton-experience skeleton-shimmer"></div>
+            <div class="skeleton-experience skeleton-shimmer"></div>
+        </div>
+        <div class="skeleton-section">
+            <div class="skeleton-section-title skeleton-shimmer"></div>
+            <div class="skeleton-skill skeleton-shimmer"></div>
+            <div class="skeleton-skill skeleton-shimmer"></div>
+            <div class="skeleton-skill skeleton-shimmer"></div>
+            <div class="skeleton-skill skeleton-shimmer"></div>
+        </div>
+    </div>
 
-    <!-- Profile Content -->
-    <div class="profile-container">
-        <!-- Full Page Skeleton Loader (shown while loading) -->
-        <div class="skeleton-loader" id="skeleton-loader">
-            <div class="skeleton-header">
-                <div class="skeleton-header-title"></div>
+    <!-- Main Profile Content (hidden until loaded) -->
+    <div class="profile-content" id="profile-content">
+        <!-- Header with Back Button and Options -->
+        <div class="profile-header">
+            <div class="header-left">
+                <a href="index.html" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div class="header-name" id="profile-name">Loading...</div>
             </div>
-            <div class="skeleton-content">
-                <div class="skeleton-banner"></div>
-                <div class="skeleton-avatar"></div>
-                <div class="skeleton-username"></div>
-                <div class="skeleton-stats">
-                    <div class="skeleton-stat">
-                        <div class="skeleton-stat-number"></div>
-                        <div class="skeleton-stat-label"></div>
-                    </div>
-                    <div class="skeleton-stat">
-                        <div class="skeleton-stat-number"></div>
-                        <div class="skeleton-stat-label"></div>
-                    </div>
-                    <div class="skeleton-stat">
-                        <div class="skeleton-stat-number"></div>
-                        <div class="skeleton-stat-label"></div>
-                    </div>
+            <div class="header-actions">
+                <div class="edit-button" id="edit-button">
+                    <i class="fas fa-pencil-alt"></i>
                 </div>
-                <div class="skeleton-actions">
-                    <div class="skeleton-action"></div>
-                </div>
-                <div class="skeleton-category"></div>
-                <div class="skeleton-bio"></div>
-                <div class="skeleton-tabs"></div>
-                <div class="skeleton-posts-grid">
-                    <div class="skeleton-post"></div>
-                    <div class="skeleton-post"></div>
-                    <div class="skeleton-post"></div>
-                    <div class="skeleton-post"></div>
-                    <div class="skeleton-post"></div>
-                    <div class="skeleton-post"></div>
+                <div class="more-options" onclick="toggleOptions()">
+                    <i class="fas fa-ellipsis-h"></i>
                 </div>
             </div>
         </div>
 
-        <!-- Actual Profile Content (hidden initially) -->
-        <div id="profile-content" style="display: none;">
-            <!-- Banner -->
-            <div class="profile-banner" id="profile-banner"></div>
-
-            <!-- Profile Info -->
-            <div class="profile-info">
-                <div class="profile-avatar-container">
-                    <div id="profile-avatar" class="initials-avatar"></div>
+        <!-- Profile Content -->
+        <div class="cover-photo" id="cover-photo"></div>
+        <div class="profile-info">
+            <img src="" alt="Profile Avatar" class="avatar" id="profile-avatar">
+            <div class="profile-details">
+                <div class="profile-name">
+                    <h1 id="full-name">Loading...</h1>
+                    <i class="fas fa-check-circle verified-badge" id="verified-badge"></i>
                 </div>
-
-                <div class="profile-username" id="profile-username">@username</div>
-
-                <div class="profile-stats">
-                    <div class="profile-stat">
-                        <span class="stat-number" id="follower-count">0</span>
-                        <span class="stat-label">Followers</span>
-                    </div>
-                    <div class="profile-stat">
-                        <span class="stat-number" id="following-count">0</span>
-                        <span class="stat-label">Following</span>
-                    </div>
-                    <div class="profile-stat">
-                        <span class="stat-number" id="post-count">0</span>
-                        <span class="stat-label">Posts</span>
-                    </div>
+                <div class="username" id="username">@loading</div>
+                <div class="connections">
+                    <i class="fas fa-link"></i> <span id="connections-count">0</span> Connections
                 </div>
-
-                <div class="profile-actions">
-                    <button class="action-button follow-button" id="follow-button">
-                        Follow
-                    </button>
-                    <button class="message-button" id="message-button">
-                        <i class="fas fa-envelope"></i>
-                    </button>
-                    <button class="more-button" id="more-button">
-                        <i class="fas fa-ellipsis-h"></i>
-                    </button>
-                    <div class="more-options" id="more-options">
-                        <div class="more-option">
-                            <i class="fas fa-ban"></i>
-                            <span>Block</span>
-                        </div>
-                        <div class="more-option">
-                            <i class="fas fa-flag"></i>
-                            <span>Report</span>
-                        </div>
-                    </div>
+                <p class="bio" id="bio">
+                    Loading profile information...
+                </p>
+                <a href="#" class="website-link" id="website-link" style="display: none;"></a>
+                <div class="category-badge" id="category-badge" style="display: none;"></div>
+                <div class="action-buttons">
+                    <button class="btn" id="connect-btn">Connect</button>
+                    <button class="btn btn-outline">Message</button>
+                    <button class="btn btn-outline" onclick="shareProfile()"><i class="fas fa-share"></i></button>
                 </div>
-
-                <div class="profile-category" id="profile-category">No category</div>
-                <div class="profile-bio" id="profile-bio"></div>
-                <a href="#" class="profile-website" id="profile-website" target="_blank" style="display: none;"></a>
             </div>
+        </div>
 
-            <!-- Posts Section -->
-            <div class="posts-section">
-                <div class="posts-tabs">
-                    <div class="post-tab active" data-tab="posts"><i class="fas fa-table-cells-large"></i></div>
-                    <div class="post-tab" data-tab="liked"><i class="fas fa-heart"></i></div>
+        <!-- Experience Section -->
+        <div class="experience-section">
+            <h2 class="section-title"><i class="fas fa-briefcase"></i> Professional Experience</h2>
+            <div id="experience-container">
+                <div class="experience-item">
+                    <div class="experience-details">
+                        <div class="description" id="experience-text">Loading experience...</div>
+                    </div>
                 </div>
-                <div class="posts-grid" id="posts-grid">
-                    <!-- Posts will be loaded here -->
-                </div>
-                <div class="posts-grid" id="liked-posts-grid" style="display: none;">
-                    <!-- Liked posts will be loaded here -->
-                </div>
+            </div>
+        </div>
+        
+        <!-- Skills Section -->
+        <div class="skills-section">
+            <h2 class="section-title"><i class="fas fa-star"></i> Skills & Endorsements</h2>
+            <div class="skills-list" id="skills-container">
+                <div class="skill-badge">Loading skills...</div>
             </div>
         </div>
     </div>
 
     <script>
+        // Get profile ID from URL or current user
+        const urlParams = new URLSearchParams(window.location.search);
+        const profileId = urlParams.get('id') || supabase.auth.user()?.id;
+        
         // DOM Elements
-        const skeletonLoader = document.getElementById('skeleton-loader');
-        const profileContent = document.getElementById('profile-content');
-        const profileBanner = document.getElementById('profile-banner');
-        const profileAvatar = document.getElementById('profile-avatar');
-        const profileUsername = document.getElementById('profile-username');
-        const profileCategory = document.getElementById('profile-category');
-        const profileBio = document.getElementById('profile-bio');
-        const profileWebsite = document.getElementById('profile-website');
-        const followerCount = document.getElementById('follower-count');
-        const followingCount = document.getElementById('following-count');
-        const postCount = document.getElementById('post-count');
-        const followButton = document.getElementById('follow-button');
-        const messageButton = document.getElementById('message-button');
-        const moreButton = document.getElementById('more-button');
-        const moreOptions = document.getElementById('more-options');
-        const postsGrid = document.getElementById('posts-grid');
-        const likedPostsGrid = document.getElementById('liked-posts-grid');
-        const headerTitle = document.getElementById('header-title');
-        const postTabs = document.querySelectorAll('.post-tab');
+        const elements = {
+            skeleton: document.getElementById('skeleton-preloader'),
+            profileContent: document.getElementById('profile-content'),
+            profileName: document.getElementById('profile-name'),
+            fullName: document.getElementById('full-name'),
+            username: document.getElementById('username'),
+            bio: document.getElementById('bio'),
+            websiteLink: document.getElementById('website-link'),
+            categoryBadge: document.getElementById('category-badge'),
+            profileAvatar: document.getElementById('profile-avatar'),
+            coverPhoto: document.getElementById('cover-photo'),
+            experienceContainer: document.getElementById('experience-container'),
+            skillsContainer: document.getElementById('skills-container'),
+            verifiedBadge: document.getElementById('verified-badge'),
+            connectionsCount: document.getElementById('connections-count'),
+            connectBtn: document.getElementById('connect-btn'),
+            editButton: document.getElementById('edit-button')
+        };
 
-        // State variables
-        let currentUser = null;
-        let profileData = null;
-        let userPosts = [];
-        let likedPosts = [];
-        let isFollowing = false;
-
-        // Initialize the page
-        async function init() {
+        // Load profile data
+        async function loadProfile() {
             try {
-                // Check dark mode before showing preloader
-                if (localStorage.getItem('darkMode') === 'true') {
-                    document.body.classList.add('dark-mode');
-                }
-                
-                // Check if user is logged in
-                const { data: { user }, error: authError } = await supabase.auth.getUser();
-                
-                if (authError || !user) {
-                    window.location.href = 'login.html';
-                    return;
-                }
-                
-                currentUser = user;
-                
-                // Get profile ID from URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const profileId = urlParams.get('id') || user.id;
-                
-                // Load profile data
-                await loadProfileData(profileId);
-                
-                // Set up event listeners
-                setupEventListeners();
-                
-            } catch (error) {
-                console.error("Initialization error:", error);
-                displayErrorState();
-            }
-        }
-
-        // Load profile data from Supabase
-        async function loadProfileData(profileId) {
-            try {
-                // Show skeleton loader
-                skeletonLoader.style.display = 'flex';
-                profileContent.style.display = 'none';
-                
                 // Get profile data
-                const { data: profile, error: profileError } = await supabase
+                const { data: profile, error } = await supabase
                     .from('profiles')
                     .select('*')
                     .eq('id', profileId)
                     .single();
-                
-                if (profileError) throw profileError;
-                
-                profileData = profile;
-                
-                // Check if current user is following this profile
-                if (currentUser.id !== profileId) {
-                    const { data: follow, error: followError } = await supabase
-                        .from('followers')
-                        .select('*')
-                        .eq('follower_id', currentUser.id)
-                        .eq('following_id', profileId)
-                        .single();
-                    
-                    isFollowing = !!follow && !followError;
-                    
-                    // Update follow button
-                    if (isFollowing) {
-                        followButton.textContent = 'Following';
-                        followButton.style.backgroundColor = '#f0f0f0';
-                        followButton.style.color = '#000';
-                        
-                        if (document.body.classList.contains('dark-mode')) {
-                            followButton.style.backgroundColor = '#3a3b3c';
-                            followButton.style.color = '#e4e6eb';
-                        }
-                    }
-                } else {
-                    // Hide follow button if it's the current user's profile
-                    followButton.style.display = 'none';
-                }
-                
-                // Get stats
-                const { count: followersCount, error: followersError } = await supabase
-                    .from('followers')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('following_id', profileId);
-                
-                const { count: followingCount, error: followingError } = await supabase
-                    .from('followers')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('follower_id', profileId);
-                
-                const followers = followersError ? 0 : followersCount;
-                const following = followingError ? 0 : followingCount;
-                
-                // Get real post count
-                const { count: postsCount, error: postsError } = await supabase
-                    .from('posts')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', profileId);
-                
-                const posts = postsError ? 0 : postsCount;
-                
-                // Load user posts
-                await loadUserPosts(profileId);
-                
-                // Load liked posts
-                await loadLikedPosts(profileId);
-                
-                // Display the profile
-                displayProfile(profile, followers, following, posts);
-                
-            } catch (error) {
-                console.error("Error loading profile:", error);
-                displayErrorState();
-            }
-        }
 
-        // Load user posts
-        async function loadUserPosts(userId) {
-            try {
-                const { data: posts, error } = await supabase
-                    .from('posts')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .order('created_at', { ascending: false });
-                
                 if (error) throw error;
-                
-                userPosts = posts || [];
-                displayPosts();
-                
-            } catch (error) {
-                console.error("Error loading posts:", error);
-                userPosts = [];
-                displayPosts();
-            }
-        }
+                if (!profile) throw new Error('Profile not found');
 
-        // Load liked posts
-        async function loadLikedPosts(userId) {
-            try {
-                const { data: likes, error: likesError } = await supabase
-                    .from('likes')
-                    .select('post_id')
-                    .eq('user_id', userId);
+                // Populate profile data
+                elements.profileName.textContent = profile.full_name || 'Profile';
+                elements.fullName.textContent = profile.full_name || 'New User';
+                elements.username.textContent = `@${profile.username_slug || profile.username || 'user'}`;
                 
-                if (likesError) throw likesError;
+                // Set bio if available
+                elements.bio.textContent = profile.bio || `${profile.full_name || 'User'} is an aviation professional.`;
                 
-                if (likes.length > 0) {
-                    const postIds = likes.map(like => like.post_id);
-                    const { data: posts, error: postsError } = await supabase
-                        .from('posts')
-                        .select('*')
-                        .in('id', postIds)
-                        .order('created_at', { ascending: false });
-                    
-                    if (postsError) throw postsError;
-                    
-                    likedPosts = posts || [];
-                } else {
-                    likedPosts = [];
+                // Set website if available
+                if (profile.website) {
+                    elements.websiteLink.textContent = profile.website;
+                    elements.websiteLink.href = profile.website.startsWith('http') ? 
+                        profile.website : `https://${profile.website}`;
+                    elements.websiteLink.style.display = 'inline-block';
                 }
                 
-                displayLikedPosts();
+                // Set category if available
+                if (profile.category) {
+                    elements.categoryBadge.textContent = profile.category;
+                    elements.categoryBadge.style.display = 'inline-block';
+                }
                 
+                // Set avatar image
+                if (profile.avatar_url) {
+                    elements.profileAvatar.src = profile.avatar_url;
+                } else {
+                    // Fallback to initials avatar
+                    const initials = profile.full_name ? 
+                        profile.full_name.split(' ').map(n => n[0]).join('') : 'U';
+                    elements.profileAvatar.src = `https://ui-avatars.com/api/?name=${initials}&background=0056b3&color=fff&size=120`;
+                }
+                
+                // Set cover photo
+                if (profile.cover_photo_url) {
+                    elements.coverPhoto.style.backgroundImage = `linear-gradient(rgba(0, 86, 179, 0.7), rgba(0, 86, 179, 0.7)), url('${profile.cover_photo_url}')`;
+                }
+                
+                // Set experience
+                if (profile.experience) {
+                    elements.experienceContainer.innerHTML = `
+                        <div class="experience-item">
+                            <div class="experience-details">
+                                <div class="description">${profile.experience}</div>
+                            </div>
+                        </div>`;
+                }
+                
+                // Set skills
+                if (profile.skills) {
+                    const skillsArray = profile.skills.split(',').map(skill => skill.trim());
+                    elements.skillsContainer.innerHTML = skillsArray
+                        .filter(skill => skill.length > 0)
+                        .map(skill => `<div class="skill-badge">${skill}</div>`)
+                        .join('');
+                }
+                
+                // Show verified badge if email is verified
+                elements.verifiedBadge.style.display = 'inline-block';
+
+                // Update connections count
+                await updateConnectionsCount();
+                
+                // Check connection status if viewing another user's profile
+                if (supabase.auth.user()?.id !== profileId) {
+                    await checkConnectionStatus();
+                } else {
+                    elements.connectBtn.style.display = 'none';
+                    elements.editButton.style.display = 'block';
+                }
+
+                // Hide skeleton and show content
+                elements.skeleton.style.display = 'none';
+                elements.profileContent.style.display = 'block';
+
             } catch (error) {
-                console.error("Error loading liked posts:", error);
-                likedPosts = [];
-                displayLikedPosts();
+                console.error('Error loading profile:', error);
+                elements.fullName.textContent = 'Error loading profile';
+                elements.bio.textContent = 'Could not load profile information. Please try again later.';
+                
+                // Still hide skeleton and show content (with error state)
+                elements.skeleton.style.display = 'none';
+                elements.profileContent.style.display = 'block';
             }
         }
 
-        // Display user posts
-        function displayPosts() {
-            postsGrid.innerHTML = '';
-            
-            if (userPosts.length === 0) {
-                const emptyMessage = document.createElement('div');
-                emptyMessage.textContent = 'No posts yet';
-                emptyMessage.style.textAlign = 'center';
-                emptyMessage.style.gridColumn = '1 / -1';
-                emptyMessage.style.padding = '20px';
-                emptyMessage.style.color = '#777';
-                postsGrid.appendChild(emptyMessage);
+        // Connection management
+        async function checkConnectionStatus() {
+            const currentUserId = supabase.auth.user()?.id;
+            if (!currentUserId || currentUserId === profileId) {
+                elements.connectBtn.style.display = 'none';
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('connections')
+                .select('id, sender_id, status')
+                .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${profileId}),and(sender_id.eq.${profileId},receiver_id.eq.${currentUserId})`)
+                .single();
+
+            if (error && error.code !== 'PGRST116') { // Ignore "No rows found" error
+                console.error('Error checking connection:', error);
                 return;
             }
             
-            userPosts.forEach(post => {
-                const postItem = document.createElement('div');
-                postItem.className = 'post-item';
-                
-                if (post.image_url) {
-                    postItem.innerHTML = `<img src="${post.image_url}" alt="Post">`;
-                } else if (post.video_url) {
-                    postItem.innerHTML = `
-                        <div style="position: relative; width: 100%; height: 100%;">
-                            <video style="width: 100%; height: 100%; object-fit: cover;">
-                                <source src="${post.video_url}" type="video/mp4">
-                            </video>
-                            <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 5px; border-radius: 4px; font-size: 12px;">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    postItem.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #f0f0f0; color: #777; padding: 10px; text-align: center;">
-                            ${post.content || 'Post'}
-                        </div>
-                    `;
-                }
-                
-                postItem.addEventListener('click', () => {
-                    window.location.href = `post.html?id=${post.id}`;
-                });
-                
-                postsGrid.appendChild(postItem);
-            });
-        }
-
-        // Display liked posts
-        function displayLikedPosts() {
-            likedPostsGrid.innerHTML = '';
-            
-            if (likedPosts.length === 0) {
-                const emptyMessage = document.createElement('div');
-                emptyMessage.textContent = 'No liked posts yet';
-                emptyMessage.style.textAlign = 'center';
-                emptyMessage.style.gridColumn = '1 / -1';
-                emptyMessage.style.padding = '20px';
-                emptyMessage.style.color = '#777';
-                likedPostsGrid.appendChild(emptyMessage);
-                return;
-            }
-            
-            likedPosts.forEach(post => {
-                const postItem = document.createElement('div');
-                postItem.className = 'post-item';
-                
-                if (post.image_url) {
-                    postItem.innerHTML = `<img src="${post.image_url}" alt="Post">`;
-                } else if (post.video_url) {
-                    postItem.innerHTML = `
-                        <div style="position: relative; width: 100%; height: 100%;">
-                            <video style="width: 100%; height: 100%; object-fit: cover;">
-                                <source src="${post.video_url}" type="video/mp4">
-                            </video>
-                            <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 5px; border-radius: 4px; font-size: 12px;">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    postItem.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: #f0f0f0; color: #777; padding: 10px; text-align: center;">
-                            ${post.content || 'Post'}
-                        </div>
-                    `;
-                }
-                
-                postItem.addEventListener('click', () => {
-                    window.location.href = `post.html?id=${post.id}`;
-                });
-                
-                likedPostsGrid.appendChild(postItem);
-            });
-        }
-
-        // Display the profile with data
-        function displayProfile(profile, followers, following, posts) {
-            // Set banner (if available)
-            if (profile.banner_url) {
-                profileBanner.style.backgroundImage = `url(${profile.banner_url})`;
-                profileBanner.style.backgroundSize = 'cover';
-                profileBanner.style.backgroundPosition = 'center';
-                profileBanner.style.height = '150px';
-            }
-            
-            // Set avatar based on username's first letter
-            const displayName = profile.full_name || profile.username || 'User';
-            const firstLetter = displayName.charAt(0).toUpperCase();
-            profileAvatar.textContent = firstLetter;
-            
-            // Set names
-            profileUsername.textContent = `@${profile.username}`;
-            
-            // Update header title
-            headerTitle.textContent = profile.full_name || profile.username;
-            
-            // Set category
-            if (profile.category) {
-                profileCategory.textContent = profile.category;
-            } else {
-                profileCategory.textContent = "No category";
-                profileCategory.style.color = '#777';
-                profileCategory.style.fontStyle = 'italic';
-            }
-            
-            // Set bio
-            if (profile.bio) {
-                profileBio.textContent = profile.bio;
-                profileBio.style.display = 'block';
-            } else {
-                profileBio.style.display = 'none';
-            }
-            
-            // Set website
-            if (profile.website) {
-                profileWebsite.href = profile.website;
-                profileWebsite.textContent = profile.website.replace(/^https?:\/\//, '');
-                profileWebsite.style.display = 'inline';
-            } else {
-                profileWebsite.style.display = 'none';
-            }
-            
-            // Set stats
-            followerCount.textContent = formatNumber(followers);
-            followingCount.textContent = formatNumber(following);
-            postCount.textContent = formatNumber(posts);
-            
-            // Hide skeleton and show content
-            skeletonLoader.style.display = 'none';
-            profileContent.style.display = 'block';
-        }
-
-        // Format large numbers
-        function formatNumber(num) {
-            if (num >= 1000000) {
-                return (num / 1000000).toFixed(1) + 'M';
-            }
-            if (num >= 1000) {
-                return (num / 1000).toFixed(1) + 'K';
-            }
-            return num.toString();
-        }
-
-        // Display error state
-        function displayErrorState() {
-            skeletonLoader.style.display = 'none';
-            profileContent.style.display = 'block';
-            
-            // Set error states
-            profileUsername.textContent = '@error';
-            profileBio.textContent = 'Failed to load profile data. Please try again later.';
-            profileBio.style.color = '#ff4444';
-        }
-
-        // Handle tab switching
-        function handleTabClick(tab) {
-            // Remove active class from all tabs
-            postTabs.forEach(t => t.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            tab.classList.add('active');
-            
-            // Show the corresponding content
-            const tabType = tab.getAttribute('data-tab');
-            if (tabType === 'posts') {
-                postsGrid.style.display = 'grid';
-                likedPostsGrid.style.display = 'none';
-            } else if (tabType === 'liked') {
-                postsGrid.style.display = 'none';
-                likedPostsGrid.style.display = 'grid';
-            }
-        }
-
-        // Toggle follow status
-        async function toggleFollow() {
-            if (!profileData || currentUser.id === profileData.id) return;
-            
-            try {
-                if (isFollowing) {
-                    // Unfollow
-                    const { error } = await supabase
-                        .from('followers')
-                        .delete()
-                        .eq('follower_id', currentUser.id)
-                        .eq('following_id', profileData.id);
-                    
-                    if (error) throw error;
-                    
-                    isFollowing = false;
-                    followButton.textContent = 'Follow';
-                    followButton.style.backgroundColor = '#000';
-                    followButton.style.color = '#fff';
-                    
-                    if (document.body.classList.contains('dark-mode')) {
-                        followButton.style.backgroundColor = '#fff';
-                        followButton.style.color = '#000';
+            if (data) {
+                if (data.status === 'pending') {
+                    if (data.sender_id === currentUserId) {
+                        elements.connectBtn.textContent = 'Pending';
+                        elements.connectBtn.disabled = true;
+                    } else {
+                        elements.connectBtn.textContent = 'Accept';
+                        elements.connectBtn.onclick = () => acceptConnection(data.id);
                     }
-                    
-                    // Update follower count
-                    followerCount.textContent = formatNumber(parseInt(followerCount.textContent) - 1);
-                } else {
-                    // Follow
-                    const { error } = await supabase
-                        .from('followers')
-                        .insert([
-                            { follower_id: currentUser.id, following_id: profileData.id }
-                        ]);
-                    
-                    if (error) throw error;
-                    
-                    isFollowing = true;
-                    followButton.textContent = 'Following';
-                    followButton.style.backgroundColor = '#f0f0f0';
-                    followButton.style.color = '#000';
-                    
-                    if (document.body.classList.contains('dark-mode')) {
-                        followButton.style.backgroundColor = '#3a3b3c';
-                        followButton.style.color = '#e4e6eb';
-                    }
-                    
-                    // Update follower count
-                    followerCount.textContent = formatNumber(parseInt(followerCount.textContent) + 1);
+                } else if (data.status === 'accepted') {
+                    elements.connectBtn.textContent = 'Connected';
+                    elements.connectBtn.disabled = true;
                 }
-            } catch (error) {
-                console.error("Error toggling follow:", error);
-                alert("Failed to update follow status. Please try again.");
+            } else {
+                elements.connectBtn.textContent = 'Connect';
+                elements.connectBtn.onclick = sendConnectionRequest;
             }
         }
 
-        // Set up event listeners
-        function setupEventListeners() {
-            // Follow button
-            followButton.addEventListener('click', toggleFollow);
+        async function sendConnectionRequest() {
+            const currentUserId = supabase.auth.user()?.id;
+            if (!currentUserId) return;
+
+            elements.connectBtn.disabled = true;
+            elements.connectBtn.textContent = 'Sending...';
+
+            const { error } = await supabase
+                .from('connections')
+                .insert([{
+                    sender_id: currentUserId,
+                    receiver_id: profileId,
+                    status: 'pending'
+                }]);
+
+            if (error) {
+                console.error('Error sending connection:', error);
+                alert('Failed to send connection request');
+                elements.connectBtn.textContent = 'Connect';
+                elements.connectBtn.disabled = false;
+            } else {
+                elements.connectBtn.textContent = 'Pending';
+            }
+        }
+
+        async function acceptConnection(connectionId) {
+            elements.connectBtn.disabled = true;
+            elements.connectBtn.textContent = 'Accepting...';
+
+            const { error } = await supabase
+                .from('connections')
+                .update({ status: 'accepted' })
+                .eq('id', connectionId);
+
+            if (error) {
+                console.error('Error accepting connection:', error);
+                alert('Failed to accept connection');
+                elements.connectBtn.textContent = 'Accept';
+                elements.connectBtn.disabled = false;
+            } else {
+                elements.connectBtn.textContent = 'Connected';
+                await updateConnectionsCount();
+            }
+        }
+
+        async function updateConnectionsCount() {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('connections_count')
+                .eq('id', profileId)
+                .single();
+
+            if (!error && data) {
+                elements.connectionsCount.textContent = data.connections_count;
+            }
+        }
+
+        // Share profile function
+        function shareProfile() {
+            const profileUrl = `${window.location.origin}${window.location.pathname}?id=${profileId}`;
             
-            // Message button
-            messageButton.addEventListener('click', () => {
-                // In a real app, this would open a chat with the user
-                alert(`Messaging ${profileData.username}`);
-            });
-            
-            // More options button
-            moreButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                moreOptions.classList.toggle('show');
-            });
-            
-            // Close more options when clicking outside
-            document.addEventListener('click', () => {
-                moreOptions.classList.remove('show');
-            });
-            
-            // Prevent more options from closing when clicking inside
-            moreOptions.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-            
-            // Post tabs
-            postTabs.forEach(tab => {
-                tab.addEventListener('click', () => handleTabClick(tab));
+            if (navigator.share) {
+                navigator.share({
+                    title: `${elements.fullName.textContent}'s Profile`,
+                    url: profileUrl
+                }).catch(err => {
+                    console.log('Error sharing:', err);
+                    copyToClipboard(profileUrl);
+                });
+            } else {
+                copyToClipboard(profileUrl);
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Profile link copied to clipboard!');
             });
         }
 
-        // Initialize the page when loaded
-        document.addEventListener('DOMContentLoaded', init);
+        function toggleOptions() {
+            // Implementation for options menu
+            console.log("Options menu clicked");
+        }
+        
+        function openEditProfile() {
+            window.location.href = `edit-profile.html?id=${profileId}`;
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProfile();
+        });
     </script>
 </body>
 </html>
