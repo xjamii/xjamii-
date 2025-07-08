@@ -414,7 +414,7 @@
         }
 
         .create-post-btn:hover {
-            background-color: #1a8cd8;
+            background-color: #1a73e8;
         }
 
         .dark-mode .create-post-btn {
@@ -2014,7 +2014,7 @@
                 </div>
             </div>
             <div class="logo-container" onclick="window.location.href='index.html'">
-                <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png' class="logo"/>
+                <img src="https://i.postimg.cc/gkL0Qdsw/file-00000000000061f8b89b5a1f67f8b937.png" alt="Aviationin Logo" class="logo"/>
             </div>
             <div class="help-icon">
                 <a href="help.html" title="Help">
@@ -2037,150 +2037,11 @@
         </div>
     </div>
 
-    <!-- Profile Section (Hidden by default) -->
-    <div id="profileSection" style="display:none;">
-        <!-- Profile Header -->
-        <header class="profile-header">
-            <div class="header-title" id="header-title">Profile</div>
-            <div class="header-actions">
-                <a href="search.html" class="header-button" id="search-button">
-                    <i class="fas fa-search"></i>
-                </a>
-            </div>
-        </header>
-
-        <!-- Profile Content -->
-        <div class="profile-container">
-            <!-- Skeleton Loader -->
-            <div class="skeleton-loader" id="skeleton-loader">
-                <div class="skeleton-header">
-                    <div class="skeleton-header-title"></div>
-                </div>
-                <div class="skeleton-content">
-                    <div class="skeleton-banner"></div>
-                    <div class="skeleton-avatar"></div>
-                    <div class="skeleton-username"></div>
-                    <div class="skeleton-stats">
-                        <div class="skeleton-stat">
-                            <div class="skeleton-stat-number"></div>
-                            <div class="skeleton-stat-label"></div>
-                        </div>
-                        <div class="skeleton-stat">
-                            <div class="skeleton-stat-number"></div>
-                            <div class="skeleton-stat-label"></div>
-                        </div>
-                        <div class="skeleton-stat">
-                            <div class="skeleton-stat-number"></div>
-                            <div class="skeleton-stat-label"></div>
-                        </div>
-                    </div>
-                    <div class="skeleton-actions">
-                        <div class="skeleton-action"></div>
-                    </div>
-                    <div class="skeleton-category"></div>
-                    <div class="skeleton-bio"></div>
-                    <div class="skeleton-tabs"></div>
-                    <div class="skeleton-posts-grid">
-                        <div class="skeleton-post"></div>
-                        <div class="skeleton-post"></div>
-                        <div class="skeleton-post"></div>
-                        <div class="skeleton-post"></div>
-                        <div class="skeleton-post"></div>
-                        <div class="skeleton-post"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Actual Profile Content -->
-            <div id="profile-content" style="display: none;">
-                <div class="profile-banner" id="profile-banner"></div>
-                <div class="profile-info">
-                    <div class="profile-avatar-container">
-                        <div id="profile-avatar" class="initials-avatar"></div>
-                    </div>
-                    <div class="profile-username" id="profile-username">@username</div>
-                    <div class="profile-stats">
-    <div class="profile-stat">
-        <span class="stat-number" id="likes-count">0</span>
-        <span class="stat-label">Likes</span>
-    </div>
-    <div class="profile-stat">
-        <span class="stat-number" id="following-count">0</span>
-        <span class="stat-label">Following</span>
-    </div>
-    <div class="profile-stat">
-        <span class="stat-number" id="follower-count">0</span>
-        <span class="stat-label">Followers</span>
-    </div>
-</div>
-<div class="profile-actions">
-    <button class="action-button edit-profile-button" id="edit-profile-button">
-        Edit Profile
-    </button>
-    <button class="action-button share-profile-button" id="share-profile-button">
-        <i class="fas fa-share-nodes"></i> <!-- TikTok-like share icon -->
-    </button>
-</div>
-                    <div class="profile-category" id="profile-category">No category</div>
-                    <div class="profile-bio" id="profile-bio"></div>
-                    <a href="#" class="profile-website" id="profile-website" target="_blank" style="display: none;"></a>
-                </div>
-                <div class="posts-section">
-                    <div class="posts-tabs">
-                        <div class="post-tab active" data-tab="posts"><i class="fas fa-table-cells-large"></i></div>
-                        <div class="post-tab" data-tab="liked"><i class="fas fa-heart"></i></div>
-                    </div>
-                    <div class="posts-grid" id="posts-grid"></div>
-                    <div class="posts-grid" id="liked-posts-grid" style="display: none;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Profile Modal -->
-    <div class="edit-modal" id="edit-modal">
-        <div class="edit-modal-content">
-            <div class="edit-modal-header">
-                <div class="edit-modal-title">Edit Profile</div>
-                <button class="edit-modal-close" id="edit-modal-close">&times;</button>
-            </div>
-            <div class="edit-modal-body">
-                <div class="edit-avatar-container">
-                    <div id="edit-avatar-preview" class="initials-avatar"></div>
-                    <button class="edit-avatar-button" id="edit-avatar-button">Change Photo</button>
-                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
-                </div>
-                <div class="form-group">
-                    <label for="edit-name" class="form-label">Name</label>
-                    <input type="text" id="edit-name" class="form-input" placeholder="Your name">
-                </div>
-                <div class="form-group">
-                    <label for="edit-username" class="form-label">Username</label>
-                    <input type="text" id="edit-username" class="form-input" placeholder="username">
-                </div>
-                <div class="form-group">
-                    <label for="edit-category" class="form-label">Category</label>
-                    <input type="text" id="edit-category" class="form-input" placeholder="e.g. Photographer, Artist">
-                </div>
-                <div class="form-group">
-                    <label for="edit-bio" class="form-label">Bio</label>
-                    <textarea id="edit-bio" class="form-input" rows="3" placeholder="Tell about yourself"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="edit-website" class="form-label">Website</label>
-                    <input type="url" id="edit-website" class="form-input" placeholder="https://example.com">
-                </div>
-                <div class="copy-profile-link" id="copy-profile-link">
-                    <i class="fas fa-link"></i>
-                    <span>Copy Profile Link</span>
-                </div>
-            </div>
-            <div class="edit-modal-footer">
-                <button class="edit-modal-button edit-modal-cancel" id="edit-modal-cancel">Cancel</button>
-                <button class="edit-modal-button edit-modal-save" id="edit-modal-save">Save Changes</button>
-            </div>
-        </div>
-    </div>
+ 
+ 
+                    
+            
+                    
 
     <!-- Bottom Navigation -->
     <footer class="footer">
@@ -2190,11 +2051,10 @@
         <div class="footer-icon" onclick="window.location.href='search.html'">
             <i class="fas fa-search"></i>
         </div>
-        <div class="footer-icon" onclick="showNotifications()">
+        <div class="footer-icon" onclick="window.location.href='notifications.html'">
             <i class="fas fa-bell"></i>
-            <span class="badge" id="notificationBadge" style="display: none;"></span>
-        </div>
-        <div class="footer-icon" onclick="showProfile()">
+              </div>
+        <div class="footer-icon" onclick="window.location.href='profile.html'">
             <i class="fas fa-user"></i>
         </div>
         <button class="create-post-btn" onclick="window.location.href='create-post.html'">
@@ -2313,51 +2173,13 @@
         </div>
     </div>
 
-    <!-- Notifications Page -->
-    <div class="notifications-page" id="notificationsPage">
-        <div class="notifications-header">
-            <div class="notifications-back-btn" onclick="hideNotifications()">
-                <i class="fas fa-arrow-left"></i>
-                <span class="notifications-title">Notifications</span>
-            </div>
-            <div class="notifications-search-btn" onclick="window.location.href='search.html'">
-                <i class="fas fa-search"></i>
-            </div>
-        </div>
+    
+        
 
         <!-- Notifications Skeleton Preloader -->
-        <div class="notifications-skeleton" id="notificationsSkeleton">
-            <div class="notification-skeleton-item">
-                <div class="skeleton-avatar"></div>
-                <div class="skeleton-content">
-                    <div class="skeleton-line medium"></div>
-                    <div class="skeleton-line short"></div>
-                    <div class="skeleton-line long" style="width: 40%; margin-top: 8px;"></div>
-                </div>
-            </div>
-            <div class="notification-skeleton-item">
-                <div class="skeleton-avatar"></div>
-                <div class="skeleton-content">
-                    <div class="skeleton-line medium"></div>
-                    <div class="skeleton-line short"></div>
-                    <div class="skeleton-line long" style="width: 40%; margin-top: 8px;"></div>
-                </div>
-            </div>
-            <div class="notification-skeleton-item">
-                <div class="skeleton-avatar"></div>
-                <div class="skeleton-content">
-                    <div class="skeleton-line medium"></div>
-                    <div class="skeleton-line short"></div>
-                    <div class="skeleton-line long" style="width: 40%; margin-top: 8px;"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="notification-container" id="notificationsContainer" style="display: none;">
-            <!-- Notifications will be loaded here -->
-        </div>
-    </div>
-
+        
+            
+        
     
    <script>
   // Notification System
