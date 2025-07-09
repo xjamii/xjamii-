@@ -102,20 +102,20 @@
         }
 
         .post-button:hover {
-            background-color: #143b6e;
+            background-color: #0d3a6e;
         }
 
         .dark-mode .post-button:hover {
-            background-color: #143b6e;
+            background-color: #0d3a6e;
         }
 
         .post-button.loading {
-            background-color: #143b6e;
+            background-color: #0d3a6e;
             pointer-events: none;
         }
 
         .dark-mode .post-button.loading {
-            background-color: #143b6e;
+            background-color: #0d3a6e;
         }
 
         .create-post-container {
@@ -353,11 +353,11 @@
         }
 
         .bottom-post-button:hover {
-            background-color: #143b6e;
+            background-color: #0d3a6e;
         }
 
         .dark-mode .bottom-post-button:hover {
-            background-color: #143b6e;
+            background-color: #0d3a6e;
         }
 
         .error-message {
@@ -382,6 +382,10 @@
         }
 
         #media-upload {
+            display: none;
+        }
+
+        #video-upload {
             display: none;
         }
 
@@ -840,10 +844,11 @@
                 <button class="option-button" id="photo-button">
                     <i class="fas fa-image"></i> Photo
                 </button>
+                <input type="file" id="photo-upload" accept="image/*" multiple>
+                
                 <button class="option-button" id="video-button">
                     <i class="fas fa-video"></i> Video
                 </button>
-                <input type="file" id="photo-upload" accept="image/*" multiple>
                 <input type="file" id="video-upload" accept="video/*">
             </div>
             
@@ -875,6 +880,7 @@
 
         // State variables
         let uploadedFiles = [];
+        let videoCount = 0;
         let currentUser = null;
         let currentProfile = null;
 
@@ -1011,12 +1017,9 @@
             // Media upload handling
             photoButton.addEventListener('click', () => photoUpload.click());
             videoButton.addEventListener('click', () => videoUpload.click());
-            photoUpload.addEventListener('change', handlePhotoUpload);
-            videoUpload.addEventListener('change', handleVideoUpload);
             
-            // Post submission
-            postButton.addEventListener('click', handlePost);
-            bottomPostButton.addEventListener('click', handlePost);
+            photoUpload.addEventListener('change', (e) => handleMediaUpload(e, 'image'));
+            videoUpload.addEventListener('change', (e) => handleMediaUpload(e, 'video'));
             
             // Error message dismissal
             errorMessage.addEventListener('click', () => {
@@ -1024,8 +1027,8 @@
             });
         }
 
-        // Handle photo upload
-        function handlePhotoUpload(e) {
+        // Handle media upload
+        function handleMediaUpload(e, type) {
             const newFiles = Array.from(e.target.files);
             
             // Validate files
@@ -1035,43 +1038,22 @@
             }
             
             newFiles.forEach(file => {
-                if (file.size > 10 * 1024 * 1024) {
+                if (type === 'video') {
+                    if (videoCount >= 1) {
+                        showError("You can only upload 1 video per post");
+                        return;
+                    }
+                    if (file.size > 100 * 1024 * 1024) {
+                        showError("Video file size must be less than 100MB");
+                        return;
+                    }
+                    videoCount++;
+                } else if (file.size > 10 * 1024 * 1024) {
                     showError("Image file size must be less than 10MB");
                     return;
                 }
                 
-                uploadedFiles.push({
-                    file: file,
-                    type: 'image'
-                });
-            });
-            
-            displayMediaPreview();
-        }
-
-        // Handle video upload
-        function handleVideoUpload(e) {
-            const newFiles = Array.from(e.target.files);
-            
-            if (newFiles.length === 0) return;
-            
-            // Check if there's already a video
-            const hasVideo = uploadedFiles.some(f => f.type === 'video');
-            if (hasVideo) {
-                showError("You can only upload 1 video per post");
-                return;
-            }
-            
-            const file = newFiles[0];
-            
-            if (file.size > 100 * 1024 * 1024) {
-                showError("Video file size must be less than 100MB");
-                return;
-            }
-            
-            uploadedFiles.push({
-                file: file,
-                type: 'video'
+                uploadedFiles.push(file);
             });
             
             displayMediaPreview();
@@ -1081,15 +1063,15 @@
         function displayMediaPreview() {
             mediaGrid.innerHTML = '';
             
-            uploadedFiles.forEach((item, index) => {
+            uploadedFiles.forEach((file, index) => {
                 const reader = new FileReader();
                 
                 reader.onload = (event) => {
                     const mediaItem = document.createElement('div');
                     mediaItem.className = 'media-item';
                     
-                    mediaItem.innerHTML = item.type === 'video' ? `
-                        <video controls><source src="${event.target.result}" type="${item.file.type}"></video>
+                    mediaItem.innerHTML = file.type.startsWith('video/') ? `
+                        <video controls><source src="${event.target.result}" type="${file.type}"></video>
                         <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
                     ` : `
                         <img src="${event.target.result}" alt="Preview">
@@ -1100,7 +1082,7 @@
                     mediaItem.querySelector('.remove-media').addEventListener('click', () => removeMediaItem(index));
                 };
                 
-                reader.readAsDataURL(item.file);
+                reader.readAsDataURL(file);
             });
             
             mediaPreview.style.display = uploadedFiles.length ? 'block' : 'none';
@@ -1108,48 +1090,9 @@
 
         // Remove media item
         function removeMediaItem(index) {
+            if (uploadedFiles[index].type.startsWith('video/')) videoCount--;
             uploadedFiles.splice(index, 1);
             displayMediaPreview();
-        }
-
-        // Handle post submission
-        async function handlePost() {
-            const content = postInput.value.trim();
-            
-            if (!content && !uploadedFiles.length) {
-                showError("Please add some content or media to your post");
-                return;
-            }
-            
-            // Set loading state
-            setLoadingState(true);
-            
-            try {
-                // Here you would normally upload media and create the post
-                // For now, we'll just simulate a delay and redirect
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                window.location.href = 'index.html';
-                
-            } catch (error) {
-                console.error("Post error:", error);
-                showError("Failed to create post. Please try again.");
-                setLoadingState(false);
-            }
-        }
-
-        // Set loading state for buttons
-        function setLoadingState(isLoading) {
-            if (isLoading) {
-                postButton.innerHTML = '<div class="spinner"></div>';
-                bottomPostButton.innerHTML = '<div class="spinner"></div> Posting...';
-                postButton.disabled = true;
-                bottomPostButton.disabled = true;
-            } else {
-                postButton.innerHTML = 'Post';
-                bottomPostButton.innerHTML = 'Post';
-                postButton.disabled = false;
-                bottomPostButton.disabled = false;
-            }
         }
 
         // Show error message
