@@ -1,7 +1,7 @@
 class PostComponent extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: 'open' });
+    // No Shadow DOM to maintain external CSS compatibility
   }
 
   connectedCallback() {
@@ -48,7 +48,6 @@ class PostComponent extends HTMLElement {
       }
 
       const post = JSON.parse(postData);
-      console.log("Rendering post:", post); // Debug log
       
       if (!post.profile) {
         console.error("Post is missing profile data:", post);
@@ -60,11 +59,7 @@ class PostComponent extends HTMLElement {
         };
       }
 
-      this.shadowRoot.innerHTML = `
-        <style>
-          /* Include all your CSS styles here */
-          ${document.querySelector('style[data-post-styles]')?.innerText || ''}
-        </style>
+      this.innerHTML = `
         <div class="post-container">
           <div class="post">
             <div class="post-header">
@@ -83,18 +78,22 @@ class PostComponent extends HTMLElement {
             ${post.content ? `<p class="post-content">${post.content}</p>` : ''}
             ${post.media && post.media.length > 0 ? this.renderMedia(post.media) : ''}
             <div class="post-actions">
-              <div class="post-action"><i class="far fa-comment"></i> 0</div>
-              <div class="post-action"><i class="far fa-heart"></i> 0</div>
-              <div class="post-action share"><i class="fas fa-arrow-up-from-bracket"></i></div>
-              <div class="post-action views"><i class="fas fa-chart-bar"></i> 0</div>
+              <div class="post-action comment-action"><i class="far fa-comment"></i> 0</div>
+              <div class="post-action like-action"><i class="far fa-heart"></i> 0</div>
+              <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
+              <div class="post-action views-action"><i class="fas fa-chart-bar"></i> 0</div>
               <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
             </div>
           </div>
         </div>
       `;
+
+      // Add event listeners after rendering
+      this.addEventListeners(post);
+
     } catch (error) {
       console.error("Error rendering post:", error);
-      this.shadowRoot.innerHTML = `
+      this.innerHTML = `
         <div class="post-container">
           <div class="post-error">Error displaying this post</div>
         </div>
@@ -134,9 +133,61 @@ class PostComponent extends HTMLElement {
       return '';
     }
   }
+
+  addEventListeners(post) {
+    // Like action
+    this.querySelector('.like-action').addEventListener('click', () => {
+      this.toggleLike(post.id);
+    });
+
+    // Comment action
+    this.querySelector('.comment-action').addEventListener('click', () => {
+      this.showComments(post.id);
+    });
+
+    // Share action
+    this.querySelector('.share-action').addEventListener('click', () => {
+      this.sharePost(post.id);
+    });
+
+    // More options
+    this.querySelector('.post-more').addEventListener('click', (e) => {
+      this.showMoreOptions(e, post);
+    });
+  }
+
+  toggleLike(postId) {
+    const likeBtn = this.querySelector('.like-action');
+    const isLiked = likeBtn.classList.contains('liked');
+    
+    // Optimistic UI update
+    likeBtn.classList.toggle('liked');
+    likeBtn.innerHTML = isLiked 
+      ? '<i class="far fa-heart"></i> 0' 
+      : '<i class="fas fa-heart"></i> 1';
+    
+    // TODO: Add your actual like API call here
+    console.log(`${isLiked ? 'Unliked' : 'Liked'} post ${postId}`);
+  }
+
+  showComments(postId) {
+    // TODO: Implement your comment popup logic
+    console.log(`Show comments for post ${postId}`);
+  }
+
+  sharePost(postId) {
+    // TODO: Implement your share logic
+    console.log(`Share post ${postId}`);
+  }
+
+  showMoreOptions(e, post) {
+    // TODO: Implement your more options menu
+    console.log(`Show options for post ${post.id}`);
+    e.stopPropagation();
+  }
 }
 
-// Register the component only if it hasn't been registered yet
+// Register the component
 if (!customElements.get('post-component')) {
   customElements.define('post-component', PostComponent);
 }
