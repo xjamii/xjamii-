@@ -6,17 +6,11 @@ class PostComponent extends HTMLElement {
     this.startY = 0;
     this.startX = 0;
     this.isRefreshing = false;
-    this.isLoading = false;
-    this.observer = null;
-    this.postsPerBatch = 6;
-    this.visiblePosts = new Set();
-    this.intersectionObserver = null;
+    this.isLoadingMore = false;
   }
 
   connectedCallback() {
-    this.renderLoader();
-    setTimeout(() => this.render(), 300);
-    this.setupIntersectionObserver();
+    this.render();
   }
 
   static get observedAttributes() {
@@ -27,57 +21,6 @@ class PostComponent extends HTMLElement {
     if (name === 'post-data' && oldValue !== newValue) {
       this.render();
     }
-  }
-
-  disconnectedCallback() {
-    if (this.intersectionObserver) {
-      this.intersectionObserver.disconnect();
-    }
-  }
-
-  setupIntersectionObserver() {
-    this.intersectionObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          this.handlePostVisible(entry.target);
-        }
-      });
-    }, {
-      rootMargin: '200px 0px',
-      threshold: 0.1
-    });
-  }
-
-  handlePostVisible(postElement) {
-    const postId = postElement.dataset.postId;
-    if (!this.visiblePosts.has(postId)) {
-      this.visiblePosts.add(postId);
-      postElement.classList.add('visible');
-      this.loadPostMedia(postElement);
-    }
-  }
-
-  loadPostMedia(postElement) {
-    const mediaElements = postElement.querySelectorAll('img[data-src], video[data-src]');
-    mediaElements.forEach(media => {
-      if (media.dataset.src) {
-        media.src = media.dataset.src;
-        media.onload = () => media.classList.add('loaded');
-        media.removeAttribute('data-src');
-        
-        if (media.tagName === 'VIDEO') {
-          media.load();
-        }
-      }
-    });
-  }
-
-  renderLoader() {
-    this.innerHTML = `
-      <div class="post-loading">
-        <div class="loader"></div>
-      </div>
-    `;
   }
 
   formatTime(dateString) {
@@ -100,9 +43,14 @@ class PostComponent extends HTMLElement {
   processContent(content) {
     if (!content) return '';
     
+    // Process mentions (@username)
     content = content.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+    
+    // Process hashtags (#tag)
     content = content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
-    content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" class="url" target="_blank" rel="noopener noreferrer">$1</a>');
+    
+    // Process URLs
+    content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" class="url" target="_blank">$1</a>');
     
     return content;
   }
@@ -111,7 +59,11 @@ class PostComponent extends HTMLElement {
     try {
       const postData = this.getAttribute('post-data');
       if (!postData) {
-        this.renderLoader();
+        this.innerHTML = `
+          <div class="post-loading">
+            <div class="loader"></div>
+          </div>
+        `;
         return;
       }
 
@@ -124,26 +76,28 @@ class PostComponent extends HTMLElement {
         user_id: ''
       };
 
+      // Create avatar HTML
       const avatarHtml = profile.avatar_url 
-        ? `<img data-src="${profile.avatar_url}" class="post-avatar" alt="${profile.full_name || profile.username}" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
-        : `<div class="post-avatar initials" aria-label="${profile.full_name || profile.username}">${this.getInitials(profile.full_name)}</div>`;
+        ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
+        : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
 
+      // Check if content needs "See more"
       const content = post.content || '';
       const showSeeMore = content.length > 200;
       const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
 
       this.innerHTML = `
-        <div class="post-container" data-post-id="${post.id}">
+        <div class="post-container">
           <div class="post">
             <div class="post-header">
-              <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none" aria-label="${profile.full_name || profile.username}'s profile">
+              <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none">
                 ${avatarHtml}
               </a>
               <div class="post-user-info">
                 <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" style="text-decoration: none">
                   <div class="post-user">
                     ${profile.full_name || profile.username}
-                    ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge" aria-label="Verified"></i>' : ''}
+                    ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
                   </div>
                   <div class="post-username" style="text-decoration: none">@${profile.username}</div>
                 </a>
@@ -158,12 +112,12 @@ class PostComponent extends HTMLElement {
             ` : ''}
             ${this.renderMedia(post.media || [])}
             <div class="post-actions">
-              <button class="post-action comment-action" aria-label="Comment"><i class="far fa-comment"></i> ${post.comment_count || 0}</button>
-              <button class="post-action like-action ${post.is_liked ? 'liked' : ''}" aria-label="${post.is_liked ? 'Unlike' : 'Like'}">
+              <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
+              <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
                 <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
-              </button>
-              <button class="post-action share-action" aria-label="Share"><i class="fas fa-arrow-up-from-bracket"></i></button>
-              <button class="post-more" aria-label="More options"><i class="fas fa-ellipsis-h"></i></button>
+              </div>
+              <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
+              <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
               <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
             </div>
           </div>
@@ -171,7 +125,6 @@ class PostComponent extends HTMLElement {
       `;
 
       this.setupEventListeners(post);
-      this.intersectionObserver.observe(this.querySelector('.post-container'));
 
     } catch (error) {
       console.error("Error rendering post:", error);
@@ -188,8 +141,8 @@ class PostComponent extends HTMLElement {
         return `
           <div class="media-container video-container">
             <div class="video-preview" data-media-index="0">
-              <video class="post-media" preload="none" data-src="${media.media_url}" aria-label="Video content">
-                <source data-src="${media.media_url}" type="video/mp4">
+              <video class="post-media" preload="metadata">
+                <source src="${media.media_url}" type="video/mp4">
               </video>
               <div class="video-play-button"><i class="fas fa-play"></i></div>
             </div>
@@ -198,7 +151,7 @@ class PostComponent extends HTMLElement {
       } else {
         return `
           <div class="media-container">
-            <img data-src="${media.media_url}" class="post-media" data-media-index="0" alt="Post image" loading="lazy">
+            <img src="${media.media_url}" class="post-media" data-media-index="0">
           </div>
         `;
       }
@@ -210,12 +163,12 @@ class PostComponent extends HTMLElement {
           <div class="grid-media-container">
             ${media.media_type === 'video' 
               ? `<div class="video-preview" data-media-index="${index}">
-                  <video class="grid-media" preload="none" data-src="${media.media_url}" aria-label="Video content">
-                    <source data-src="${media.media_url}" type="video/mp4">
+                  <video class="grid-media" preload="metadata">
+                    <source src="${media.media_url}" type="video/mp4">
                   </video>
                   <div class="video-play-button"><i class="fas fa-play"></i></div>
                 </div>`
-              : `<img data-src="${media.media_url}" class="grid-media" data-media-index="${index}" alt="Post image" loading="lazy">`}
+              : `<img src="${media.media_url}" class="grid-media" data-media-index="${index}">`}
           </div>
         `).join('')}
         ${mediaItems.length > 4 ? `
@@ -227,6 +180,7 @@ class PostComponent extends HTMLElement {
   }
 
   setupEventListeners(post) {
+    // Like action
     this.querySelector('.like-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       const likeBtn = e.currentTarget;
@@ -241,23 +195,30 @@ class PostComponent extends HTMLElement {
         let count = parseInt(countEl.textContent) || 0;
         countEl.textContent = isLiked ? count - 1 : count + 1;
       }
+      
+      // TODO: Add like API call
+      console.log(`${isLiked ? 'Unliked' : 'Liked'} post ${post.id}`);
     });
 
+    // More options
     this.querySelector('.post-more')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.showMoreOptions(e, post);
     });
 
+    // Share action
     this.querySelector('.share-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.sharePost(post.id);
     });
 
+    // Comment action - open comment page
     this.querySelector('.comment-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.openCommentPage(post);
     });
 
+    // Mentions
     this.querySelectorAll('.mention').forEach(mention => {
       mention.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -266,6 +227,9 @@ class PostComponent extends HTMLElement {
       });
     });
 
+    // URLs - already handled by anchor tags in processContent
+
+    // Media click handlers
     this.querySelectorAll('.post-media, .grid-media, .video-preview').forEach(media => {
       media.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -274,41 +238,55 @@ class PostComponent extends HTMLElement {
       });
     });
 
+    // See more click handler
     this.querySelector('.see-more')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.openCommentPage(post);
     });
 
+    // Post content click handler (opens comment page)
     this.querySelector('.post-content')?.addEventListener('click', (e) => {
       if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
         this.openCommentPage(post);
       }
     });
+
+    // Setup pull-to-refresh if this is the first post
+    if (this.previousElementSibling === null) {
+      this.setupPullToRefresh();
+    }
   }
 
   showMediaViewer(mediaItems, startIndex = 0) {
     if (!mediaItems || !mediaItems.length) return;
     
+    // Create media viewer overlay
     this.mediaViewer = document.createElement('div');
     this.mediaViewer.className = 'media-viewer-overlay';
     this.currentMediaIndex = startIndex;
     
+    // Create close button
     const closeBtn = document.createElement('div');
     closeBtn.className = 'media-viewer-close';
     closeBtn.innerHTML = '<i class="fas fa-times"></i>';
     closeBtn.addEventListener('click', () => this.closeMediaViewer());
     
+    // Create media container
     const mediaContainer = document.createElement('div');
     mediaContainer.className = 'media-viewer-container';
     
+    // Add touch and mouse events for dragging
     mediaContainer.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true });
     mediaContainer.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
     mediaContainer.addEventListener('touchend', this.handleTouchEnd.bind(this));
+    
     mediaContainer.addEventListener('mousedown', this.handleMouseDown.bind(this));
     
+    // Create media content
     const mediaContent = document.createElement('div');
     mediaContent.className = 'media-viewer-content';
     
+    // Add media items
     mediaItems.forEach((media, index) => {
       const mediaItem = document.createElement('div');
       mediaItem.className = `media-viewer-item ${index === startIndex ? 'active' : ''}`;
@@ -329,6 +307,7 @@ class PostComponent extends HTMLElement {
       mediaContent.appendChild(mediaItem);
     });
     
+    // Add navigation arrows if multiple items
     let prevBtn, nextBtn;
     if (mediaItems.length > 1) {
       prevBtn = document.createElement('div');
@@ -348,6 +327,7 @@ class PostComponent extends HTMLElement {
       });
     }
     
+    // Add dots indicator if multiple items
     let dotsContainer;
     if (mediaItems.length > 1) {
       dotsContainer = document.createElement('div');
@@ -361,6 +341,7 @@ class PostComponent extends HTMLElement {
       });
     }
     
+    // Assemble the viewer
     mediaContainer.appendChild(mediaContent);
     if (prevBtn) mediaContainer.appendChild(prevBtn);
     if (nextBtn) mediaContainer.appendChild(nextBtn);
@@ -372,6 +353,7 @@ class PostComponent extends HTMLElement {
     document.body.appendChild(this.mediaViewer);
     document.body.style.overflow = 'hidden';
     
+    // Start playing video if the first item is a video
     if (mediaItems[startIndex]?.media_type === 'video') {
       setTimeout(() => {
         const video = this.mediaViewer.querySelector('.media-viewer-item.active video');
@@ -385,6 +367,7 @@ class PostComponent extends HTMLElement {
   closeMediaViewer() {
     if (!this.mediaViewer) return;
     
+    // Pause any playing videos
     const videos = this.mediaViewer.querySelectorAll('video');
     videos.forEach(video => video.pause());
     
@@ -408,13 +391,16 @@ class PostComponent extends HTMLElement {
     const mediaItems = this.mediaViewer?.querySelectorAll('.media-viewer-item');
     if (!mediaItems || index < 0 || index >= mediaItems.length) return;
     
+    // Pause current video if it's a video
     const currentVideo = mediaItems[this.currentMediaIndex]?.querySelector('video');
     if (currentVideo) currentVideo.pause();
     
+    // Update active item
     mediaItems[this.currentMediaIndex]?.classList.remove('active');
     mediaItems[index].classList.add('active');
     this.currentMediaIndex = index;
     
+    // Update dots
     const dots = this.mediaViewer?.querySelectorAll('.media-viewer-dot');
     if (dots) {
       dots.forEach((dot, i) => {
@@ -422,6 +408,7 @@ class PostComponent extends HTMLElement {
       });
     }
     
+    // Play new video if it's a video
     const newVideo = mediaItems[index]?.querySelector('video');
     if (newVideo) {
       newVideo.currentTime = 0;
@@ -429,6 +416,7 @@ class PostComponent extends HTMLElement {
     }
   }
 
+  // Touch event handlers for swipe and drag to close
   handleTouchStart(e) {
     if (!this.mediaViewer) return;
     this.startY = e.touches[0].clientY;
@@ -444,18 +432,20 @@ class PostComponent extends HTMLElement {
     const dy = y - this.startY;
     const dx = x - this.startX;
     
+    // Check if it's a horizontal swipe (for changing media)
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
       e.preventDefault();
       this.isDragging = true;
       if (dx > 0) {
-        this.navigateMedia(-1);
+        this.navigateMedia(-1); // Swipe right
       } else {
-        this.navigateMedia(1);
+        this.navigateMedia(1); // Swipe left
       }
       this.startX = x;
       return;
     }
     
+    // Vertical drag to close
     if (Math.abs(dy) > 30) {
       e.preventDefault();
       this.isDragging = true;
@@ -487,6 +477,7 @@ class PostComponent extends HTMLElement {
     this.isDragging = false;
   }
 
+  // Mouse event handlers for drag to close
   handleMouseDown(e) {
     if (!this.mediaViewer) return;
     this.startY = e.clientY;
@@ -535,9 +526,11 @@ class PostComponent extends HTMLElement {
   }
 
   openCommentPage(post) {
+    // Create comment page overlay
     const commentPage = document.createElement('div');
     commentPage.className = 'comment-page-overlay';
     
+    // Create header
     const header = document.createElement('div');
     header.className = 'comment-page-header';
     
@@ -557,9 +550,11 @@ class PostComponent extends HTMLElement {
     header.appendChild(closeBtn);
     header.appendChild(title);
     
+    // Create post preview
     const postPreview = document.createElement('div');
     postPreview.className = 'comment-page-post-preview';
     
+    // Clone the post content (simplified for the preview)
     const profile = post.profile || {
       username: 'unknown',
       full_name: 'Unknown User',
@@ -569,20 +564,20 @@ class PostComponent extends HTMLElement {
     };
     
     const avatarHtml = profile.avatar_url 
-      ? `<img src="${profile.avatar_url}" class="post-avatar" alt="${profile.full_name || profile.username}" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
-      : `<div class="post-avatar initials" aria-label="${profile.full_name || profile.username}">${this.getInitials(profile.full_name)}</div>`;
+      ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
+      : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
     
     postPreview.innerHTML = `
       <div class="comment-page-post">
         <div class="post-header">
-          <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none" aria-label="${profile.full_name || profile.username}'s profile">
+          <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none">
             ${avatarHtml}
           </a>
           <div class="post-user-info">
             <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" style="text-decoration: none">
               <div class="post-user">
                 ${profile.full_name || profile.username}
-                ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge" aria-label="Verified"></i>' : ''}
+                ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
               </div>
               <div class="post-username" style="text-decoration: none">@${profile.username}</div>
             </a>
@@ -592,17 +587,18 @@ class PostComponent extends HTMLElement {
         ${post.content ? `<p class="post-content">${this.processContent(post.content)}</p>` : ''}
         ${this.renderMediaForCommentPage(post.media || [])}
         <div class="post-actions">
-          <button class="post-action like-action ${post.is_liked ? 'liked' : ''}" aria-label="${post.is_liked ? 'Unlike' : 'Like'}">
+          <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
             <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
-          </button>
-          <button class="post-action comment-action" aria-label="Comment"><i class="far fa-comment"></i> ${post.comment_count || 0}</button>
-          <button class="post-action share-action" aria-label="Share"><i class="fas fa-arrow-up-from-bracket"></i></button>
-          <button class="post-more" aria-label="More options"><i class="fas fa-ellipsis-h"></i></button>
+          </div>
+          <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
+          <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
+          <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
           <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
         </div>
       </div>
     `;
     
+    // Create comments section
     const commentsSection = document.createElement('div');
     commentsSection.className = 'comment-page-comments';
     commentsSection.innerHTML = `
@@ -614,13 +610,15 @@ class PostComponent extends HTMLElement {
       </div>
     `;
     
+    // Create comment input
     const commentInput = document.createElement('div');
     commentInput.className = 'comment-page-input-container';
     commentInput.innerHTML = `
       <input type="text" class="comment-page-input" placeholder="Write a comment...">
-      <button class="comment-page-send" aria-label="Send comment"><i class="fas fa-paper-plane"></i></button>
+      <button class="comment-page-send"><i class="fas fa-paper-plane"></i></button>
     `;
     
+    // Assemble the page
     commentPage.appendChild(header);
     commentPage.appendChild(postPreview);
     commentPage.appendChild(commentsSection);
@@ -629,14 +627,17 @@ class PostComponent extends HTMLElement {
     document.body.appendChild(commentPage);
     document.body.style.overflow = 'hidden';
     
+    // Setup event listeners for the comment page
     this.setupCommentPageEventListeners(commentPage, post);
     
+    // Focus the input
     setTimeout(() => {
       commentPage.querySelector('.comment-page-input')?.focus();
     }, 300);
   }
 
   setupCommentPageEventListeners(commentPage, post) {
+    // Like action
     commentPage.querySelector('.like-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       const likeBtn = e.currentTarget;
@@ -653,21 +654,25 @@ class PostComponent extends HTMLElement {
       }
     });
 
+    // More options
     commentPage.querySelector('.post-more')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.showMoreOptions(e, post);
     });
 
+    // Share action
     commentPage.querySelector('.share-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.sharePost(post.id);
     });
 
+    // Comment button focuses input
     commentPage.querySelector('.comment-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       commentPage.querySelector('.comment-page-input')?.focus();
     });
 
+    // Media click handlers
     commentPage.querySelectorAll('.post-media, .grid-media, .video-preview').forEach(media => {
       media.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -676,20 +681,24 @@ class PostComponent extends HTMLElement {
       });
     });
 
+    // Send comment button
     commentPage.querySelector('.comment-page-send')?.addEventListener('click', () => {
       const input = commentPage.querySelector('.comment-page-input');
       const commentText = input.value.trim();
       if (commentText) {
+        // TODO: Send comment to server
         console.log('Posting comment:', commentText);
         input.value = '';
       }
     });
 
+    // Press Enter to send comment
     commentPage.querySelector('.comment-page-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         const input = commentPage.querySelector('.comment-page-input');
         const commentText = input.value.trim();
         if (commentText) {
+          // TODO: Send comment to server
           console.log('Posting comment:', commentText);
           input.value = '';
         }
@@ -706,7 +715,7 @@ class PostComponent extends HTMLElement {
         return `
           <div class="media-container video-container">
             <div class="video-preview" data-media-index="0">
-              <video class="post-media" preload="metadata" src="${media.media_url}" aria-label="Video content">
+              <video class="post-media" preload="metadata">
                 <source src="${media.media_url}" type="video/mp4">
               </video>
               <div class="video-play-button"><i class="fas fa-play"></i></div>
@@ -716,7 +725,7 @@ class PostComponent extends HTMLElement {
       } else {
         return `
           <div class="media-container">
-            <img src="${media.media_url}" class="post-media" data-media-index="0" alt="Post image" loading="lazy">
+            <img src="${media.media_url}" class="post-media" data-media-index="0">
           </div>
         `;
       }
@@ -728,12 +737,12 @@ class PostComponent extends HTMLElement {
           <div class="grid-media-container">
             ${media.media_type === 'video' 
               ? `<div class="video-preview" data-media-index="${index}">
-                  <video class="grid-media" preload="metadata" src="${media.media_url}" aria-label="Video content">
+                  <video class="grid-media" preload="metadata">
                     <source src="${media.media_url}" type="video/mp4">
                   </video>
                   <div class="video-play-button"><i class="fas fa-play"></i></div>
                 </div>`
-              : `<img src="${media.media_url}" class="grid-media" data-media-index="${index}" alt="Post image" loading="lazy">`}
+              : `<img src="${media.media_url}" class="grid-media" data-media-index="${index}">`}
           </div>
         `).join('')}
         ${mediaItems.length > 4 ? `
@@ -745,8 +754,9 @@ class PostComponent extends HTMLElement {
   }
 
   showMoreOptions(e, post) {
-    const isOwner = true;
+    const isOwner = true; // Replace with actual owner check
     
+    // Remove any existing popups
     document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
     
     const popup = document.createElement('div');
@@ -754,20 +764,22 @@ class PostComponent extends HTMLElement {
     popup.innerHTML = `
       <div class="more-options-content">
         ${isOwner ? `
-          <button class="more-option edit-option" aria-label="Edit post"><i class="fas fa-edit"></i> Edit</button>
-          <button class="more-option delete-option" aria-label="Delete post"><i class="fas fa-trash-alt"></i> Delete</button>
+          <div class="more-option edit-option"><i class="fas fa-edit"></i> Edit</div>
+          <div class="more-option delete-option"><i class="fas fa-trash-alt"></i> Delete</div>
         ` : `
-          <button class="more-option report-option" aria-label="Report post"><i class="fas fa-flag"></i> Report</button>
+          <div class="more-option report-option"><i class="fas fa-flag"></i> Report</div>
         `}
       </div>
     `;
     
     document.body.appendChild(popup);
     
+    // Position the popup
     const rect = e.target.getBoundingClientRect();
     popup.style.left = `${rect.left - 100}px`;
     popup.style.top = `${rect.top - 10}px`;
     
+    // Close when clicking outside
     const clickHandler = (event) => {
       if (!popup.contains(event.target)) {
         popup.remove();
@@ -779,6 +791,7 @@ class PostComponent extends HTMLElement {
       document.addEventListener('click', clickHandler);
     }, 0);
     
+    // Add option handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
       console.log('Edit post', post.id);
       popup.remove();
@@ -816,139 +829,6 @@ class PostComponent extends HTMLElement {
       alert('Link copied to clipboard!');
     });
   }
-}
-
-customElements.define('post-component', PostComponent);
-
-class PostFeed {
-  constructor() {
-    this.postsContainer = document.querySelector('#posts-container');
-    this.posts = [];
-    this.currentIndex = 0;
-    this.batchSize = 6;
-    this.isLoading = false;
-    this.isRefreshing = false;
-    this.setupPullToRefresh();
-    this.setupInfiniteScroll();
-    this.loadInitialPosts();
-  }
-
-  async loadInitialPosts() {
-    this.showLoader();
-    
-    try {
-      // Simulate API call
-      this.posts = await this.fetchPosts();
-      this.hideLoader();
-      this.loadNextBatch();
-    } catch (error) {
-      console.error('Error loading posts:', error);
-      this.hideLoader();
-      this.showError();
-    }
-  }
-
-  async fetchPosts() {
-    // Simulate API call delay
-    return new Promise(resolve => {
-      setTimeout(() => {
-        // Generate mock posts
-        const mockPosts = Array.from({ length: 30 }, (_, i) => ({
-          id: `post-${i}`,
-          content: `This is post content ${i + 1}. ${i % 3 === 0 ? 'With some extra text to make it longer. '.repeat(5) : ''}`,
-          created_at: new Date(Date.now() - i * 3600000).toISOString(),
-          comment_count: Math.floor(Math.random() * 100),
-          like_count: Math.floor(Math.random() * 500),
-          views: Math.floor(Math.random() * 1000),
-          is_liked: Math.random() > 0.7,
-          media: this.generateMockMedia(i),
-          profile: {
-            user_id: `user-${i}`,
-            username: `user${i}`,
-            full_name: `User ${i}`,
-            avatar_url: i % 2 === 0 ? `https://picsum.photos/200/200?random=${i}` : '',
-            is_verified: i % 5 === 0
-          }
-        }));
-        resolve(mockPosts);
-      }, 800);
-    });
-  }
-
-  generateMockMedia(index) {
-    const mediaTypes = ['image', 'video'];
-    const count = index % 5;
-    if (count === 0) return [];
-    
-    return Array.from({ length: count }, (_, i) => ({
-      media_type: mediaTypes[i % 2],
-      media_url: i % 2 === 0 
-        ? `https://picsum.photos/800/600?random=${index}${i}`
-        : `https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4`
-    }));
-  }
-
-  showLoader() {
-    this.postsContainer.innerHTML = '<div class="posts-loading"><div class="loader"></div></div>';
-  }
-
-  hideLoader() {
-    const loader = this.postsContainer.querySelector('.posts-loading');
-    if (loader) loader.remove();
-  }
-
-  showError() {
-    this.postsContainer.innerHTML = '<div class="posts-error">Error loading posts. <button id="retry-button">Try again</button></div>';
-    document.getElementById('retry-button')?.addEventListener('click', () => this.loadInitialPosts());
-  }
-
-  loadNextBatch() {
-    if (this.isLoading || this.currentIndex >= this.posts.length) return;
-    
-    this.isLoading = true;
-    const batch = this.posts.slice(this.currentIndex, this.currentIndex + this.batchSize);
-    this.currentIndex += this.batchSize;
-
-    const batchLoader = document.createElement('div');
-    batchLoader.className = 'batch-loading';
-    batchLoader.innerHTML = '<div class="loader small"></div>';
-    this.postsContainer.appendChild(batchLoader);
-
-    let loadedCount = 0;
-    batch.forEach((post, index) => {
-      setTimeout(() => {
-        const postElement = document.createElement('post-component');
-        postElement.setAttribute('post-data', JSON.stringify(post));
-        this.postsContainer.insertBefore(postElement, batchLoader);
-        loadedCount++;
-        
-        if (loadedCount === batch.length) {
-          batchLoader.remove();
-          this.isLoading = false;
-        }
-      }, index * 200);
-    });
-  }
-
-  refreshPosts() {
-    if (this.isRefreshing) return;
-    
-    this.isRefreshing = true;
-    this.currentIndex = 0;
-    
-    const refreshLoader = document.createElement('div');
-    refreshLoader.className = 'refresh-loading';
-    refreshLoader.innerHTML = '<div class="loader"></div>';
-    this.postsContainer.insertBefore(refreshLoader, this.postsContainer.firstChild);
-
-    setTimeout(() => {
-      document.querySelectorAll('post-component').forEach(post => post.remove());
-      this.posts = [];
-      this.loadInitialPosts();
-      refreshLoader.remove();
-      this.isRefreshing = false;
-    }, 1000);
-  }
 
   setupPullToRefresh() {
     let startY = 0;
@@ -956,16 +836,16 @@ class PostFeed {
     const refreshContainer = document.createElement('div');
     refreshContainer.className = 'refresh-container';
     refreshContainer.innerHTML = '<div class="refresh-loader"><i class="fas fa-sync-alt"></i></div>';
-    document.body.insertBefore(refreshContainer, this.postsContainer);
+    this.parentNode.insertBefore(refreshContainer, this);
 
-    document.addEventListener('touchstart', (e) => {
+    this.addEventListener('touchstart', (e) => {
       if (window.scrollY === 0 && !this.isRefreshing) {
         startY = e.touches[0].pageY;
         touchStart = true;
       }
     }, { passive: true });
 
-    document.addEventListener('touchmove', (e) => {
+    this.addEventListener('touchmove', (e) => {
       if (!touchStart || this.isRefreshing) return;
       
       const y = e.touches[0].pageY;
@@ -981,19 +861,24 @@ class PostFeed {
       }
     }, { passive: false });
 
-    document.addEventListener('touchend', (e) => {
+    this.addEventListener('touchend', (e) => {
       if (!touchStart || this.isRefreshing) return;
       
       const y = e.changedTouches[0].pageY;
       const dy = y - startY;
       
       if (dy > 100) {
-        this.refreshPosts();
+        this.isRefreshing = true;
         refreshContainer.classList.add('refreshing');
         
+        // Simulate refresh
         setTimeout(() => {
           refreshContainer.style.transform = 'translateY(0)';
           refreshContainer.classList.remove('refreshing');
+          this.isRefreshing = false;
+          
+          // TODO: Actually refresh content
+          console.log('Refreshing content...');
         }, 1000);
       } else {
         refreshContainer.style.transform = 'translateY(0)';
@@ -1003,24 +888,6 @@ class PostFeed {
       touchStart = false;
     });
   }
-
-  setupInfiniteScroll() {
-    const scrollHandler = () => {
-      if (this.isLoading) return;
-
-      const scrollPosition = window.innerHeight + window.scrollY;
-      const documentHeight = document.body.offsetHeight;
-      const threshold = 500;
-
-      if (scrollPosition > documentHeight - threshold) {
-        this.loadNextBatch();
-      }
-    };
-
-    window.addEventListener('scroll', scrollHandler, { passive: true });
-  }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  new PostFeed();
-});
+customElements.define('post-component', PostComponent);
