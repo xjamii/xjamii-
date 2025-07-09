@@ -625,3 +625,148 @@ a, .mention, .hashtag, .url {
   justify-content: center;
   cursor: pointer;
 }
+
+/* Loading styles */
+.post-loading {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.loader {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #0056b3;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Pull to refresh */
+.refresh-container {
+  position: fixed;
+  top: -60px;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 100;
+}
+
+.refresh-loader {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #0056b3;
+  font-size: 20px;
+}
+
+.refresh-container.refreshing .refresh-loader {
+  animation: spin 1s linear infinite;
+}
+
+/* See more text */
+.see-more {
+  color: #0056b3;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* URL links */
+.url {
+  color: #0056b3;
+  text-decoration: none;
+}
+
+.url:hover {
+  text-decoration: underline;
+}
+
+/* No comments style */
+.no-comments {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #666;
+  text-align: center;
+}
+
+.no-comments i {
+  font-size: 40px;
+  margin-bottom: 10px;
+  color: #ccc;
+}
+
+/* Comment page post preview */
+.comment-page-post {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.comment-page-post .post-actions {
+  margin-top: 10px;
+}
+
+/* Media viewer close button */
+.media-viewer-close {
+  background: rgba(0, 0, 0, 0.5);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+}
+
+/* Media viewer navigation */
+.media-viewer-nav {
+  background: rgba(0, 0, 0, 0.5);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+}
+
+/* Media viewer dots */
+.media-viewer-dots {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.media-viewer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+
+.media-viewer-dot.active {
+  background-color: white;
+}
