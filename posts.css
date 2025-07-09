@@ -278,3 +278,58 @@
 .post-action.liked i.fa-heart {
   animation: heartBeat 0.5s ease;
 }
+
+
+  .post-image {
+            width: calc(100% - 65px);
+            margin-left: 65px; /* Align with username */
+            border-radius: 8px;
+            margin-bottom: 8px;
+            max-height: 500px;
+            object-fit: cover;
+        }
+        
+        .post-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-left: 65px; /* Align with username */
+        }
+        
+        .post-action {
+            display: flex;
+            align-items: center;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .post-action i {
+            margin-right: 5px;
+        }
+        
+        .post-action:hover {
+            color: var(--primary);
+        }
+        
+        /* Twitter-like share button */
+        .post-action.share:hover {
+            color: var(--twitter-blue);
+        }
+        
+        .post-action.views {
+            margin-left: auto;
+            color: var(--gray);
+        }
+        
+        .post-more {
+            color: var(--gray);
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 5px;
+        }
+        
+        .post-more:hover {
+            color: var(--dark);
+        }
