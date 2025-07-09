@@ -791,6 +791,155 @@
     color: #0d8ddb;
     cursor: pointer;
 }
+           .post-container {
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .post {
+            margin-bottom: 0;
+        }
+        
+        .post-header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        
+        .post-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+        
+        .post-user-info {
+            flex: 1;
+        }
+        
+        .post-user {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .verified-badge {
+            color: var(--primary);
+            font-size: 16px;
+            margin-left: 5px;
+        }
+        
+        .post-username {
+            color: var(--gray);
+            font-size: 14px;
+            margin-top: 2px;
+        }
+        
+        .post-time {
+            font-size: 13px;
+            color: var(--gray);
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+        
+        .connect-btn {
+            position: absolute;
+            right: 0;
+            top: 25px;
+            background-color: white;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .connect-btn:hover {
+            background-color: rgba(0, 86, 179, 0.1);
+        }
+        
+        .post-content {
+            margin-bottom: 15px;
+            font-size: 16px;
+            margin-left: 65px; /* Align with username */
+            margin-top: -5px; /* Reduce gap between username and content */
+        }
+        
+        .post-content a,
+        .post-content .hashtag,
+        .post-content .mention {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .post-content a:hover,
+        .post-content .hashtag:hover,
+        .post-content .mention:hover {
+            text-decoration: underline;
+        }
+        
+        .post-image {
+            width: calc(100% - 65px);
+            margin-left: 65px; /* Align with username */
+            border-radius: 8px;
+            margin-bottom: 8px;
+            max-height: 500px;
+            object-fit: cover;
+        }
+        
+        .post-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-left: 65px; /* Align with username */
+        }
+        
+        .post-action {
+            display: flex;
+            align-items: center;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .post-action i {
+            margin-right: 5px;
+        }
+        
+        .post-action:hover {
+            color: var(--primary);
+        }
+        
+        /* Twitter-like share button */
+        .post-action.share:hover {
+            color: var(--twitter-blue);
+        }
+        
+        .post-action.views {
+            margin-left: auto;
+            color: var(--gray);
+        }
+        
+        .post-more {
+            color: var(--gray);
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 5px;
+        }
+        
+        .post-more:hover {
+            color: var(--dark);
+        }
     </style>
 </head>
 <body>
