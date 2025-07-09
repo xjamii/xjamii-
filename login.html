@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-     <meta name="theme-color" content="#0066cc">
+     <meta name="theme-color" content="#ECEFF1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Xjamii</title>
     <!-- Firebase v8 SDKs -->
@@ -51,7 +51,7 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #000;
+            background: #1a4b8c; /* Changed to blue */
             animation: spinner-bounce 1.4s infinite ease-in-out both;
         }
 
@@ -94,13 +94,14 @@
         .logo {
             height: 60px;
             width: auto;
+            filter: brightness(0) saturate(100%) invert(22%) sepia(55%) saturate(1553%) hue-rotate(194deg) brightness(93%) contrast(91%); /* Makes logo blue */
         }
 
         .title {
             font-size: 28px;
             font-weight: bold;
             margin: 0 0 40px;
-            color: #000;
+            color: #1a4b8c; /* Changed to blue */
             text-align: left;
         }
 
@@ -127,7 +128,7 @@
 
         .text-input:focus {
             outline: none;
-            border-color: #000;
+            border-color: #1a4b8c; /* Changed to blue */
         }
 
         .input-label {
@@ -183,14 +184,14 @@
 
         .back-button {
             background-color: #ECEFF1;
-            color: #000;
-            border: 2px solid #000;
+            color: #1a4b8c; /* Changed to blue */
+            border: 2px solid #1a4b8c; /* Changed to blue */
         }
 
         .login-button {
-            background-color: #000;
+            background-color: #1a4b8c; /* Changed to blue */
             color: #fff;
-            border: 2px solid #000;
+            border: 2px solid #1a4b8c; /* Changed to blue */
         }
 
         .back-button:hover {
@@ -198,7 +199,7 @@
         }
 
         .login-button:hover {
-            background-color: #333;
+            background-color: #0d2d59; /* Darker blue */
         }
 
         /* Spinner */
@@ -291,7 +292,7 @@
     <div class="main-content">
         <div class="logo-container">
             <img 
-                src="https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png" 
+                src="https://i.postimg.cc/gkL0Qdsw/file-00000000000061f8b89b5a1f67f8b937.png" 
                 alt="X-Aviation Logo" 
                 class="logo" 
                 loading="eager"
@@ -329,10 +330,10 @@
         <button class="action-button back-button" id="back-btn">
             <span class="btn-text">Back</span>
             <span class="spinner" style="display: none;">
-                <span class="spinner-dot" style="color: #000;"></span>
-                <span class="spinner-dot" style="color: #000;"></span>
-                <span class="spinner-dot" style="color: #000;"></span>
-                <span class="spinner-dot" style="color: #000;"></span>
+                <span class="spinner-dot" style="color: #1a4b8c;"></span>
+                <span class="spinner-dot" style="color: #1a4b8c;"></span>
+                <span class="spinner-dot" style="color: #1a4b8c;"></span>
+                <span class="spinner-dot" style="color: #1a4b8c;"></span>
             </span>
         </button>
         <button class="action-button login-button" id="login-btn">
