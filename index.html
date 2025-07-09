@@ -1300,35 +1300,58 @@ if (localStorage.getItem('darkMode') === 'true') {
 
     <script>
         async function loadPosts() {
-            const { data: posts, error } = await supabase
-                .from('posts')
-                .select(`
-                    *,
-                    profile:user_id (username, full_name, avatar_url, is_verified),
-                    media:post_media (media_url, media_type)
-                `)
-                .order('created_at', { ascending: false });
-            
-            if (error) {
-                console.error("Error loading posts:", error);
-                return;
-            }
-            
-            const postsContainer = document.getElementById('posts-container');
-            postsContainer.innerHTML = '';
-            
-            posts.forEach(post => {
-                const postElement = document.createElement('post-component');
-                postElement.setAttribute('post-data', JSON.stringify(post));
-                postsContainer.appendChild(postElement);
-            });
+    try {
+        // Show loading state
+        document.getElementById('posts-container').innerHTML = '<div class="loading-spinner">Loading posts...</div>';
+        
+        const { data: posts, error } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (username, full_name, avatar_url, is_verified),
+                media:post_media (media_url, media_type)
+            `)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        const postsContainer = document.getElementById('posts-container');
+        postsContainer.innerHTML = '';
+        
+        if (posts.length === 0) {
+            postsContainer.innerHTML = '<div class="no-posts">No posts yet. Be the first to post!</div>';
+            return;
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
-            // Check auth first
-            checkAuth().then(loadPosts);
+        posts.forEach(post => {
+            const postElement = document.createElement('post-component');
+            postElement.setAttribute('post-data', JSON.stringify(post));
+            postsContainer.appendChild(postElement);
         });
+        
+    } catch (error) {
+        console.error("Error loading posts:", error);
+        document.getElementById('posts-container').innerHTML = `
+            <div class="error-message">
+                Failed to load posts. <button onclick="loadPosts()">Try again</button>
+            </div>
+        `;
+    }
+}
     </script>
+
+    <script>
+    // Verify custom element is registered
+    if (!customElements.get('post-component')) {
+        console.error('Post component not registered! Loading posts.js');
+        const script = document.createElement('script');
+        script.src = 'posts.js';
+        document.body.appendChild(script);
+        
+        // Retry loading posts after component is loaded
+        script.onload = loadPosts;
+    }
+</script>
 <script src="profile.js"></script>
     <script src="suggestions.js"></script>
     <!-- Notifications JS (standalone file) -->
