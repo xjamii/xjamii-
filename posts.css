@@ -372,3 +372,19 @@
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
+
+/* Share icon styling */
+.post-action.share-action i {
+  transform: rotate(90deg); /* Makes the arrow point upward */
+}
+
+/* Remove all underlines */
+a, .mention, .hashtag, .url {
+  text-decoration: none !important;
+}
+
+/* Blue colored mentions/links */
+.mention, .hashtag, .url {
+  color: #1d9bf0;
+  cursor: pointer;
+}
