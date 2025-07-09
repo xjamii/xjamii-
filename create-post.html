@@ -822,108 +822,98 @@
             }
         }
 
-        // Handle media upload for a post
-        
-                    
-            // Handle media upload for a post using Cloudinary
-async function handleMediaUploadForPost(postId) {
+        // Handle media upload for a post    
+
+                
+
+                
+
+            async function handleMediaUploadForPost(postId) {
     try {
-        console.log("[Media] Uploading files to Cloudinary...");
-        
-        // Ensure uploadedFiles exists and is an array
+        // 1. VALIDATION PHASE
+        if (!postId) throw new Error("Missing post ID");
+        if (!currentUser?.id) throw new Error("User not authenticated");
         if (!Array.isArray(uploadedFiles)) {
-            console.error("uploadedFiles is not an array:", uploadedFiles);
-            throw new Error("No media files to upload");
+            throw new Error("Invalid media files format");
         }
+        if (uploadedFiles.length === 0) return [];
 
-        // Check if there are files to upload
-        if (uploadedFiles.length === 0) {
-            console.log("No media files to upload");
-            return;
-        }
+        // 2. VERIFY REFERENCES
+        const [{ data: post }, { data: profile }] = await Promise.all([
+            supabase.from('posts').select('id').eq('id', postId).single(),
+            supabase.from('profiles').select('id').eq('id', currentUser.id).single()
+        ]);
+        if (!post) throw new Error("Referenced post doesn't exist");
+        if (!profile) throw new Error("User profile not found");
 
-        const mediaUrls = [];
+        // 3. CLOUDINARY UPLOAD
+        const mediaRecords = [];
         const cloudName = 'dwwhpznwb';
         const uploadPreset = 'web_usigned_upload';
 
-        // Upload each file to Cloudinary
         for (const file of uploadedFiles) {
-            try {
-                if (!(file instanceof File)) {
-                    console.error("Invalid file object:", file);
-                    continue;
-                }
+            if (!(file instanceof File)) continue;
 
-                console.log(`Uploading ${file.name} (${file.type}, ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-                
+            try {
+                const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('upload_preset', uploadPreset);
                 formData.append('cloud_name', cloudName);
 
-                // Determine resource type
-                const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
-                
                 const response = await fetch(
-                    `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`, 
-                    {
-                        method: 'POST',
-                        body: formData
-                    }
+                    `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+                    { method: 'POST', body: formData }
                 );
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error("Cloudinary upload failed:", errorData);
-                    throw new Error(`Upload failed for ${file.name}`);
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.message || 'Upload failed');
                 }
 
-                const data = await response.json();
-                console.log("Cloudinary response:", data);
-
-                mediaUrls.push({
-                    url: data.secure_url,
-                    type: resourceType,
-                    public_id: data.public_id
+                const result = await response.json();
+                mediaRecords.push({
+                    post_id: postId,
+                    user_id: currentUser.id,
+                    media_url: result.secure_url,
+                    media_type: resourceType,
+                    created_at: new Date().toISOString()
                 });
 
-                console.log(`Successfully uploaded ${file.name}: ${data.secure_url}`);
-
-            } catch (fileError) {
-                console.error(`Error uploading file ${file?.name || 'unknown'}:`, fileError);
-                // Continue with next file even if one fails
+            } catch (error) {
+                console.error(`Failed to upload ${file.name}:`, error);
                 continue;
             }
         }
 
-        // Create media records in Supabase only if we have successful uploads
-        if (mediaUrls.length > 0) {
-            console.log("Creating media records in Supabase...");
-            const { data, error: mediaError } = await supabase
-                .from('post_media')
-                .insert(mediaUrls.map(media => ({
-                    post_id: postId,
-                    user_id: currentUser.id,
-                    media_url: media.url,
-                    media_type: media.type,
-                    cloudinary_id: media.public_id // Optional: store Cloudinary public ID
-                })))
-                .select();
-
-            if (mediaError) {
-                console.error("Supabase media record creation failed:", mediaError);
-                throw new Error("Failed to save media records");
-            }
-
-            console.log("Successfully created media records:", data);
-            return data;
+        // 4. DATABASE INSERTION
+        if (mediaRecords.length === 0) {
+            throw new Error("All media uploads failed");
         }
 
-        return [];
-        
+        const { data, error } = await supabase
+            .from('post_media')
+            .insert(mediaRecords)
+            .select();
+
+        if (error) {
+            console.error("Database insertion error:", {
+                code: error.code,
+                message: error.message,
+                details: error.details
+            });
+            throw new Error("Failed to save media records");
+        }
+
+        return data;
+
     } catch (error) {
-        console.error("Error in handleMediaUploadForPost:", error);
-        throw error; // Re-throw to be caught by the calling function
+        console.error("Media processing failed:", {
+            error: error.message,
+            postId,
+            userId: currentUser?.id
+        });
+        throw new Error(`Media upload failed: ${error.message}`);
     }
 }
 
