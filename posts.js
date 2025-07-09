@@ -1,7 +1,3 @@
-/* ===== Posts System with Connection Functionality ===== */
-const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 /* ===== Connection System ===== */
 async function checkPostConnectionStatus(postUserId) {
