@@ -1,286 +1,125 @@
-/* posts.css */
 :root {
-  --primary: #0056b3;
-  --primary-dark: #003d7a;
-  --secondary: #ffc107;
-  --light: #f8f9fa;
-  --dark: #212529;
-  --gray: #6c757d;
-  --light-gray: #e9ecef;
-  --twitter-blue: #1D9BF0;
-  --error-red: #dc3545;
-  --success-green: #28a745;
-}
-
-.post-container {
-  width: 100%;
-  background: white;
-  padding: 20px;
-  border-bottom: 1px solid var(--light-gray);
-  transition: all 0.3s ease;
-}
-
-.post {
-  margin-bottom: 0;
-}
-
-.post-header {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 12px;
-  position: relative;
-}
-
-.post-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 15px;
-  background-color: var(--light-gray);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.post-avatar[src=""] {
-  display: none;
-}
-
-.post-avatar-fallback {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: var(--primary);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 20px;
-  margin-right: 15px;
-}
-
-.post-user-info {
-  flex: 1;
-  min-width: 0; /* Prevent overflow */
-}
-
-.post-user {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-  color: var(--dark);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.verified-badge {
-  color: var(--primary);
-  font-size: 16px;
-  margin-left: 5px;
-  flex-shrink: 0;
-}
-
-.post-username {
-  color: var(--gray);
-  font-size: 14px;
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.post-time {
-  font-size: 13px;
-  color: var(--gray);
-  position: absolute;
-  right: 0;
-  top: 0;
-  white-space: nowrap;
-}
-
-.post-content {
-  margin-bottom: 15px;
-  font-size: 16px;
-  margin-left: 65px;
-  margin-top: -5px;
-  word-break: break-word;
-  white-space: pre-wrap;
-}
-
-.post-content a,
-.post-content .hashtag,
-.post-content .mention {
-  color: var(--primary);
-  text-decoration: none;
-}
-
-.post-content a:hover,
-.post-content .hashtag:hover,
-.post-content .mention:hover {
-  text-decoration: underline;
-}
-
-.post-image {
-  width: calc(100% - 65px);
-  margin-left: 65px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  max-height: 500px;
-  object-fit: cover;
-  background-color: var(--light-gray);
-}
-
-.post-video {
-  width: calc(100% - 65px);
-  margin-left: 65px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  max-height: 500px;
-  background-color: var(--light-gray);
-}
-
-.post-actions {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  margin-left: 65px;
-  padding-top: 8px;
-}
-
-.post-action {
-  display: flex;
-  align-items: center;
-  color: var(--gray);
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.post-action i {
-  margin-right: 5px;
-  font-size: 16px;
-}
-
-.post-action:hover {
-  color: var(--primary);
-}
-
-.post-action.liked {
-  color: var(--error-red);
-}
-
-.post-action.share:hover {
-  color: var(--twitter-blue);
-}
-
-.post-action.views {
-  margin-left: auto;
-  color: var(--gray);
-}
-
-.post-more {
-  color: var(--gray);
-  cursor: pointer;
-  padding: 5px;
-  margin-left: 5px;
-  position: relative;
-}
-
-.post-more:hover {
-  color: var(--dark);
-}
-
-/* Media grid for multiple attachments */
-.media-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin-left: 65px;
-  margin-bottom: 8px;
-}
-
-.media-grid img,
-.media-grid video {
-  width: 100%;
-  height: 150px;
-  border-radius: 8px;
-  object-fit: cover;
-  background-color: var(--light-gray);
-}
-
-.media-count-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 24px;
-  font-weight: bold;
-  border-radius: 8px;
-}
-
-/* Loading and error states */
-.post-loading {
-  padding: 20px;
-  text-align: center;
-  color: var(--gray);
-}
-
-.post-error {
-  padding: 20px;
-  color: var(--error-red);
-  background: #ffebee;
-  border-radius: 4px;
-  margin: 10px 0;
-  text-align: center;
-}
-
-/* Responsive adjustments */
-@media (max-width: 480px) {
-  .post-avatar {
-    width: 40px;
-    height: 40px;
-    margin-right: 12px;
-  }
-  
-  .post-content,
-  .post-image,
-  .post-video,
-  .post-actions,
-  .media-grid {
-    margin-left: 52px; /* 40px avatar + 12px margin */
-  }
-  
-  .post-content {
-    font-size: 15px;
-  }
-  
-  .post-actions {
-    gap: 12px;
-  }
-}
-
-/* Animation for like action */
-@keyframes heartBeat {
-  0% { transform: scale(1); }
-  25% { transform: scale(1.2); }
-  50% { transform: scale(1); }
-  75% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
-.post-action.liked i.fa-heart {
-  animation: heartBeat 0.5s ease;
-}
-
-
-  .post-image {
+            --primary: #0056b3;
+            --primary-dark: #003d7a;
+            --secondary: #ffc107;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --twitter-blue: #1D9BF0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 0;
+        }
+        
+        .post-container {
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .post {
+            margin-bottom: 0;
+        }
+        
+        .post-header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        
+        .post-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+        
+        .post-user-info {
+            flex: 1;
+        }
+        
+        .post-user {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .verified-badge {
+            color: var(--primary);
+            font-size: 16px;
+            margin-left: 5px;
+        }
+        
+        .post-username {
+            color: var(--gray);
+            font-size: 14px;
+            margin-top: 2px;
+        }
+        
+        .post-time {
+            font-size: 13px;
+            color: var(--gray);
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+        
+        .connect-btn {
+            position: absolute;
+            right: 0;
+            top: 25px;
+            background-color: white;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .connect-btn:hover {
+            background-color: rgba(0, 86, 179, 0.1);
+        }
+        
+        .post-content {
+            margin-bottom: 15px;
+            font-size: 16px;
+            margin-left: 65px; /* Align with username */
+            margin-top: -5px; /* Reduce gap between username and content */
+        }
+        
+        .post-content a,
+        .post-content .hashtag,
+        .post-content .mention {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .post-content a:hover,
+        .post-content .hashtag:hover,
+        .post-content .mention:hover {
+            text-decoration: underline;
+        }
+        
+        .post-image {
             width: calc(100% - 65px);
             margin-left: 65px; /* Align with username */
             border-radius: 8px;
