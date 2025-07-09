@@ -770,3 +770,102 @@ a, .mention, .hashtag, .url {
 .media-viewer-dot.active {
   background-color: white;
 }
+
+/* Loading styles */
+.post-loading, .posts-loading, .batch-loading {
+  padding: 40px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.loader {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #0056b3;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+}
+
+.loader.small {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Pull to refresh */
+.refresh-container {
+  position: fixed;
+  top: -60px;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.refresh-loader {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #0056b3;
+  font-size: 20px;
+}
+
+.refresh-container.refreshing .refresh-loader {
+  animation: spin 1s linear infinite;
+}
+
+/* Batch loading */
+.batch-loading {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Accessibility improvements */
+.post-action {
+  cursor: pointer;
+}
+
+.post-action:focus {
+  outline: 2px solid #0056b3;
+  outline-offset: 2px;
+}
+
+/* Lazy loading fade-in */
+.post-container {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.post-container.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Media lazy loading */
+.post-media, .grid-media {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.post-media.loaded, .grid-media.loaded {
+  opacity: 1;
+}
