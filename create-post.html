@@ -571,7 +571,7 @@
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     
      <script>
- // DOM Elements
+// DOM Elements
 const userInfoContainer = document.getElementById('user-info-container');
 const postInput = document.getElementById('post-content');
 const postButton = document.getElementById('submit-post');
@@ -739,8 +739,8 @@ async function handleMediaUpload(e, type) {
     
     // Validate file count
     if (type === 'image') {
-        if (uploadedFiles.length + newFiles.length > 2) {
-            showToastMessage("Maximum 2 photos allowed per post");
+        if (uploadedFiles.length + newFiles.length > 4) {
+            showToastMessage("Maximum 4 photos allowed per post");
             e.target.value = '';
             return;
         }
@@ -767,43 +767,15 @@ async function handleMediaUpload(e, type) {
         const videoFile = newFiles[0];
         
         // Check video size
-        if (videoFile.size > 30 * 1024 * 1024) { // 30MB limit
-            showToastMessage("Videos must be less than 30MB");
+        if (videoFile.size > 50 * 1024 * 1024) { // 50MB limit
+            showToastMessage("Videos must be less than 50MB");
             e.target.value = '';
             return;
         }
         
-        try {
-            // Check duration (simplified implementation)
-            const video = document.createElement('video');
-            video.preload = 'metadata';
-            
-            video.onloadedmetadata = function() {
-                window.URL.revokeObjectURL(video.src);
-                const duration = video.duration;
-                
-                if (duration > 300) { // 5 minutes = 300 seconds
-                    showToastMessage("Videos must be shorter than 5 minutes");
-                    e.target.value = '';
-                    return;
-                }
-                
-                // If all checks passed, add video
-                uploadedFiles.push(videoFile);
-                videoCount++;
-                displayMediaPreview();
-                e.target.value = '';
-            };
-            
-            video.src = URL.createObjectURL(videoFile);
-            return; // Exit since we're handling video asynchronously
-            
-        } catch (error) {
-            console.error("Error checking video duration:", error);
-            showError("Could not process video");
-            e.target.value = '';
-            return;
-        }
+        // If all checks passed, add video
+        uploadedFiles.push(videoFile);
+        videoCount++;
     }
     
     displayMediaPreview();
@@ -889,8 +861,9 @@ async function handlePostCreation() {
     
     const content = postInput.value.trim();
     
+    // Check if post has content or media
     if (!content && uploadedFiles.length === 0) {
-        showError("Please add text or media");
+        showError("Please add text or media to your post");
         return;
     }
     
