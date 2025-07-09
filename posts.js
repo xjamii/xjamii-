@@ -72,16 +72,16 @@ class PostComponent extends HTMLElement {
         <div class="post-container">
           <div class="post">
             <div class="post-header">
-              <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link">
+              <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none">
                 ${avatarHtml}
               </a>
               <div class="post-user-info">
-                <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link">
+                <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" style="text-decoration: none">
                   <div class="post-user">
                     ${profile.full_name || profile.username}
                     ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
                   </div>
-                  <div class="post-username">@${profile.username}</div>
+                  <div class="post-username" style="text-decoration: none">@${profile.username}</div>
                 </a>
               </div>
               <span class="post-time">${this.formatTime(post.created_at)}</span>
@@ -93,7 +93,7 @@ class PostComponent extends HTMLElement {
               <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
                 <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
               </div>
-              <div class="post-action share-action"><i class="fas fa-share"></i></div>
+              <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
               <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
               <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
             </div>
@@ -171,7 +171,7 @@ class PostComponent extends HTMLElement {
       this.showMoreOptions(e, post);
     });
 
-    // Share action
+    // Share action (with your original icon)
     this.querySelector('.share-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.sharePost(post.id);
