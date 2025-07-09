@@ -1297,6 +1297,38 @@ if (localStorage.getItem('darkMode') === 'true') {
 }
 
     </script>
+
+    <script>
+        async function loadPosts() {
+            const { data: posts, error } = await supabase
+                .from('posts')
+                .select(`
+                    *,
+                    profile:user_id (username, full_name, avatar_url, is_verified),
+                    media:post_media (media_url, media_type)
+                `)
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                console.error("Error loading posts:", error);
+                return;
+            }
+            
+            const postsContainer = document.getElementById('posts-container');
+            postsContainer.innerHTML = '';
+            
+            posts.forEach(post => {
+                const postElement = document.createElement('post-component');
+                postElement.setAttribute('post-data', JSON.stringify(post));
+                postsContainer.appendChild(postElement);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check auth first
+            checkAuth().then(loadPosts);
+        });
+    </script>
 <script src="profile.js"></script>
     <script src="suggestions.js"></script>
     <!-- Notifications JS (standalone file) -->
