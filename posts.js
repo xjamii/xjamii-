@@ -5,6 +5,8 @@ class PostComponent extends HTMLElement {
     this.currentMediaIndex = 0;
     this.startY = 0;
     this.startX = 0;
+    this.isRefreshing = false;
+    this.isLoadingMore = false;
   }
 
   connectedCallback() {
@@ -48,7 +50,7 @@ class PostComponent extends HTMLElement {
     content = content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
     
     // Process URLs
-    content = content.replace(/(https?:\/\/[^\s]+)/g, '<span class="url">$1</span>');
+    content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" class="url" target="_blank">$1</a>');
     
     return content;
   }
@@ -56,7 +58,14 @@ class PostComponent extends HTMLElement {
   render() {
     try {
       const postData = this.getAttribute('post-data');
-      if (!postData) return;
+      if (!postData) {
+        this.innerHTML = `
+          <div class="post-loading">
+            <div class="loader"></div>
+          </div>
+        `;
+        return;
+      }
 
       const post = JSON.parse(postData);
       const profile = post.profile || {
@@ -71,6 +80,11 @@ class PostComponent extends HTMLElement {
       const avatarHtml = profile.avatar_url 
         ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
         : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
+
+      // Check if content needs "See more"
+      const content = post.content || '';
+      const showSeeMore = content.length > 200;
+      const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
 
       this.innerHTML = `
         <div class="post-container">
@@ -90,7 +104,12 @@ class PostComponent extends HTMLElement {
               </div>
               <span class="post-time">${this.formatTime(post.created_at)}</span>
             </div>
-            ${post.content ? `<p class="post-content">${this.processContent(post.content)}</p>` : ''}
+            ${content ? `
+              <p class="post-content" data-full-content="${content.replace(/"/g, '&quot;')}">
+                ${this.processContent(displayedContent)}
+                ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
+              </p>
+            ` : ''}
             ${this.renderMedia(post.media || [])}
             <div class="post-actions">
               <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
@@ -187,7 +206,7 @@ class PostComponent extends HTMLElement {
       this.showMoreOptions(e, post);
     });
 
-    // Share action (with your original icon)
+    // Share action
     this.querySelector('.share-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.sharePost(post.id);
@@ -208,13 +227,7 @@ class PostComponent extends HTMLElement {
       });
     });
 
-    // URLs
-    this.querySelectorAll('.url').forEach(url => {
-      url.addEventListener('click', (e) => {
-        e.stopPropagation();
-        window.open(e.target.textContent, '_blank');
-      });
-    });
+    // URLs - already handled by anchor tags in processContent
 
     // Media click handlers
     this.querySelectorAll('.post-media, .grid-media, .video-preview').forEach(media => {
@@ -224,6 +237,24 @@ class PostComponent extends HTMLElement {
         this.showMediaViewer(post.media, mediaIndex);
       });
     });
+
+    // See more click handler
+    this.querySelector('.see-more')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openCommentPage(post);
+    });
+
+    // Post content click handler (opens comment page)
+    this.querySelector('.post-content')?.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
+        this.openCommentPage(post);
+      }
+    });
+
+    // Setup pull-to-refresh if this is the first post
+    if (this.previousElementSibling === null) {
+      this.setupPullToRefresh();
+    }
   }
 
   showMediaViewer(mediaItems, startIndex = 0) {
@@ -539,18 +570,19 @@ class PostComponent extends HTMLElement {
     postPreview.innerHTML = `
       <div class="comment-page-post">
         <div class="post-header">
-          <div class="post-avatar-link">
+          <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none">
             ${avatarHtml}
-          </div>
+          </a>
           <div class="post-user-info">
-            <div class="post-user-link">
+            <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" style="text-decoration: none">
               <div class="post-user">
                 ${profile.full_name || profile.username}
                 ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
               </div>
-              <div class="post-username">@${profile.username}</div>
-            </div>
+              <div class="post-username" style="text-decoration: none">@${profile.username}</div>
+            </a>
           </div>
+          <span class="post-time">${this.formatTime(post.created_at)}</span>
         </div>
         ${post.content ? `<p class="post-content">${this.processContent(post.content)}</p>` : ''}
         ${this.renderMediaForCommentPage(post.media || [])}
@@ -558,9 +590,10 @@ class PostComponent extends HTMLElement {
           <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
             <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
           </div>
-          <div class="post-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
+          <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
           <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-          <div class="post-time">${this.formatTime(post.created_at)}</div>
+          <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
+          <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
         </div>
       </div>
     `;
@@ -570,8 +603,10 @@ class PostComponent extends HTMLElement {
     commentsSection.className = 'comment-page-comments';
     commentsSection.innerHTML = `
       <div class="comments-list">
-        <!-- Comments will be loaded here -->
-        <div class="no-comments">No comments yet</div>
+        <div class="no-comments">
+          <i class="far fa-comment-dots"></i>
+          <div>No comments yet</div>
+        </div>
       </div>
     `;
     
@@ -592,13 +627,83 @@ class PostComponent extends HTMLElement {
     document.body.appendChild(commentPage);
     document.body.style.overflow = 'hidden';
     
+    // Setup event listeners for the comment page
+    this.setupCommentPageEventListeners(commentPage, post);
+    
     // Focus the input
     setTimeout(() => {
       commentPage.querySelector('.comment-page-input')?.focus();
     }, 300);
-    
-    // TODO: Load actual comments
-    // this.loadComments(post.id);
+  }
+
+  setupCommentPageEventListeners(commentPage, post) {
+    // Like action
+    commentPage.querySelector('.like-action')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const likeBtn = e.currentTarget;
+      const isLiked = likeBtn.classList.contains('liked');
+      const icon = likeBtn.querySelector('i');
+      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
+      
+      likeBtn.classList.toggle('liked');
+      icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
+      
+      if (countEl) {
+        let count = parseInt(countEl.textContent) || 0;
+        countEl.textContent = isLiked ? count - 1 : count + 1;
+      }
+    });
+
+    // More options
+    commentPage.querySelector('.post-more')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.showMoreOptions(e, post);
+    });
+
+    // Share action
+    commentPage.querySelector('.share-action')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.sharePost(post.id);
+    });
+
+    // Comment button focuses input
+    commentPage.querySelector('.comment-action')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      commentPage.querySelector('.comment-page-input')?.focus();
+    });
+
+    // Media click handlers
+    commentPage.querySelectorAll('.post-media, .grid-media, .video-preview').forEach(media => {
+      media.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const mediaIndex = parseInt(media.getAttribute('data-media-index') || media.parentElement.getAttribute('data-media-index') || 0);
+        this.showMediaViewer(post.media, mediaIndex);
+      });
+    });
+
+    // Send comment button
+    commentPage.querySelector('.comment-page-send')?.addEventListener('click', () => {
+      const input = commentPage.querySelector('.comment-page-input');
+      const commentText = input.value.trim();
+      if (commentText) {
+        // TODO: Send comment to server
+        console.log('Posting comment:', commentText);
+        input.value = '';
+      }
+    });
+
+    // Press Enter to send comment
+    commentPage.querySelector('.comment-page-input')?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const input = commentPage.querySelector('.comment-page-input');
+        const commentText = input.value.trim();
+        if (commentText) {
+          // TODO: Send comment to server
+          console.log('Posting comment:', commentText);
+          input.value = '';
+        }
+      }
+    });
   }
 
   renderMediaForCommentPage(mediaItems) {
@@ -722,6 +827,65 @@ class PostComponent extends HTMLElement {
   copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
       alert('Link copied to clipboard!');
+    });
+  }
+
+  setupPullToRefresh() {
+    let startY = 0;
+    let touchStart = false;
+    const refreshContainer = document.createElement('div');
+    refreshContainer.className = 'refresh-container';
+    refreshContainer.innerHTML = '<div class="refresh-loader"><i class="fas fa-sync-alt"></i></div>';
+    this.parentNode.insertBefore(refreshContainer, this);
+
+    this.addEventListener('touchstart', (e) => {
+      if (window.scrollY === 0 && !this.isRefreshing) {
+        startY = e.touches[0].pageY;
+        touchStart = true;
+      }
+    }, { passive: true });
+
+    this.addEventListener('touchmove', (e) => {
+      if (!touchStart || this.isRefreshing) return;
+      
+      const y = e.touches[0].pageY;
+      const dy = y - startY;
+      
+      if (dy > 0) {
+        e.preventDefault();
+        const pullDistance = Math.min(dy, 150);
+        const progress = Math.min(pullDistance / 150, 1);
+        refreshContainer.style.opacity = progress;
+        refreshContainer.style.transform = `translateY(${pullDistance}px)`;
+        refreshContainer.querySelector('.refresh-loader').style.transform = `rotate(${progress * 360}deg)`;
+      }
+    }, { passive: false });
+
+    this.addEventListener('touchend', (e) => {
+      if (!touchStart || this.isRefreshing) return;
+      
+      const y = e.changedTouches[0].pageY;
+      const dy = y - startY;
+      
+      if (dy > 100) {
+        this.isRefreshing = true;
+        refreshContainer.classList.add('refreshing');
+        
+        // Simulate refresh
+        setTimeout(() => {
+          refreshContainer.style.transform = 'translateY(0)';
+          refreshContainer.classList.remove('refreshing');
+          this.isRefreshing = false;
+          
+          // TODO: Actually refresh content
+          console.log('Refreshing content...');
+        }, 1000);
+      } else {
+        refreshContainer.style.transform = 'translateY(0)';
+        refreshContainer.style.opacity = '0';
+      }
+      
+      touchStart = false;
     });
   }
 }
