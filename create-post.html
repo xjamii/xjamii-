@@ -571,7 +571,7 @@
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     
      <script>
-      // DOM Elements
+ // DOM Elements
 const userInfoContainer = document.getElementById('user-info-container');
 const postInput = document.getElementById('post-content');
 const postButton = document.getElementById('submit-post');
@@ -733,124 +733,84 @@ function setupEventListeners() {
     console.log("[Events] Listeners ready");
 }
 
-// Handle media upload
+// Handle media upload with all requirements
 async function handleMediaUpload(e, type) {
     const newFiles = Array.from(e.target.files);
     
     // Validate file count
-    if (type === 'image' && uploadedFiles.length + newFiles.length > 2) {
-        showToastMessage("Maximum 2 photos allowed");
-        return;
-    }
-    
-    if (type === 'video' && (uploadedFiles.some(f => f.type.startsWith('video/')) || newFiles.length > 1)) {
-        showToastMessage("Maximum 1 video allowed per post");
-        return;
-    }
-    
-    try {
+    if (type === 'image') {
+        if (uploadedFiles.length + newFiles.length > 2) {
+            showToastMessage("Maximum 2 photos allowed per post");
+            e.target.value = '';
+            return;
+        }
+        
+        // Check each image size
         for (const file of newFiles) {
-            if (type === 'video') {
-                // Check video duration (simplified - actual duration check requires more code)
-                if (file.size > 100 * 1024 * 1024) {
-                    showToastMessage("Video must be <100MB");
-                    continue;
-                }
-                
-                const processedVideo = await processVideo(file);
-                uploadedFiles.push(processedVideo);
-                videoCount++;
-            } else {
-                if (file.size > 10 * 1024 * 1024) {
-                    showToastMessage("Images must be <10MB");
-                    continue;
-                }
-                
-                const compressedImage = await compressImage(file);
-                uploadedFiles.push(compressedImage);
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                showToastMessage("Photos must be less than 10MB");
+                e.target.value = '';
+                return;
             }
         }
         
-        displayMediaPreview();
-        e.target.value = ''; // Reset input to allow same file re-upload
-        
-    } catch (error) {
-        console.error("Error processing media:", error);
-        showError("Failed to process media files");
-    }
-}
-
-// Compress image to 1MB if larger than 1MB
-async function compressImage(file) {
-    return new Promise((resolve) => {
-        if (file.size <= 1024 * 1024) { // If under 1MB
-            resolve(file);
+        // If all checks passed, add images
+        uploadedFiles = [...uploadedFiles, ...newFiles];
+    } 
+    else if (type === 'video') {
+        if (videoCount >= 1 || newFiles.length > 1) {
+            showToastMessage("Maximum 1 video allowed per post");
+            e.target.value = '';
             return;
         }
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
+        
+        const videoFile = newFiles[0];
+        
+        // Check video size
+        if (videoFile.size > 30 * 1024 * 1024) { // 30MB limit
+            showToastMessage("Videos must be less than 30MB");
+            e.target.value = '';
+            return;
+        }
+        
+        try {
+            // Check duration (simplified implementation)
+            const video = document.createElement('video');
+            video.preload = 'metadata';
             
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
+            video.onloadedmetadata = function() {
+                window.URL.revokeObjectURL(video.src);
+                const duration = video.duration;
                 
-                // Calculate new dimensions while maintaining aspect ratio
-                let width = img.width;
-                let height = img.height;
-                const quality = 0.7; // Initial quality
+                if (duration > 300) { // 5 minutes = 300 seconds
+                    showToastMessage("Videos must be shorter than 5 minutes");
+                    e.target.value = '';
+                    return;
+                }
                 
-                // Resize until under 1MB
-                let compressedBlob;
-                do {
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Try with current quality
-                    canvas.toBlob((blob) => {
-                        compressedBlob = blob;
-                        if (compressedBlob.size > 1024 * 1024) {
-                            // Reduce quality or dimensions
-                            width *= 0.9;
-                            height *= 0.9;
-                        } else {
-                            resolve(new File([compressedBlob], file.name, {
-                                type: 'image/jpeg',
-                                lastModified: Date.now()
-                            }));
-                        }
-                    }, 'image/jpeg', quality);
-                } while (!compressedBlob || compressedBlob.size > 1024 * 1024);
+                // If all checks passed, add video
+                uploadedFiles.push(videoFile);
+                videoCount++;
+                displayMediaPreview();
+                e.target.value = '';
             };
-        };
-        reader.readAsDataURL(file);
-    });
-}
-
-// Process video (limit to 5 minutes and 10MB)
-async function processVideo(file) {
-    return new Promise((resolve) => {
-        if (file.size <= 10 * 1024 * 1024) { // If under 10MB
-            // For videos under 10MB but larger than 5MB, compress to 7MB
-            if (file.size > 5 * 1024 * 1024 && file.size <= 10 * 1024 * 1024) {
-                console.log("Video compression to 7MB would happen here");
-                resolve(file);
-            } else {
-                resolve(file);
-            }
+            
+            video.src = URL.createObjectURL(videoFile);
+            return; // Exit since we're handling video asynchronously
+            
+        } catch (error) {
+            console.error("Error checking video duration:", error);
+            showError("Could not process video");
+            e.target.value = '';
             return;
         }
-
-        // For videos over 10MB, compress to 10MB
-        console.log("Video compression to 10MB would happen here");
-        resolve(file);
-    });
+    }
+    
+    displayMediaPreview();
+    e.target.value = '';
 }
 
-// Display media preview
+// Display media preview with working delete functionality
 function displayMediaPreview() {
     mediaGrid.innerHTML = '';
     
@@ -861,12 +821,10 @@ function displayMediaPreview() {
             const mediaItem = document.createElement('div');
             mediaItem.className = 'media-item';
             
-            // Create media element (image or video)
             const mediaElement = file.type.startsWith('video/') 
                 ? `<video controls><source src="${event.target.result}" type="${file.type}"></video>`
                 : `<img src="${event.target.result}" alt="Preview">`;
             
-            // Create delete button with proper event handling
             mediaItem.innerHTML = `
                 ${mediaElement}
                 <div class="remove-media" data-index="${index}">
@@ -876,10 +834,9 @@ function displayMediaPreview() {
             
             mediaGrid.appendChild(mediaItem);
             
-            // Add click event directly to the delete button
-            const deleteBtn = mediaItem.querySelector('.remove-media');
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent event bubbling
+            // Add click event to delete button
+            mediaItem.querySelector('.remove-media').addEventListener('click', (e) => {
+                e.stopPropagation();
                 removeMediaItem(index);
             });
         };
@@ -893,33 +850,15 @@ function displayMediaPreview() {
 // Remove media item
 function removeMediaItem(index) {
     if (index >= 0 && index < uploadedFiles.length) {
-        // Check if we're removing a video
         if (uploadedFiles[index].type.startsWith('video/')) {
             videoCount--;
         }
         uploadedFiles.splice(index, 1);
-        displayMediaPreview(); // Refresh the preview
+        displayMediaPreview();
     }
 }
 
-// Show loading overlay
-function showLoadingOverlay() {
-    const overlay = document.createElement('div');
-    overlay.className = 'loading-overlay';
-    overlay.innerHTML = `
-        <div class="loading-spinner"></div>
-        <p>Uploading your post...</p>
-    `;
-    document.body.appendChild(overlay);
-}
-
-// Hide loading overlay
-function hideLoadingOverlay() {
-    const overlay = document.querySelector('.loading-overlay');
-    if (overlay) overlay.remove();
-}
-
-// Show toast message
+// Show professional toast message
 function showToastMessage(message) {
     const toast = document.createElement('div');
     toast.className = 'toast-message';
@@ -1077,6 +1016,23 @@ async function handleMediaUploadForPost(postId) {
     }
 }
 
+// Show loading overlay
+function showLoadingOverlay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    overlay.innerHTML = `
+        <div class="loading-spinner"></div>
+        <p>Uploading your post...</p>
+    `;
+    document.body.appendChild(overlay);
+}
+
+// Hide loading overlay
+function hideLoadingOverlay() {
+    const overlay = document.querySelector('.loading-overlay');
+    if (overlay) overlay.remove();
+}
+
 // Set loading state
 function setLoadingState(isLoading) {
     if (isLoading) {
@@ -1090,11 +1046,6 @@ function setLoadingState(isLoading) {
         bottomPostButton.innerHTML = 'Post';
         bottomPostButton.disabled = false;
     }
-}
-
-// Generate UUID
-function uuidv4() {
-    return crypto.randomUUID();
 }
 
 // Initialize when DOM is ready
