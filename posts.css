@@ -172,3 +172,29 @@
         .post-more:hover {
             color: var(--dark);
         }
+
+        .loading-spinner {
+    padding: 20px;
+    text-align: center;
+    color: var(--gray);
+}
+
+.no-posts {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--gray);
+}
+
+.error-message {
+    padding: 20px;
+    color: #dc3545;
+    text-align: center;
+}
+
+.error-message button {
+    background: none;
+    border: none;
+    color: var(--primary);
+    text-decoration: underline;
+    cursor: pointer;
+}
