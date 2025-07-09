@@ -684,28 +684,29 @@
         }
 
         // Handle media upload for a post using Cloudinary
-async function handleMediaUploadForPost(postId) {
+async function handleMediaUploadForPost(postId, uploadedFiles) {
     console.log("[Media] Uploading files to Cloudinary...");
     const mediaUrls = [];
     
-    // Cloudinary configuration
-    const cloudName = 'dwwhpznwb'; // Your cloud name from the URL
-    const uploadPreset = 'web_usigned_upload'; // Your unsigned upload preset
+    const cloudName = 'dwwhpznwb';
+    const uploadPreset = 'web_usigned_upload';
     
-    // Upload each file to Cloudinary
     for (const file of uploadedFiles) {
         try {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', uploadPreset);
-            formData.append('cloud_name', cloudName);
             
-            const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${file.type.startsWith('video/') ? 'video' : 'image'}/upload`, {
+            const mediaType = file.type.startsWith('video/') ? 'video' : 'image';
+            
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${mediaType}/upload`, {
                 method: 'POST',
                 body: formData
             });
             
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error("[Upload Error Response]", errorText);
                 throw new Error('Upload failed');
             }
             
@@ -713,7 +714,7 @@ async function handleMediaUploadForPost(postId) {
             
             mediaUrls.push({
                 url: data.secure_url,
-                type: file.type.startsWith('video/') ? 'video' : 'image'
+                type: mediaType
             });
             
             console.log("[Cloudinary] Uploaded:", data.secure_url);
@@ -724,7 +725,6 @@ async function handleMediaUploadForPost(postId) {
         }
     }
     
-    // Create media records in Supabase
     if (mediaUrls.length > 0) {
         const { error: mediaError } = await supabase
             .from('post_media')
@@ -739,6 +739,11 @@ async function handleMediaUploadForPost(postId) {
         
         console.log("[Media] Saved", mediaUrls.length, "records to Supabase");
     }
+}
+            
+            
+            
+                
 }
 
         // Display media preview
