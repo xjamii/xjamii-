@@ -519,7 +519,7 @@
 
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     
-      <script>
+     <script>
         // DOM Elements
         const userInfoContainer = document.getElementById('user-info-container');
         const postInput = document.getElementById('post-content');
@@ -532,47 +532,57 @@
         const mediaPreview = document.getElementById('media-preview');
         const mediaGrid = document.getElementById('media-grid');
         const errorMessage = document.getElementById('error-message');
-        const body = document.body;
 
         // State variables
         let uploadedFiles = [];
         let videoCount = 0;
         let currentUser = null;
         let currentProfile = null;
+        let isInitialized = false;
 
         // Initialize the page
         async function init() {
+            if (isInitialized) return;
+            
             try {
-                // Check if user is logged in
+                console.log("[Init] Starting initialization...");
+                
+                // 1. Check authentication
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
                 
                 if (authError || !user) {
+                    console.error("[Auth Error]", authError);
                     window.location.href = 'login.html';
                     return;
                 }
                 
                 currentUser = user;
+                console.log("[Auth] User authenticated:", user.email);
                 
-                // Load user profile
+                // 2. Load user profile
                 await loadUserProfile();
                 
-                // Set up event listeners
+                // 3. Setup event listeners
                 setupEventListeners();
                 
+                isInitialized = true;
+                console.log("[Init] Initialization completed successfully");
+                
             } catch (error) {
-                console.error("Initialization error:", error);
-                showError("Failed to initialize. Please try again.");
-                window.location.href = 'login.html';
+                console.error("[Init Error]", error);
+                showError("Failed to initialize. Please refresh the page.");
+                if (!currentUser) {
+                    window.location.href = 'login.html';
+                }
             }
         }
 
         // Load user profile data from Supabase
         async function loadUserProfile() {
             try {
-                // Show skeleton loader
+                console.log("[Profile] Loading profile...");
                 showSkeletonLoader();
                 
-                // Get user profile from profiles table
                 const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('*')
@@ -582,14 +592,15 @@
                 if (profileError) throw profileError;
                 
                 currentProfile = profile;
+                console.log("[Profile] Loaded:", profile.username);
                 
-                // Display the user profile
                 displayUserProfile(profile);
                 
             } catch (error) {
-                console.error("Error loading profile:", error);
-                showError("Failed to load profile. Please try again.");
+                console.error("[Profile Error]", error);
+                showError("Couldn't load full profile. Using limited functionality.");
                 displayDefaultProfile();
+                throw error; // Re-throw to stop further initialization
             }
         }
 
@@ -609,7 +620,8 @@
         // Display user profile with actual data
         function displayUserProfile(profile) {
             const avatarContent = profile.avatar_url 
-                ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}" onerror="handleAvatarError(this)">`
+                ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}" 
+                   onerror="this.src='https://www.gravatar.com/avatar/${crypto.randomUUID()}?d=identicon'">`
                 : createInitialAvatar(profile.full_name || profile.username);
             
             const verifiedBadge = profile.is_verified 
@@ -635,41 +647,22 @@
         // Create initial avatar with colored background
         function createInitialAvatar(name) {
             if (!name) name = 'User';
-            const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            const initials = name.split(' ').map(n => n[0] || '').join('').toUpperCase().substring(0, 2);
             const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
-            const colorIndex = initials.charCodeAt(0) % colors.length;
+            const colorIndex = (initials.charCodeAt(0) || 0) % colors.length;
             const color = colors[colorIndex];
             
             return `
-                <div class="avatar-initial" style="background-color: ${color}; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; color: white; font-weight: bold; font-size: 18px;">
-                    ${initials}
-                </div>
-            `;
-        }
-
-        // Handle avatar image loading errors
-        function handleAvatarError(imgElement) {
-            const displayName = imgElement.alt || 'User';
-            imgElement.replaceWith(createInitialAvatar(displayName));
-        }
-
-        // Display default profile if loading fails
-        function displayDefaultProfile() {
-            userInfoContainer.innerHTML = `
-                <div class="loaded-user-info">
-                    <div class="user-avatar">
-                        ${createInitialAvatar('User')}
-                    </div>
-                    <div class="user-details">
-                        <div class="user-name">User</div>
-                        <div class="user-username">@user</div>
-                    </div>
+                <div class="avatar-initial" style="background-color: ${color}">
+                    ${initials || 'U'}
                 </div>
             `;
         }
 
         // Set up event listeners
         function setupEventListeners() {
+            console.log("[Events] Setting up listeners...");
+            
             // Media upload handling
             photoButton.addEventListener('click', () => photoUpload.click());
             videoButton.addEventListener('click', () => videoUpload.click());
@@ -683,8 +676,10 @@
             });
 
             // Post creation handlers
-            postButton.addEventListener('click', createPost);
-            bottomPostButton.addEventListener('click', createPost);
+            postButton.addEventListener('click', handlePostCreation);
+            bottomPostButton.addEventListener('click', handlePostCreation);
+            
+            console.log("[Events] Listeners ready");
         }
 
         // Handle media upload
@@ -693,23 +688,23 @@
             
             // Validate files
             if (uploadedFiles.length + newFiles.length > 5) {
-                showError("You can upload up to 5 files");
+                showError("Maximum 5 files allowed");
                 return;
             }
             
             newFiles.forEach(file => {
                 if (type === 'video') {
                     if (videoCount >= 1) {
-                        showError("You can only upload 1 video per post");
+                        showError("Only 1 video allowed per post");
                         return;
                     }
                     if (file.size > 100 * 1024 * 1024) {
-                        showError("Video file size must be less than 100MB");
+                        showError("Video must be <100MB");
                         return;
                     }
                     videoCount++;
                 } else if (file.size > 10 * 1024 * 1024) {
-                    showError("Image file size must be less than 10MB");
+                    showError("Images must be <10MB");
                     return;
                 }
                 
@@ -717,6 +712,7 @@
             });
             
             displayMediaPreview();
+            e.target.value = ''; // Reset input to allow same file re-upload
         }
 
         // Display media preview
@@ -732,44 +728,111 @@
                     
                     mediaItem.innerHTML = file.type.startsWith('video/') ? `
                         <video controls><source src="${event.target.result}" type="${file.type}"></video>
-                        <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
+                        <div class="remove-media" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </div>
                     ` : `
                         <img src="${event.target.result}" alt="Preview">
-                        <div class="remove-media" data-index="${index}"><i class="fas fa-trash"></i></div>
+                        <div class="remove-media" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </div>
                     `;
                     
                     mediaGrid.appendChild(mediaItem);
-                    mediaItem.querySelector('.remove-media').addEventListener('click', () => removeMediaItem(index));
                 };
                 
                 reader.readAsDataURL(file);
             });
             
             mediaPreview.style.display = uploadedFiles.length ? 'block' : 'none';
+            
+            // Add event listeners after DOM update
+            document.querySelectorAll('.remove-media').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.getAttribute('data-index'));
+                    removeMediaItem(index);
+                });
+            });
         }
 
         // Remove media item
         function removeMediaItem(index) {
-            if (uploadedFiles[index].type.startsWith('video/')) videoCount--;
+            if (uploadedFiles[index]?.type.startsWith('video/')) {
+                videoCount--;
+            }
             uploadedFiles.splice(index, 1);
             displayMediaPreview();
         }
 
         // Show error message
         function showError(message) {
+            console.error("[UI Error]", message);
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
         }
 
-        // Function to upload media files to Supabase Storage
-        async function uploadMediaFiles(postId) {
+        // Handle post creation
+        async function handlePostCreation() {
+            if (!isInitialized) {
+                showError("System still loading. Please wait...");
+                return;
+            }
+            
+            const content = postInput.value.trim();
+            
+            if (!content && uploadedFiles.length === 0) {
+                showError("Please add text or media");
+                return;
+            }
+            
+            try {
+                setLoadingState(true);
+                console.log("[Post] Creating post...");
+                
+                // Create post record
+                const { data: post, error: postError } = await supabase
+                    .from('posts')
+                    .insert({
+                        user_id: currentUser.id,
+                        content: content || null
+                    })
+                    .select()
+                    .single();
+                
+                if (postError) throw postError;
+                
+                console.log("[Post] Created:", post.id);
+                
+                // Handle media if exists
+                if (uploadedFiles.length > 0) {
+                    await handleMediaUploadForPost(post.id);
+                }
+                
+                // Redirect on success
+                window.location.href = 'index.html?post_success=true';
+                
+            } catch (error) {
+                console.error("[Post Error]", error);
+                showError("Post failed: " + (error.message || "Please try again"));
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        // Handle media upload for a post
+        async function handleMediaUploadForPost(postId) {
+            console.log("[Media] Uploading files...");
             const mediaUrls = [];
             
             for (const file of uploadedFiles) {
-                const fileExt = file.name.split('.').pop();
-                const filePath = `${currentUser.id}/${postId}/${uuidv4()}.${fileExt}`;
-                
                 try {
+                    const fileExt = file.name.split('.').pop();
+                    const filePath = `${currentUser.id}/${postId}/${uuidv4()}.${fileExt}`;
+                    
+                    // Upload file
                     const { error: uploadError } = await supabase.storage
                         .from('post-media')
                         .upload(filePath, file);
@@ -787,86 +850,52 @@
                     });
                     
                 } catch (error) {
-                    console.error("Error uploading media:", error);
-                    throw error;
+                    console.error("[Media Upload Error]", error);
+                    throw new Error("Failed to upload media");
                 }
             }
             
-            return mediaUrls;
-        }
-
-        // Function to create a new post
-        async function createPost() {
-            const content = postInput.value.trim();
-            
-            if (!content && uploadedFiles.length === 0) {
-                showError("Please add some content or media to your post");
-                return;
-            }
-            
-            try {
-                // Show loading state
-                postButton.innerHTML = '<div class="spinner"></div>';
-                postButton.classList.add('loading');
-                bottomPostButton.innerHTML = '<div class="spinner"></div>';
-                bottomPostButton.classList.add('loading');
-                
-                // Create the post record
-                const { data: post, error: postError } = await supabase
-                    .from('posts')
-                    .insert([{
-                        user_id: currentUser.id,
-                        content: content || null
-                    }])
-                    .select()
-                    .single();
-                
-                if (postError) throw postError;
-                
-                // Upload media files if any
-                if (uploadedFiles.length > 0) {
-                    const mediaUrls = await uploadMediaFiles(post.id);
-                    
-                    // Create media records
-                    const mediaRecords = mediaUrls.map(media => ({
-                        post_id: post.id,
+            // Create media records
+            if (mediaUrls.length > 0) {
+                const { error: mediaError } = await supabase
+                    .from('post_media')
+                    .insert(mediaUrls.map(media => ({
+                        post_id: postId,
                         user_id: currentUser.id,
                         media_url: media.url,
                         media_type: media.type
-                    }));
-                    
-                    const { error: mediaError } = await supabase
-                        .from('post_media')
-                        .insert(mediaRecords);
-                    
-                    if (mediaError) throw mediaError;
-                }
+                    })));
                 
-                // Redirect to home page after successful post
-                window.location.href = 'index.html';
+                if (mediaError) throw mediaError;
                 
-            } catch (error) {
-                console.error("Error creating post:", error);
-                showError("Failed to create post. Please try again.");
-            } finally {
-                // Reset loading state
-                postButton.innerHTML = 'Post';
-                postButton.classList.remove('loading');
-                bottomPostButton.innerHTML = 'Post';
-                bottomPostButton.classList.remove('loading');
+                console.log("[Media] Uploaded", mediaUrls.length, "files");
             }
         }
 
-        // Helper function to generate UUID (needed for file paths)
-        function uuidv4() {
-            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-                (c ^ crypto.getRandomValues(new Uint8Array(1))[0].toString(16).padStart(2, '0')
-            );
+        // Set loading state
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                postButton.innerHTML = '<div class="spinner"></div>';
+                postButton.disabled = true;
+                bottomPostButton.innerHTML = '<div class="spinner"></div>';
+                bottomPostButton.disabled = true;
+            } else {
+                postButton.innerHTML = 'Post';
+                postButton.disabled = false;
+                bottomPostButton.innerHTML = 'Post';
+                bottomPostButton.disabled = false;
+            }
         }
 
-        // Initialize the page when loaded
-        document.addEventListener('DOMContentLoaded', init);
+        // Generate UUID
+        function uuidv4() {
+            return crypto.randomUUID();
+        }
 
-    </script>
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            init().catch(e => console.error("Initialization failed:", e));
+        });
+</script>
 </body>
 </html>
