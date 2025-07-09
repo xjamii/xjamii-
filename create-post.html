@@ -733,38 +733,58 @@
             console.log("[Events] Listeners ready");
         }
 
-        // Handle media upload
-        function handleMediaUpload(e, type) {
-            const newFiles = Array.from(e.target.files);
-            
-            // Validate files
-            if (uploadedFiles.length + newFiles.length > 5) {
-                showError("Maximum 5 files allowed");
-                return;
+        async function handleMediaUpload(e, type) {
+    const newFiles = Array.from(e.target.files);
+    
+    // Validate number of files
+    if (type === 'image' && (uploadedFiles.length + newFiles.length) > 2) {
+        showToast("Maximum 2 photos allowed");
+        e.target.value = '';
+        return;
+    }
+    
+    if (type === 'video' && (uploadedFiles.length + newFiles.length) > 1) {
+        showToast("Maximum 1 video allowed");
+        e.target.value = '';
+        return;
+    }
+    
+    // Process each file
+    for (const file of newFiles) {
+        try {
+            // Validate file size
+            if (type === 'image' && file.size > 2 * 1024 * 1024) {
+                showToast("Images must be <2MB");
+                continue;
             }
             
-            newFiles.forEach(file => {
-                if (type === 'video') {
-                    if (videoCount >= 1) {
-                        showError("Only 1 video allowed per post");
-                        return;
-                    }
-                    if (file.size > 100 * 1024 * 1024) {
-                        showError("Video must be <100MB");
-                        return;
-                    }
-                    videoCount++;
-                } else if (file.size > 10 * 1024 * 1024) {
-                    showError("Images must be <10MB");
-                    return;
-                }
-                
-                uploadedFiles.push(file);
-            });
+            if (type === 'video' && file.size > 100 * 1024 * 1024) {
+                showToast("Videos must be <100MB");
+                continue;
+            }
             
-            displayMediaPreview();
-            e.target.value = ''; // Reset input to allow same file re-upload
+            // Compress if needed
+            let processedFile = file;
+            if (type === 'image') {
+                processedFile = await compressImage(file);
+            } else if (type === 'video') {
+                processedFile = await processVideo(file);
+            }
+            
+            uploadedFiles.push(processedFile);
+            
+            // Update video count
+            if (type === 'video') videoCount++;
+            
+        } catch (error) {
+            console.error("Error processing file:", error);
+            showToast("Error processing file");
         }
+    }
+    
+    displayMediaPreview();
+    e.target.value = '';
+}
 
         // Display media preview
         function displayMediaPreview() {
@@ -825,56 +845,60 @@
             }, 5000);
         }
 
-        // Handle post creation
         async function handlePostCreation() {
-            if (!isInitialized) {
-                showError("System still loading. Please wait...");
-                return;
-            }
-            
-            const content = postInput.value.trim();
-            
-            if (!content && uploadedFiles.length === 0) {
-                showError("Please add text or media");
-                return;
-            }
-            
-            try {
-                setLoadingState(true);
-                console.log("[Post] Creating post...");
-                
-                // Create post record
-                const { data: post, error: postError } = await supabase
-                    .from('posts')
-                    .insert({
-                        user_id: currentUser.id,
-                        content: content || null
-                    })
-                    .select()
-                    .single();
-                
-                if (postError) throw postError;
-                
-                console.log("[Post] Created:", post.id);
-                
-                // Handle media if exists
-                if (uploadedFiles.length > 0) {
-                    await handleMediaUploadForPost(post.id);
-                }
-                
-                // Redirect on success
-                window.location.href = 'index.html?post_success=true';
-                
-            } catch (error) {
-                console.error("[Post Error]", error);
-                showError("Post failed: " + (error.message || "Please try again"));
-            } finally {
-                setLoadingState(false);
-            }
+    if (!isInitialized) {
+        showError("System still loading. Please wait...");
+        return;
+    }
+    
+    const content = postInput.value.trim();
+    
+    if (!content && uploadedFiles.length === 0) {
+        showError("Please add text or media");
+        return;
+    }
+    
+    const loadingOverlay = showLoading("Creating your post...");
+    setLoadingState(true);
+    
+    try {
+        console.log("[Post] Creating post...");
+        
+        // Create post record
+        const { data: post, error: postError } = await supabase
+            .from('posts')
+            .insert({
+                user_id: currentUser.id,
+                content: content || null
+            })
+            .select()
+            .single();
+        
+        if (postError) throw postError;
+        
+        console.log("[Post] Created:", post.id);
+        
+        // Handle media if exists
+        if (uploadedFiles.length > 0) {
+            await handleMediaUploadForPost(post.id);
         }
-
-        // Handle media upload for a post    
-
+        
+        // Show success and redirect
+        loadingOverlay.querySelector('.loading-text').textContent = "Post created successfully!";
+        setTimeout(() => {
+            window.location.href = 'index.html?post_success=true';
+        }, 1000);
+        
+    } catch (error) {
+        console.error("[Post Error]", error);
+        hideLoading(loadingOverlay);
+        showError("Post failed: " + (error.message || "Please try again"));
+    } finally {
+        setLoadingState(false);
+    }
+}
+                
+                
                 
 
                 
