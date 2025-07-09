@@ -1340,7 +1340,18 @@ if (localStorage.getItem('darkMode') === 'true') {
 }
     </script>
 
-    
+    <script>
+    // Verify custom element is registered
+    if (!customElements.get('post-component')) {
+        console.error('Post component not registered! Loading posts.js');
+        const script = document.createElement('script');
+        script.src = 'posts.js';
+        document.body.appendChild(script);
+        
+        // Retry loading posts after component is loaded
+        script.onload = loadPosts;
+    }
+</script>
 <script src="profile.js"></script>
     <script src="suggestions.js"></script>
     <!-- Notifications JS (standalone file) -->
