@@ -518,7 +518,8 @@
     </button>
 
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-    <script>
+    
+      <script>
         // DOM Elements
         const userInfoContainer = document.getElementById('user-info-container');
         const postInput = document.getElementById('post-content');
@@ -680,6 +681,10 @@
             errorMessage.addEventListener('click', () => {
                 errorMessage.style.display = 'none';
             });
+
+            // Post creation handlers
+            postButton.addEventListener('click', createPost);
+            bottomPostButton.addEventListener('click', createPost);
         }
 
         // Handle media upload
@@ -756,8 +761,112 @@
             errorMessage.style.display = 'block';
         }
 
+        // Function to upload media files to Supabase Storage
+        async function uploadMediaFiles(postId) {
+            const mediaUrls = [];
+            
+            for (const file of uploadedFiles) {
+                const fileExt = file.name.split('.').pop();
+                const filePath = `${currentUser.id}/${postId}/${uuidv4()}.${fileExt}`;
+                
+                try {
+                    const { error: uploadError } = await supabase.storage
+                        .from('post-media')
+                        .upload(filePath, file);
+                    
+                    if (uploadError) throw uploadError;
+                    
+                    // Get public URL
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('post-media')
+                        .getPublicUrl(filePath);
+                    
+                    mediaUrls.push({
+                        url: publicUrl,
+                        type: file.type.startsWith('video/') ? 'video' : 'image'
+                    });
+                    
+                } catch (error) {
+                    console.error("Error uploading media:", error);
+                    throw error;
+                }
+            }
+            
+            return mediaUrls;
+        }
+
+        // Function to create a new post
+        async function createPost() {
+            const content = postInput.value.trim();
+            
+            if (!content && uploadedFiles.length === 0) {
+                showError("Please add some content or media to your post");
+                return;
+            }
+            
+            try {
+                // Show loading state
+                postButton.innerHTML = '<div class="spinner"></div>';
+                postButton.classList.add('loading');
+                bottomPostButton.innerHTML = '<div class="spinner"></div>';
+                bottomPostButton.classList.add('loading');
+                
+                // Create the post record
+                const { data: post, error: postError } = await supabase
+                    .from('posts')
+                    .insert([{
+                        user_id: currentUser.id,
+                        content: content || null
+                    }])
+                    .select()
+                    .single();
+                
+                if (postError) throw postError;
+                
+                // Upload media files if any
+                if (uploadedFiles.length > 0) {
+                    const mediaUrls = await uploadMediaFiles(post.id);
+                    
+                    // Create media records
+                    const mediaRecords = mediaUrls.map(media => ({
+                        post_id: post.id,
+                        user_id: currentUser.id,
+                        media_url: media.url,
+                        media_type: media.type
+                    }));
+                    
+                    const { error: mediaError } = await supabase
+                        .from('post_media')
+                        .insert(mediaRecords);
+                    
+                    if (mediaError) throw mediaError;
+                }
+                
+                // Redirect to home page after successful post
+                window.location.href = 'index.html';
+                
+            } catch (error) {
+                console.error("Error creating post:", error);
+                showError("Failed to create post. Please try again.");
+            } finally {
+                // Reset loading state
+                postButton.innerHTML = 'Post';
+                postButton.classList.remove('loading');
+                bottomPostButton.innerHTML = 'Post';
+                bottomPostButton.classList.remove('loading');
+            }
+        }
+
+        // Helper function to generate UUID (needed for file paths)
+        function uuidv4() {
+            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                (c ^ crypto.getRandomValues(new Uint8Array(1))[0].toString(16).padStart(2, '0')
+            );
+        }
+
         // Initialize the page when loaded
         document.addEventListener('DOMContentLoaded', init);
+
     </script>
 </body>
 </html>
