@@ -1301,9 +1301,19 @@ if (localStorage.getItem('darkMode') === 'true') {
     <script>
         async function loadPosts() {
     try {
-        // Show loading state
-        document.getElementById('posts-container').innerHTML = '<div class="loading-spinner">Loading posts...</div>';
+        console.log("[1] Starting to load posts...");
         
+        // 1. Check authentication first
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+            console.error("[Auth Error]", authError);
+            window.location.href = 'login.html';
+            return;
+        }
+        console.log("[2] User authenticated:", user.id);
+
+        // 2. Fetch posts with related data
+        console.log("[3] Fetching posts from Supabase...");
         const { data: posts, error } = await supabase
             .from('posts')
             .select(`
@@ -1313,27 +1323,36 @@ if (localStorage.getItem('darkMode') === 'true') {
             `)
             .order('created_at', { ascending: false });
         
-        if (error) throw error;
-        
+        if (error) {
+            console.error("[4] Supabase query error:", error);
+            throw error;
+        }
+        console.log("[5] Posts fetched successfully. Count:", posts.length);
+
+        // 3. Render posts
         const postsContainer = document.getElementById('posts-container');
         postsContainer.innerHTML = '';
         
         if (posts.length === 0) {
+            console.log("[6] No posts found");
             postsContainer.innerHTML = '<div class="no-posts">No posts yet. Be the first to post!</div>';
             return;
         }
-        
+
+        console.log("[7] Rendering posts...");
         posts.forEach(post => {
+            console.log("[8] Rendering post ID:", post.id);
             const postElement = document.createElement('post-component');
             postElement.setAttribute('post-data', JSON.stringify(post));
             postsContainer.appendChild(postElement);
         });
         
     } catch (error) {
-        console.error("Error loading posts:", error);
+        console.error("[9] Critical error in loadPosts:", error);
         document.getElementById('posts-container').innerHTML = `
             <div class="error-message">
                 Failed to load posts. <button onclick="loadPosts()">Try again</button>
+                <p>${error.message}</p>
             </div>
         `;
     }
