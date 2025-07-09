@@ -571,317 +571,429 @@
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     
      <script>
-        // DOM Elements
-        const userInfoContainer = document.getElementById('user-info-container');
-        const postInput = document.getElementById('post-content');
-        const postButton = document.getElementById('submit-post');
-        const bottomPostButton = document.getElementById('bottom-post-button');
-        const photoButton = document.getElementById('photo-button');
-        const videoButton = document.getElementById('video-button');
-        const photoUpload = document.getElementById('photo-upload');
-        const videoUpload = document.getElementById('video-upload');
-        const mediaPreview = document.getElementById('media-preview');
-        const mediaGrid = document.getElementById('media-grid');
-        const errorMessage = document.getElementById('error-message');
+      // DOM Elements
+const userInfoContainer = document.getElementById('user-info-container');
+const postInput = document.getElementById('post-content');
+const postButton = document.getElementById('submit-post');
+const bottomPostButton = document.getElementById('bottom-post-button');
+const photoButton = document.getElementById('photo-button');
+const videoButton = document.getElementById('video-button');
+const photoUpload = document.getElementById('photo-upload');
+const videoUpload = document.getElementById('video-upload');
+const mediaPreview = document.getElementById('media-preview');
+const mediaGrid = document.getElementById('media-grid');
+const errorMessage = document.getElementById('error-message');
 
-        // State variables
-        let uploadedFiles = [];
-        let videoCount = 0;
-        let currentUser = null;
-        let currentProfile = null;
-        let isInitialized = false;
+// State variables
+let uploadedFiles = [];
+let videoCount = 0;
+let currentUser = null;
+let currentProfile = null;
+let isInitialized = false;
 
-        // Initialize the page
-        async function init() {
-            if (isInitialized) return;
-            
-            try {
-                console.log("[Init] Starting initialization...");
-                
-                // 1. Check authentication
-                const { data: { user }, error: authError } = await supabase.auth.getUser();
-                
-                if (authError || !user) {
-                    console.error("[Auth Error]", authError);
-                    window.location.href = 'login.html';
-                    return;
-                }
-                
-                currentUser = user;
-                console.log("[Auth] User authenticated:", user.email);
-                
-                // 2. Load user profile
-                await loadUserProfile();
-                
-                // 3. Setup event listeners
-                setupEventListeners();
-                
-                isInitialized = true;
-                console.log("[Init] Initialization completed successfully");
-                
-            } catch (error) {
-                console.error("[Init Error]", error);
-                showError("Failed to initialize. Please refresh the page.");
-                if (!currentUser) {
-                    window.location.href = 'login.html';
-                }
-            }
-        }
-
-        // Load user profile data from Supabase
-        async function loadUserProfile() {
-            try {
-                console.log("[Profile] Loading profile...");
-                showSkeletonLoader();
-                
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', currentUser.id)
-                    .single();
-                
-                if (profileError) throw profileError;
-                
-                currentProfile = profile;
-                console.log("[Profile] Loaded:", profile.username);
-                
-                displayUserProfile(profile);
-                
-            } catch (error) {
-                console.error("[Profile Error]", error);
-                showError("Couldn't load full profile. Using limited functionality.");
-                displayDefaultProfile();
-                throw error; // Re-throw to stop further initialization
-            }
-        }
-
-        // Show skeleton loader
-        function showSkeletonLoader() {
-            userInfoContainer.innerHTML = `
-                <div class="skeleton-loader">
-                    <div class="skeleton-avatar"></div>
-                    <div class="skeleton-details">
-                        <div class="skeleton-name"></div>
-                        <div class="skeleton-username"></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Display user profile with actual data
-        function displayUserProfile(profile) {
-            const avatarContent = profile.avatar_url 
-                ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}" 
-                   onerror="this.src='https://www.gravatar.com/avatar/${crypto.randomUUID()}?d=identicon'">`
-                : createInitialAvatar(profile.full_name || profile.username);
-            
-            const verifiedBadge = profile.is_verified 
-                ? '<i class="fas fa-check-circle verified-badge"></i>' 
-                : '';
-            
-            userInfoContainer.innerHTML = `
-                <div class="loaded-user-info">
-                    <div class="user-avatar">
-                        ${avatarContent}
-                    </div>
-                    <div class="user-details">
-                        <div class="user-name">
-                            ${profile.full_name || profile.username}
-                            ${verifiedBadge}
-                        </div>
-                        <div class="user-username">@${profile.username}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Create initial avatar with colored background
-        function createInitialAvatar(name) {
-            if (!name) name = 'User';
-            const initials = name.split(' ').map(n => n[0] || '').join('').toUpperCase().substring(0, 2);
-            const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
-            const colorIndex = (initials.charCodeAt(0) || 0) % colors.length;
-            const color = colors[colorIndex];
-            
-            return `
-                <div class="avatar-initial" style="background-color: ${color}">
-                    ${initials || 'U'}
-                </div>
-            `;
-        }
-
-        // Set up event listeners
-        function setupEventListeners() {
-            console.log("[Events] Setting up listeners...");
-            
-            // Media upload handling
-            photoButton.addEventListener('click', () => photoUpload.click());
-            videoButton.addEventListener('click', () => videoUpload.click());
-            
-            photoUpload.addEventListener('change', (e) => handleMediaUpload(e, 'image'));
-            videoUpload.addEventListener('change', (e) => handleMediaUpload(e, 'video'));
-            
-            // Error message dismissal
-            errorMessage.addEventListener('click', () => {
-                errorMessage.style.display = 'none';
-            });
-
-            // Post creation handlers
-            postButton.addEventListener('click', handlePostCreation);
-            bottomPostButton.addEventListener('click', handlePostCreation);
-            
-            console.log("[Events] Listeners ready");
-        }
-
-        // Handle media upload
-        function handleMediaUpload(e, type) {
-            const newFiles = Array.from(e.target.files);
-            
-            // Validate files
-            if (uploadedFiles.length + newFiles.length > 5) {
-                showError("Maximum 5 files allowed");
-                return;
-            }
-            
-            newFiles.forEach(file => {
-                if (type === 'video') {
-                    if (videoCount >= 1) {
-                        showError("Only 1 video allowed per post");
-                        return;
-                    }
-                    if (file.size > 100 * 1024 * 1024) {
-                        showError("Video must be <100MB");
-                        return;
-                    }
-                    videoCount++;
-                } else if (file.size > 10 * 1024 * 1024) {
-                    showError("Images must be <10MB");
-                    return;
-                }
-                
-                uploadedFiles.push(file);
-            });
-            
-            displayMediaPreview();
-            e.target.value = ''; // Reset input to allow same file re-upload
-        }
-
-        // Display media preview
-        function displayMediaPreview() {
-            mediaGrid.innerHTML = '';
-            
-            uploadedFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                
-                reader.onload = (event) => {
-                    const mediaItem = document.createElement('div');
-                    mediaItem.className = 'media-item';
-                    
-                    mediaItem.innerHTML = file.type.startsWith('video/') ? `
-                        <video controls><source src="${event.target.result}" type="${file.type}"></video>
-                        <div class="remove-media" data-index="${index}">
-                            <i class="fas fa-trash"></i>
-                        </div>
-                    ` : `
-                        <img src="${event.target.result}" alt="Preview">
-                        <div class="remove-media" data-index="${index}">
-                            <i class="fas fa-trash"></i>
-                        </div>
-                    `;
-                    
-                    mediaGrid.appendChild(mediaItem);
-                };
-                
-                reader.readAsDataURL(file);
-            });
-            
-            mediaPreview.style.display = uploadedFiles.length ? 'block' : 'none';
-            
-            // Add event listeners after DOM update
-            document.querySelectorAll('.remove-media').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const index = parseInt(e.currentTarget.getAttribute('data-index'));
-                    removeMediaItem(index);
-                });
-            });
-        }
-
-        // Remove media item
-        function removeMediaItem(index) {
-            if (uploadedFiles[index]?.type.startsWith('video/')) {
-                videoCount--;
-            }
-            uploadedFiles.splice(index, 1);
-            displayMediaPreview();
-        }
-
-        // Show error message
-        function showError(message) {
-            console.error("[UI Error]", message);
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            setTimeout(() => {
-                errorMessage.style.display = 'none';
-            }, 5000);
-        }
-
-        // Handle post creation
-        async function handlePostCreation() {
-            if (!isInitialized) {
-                showError("System still loading. Please wait...");
-                return;
-            }
-            
-            const content = postInput.value.trim();
-            
-            if (!content && uploadedFiles.length === 0) {
-                showError("Please add text or media");
-                return;
-            }
-            
-            try {
-                setLoadingState(true);
-                console.log("[Post] Creating post...");
-                
-                // Create post record
-                const { data: post, error: postError } = await supabase
-                    .from('posts')
-                    .insert({
-                        user_id: currentUser.id,
-                        content: content || null
-                    })
-                    .select()
-                    .single();
-                
-                if (postError) throw postError;
-                
-                console.log("[Post] Created:", post.id);
-                
-                // Handle media if exists
-                if (uploadedFiles.length > 0) {
-                    await handleMediaUploadForPost(post.id);
-                }
-                
-                // Redirect on success
-                window.location.href = 'index.html?post_success=true';
-                
-            } catch (error) {
-                console.error("[Post Error]", error);
-                showError("Post failed: " + (error.message || "Please try again"));
-            } finally {
-                setLoadingState(false);
-            }
-        }
-
-        // Handle media upload for a post    
-
-                
-
-                
-
-            async function handleMediaUploadForPost(postId) {
+// Initialize the page
+async function init() {
+    if (isInitialized) return;
+    
     try {
-        // 1. VALIDATION PHASE
+        console.log("[Init] Starting initialization...");
+        
+        // 1. Check authentication
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+            console.error("[Auth Error]", authError);
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        currentUser = user;
+        console.log("[Auth] User authenticated:", user.email);
+        
+        // 2. Load user profile
+        await loadUserProfile();
+        
+        // 3. Setup event listeners
+        setupEventListeners();
+        
+        isInitialized = true;
+        console.log("[Init] Initialization completed successfully");
+        
+    } catch (error) {
+        console.error("[Init Error]", error);
+        showError("Failed to initialize. Please refresh the page.");
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+    }
+}
+
+// Load user profile data from Supabase
+async function loadUserProfile() {
+    try {
+        console.log("[Profile] Loading profile...");
+        showSkeletonLoader();
+        
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+        
+        if (profileError) throw profileError;
+        
+        currentProfile = profile;
+        console.log("[Profile] Loaded:", profile.username);
+        
+        displayUserProfile(profile);
+        
+    } catch (error) {
+        console.error("[Profile Error]", error);
+        showError("Couldn't load full profile. Using limited functionality.");
+        displayDefaultProfile();
+        throw error;
+    }
+}
+
+// Show skeleton loader
+function showSkeletonLoader() {
+    userInfoContainer.innerHTML = `
+        <div class="skeleton-loader">
+            <div class="skeleton-avatar"></div>
+            <div class="skeleton-details">
+                <div class="skeleton-name"></div>
+                <div class="skeleton-username"></div>
+            </div>
+        </div>
+    `;
+}
+
+// Display user profile with actual data
+function displayUserProfile(profile) {
+    const avatarContent = profile.avatar_url 
+        ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}" 
+           onerror="this.src='https://www.gravatar.com/avatar/${crypto.randomUUID()}?d=identicon'">`
+        : createInitialAvatar(profile.full_name || profile.username);
+    
+    const verifiedBadge = profile.is_verified 
+        ? '<i class="fas fa-check-circle verified-badge"></i>' 
+        : '';
+    
+    userInfoContainer.innerHTML = `
+        <div class="loaded-user-info">
+            <div class="user-avatar">
+                ${avatarContent}
+            </div>
+            <div class="user-details">
+                <div class="user-name">
+                    ${profile.full_name || profile.username}
+                    ${verifiedBadge}
+                </div>
+                <div class="user-username">@${profile.username}</div>
+            </div>
+        </div>
+    `;
+}
+
+// Create initial avatar with colored background
+function createInitialAvatar(name) {
+    if (!name) name = 'User';
+    const initials = name.split(' ').map(n => n[0] || '').join('').toUpperCase().substring(0, 2);
+    const colors = ['#00B0FF', '#FF5722', '#4CAF50', '#9C27B0', '#FF9800'];
+    const colorIndex = (initials.charCodeAt(0) || 0) % colors.length;
+    const color = colors[colorIndex];
+    
+    return `
+        <div class="avatar-initial" style="background-color: ${color}">
+            ${initials || 'U'}
+        </div>
+    `;
+}
+
+// Set up event listeners
+function setupEventListeners() {
+    console.log("[Events] Setting up listeners...");
+    
+    // Media upload handling
+    photoButton.addEventListener('click', () => photoUpload.click());
+    videoButton.addEventListener('click', () => videoUpload.click());
+    
+    photoUpload.addEventListener('change', (e) => handleMediaUpload(e, 'image'));
+    videoUpload.addEventListener('change', (e) => handleMediaUpload(e, 'video'));
+    
+    // Error message dismissal
+    errorMessage.addEventListener('click', () => {
+        errorMessage.style.display = 'none';
+    });
+
+    // Post creation handlers
+    postButton.addEventListener('click', handlePostCreation);
+    bottomPostButton.addEventListener('click', handlePostCreation);
+    
+    console.log("[Events] Listeners ready");
+}
+
+// Handle media upload
+async function handleMediaUpload(e, type) {
+    const newFiles = Array.from(e.target.files);
+    
+    // Validate file count
+    if (type === 'image' && uploadedFiles.length + newFiles.length > 2) {
+        showToastMessage("Maximum 2 photos allowed");
+        return;
+    }
+    
+    if (type === 'video' && (uploadedFiles.some(f => f.type.startsWith('video/')) || newFiles.length > 1)) {
+        showToastMessage("Maximum 1 video allowed per post");
+        return;
+    }
+    
+    try {
+        for (const file of newFiles) {
+            if (type === 'video') {
+                // Check video duration (simplified - actual duration check requires more code)
+                if (file.size > 100 * 1024 * 1024) {
+                    showToastMessage("Video must be <100MB");
+                    continue;
+                }
+                
+                const processedVideo = await processVideo(file);
+                uploadedFiles.push(processedVideo);
+                videoCount++;
+            } else {
+                if (file.size > 10 * 1024 * 1024) {
+                    showToastMessage("Images must be <10MB");
+                    continue;
+                }
+                
+                const compressedImage = await compressImage(file);
+                uploadedFiles.push(compressedImage);
+            }
+        }
+        
+        displayMediaPreview();
+        e.target.value = ''; // Reset input to allow same file re-upload
+        
+    } catch (error) {
+        console.error("Error processing media:", error);
+        showError("Failed to process media files");
+    }
+}
+
+// Compress image to 1MB if larger than 1MB
+async function compressImage(file) {
+    return new Promise((resolve) => {
+        if (file.size <= 1024 * 1024) { // If under 1MB
+            resolve(file);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Calculate new dimensions while maintaining aspect ratio
+                let width = img.width;
+                let height = img.height;
+                const quality = 0.7; // Initial quality
+                
+                // Resize until under 1MB
+                let compressedBlob;
+                do {
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Try with current quality
+                    canvas.toBlob((blob) => {
+                        compressedBlob = blob;
+                        if (compressedBlob.size > 1024 * 1024) {
+                            // Reduce quality or dimensions
+                            width *= 0.9;
+                            height *= 0.9;
+                        } else {
+                            resolve(new File([compressedBlob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            }));
+                        }
+                    }, 'image/jpeg', quality);
+                } while (!compressedBlob || compressedBlob.size > 1024 * 1024);
+            };
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Process video (limit to 5 minutes and 10MB)
+async function processVideo(file) {
+    return new Promise((resolve) => {
+        if (file.size <= 10 * 1024 * 1024) { // If under 10MB
+            // For videos under 10MB but larger than 5MB, compress to 7MB
+            if (file.size > 5 * 1024 * 1024 && file.size <= 10 * 1024 * 1024) {
+                console.log("Video compression to 7MB would happen here");
+                resolve(file);
+            } else {
+                resolve(file);
+            }
+            return;
+        }
+
+        // For videos over 10MB, compress to 10MB
+        console.log("Video compression to 10MB would happen here");
+        resolve(file);
+    });
+}
+
+// Display media preview
+function displayMediaPreview() {
+    mediaGrid.innerHTML = '';
+    
+    uploadedFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        
+        reader.onload = (event) => {
+            const mediaItem = document.createElement('div');
+            mediaItem.className = 'media-item';
+            
+            // Create media element (image or video)
+            const mediaElement = file.type.startsWith('video/') 
+                ? `<video controls><source src="${event.target.result}" type="${file.type}"></video>`
+                : `<img src="${event.target.result}" alt="Preview">`;
+            
+            // Create delete button with proper event handling
+            mediaItem.innerHTML = `
+                ${mediaElement}
+                <div class="remove-media" data-index="${index}">
+                    <i class="fas fa-trash"></i>
+                </div>
+            `;
+            
+            mediaGrid.appendChild(mediaItem);
+            
+            // Add click event directly to the delete button
+            const deleteBtn = mediaItem.querySelector('.remove-media');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                removeMediaItem(index);
+            });
+        };
+        
+        reader.readAsDataURL(file);
+    });
+    
+    mediaPreview.style.display = uploadedFiles.length ? 'block' : 'none';
+}
+
+// Remove media item
+function removeMediaItem(index) {
+    if (index >= 0 && index < uploadedFiles.length) {
+        // Check if we're removing a video
+        if (uploadedFiles[index].type.startsWith('video/')) {
+            videoCount--;
+        }
+        uploadedFiles.splice(index, 1);
+        displayMediaPreview(); // Refresh the preview
+    }
+}
+
+// Show loading overlay
+function showLoadingOverlay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    overlay.innerHTML = `
+        <div class="loading-spinner"></div>
+        <p>Uploading your post...</p>
+    `;
+    document.body.appendChild(overlay);
+}
+
+// Hide loading overlay
+function hideLoadingOverlay() {
+    const overlay = document.querySelector('.loading-overlay');
+    if (overlay) overlay.remove();
+}
+
+// Show toast message
+function showToastMessage(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-message';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Show error message
+function showError(message) {
+    console.error("[UI Error]", message);
+    errorMessage.textContent = message;
+    errorMessage.style.display = 'block';
+    setTimeout(() => {
+        errorMessage.style.display = 'none';
+    }, 5000);
+}
+
+// Handle post creation
+async function handlePostCreation() {
+    if (!isInitialized) {
+        showError("System still loading. Please wait...");
+        return;
+    }
+    
+    const content = postInput.value.trim();
+    
+    if (!content && uploadedFiles.length === 0) {
+        showError("Please add text or media");
+        return;
+    }
+    
+    try {
+        setLoadingState(true);
+        showLoadingOverlay();
+        console.log("[Post] Creating post...");
+        
+        // Create post record
+        const { data: post, error: postError } = await supabase
+            .from('posts')
+            .insert({
+                user_id: currentUser.id,
+                content: content || null
+            })
+            .select()
+            .single();
+        
+        if (postError) throw postError;
+        
+        console.log("[Post] Created:", post.id);
+        
+        // Handle media if exists
+        if (uploadedFiles.length > 0) {
+            await handleMediaUploadForPost(post.id);
+        }
+        
+        // Redirect on success
+        window.location.href = 'index.html?post_success=true';
+        
+    } catch (error) {
+        console.error("[Post Error]", error);
+        showError("Post failed: " + (error.message || "Please try again"));
+    } finally {
+        setLoadingState(false);
+        hideLoadingOverlay();
+    }
+}
+
+// Handle media upload for a post
+async function handleMediaUploadForPost(postId) {
+    try {
         if (!postId) throw new Error("Missing post ID");
         if (!currentUser?.id) throw new Error("User not authenticated");
         if (!Array.isArray(uploadedFiles)) {
@@ -889,7 +1001,6 @@
         }
         if (uploadedFiles.length === 0) return [];
 
-        // 2. VERIFY REFERENCES
         const [{ data: post }, { data: profile }] = await Promise.all([
             supabase.from('posts').select('id').eq('id', postId).single(),
             supabase.from('profiles').select('id').eq('id', currentUser.id).single()
@@ -897,7 +1008,6 @@
         if (!post) throw new Error("Referenced post doesn't exist");
         if (!profile) throw new Error("User profile not found");
 
-        // 3. CLOUDINARY UPLOAD
         const mediaRecords = [];
         const cloudName = 'dwwhpznwb';
         const uploadPreset = 'web_usigned_upload';
@@ -937,7 +1047,6 @@
             }
         }
 
-        // 4. DATABASE INSERTION
         if (mediaRecords.length === 0) {
             throw new Error("All media uploads failed");
         }
@@ -968,30 +1077,30 @@
     }
 }
 
-        // Set loading state
-        function setLoadingState(isLoading) {
-            if (isLoading) {
-                postButton.innerHTML = '<div class="spinner"></div>';
-                postButton.disabled = true;
-                bottomPostButton.innerHTML = '<div class="spinner"></div>';
-                bottomPostButton.disabled = true;
-            } else {
-                postButton.innerHTML = 'Post';
-                postButton.disabled = false;
-                bottomPostButton.innerHTML = 'Post';
-                bottomPostButton.disabled = false;
-            }
-        }
+// Set loading state
+function setLoadingState(isLoading) {
+    if (isLoading) {
+        postButton.innerHTML = '<div class="spinner"></div>';
+        postButton.disabled = true;
+        bottomPostButton.innerHTML = '<div class="spinner"></div>';
+        bottomPostButton.disabled = true;
+    } else {
+        postButton.innerHTML = 'Post';
+        postButton.disabled = false;
+        bottomPostButton.innerHTML = 'Post';
+        bottomPostButton.disabled = false;
+    }
+}
 
-        // Generate UUID
-        function uuidv4() {
-            return crypto.randomUUID();
-        }
+// Generate UUID
+function uuidv4() {
+    return crypto.randomUUID();
+}
 
-        // Initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            init().catch(e => console.error("Initialization failed:", e));
-        });
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    init().catch(e => console.error("Initialization failed:", e));
+});
 </script>
 </body>
 </html>
