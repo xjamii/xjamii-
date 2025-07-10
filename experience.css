@@ -117,3 +117,94 @@
     font-size: 14px;
     line-height: 1.6;
 }
+
+/* Experience Section Header */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.edit-section-btn {
+    background: none;
+    border: none;
+    color: #0056b3;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.edit-section-btn:hover {
+    background-color: #f0f4f8;
+}
+
+/* Experience Items */
+.experience-item {
+    position: relative;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+}
+
+.experience-item:hover {
+    background-color: #f0f4f8;
+}
+
+.experience-position {
+    font-weight: 600;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.experience-company {
+    font-weight: 500;
+    color: #0056b3;
+    margin-bottom: 5px;
+}
+
+.experience-duration {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.experience-description {
+    color: #444;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+.experience-actions {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.experience-action-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.experience-action-btn:hover {
+    color: #0056b3;
+}
+
+.no-experiences {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
