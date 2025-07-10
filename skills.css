@@ -168,3 +168,29 @@
     font-size: 13px;
     font-weight: 500;
 }
+
+/* Skills Empty State - matches Experience section */
+.skills-container-empty .no-skills {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+    width: 100%;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+/* Keep existing edit button styles */
+.skills-edit-btn {
+    background: none;
+    border: none;
+    color: #0056b3;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto; /* Keeps button on the right */
+}
