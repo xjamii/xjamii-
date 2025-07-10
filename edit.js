@@ -274,22 +274,45 @@ async function saveProfileChanges(e) {
     }
 }
 
-// Simplified category selection (changed to simple select)
+// Updated category selection with new categories
 function populateCategories() {
     const categories = [
+        // Commercial Aviation
         'Airline Pilot', 'First Officer', 'Captain', 'Flight Instructor',
         'Flight Attendant', 'Purser', 'Cabin Crew Manager', 'Ground Staff',
         'Air Traffic Controller', 'Dispatcher', 'Flight Operations Officer',
+        
+        // Technical Roles
         'Aircraft Engineer', 'Avionics Technician', 'Maintenance Technician',
         'Quality Assurance', 'Safety Inspector', 'Aircraft Mechanic',
+        
+        // Management
         'Airline CEO', 'Operations Manager', 'Flight Operations Manager',
         'Maintenance Manager', 'Training Manager', 'Safety Manager',
+        
+        // Helicopter
         'Helicopter Pilot', 'HEMS Pilot', 'Offshore Pilot', 'Flight Paramedic',
+        
+        // New Categories Added
+        'Aircraft', 
+        'Company', 
+        'Airport', 
+        'Private Plane Charter', 
+        'Pilot', 
+        'Sales', 
+        'Management',
+        
+        // Other existing categories
         'Aviation Consultant', 'Broker', 'Charter Operator', 'FBO Manager',
         'Aviation Lawyer', 'Aviation Journalist', 'Aircraft Sales'
     ];
     
     const categorySelect = document.getElementById('edit-category');
+    
+    // Clear existing options first
+    categorySelect.innerHTML = '<option value="">Select your category</option>';
+    
+    // Add all categories including new ones
     categories.forEach(category => {
         const option = document.createElement('option');
         option.value = category;
@@ -297,7 +320,6 @@ function populateCategories() {
         categorySelect.appendChild(option);
     });
 }
-
 // Initialize the page (no changes)
 document.addEventListener('DOMContentLoaded', () => {
     loadProfile();
