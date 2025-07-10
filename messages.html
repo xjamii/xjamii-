@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Message</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .message-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .back-button {
+            margin-right: 15px;
+            font-size: 20px;
+            color: #0056b3;
+        }
+        .message-thread {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            height: 60vh;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .message-input {
+            display: flex;
+            gap: 10px;
+        }
+        .message-input textarea {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            resize: none;
+            min-height: 80px;
+        }
+        .send-button {
+            padding: 10px 20px;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #f5f7fa;
+        }
+        .message.sent {
+            background-color: #e6f0ff;
+            margin-left: 20%;
+        }
+        .message.received {
+            background-color: #f0f4f8;
+            margin-right: 20%;
+        }
+        .message-time {
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="message-container">
+        <div class="message-header">
+            <a href="#" class="back-button" id="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h2 id="recipient-name">Message</h2>
+        </div>
+        
+        <div class="message-thread" id="message-thread">
+            <!-- Messages will be loaded here -->
+        </div>
+        
+        <div class="message-input">
+            <textarea id="message-text" placeholder="Type your message..."></textarea>
+            <button class="send-button" id="send-button">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const recipientId = urlParams.get('user');
+        let currentUser = null;
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Get current user
+            const { data: { user } } = await supabase.auth.getUser();
+            currentUser = user;
+            
+            // Set up back button
+            document.getElementById('back-button').href = `/profile.html?id=${recipientId}`;
+            
+            // Load recipient info
+            const { data: recipient } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', recipientId)
+                .single();
+                
+            if (recipient) {
+                document.getElementById('recipient-name').textContent = `Message ${recipient.full_name}`;
+            }
+            
+            // Load messages
+            await loadMessages();
+            
+            // Set up message sending
+            document.getElementById('send-button').addEventListener('click', sendMessage);
+            
+            // Set up real-time updates
+            const channel = supabase
+                .channel('messages')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages'
+                }, payload => {
+                    if ((payload.new.sender_id === currentUser.id && payload.new.receiver_id === recipientId) ||
+                        (payload.new.sender_id === recipientId && payload.new.receiver_id === currentUser.id)) {
+                        appendMessage(payload.new);
+                    }
+                })
+                .subscribe();
+        });
+        
+        async function loadMessages() {
+            const { data: messages, error } = await supabase
+                .from('messages')
+                .select('*')
+                .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${currentUser.id})`)
+                .order('created_at', { ascending: true });
+                
+            if (!error && messages) {
+                messages.forEach(message => {
+                    appendMessage(message);
+                });
+            }
+        }
+        
+        function appendMessage(message) {
+            const thread = document.getElementById('message-thread');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.sender_id === currentUser.id ? 'sent' : 'received'}`;
+            
+            messageDiv.innerHTML = `
+                <p>${message.content}</p>
+                <div class="message-time">
+                    ${new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+            `;
+            
+            thread.appendChild(messageDiv);
+            thread.scrollTop = thread.scrollHeight;
+        }
+        
+        async function sendMessage() {
+            const content = document.getElementById('message-text').value.trim();
+            if (!content) return;
+            
+            const { error } = await supabase
+                .from('messages')
+                .insert([{
+                    sender_id: currentUser.id,
+                    receiver_id: recipientId,
+                    content: content
+                }]);
+                
+            if (!error) {
+                document.getElementById('message-text').value = '';
+            }
+        }
+    </script>
+</body>
+</html>
