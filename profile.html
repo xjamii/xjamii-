@@ -353,38 +353,25 @@ body {
 }
         
         
-/* Instagram Style Posts Header */
-.instagram-posts-header {
-  padding: 20px 0;
-  text-align: center;
-  border-top: 1px solid #dbdbdb;
-  margin: 15px 0 0;
-}
 
-.header-content {
-  display: inline-flex;
+
+.simple-posts-header {
+  display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
-}
-
-.icon-wrapper {
-  display: flex;
-  align-items: center;
-}
-
-.instagram-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.instagram-posts-header h2 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
+  padding: 20px 0;
+  border-top: 1px solid #dbdbdb;
   color: #262626;
-  letter-spacing: 1px;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 1px;
 }
+
+.simple-posts-header i {
+  font-size: 18px;
+}
+
 
     </style>
 </head>
@@ -480,15 +467,9 @@ body {
     </div>
 </div>
 
-       <div class="instagram-posts-header">
-  <div class="header-content">
-    <div class="icon-wrapper">
-      <svg aria-label="Posts" class="instagram-icon" fill="#262626" height="16" viewBox="0 0 48 48" width="16">
-        <path d="M45 1.5H3c-.8 0-1.5.7-1.5 1.5v42c0 .8.7 1.5 1.5 1.5h42c.8 0 1.5-.7 1.5-1.5V3c0-.8-.7-1.5-1.5-1.5zm-40.5 3h11v11h-11v-11zm0 14h11v11h-11v-11zm11 25h-11v-11h11v11zm14 0h-11v-11h11v11zm0-14h-11v-11h11v11zm0-14h-11v-11h11v11zm14 28h-11v-11h11v11zm0-14h-11v-11h11v11zm0-14h-11v-11h11v11z"></path>
-      </svg>
-    </div>
-    <h2>POSTS</h2>
-  </div>
+       <div class="simple-posts-header">
+  <i class="fas fa-square"></i>
+  <span>POSTS</span>
 </div>
     <div id="user-posts">
         <!-- User posts will be loaded here -->
