@@ -169,9 +169,13 @@ class SkillsEditor {
     
     
     
-                async loadSkills() {
+                
+        async loadSkills() {
     try {
-        // Remove loading state - go straight to content
+        // First ensure edit button exists
+        this.ensureEditButtonExists();
+        
+        // Check skills directly (no loading message)
         const { data: profile, error } = await supabase
             .from('profiles')
             .select('skills')
@@ -180,18 +184,13 @@ class SkillsEditor {
         
         if (error) throw error;
         
-        if (profile && profile.skills) {
+        if (profile?.skills?.trim()) {
             const skills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
-            if (skills.length > 0) {
-                this.elements.skillsContainer.innerHTML = skills
-                    .map(skill => `<div class="skill-badge">${skill}</div>`)
-                    .join('');
-                this.elements.skillsContainer.classList.remove('skills-container-empty');
-            } else {
-                this.showNoSkillsMessage();
-            }
+            this.elements.skillsContainer.innerHTML = skills
+                .map(skill => `<div class="skill-badge">${skill}</div>`)
+                .join('');
         } else {
-            this.showNoSkillsMessage();
+            this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
         }
         
         this.elements.skillsSection.style.display = 'block';
@@ -203,10 +202,19 @@ class SkillsEditor {
     }
 }
 
-// New helper method
-showNoSkillsMessage() {
-    this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
-    this.elements.skillsContainer.classList.add('skills-container-empty');
+// Add this helper method to preserve edit button
+ensureEditButtonExists() {
+    if (!document.querySelector('.skills-edit-btn')) {
+        const editButton = document.createElement('button');
+        editButton.className = 'skills-edit-btn';
+        editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
+        editButton.addEventListener('click', () => this.open());
+        
+        const sectionTitle = this.elements.skillsSection.querySelector('.section-title');
+        if (sectionTitle) {
+            sectionTitle.appendChild(editButton);
+        }
+    }
 }
 // Initialize Skills Editor and add edit button
 function initSkillsEditor() {
