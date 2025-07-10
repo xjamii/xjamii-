@@ -1,4 +1,4 @@
-// Experience Editor
+// Experience Editor - Complete Implementation
 class ExperienceEditor {
     constructor() {
         this.currentExperienceId = null;
@@ -9,10 +9,14 @@ class ExperienceEditor {
     
     initElements() {
         this.elements = {
+            // Page elements
             page: document.getElementById('experience-page'),
             backButton: document.getElementById('back-from-experience'),
             saveButton: document.getElementById('save-experience'),
             preloader: document.getElementById('experience-preloader'),
+            deleteButton: document.getElementById('delete-experience'),
+            
+            // Form elements
             positionInput: document.getElementById('experience-position'),
             companyInput: document.getElementById('experience-company'),
             startMonth: document.getElementById('experience-start-month'),
@@ -21,17 +25,29 @@ class ExperienceEditor {
             endYear: document.getElementById('experience-end-year'),
             currentCheckbox: document.getElementById('experience-current'),
             descriptionInput: document.getElementById('experience-description'),
-            deleteButton: document.getElementById('delete-experience')
+            
+            // Section elements
+            editSectionBtn: document.getElementById('edit-experience-btn'),
+            experienceContainer: document.getElementById('experience-container'),
+            experienceSection: document.getElementById('experience-section')
         };
     }
     
     initEventListeners() {
+        // Navigation buttons
         this.elements.backButton.addEventListener('click', () => this.close());
         this.elements.saveButton.addEventListener('click', () => this.saveExperience());
         this.elements.deleteButton.addEventListener('click', () => this.deleteExperience());
+        
+        // Form interactions
         this.elements.currentCheckbox.addEventListener('change', (e) => {
             this.toggleCurrentRole(e.target.checked);
         });
+        
+        // Section edit button
+        if (this.elements.editSectionBtn) {
+            this.elements.editSectionBtn.addEventListener('click', () => this.open());
+        }
     }
     
     populateDateOptions() {
@@ -65,17 +81,23 @@ class ExperienceEditor {
         this.elements.page.style.display = 'block';
         this.elements.preloader.style.display = 'flex';
         
-        if (experienceId) {
-            // Load existing experience
-            await this.loadExperience(experienceId);
-            this.elements.deleteButton.style.display = 'block';
-        } else {
-            // New experience
-            this.resetForm();
-            this.elements.deleteButton.style.display = 'none';
+        try {
+            if (experienceId) {
+                // Load existing experience
+                await this.loadExperience(experienceId);
+                this.elements.deleteButton.style.display = 'block';
+            } else {
+                // New experience
+                this.resetForm();
+                this.elements.deleteButton.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error opening experience editor:', error);
+            showError('Failed to load experience editor');
+            this.close();
+        } finally {
+            this.elements.preloader.style.display = 'none';
         }
-        
-        this.elements.preloader.style.display = 'none';
     }
     
     close() {
@@ -91,6 +113,7 @@ class ExperienceEditor {
         this.elements.endYear.value = '';
         this.elements.currentCheckbox.checked = false;
         this.elements.descriptionInput.value = '';
+        this.toggleCurrentRole(false);
     }
     
     toggleCurrentRole(isCurrent) {
@@ -111,6 +134,7 @@ class ExperienceEditor {
                 .single();
             
             if (error) throw error;
+            if (!data) throw new Error('Experience not found');
             
             this.elements.positionInput.value = data.position;
             this.elements.companyInput.value = data.company;
@@ -132,8 +156,7 @@ class ExperienceEditor {
             this.elements.descriptionInput.value = data.description || '';
         } catch (error) {
             console.error('Error loading experience:', error);
-            showError('Failed to load experience');
-            this.close();
+            throw error;
         }
     }
     
@@ -159,29 +182,28 @@ class ExperienceEditor {
                 updated_at: new Date().toISOString()
             };
             
+            let result;
             if (this.currentExperienceId) {
                 // Update existing experience
-                const { error } = await supabase
+                result = await supabase
                     .from('experiences')
                     .update(experienceData)
                     .eq('id', this.currentExperienceId);
-                
-                if (error) throw error;
             } else {
                 // Create new experience
                 experienceData.profile_id = profileId;
-                const { error } = await supabase
+                result = await supabase
                     .from('experiences')
                     .insert([experienceData]);
-                
-                if (error) throw error;
             }
             
+            if (result.error) throw result.error;
+            
             this.close();
-            await loadProfile(); // Refresh profile display
+            await this.loadExperiences(); // Refresh the experience display
         } catch (error) {
             console.error('Error saving experience:', error);
-            showError('Failed to save experience');
+            showError('Failed to save experience. Please try again.');
         } finally {
             this.elements.saveButton.disabled = false;
             this.elements.saveButton.textContent = 'Save';
@@ -189,28 +211,45 @@ class ExperienceEditor {
     }
     
     validateForm() {
+        // Clear any previous errors
+        document.querySelectorAll('.form-error').forEach(el => el.remove());
+        
+        let isValid = true;
+        
         if (!this.elements.positionInput.value.trim()) {
-            showError('Position is required');
-            return false;
+            this.showFieldError(this.elements.positionInput, 'Position is required');
+            isValid = false;
         }
         
         if (!this.elements.companyInput.value.trim()) {
-            showError('Company is required');
-            return false;
+            this.showFieldError(this.elements.companyInput, 'Company is required');
+            isValid = false;
         }
         
         if (!this.elements.startMonth.value || !this.elements.startYear.value) {
-            showError('Start date is required');
-            return false;
+            this.showFieldError(this.elements.startMonth, 'Start date is required');
+            isValid = false;
         }
         
         if (!this.elements.currentCheckbox.checked && 
             (!this.elements.endMonth.value || !this.elements.endYear.value)) {
-            showError('End date is required if not current role');
-            return false;
+            this.showFieldError(this.elements.endMonth, 'End date is required if not current role');
+            isValid = false;
         }
         
-        return true;
+        return isValid;
+    }
+    
+    showFieldError(field, message) {
+        const errorElement = document.createElement('div');
+        errorElement.className = 'form-error';
+        errorElement.style.color = '#ff4444';
+        errorElement.style.fontSize = '13px';
+        errorElement.style.marginTop = '5px';
+        errorElement.textContent = message;
+        
+        // Insert after the field
+        field.parentNode.insertBefore(errorElement, field.nextSibling);
     }
     
     getStartDate() {
@@ -226,6 +265,7 @@ class ExperienceEditor {
         
         try {
             this.elements.deleteButton.disabled = true;
+            this.elements.deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
             
             const { error } = await supabase
                 .from('experiences')
@@ -235,55 +275,109 @@ class ExperienceEditor {
             if (error) throw error;
             
             this.close();
-            await loadProfile(); // Refresh profile display
+            await this.loadExperiences(); // Refresh the experience display
         } catch (error) {
             console.error('Error deleting experience:', error);
             showError('Failed to delete experience');
         } finally {
             this.elements.deleteButton.disabled = false;
+            this.elements.deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete Experience';
         }
+    }
+    
+    async loadExperiences() {
+        try {
+            this.elements.experienceSection.style.display = 'none';
+            this.elements.experienceContainer.innerHTML = '<div class="loading-experience">Loading experiences...</div>';
+            
+            const { data: experiences, error } = await supabase
+                .from('experiences')
+                .select('*')
+                .eq('profile_id', profileId)
+                .order('start_date', { ascending: false });
+            
+            if (error) throw error;
+            
+            if (experiences && experiences.length > 0) {
+                this.elements.experienceContainer.innerHTML = experiences.map(exp => this.formatExperience(exp)).join('');
+                
+                // Add event listeners to all edit buttons
+                document.querySelectorAll('.edit-experience-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const experienceId = e.currentTarget.closest('.experience-item').dataset.id;
+                        this.open(experienceId);
+                    });
+                });
+            } else {
+                this.elements.experienceContainer.innerHTML = '<div class="no-experiences">No professional experience added yet</div>';
+            }
+            
+            this.elements.experienceSection.style.display = 'block';
+        } catch (error) {
+            console.error('Error loading experiences:', error);
+            this.elements.experienceContainer.innerHTML = `
+                <div class="error-message">
+                    Failed to load experiences. <button onclick="window.experienceEditor.loadExperiences()">Try again</button>
+                </div>
+            `;
+            this.elements.experienceSection.style.display = 'block';
+        }
+    }
+    
+    formatExperience(experience) {
+        const startDate = new Date(experience.start_date);
+        const startStr = `${startDate.toLocaleString('default', { month: 'short' })} ${startDate.getFullYear()}`;
+        
+        let endStr = 'Present';
+        if (experience.end_date) {
+            const endDate = new Date(experience.end_date);
+            endStr = `${endDate.toLocaleString('default', { month: 'short' })} ${endDate.getFullYear()}`;
+        }
+        
+        return `
+            <div class="experience-item" data-id="${experience.id}">
+                <div class="experience-actions">
+                    <button class="experience-action-btn edit-experience-btn" title="Edit">
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                </div>
+                <div class="experience-position">${experience.position}</div>
+                <div class="experience-company">${experience.company}</div>
+                <div class="experience-duration">${startStr} - ${endStr}</div>
+                ${experience.description ? `<div class="experience-description">${experience.description}</div>` : ''}
+            </div>
+        `;
     }
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.experienceEditor = new ExperienceEditor();
-    
-    // Add edit button to experience section
-    const experienceSection = document.getElementById('experience-section');
-    if (experienceSection) {
-        const editButton = document.createElement('button');
-        editButton.className = 'experience-edit-btn';
-        editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
-        editButton.onclick = () => window.experienceEditor.open();
+    // Check if we're on a profile page with experience section
+    if (document.getElementById('experience-section')) {
+        window.experienceEditor = new ExperienceEditor();
         
-        const sectionTitle = experienceSection.querySelector('.section-title');
-        if (sectionTitle) {
-            sectionTitle.appendChild(editButton);
-        }
+        // Load experiences after a short delay to allow other elements to initialize
+        setTimeout(() => {
+            window.experienceEditor.loadExperiences();
+        }, 100);
     }
 });
 
-// Helper function to format experience display
-function formatExperience(experience) {
-    const startDate = new Date(experience.start_date);
-    const startStr = `${startDate.toLocaleString('default', { month: 'short' })} ${startDate.getFullYear()}`;
+// Helper function to show error messages
+function showError(message) {
+    const errorContainer = document.getElementById('error-message') || document.createElement('div');
+    errorContainer.id = 'error-message';
+    errorContainer.style.color = '#ff4444';
+    errorContainer.style.padding = '10px';
+    errorContainer.style.textAlign = 'center';
+    errorContainer.style.fontWeight = '500';
+    errorContainer.textContent = message;
     
-    let endStr = 'Present';
-    if (experience.end_date) {
-        const endDate = new Date(experience.end_date);
-        endStr = `${endDate.toLocaleString('default', { month: 'short' })} ${endDate.getFullYear()}`;
+    if (!document.getElementById('error-message')) {
+        document.body.prepend(errorContainer);
     }
     
-    return `
-        <div class="experience-item" data-id="${experience.id}">
-            <div class="experience-position">${experience.position}</div>
-            <div class="experience-company">${experience.company}</div>
-            <div class="experience-duration">${startStr} - ${endStr}</div>
-            ${experience.description ? `<div class="experience-description">${experience.description}</div>` : ''}
-            <button class="experience-edit-btn" onclick="window.experienceEditor.open('${experience.id}')">
-                <i class="fas fa-pencil-alt"></i> Edit
-            </button>
-        </div>
-    `;
+    setTimeout(() => {
+        errorContainer.style.display = 'none';
+    }, 5000);
 }
