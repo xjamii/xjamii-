@@ -167,11 +167,11 @@ class SkillsEditor {
         }
     }
     
-    async loadSkills() {
+    
+    
+                async loadSkills() {
     try {
-        // Show loading state
-        this.elements.skillsContainer.innerHTML = '<div class="skill-badge">Loading skills...</div>';
-        
+        // Remove loading state - go straight to content
         const { data: profile, error } = await supabase
             .from('profiles')
             .select('skills')
@@ -186,11 +186,12 @@ class SkillsEditor {
                 this.elements.skillsContainer.innerHTML = skills
                     .map(skill => `<div class="skill-badge">${skill}</div>`)
                     .join('');
+                this.elements.skillsContainer.classList.remove('skills-container-empty');
             } else {
-                this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
+                this.showNoSkillsMessage();
             }
         } else {
-            this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
+            this.showNoSkillsMessage();
         }
         
         this.elements.skillsSection.style.display = 'block';
@@ -200,6 +201,12 @@ class SkillsEditor {
             '<div class="error-message">Failed to load skills</div>';
         this.elements.skillsSection.style.display = 'block';
     }
+}
+
+// New helper method
+showNoSkillsMessage() {
+    this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
+    this.elements.skillsContainer.classList.add('skills-container-empty');
 }
 // Initialize Skills Editor and add edit button
 function initSkillsEditor() {
