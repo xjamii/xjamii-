@@ -103,10 +103,11 @@
     position: relative;
 }
 
-.skills-section  {
+.skills-section .section-title {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* Changed from space-between */
     align-items: center;
+    gap: 15px; /* Adds consistent spacing between title and button */
 }
 
 .skills-edit-btn {
