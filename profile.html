@@ -447,636 +447,539 @@ body {
     </div>
     
     <!-- Edit Profile Modal -->
-    <div class="modal-overlay" id="edit-modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Edit Profile</h3>
-                <button class="close-modal" id="close-modal">&times;</button>
+    <!-- Edit Profile Page (replaces the modal) -->
+<div class="edit-profile-page" id="edit-profile-page" style="display: none;">
+    <div class="edit-header">
+        <button class="btn-back" id="edit-back-button">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Edit Profile</h2>
+        <button class="btn-save" id="edit-save-button">Save</button>
+    </div>
+    
+    <div class="edit-content">
+        <form id="edit-profile-form">
+            <!-- Profile Picture Section -->
+            <div class="edit-section">
+                <h3>Profile Picture</h3>
+                <div class="avatar-upload-container">
+                    <img id="avatar-preview" class="avatar-preview" src="" alt="Avatar Preview">
+                    <label for="edit-avatar-upload" class="file-input-label">
+                        <i class="fas fa-camera"></i> Change Photo
+                    </label>
+                    <input type="file" id="edit-avatar-upload" class="file-input" accept="image/*">
+                </div>
             </div>
-            <div class="modal-body">
-                <form id="edit-profile-form">
-                    <div class="form-group">
-                        <label for="edit-avatar">Profile Picture</label>
-                        <img id="avatar-preview" class="avatar-preview" src="" alt="Avatar Preview">
-                        <label for="edit-avatar-upload" class="file-input-label">
-                            <i class="fas fa-camera"></i> Change Photo
-                        </label>
-                        <input type="file" id="edit-avatar-upload" class="file-input" accept="image/*">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-cover">Cover Photo</label>
-                        <img id="cover-preview" class="cover-preview" src="" alt="Cover Preview">
-                        <label for="edit-cover-upload" class="file-input-label">
-                            <i class="fas fa-camera"></i> Change Cover
-                        </label>
-                        <input type="file" id="edit-cover-upload" class="file-input" accept="image/*">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-full-name">Full Name</label>
-                        <input type="text" id="edit-full-name" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-username">Username</label>
-                        <input type="text" id="edit-username" required>
-                        <div class="username-availability" id="username-availability"></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-bio">Bio</label>
-                        <textarea id="edit-bio"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-website">Website</label>
-                        <input type="url" id="edit-website" placeholder="https://example.com">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-category">Professional Category</label>
-                        <select id="edit-category">
-                            <option value="">Select Category</option>
-                            <option value="Pilot">Pilot</option>
-                            <option value="Flight Attendant">Flight Attendant</option>
-                            <option value="Engineer">Aircraft Engineer</option>
-                            <option value="Air Traffic Controller">Air Traffic Controller</option>
-                            <option value="Management">Management</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-experience">Professional Experience</label>
-                        <textarea id="edit-experience" placeholder="Describe your professional background"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-skills">Skills (comma separated)</label>
-                        <textarea id="edit-skills" placeholder="e.g., CRM, Flight Planning, Safety Management"></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-cancel" id="cancel-edit">Cancel</button>
-                        <button type="submit" class="btn btn-save">Save Changes</button>
-                    </div>
-                </form>
+            
+            <!-- Cover Photo Section -->
+            <div class="edit-section">
+                <h3>Cover Photo</h3>
+                <div class="cover-upload-container">
+                    <img id="cover-preview" class="cover-preview" src="" alt="Cover Preview">
+                    <label for="edit-cover-upload" class="file-input-label">
+                        <i class="fas fa-camera"></i> Change Cover
+                    </label>
+                    <input type="file" id="edit-cover-upload" class="file-input" accept="image/*">
+                </div>
             </div>
+            
+            <!-- Basic Info Section -->
+            <div class="edit-section">
+                <h3>Basic Information</h3>
+                <div class="form-group">
+                    <label for="edit-full-name">Full Name</label>
+                    <input type="text" id="edit-full-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-username">Username</label>
+                    <input type="text" id="edit-username" required>
+                    <div class="username-availability" id="username-availability"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-bio">Bio</label>
+                    <textarea id="edit-bio"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-website">Website</label>
+                    <input type="url" id="edit-website" placeholder="https://example.com">
+                </div>
+            </div>
+            
+            <!-- Professional Section -->
+            <div class="edit-section">
+                <h3>Professional Information</h3>
+                <div class="form-group">
+                    <label for="edit-category">Professional Category</label>
+                    <div class="category-selector" id="category-selector">
+                        <input type="text" id="edit-category-display" placeholder="Select your category" readonly>
+                        <button type="button" class="btn-select-category" id="select-category-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="edit-category">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-experience">Professional Experience</label>
+                    <div class="experience-selector" id="experience-selector">
+                        <textarea id="edit-experience-display" placeholder="Describe your professional background" readonly></textarea>
+                        <button type="button" class="btn-select-experience" id="select-experience-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="edit-experience">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-skills">Skills</label>
+                    <div class="skills-selector" id="skills-selector">
+                        <textarea id="edit-skills-display" placeholder="Select your skills (max 10)" readonly></textarea>
+                        <button type="button" class="btn-select-skills" id="select-skills-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="edit-skills">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Category Selection Page -->
+<div class="category-page" id="category-page" style="display: none;">
+    <div class="edit-header">
+        <button class="btn-back" id="category-back-button">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Select Category</h2>
+        <button class="btn-save" id="category-save-button">Save</button>
+    </div>
+    
+    <div class="category-content">
+        <div class="category-grid">
+            <!-- Categories will be populated by JavaScript -->
         </div>
     </div>
+</div>
+
+<!-- Experience Page -->
+<div class="experience-page" id="experience-page" style="display: none;">
+    <div class="edit-header">
+        <button class="btn-back" id="experience-back-button">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Professional Experience</h2>
+        <button class="btn-save" id="experience-save-button">Save</button>
+    </div>
+    
+    <div class="experience-content">
+        <form id="experience-form">
+            <div class="form-group">
+                <label for="experience-position">Position/Role</label>
+                <input type="text" id="experience-position" placeholder="e.g., Captain, First Officer">
+            </div>
+            
+            <div class="form-group">
+                <label for="experience-company">Company/Organization</label>
+                <input type="text" id="experience-company" placeholder="e.g., Emirates, Boeing">
+            </div>
+            
+            <div class="form-group">
+                <label for="experience-location">Location</label>
+                <input type="text" id="experience-location" placeholder="e.g., Dubai, UAE">
+            </div>
+            
+            <div class="form-group">
+                <label>Time Period</label>
+                <div class="date-range">
+                    <input type="month" id="experience-start">
+                    <span>to</span>
+                    <input type="month" id="experience-end">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="experience-current"> I currently work here
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="experience-description">Description</label>
+                <textarea id="experience-description" placeholder="Describe your responsibilities and achievements"></textarea>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Skills Selection Page -->
+<div class="skills-page" id="skills-page" style="display: none;">
+    <div class="edit-header">
+        <button class="btn-back" id="skills-back-button">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Select Skills</h2>
+        <button class="btn-save" id="skills-save-button">Save</button>
+    </div>
+    
+    <div class="skills-content">
+        <div class="skills-selected" id="skills-selected">
+            <h4>Selected Skills (max 10)</h4>
+            <div class="selected-skills-list" id="selected-skills-list"></div>
+        </div>
+        
+        <div class="skills-grid">
+            <!-- Skills will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div class="full-page-loader" id="full-page-loader" style="display: none;">
+    <div class="loader-spinner"></div>
+</div>
     <script>
-    let avatarFile = null;
-let coverFile = null;
-let originalUsername = '';
-let selectedCategory = '';
-let selectedSkills = [];
-let currentExperience = {
-    position: '',
-    company: '',
-    location: '',
-    start: '',
-    end: '',
-    current: false,
-    description: ''
+     // Initialize Supabase
+const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+// Get profile ID from URL or current user
+const urlParams = new URLSearchParams(window.location.search);
+let profileId = urlParams.get('id');
+
+// DOM Elements
+const elements = {
+    skeleton: document.getElementById('profile-details-skeleton'),
+    errorMessage: document.getElementById('error-message'),
+    profileInfo: document.getElementById('profile-info'),
+    experienceSection: document.getElementById('experience-section'),
+    skillsSection: document.getElementById('skills-section'),
+    profileName: document.getElementById('profile-name'),
+    fullName: document.getElementById('full-name'),
+    username: document.getElementById('username'),
+    bio: document.getElementById('bio'),
+    websiteLink: document.getElementById('website-link'),
+    categoryBadge: document.getElementById('category-badge'),
+    profileAvatar: document.getElementById('profile-avatar'),
+    coverPhoto: document.getElementById('cover-photo'),
+    experienceContainer: document.getElementById('experience-container'),
+    skillsContainer: document.getElementById('skills-container'),
+    verifiedBadge: document.getElementById('verified-badge'),
+    connectionsCount: document.getElementById('connections-count'),
+    connectBtn: document.getElementById('connect-btn'),
+    editButton: document.getElementById('edit-button')
 };
 
-// Aviation categories
-const aviationCategories = [
-    'Pilot (Captain)', 'Pilot (First Officer)', 'Pilot (Helicopter)', 
-    'Flight Attendant', 'Cabin Crew Manager', 'Purser',
-    'Aircraft Engineer', 'Avionics Technician', 'Maintenance Controller',
-    'Air Traffic Controller', 'ATC Supervisor', 'Flight Dispatcher',
-    'Aircraft Broker', 'Sales Director', 'Leasing Manager',
-    'Ground Handling', 'Ramp Agent', 'Load Controller',
-    'Flight Instructor', 'Simulator Instructor', 'Check Captain',
-    'Safety Officer', 'Quality Assurance', 'Compliance Manager',
-    'Operations Manager', 'Chief Pilot', 'Director of Operations',
-    'CEO/Executive', 'Finance Director', 'HR Director',
-    'Marketing Manager', 'Customer Service', 'Flight Planner',
-    'Fuel Manager', 'Catering Manager', 'Security Manager'
-];
-
-// Aviation skills
-const aviationSkills = [
-    'CRM', 'TEM', 'SMS', 'SOP Development',
-    'Flight Planning', 'Fuel Management', 'Weight & Balance',
-    'Aircraft Systems', 'Avionics', 'Troubleshooting',
-    'Maintenance Planning', 'NDT', 'Component Repair',
-    'Air Law', 'Meteorology', 'Navigation',
-    'Human Factors', 'Crew Resource Management', 'Safety Management',
-    'Emergency Procedures', 'First Aid', 'Security Procedures',
-    'Customer Service', 'Cabin Safety', 'In-Flight Service',
-    'Sales & Marketing', 'Contract Negotiation', 'Leasing',
-    'Financial Analysis', 'Budgeting', 'Regulatory Compliance'
-];
-
-// Initialize edit functionality
-function initEditProfile() {
-    const editButton = document.getElementById('edit-button');
-    const backButton = document.getElementById('edit-back-button');
-    const saveButton = document.getElementById('edit-save-button');
-    const editPage = document.getElementById('edit-profile-page');
-    
-    // Category selection
-    const categoryBtn = document.getElementById('select-category-btn');
-    const categoryBackBtn = document.getElementById('category-back-button');
-    const categorySaveBtn = document.getElementById('category-save-button');
-    const categoryPage = document.getElementById('category-page');
-    
-    // Experience selection
-    const experienceBtn = document.getElementById('select-experience-btn');
-    const experienceBackBtn = document.getElementById('experience-back-button');
-    const experienceSaveBtn = document.getElementById('experience-save-button');
-    const experiencePage = document.getElementById('experience-page');
-    
-    // Skills selection
-    const skillsBtn = document.getElementById('select-skills-btn');
-    const skillsBackBtn = document.getElementById('skills-back-button');
-    const skillsSaveBtn = document.getElementById('skills-save-button');
-    const skillsPage = document.getElementById('skills-page');
-    
-    // File uploads
-    const avatarUpload = document.getElementById('edit-avatar-upload');
-    const coverUpload = document.getElementById('edit-cover-upload');
-    const usernameInput = document.getElementById('edit-username');
-    
-    // Event listeners
-    editButton.addEventListener('click', openEditProfile);
-    backButton.addEventListener('click', closeEditProfile);
-    saveButton.addEventListener('click', saveProfileChanges);
-    
-    categoryBtn.addEventListener('click', openCategoryPage);
-    categoryBackBtn.addEventListener('click', closeCategoryPage);
-    categorySaveBtn.addEventListener('click', saveCategory);
-    
-    experienceBtn.addEventListener('click', openExperiencePage);
-    experienceBackBtn.addEventListener('click', closeExperiencePage);
-    experienceSaveBtn.addEventListener('click', saveExperience);
-    
-    skillsBtn.addEventListener('click', openSkillsPage);
-    skillsBackBtn.addEventListener('click', closeSkillsPage);
-    skillsSaveBtn.addEventListener('click', saveSkills);
-    
-    avatarUpload.addEventListener('change', handleAvatarUpload);
-    coverUpload.addEventListener('change', handleCoverUpload);
-    
-    // Real-time username availability check
-    usernameInput.addEventListener('input', debounce(checkUsernameAvailability, 500));
-    
-    // Populate category and skills pages
-    populateCategories();
-    populateSkills();
-}
-
-function debounce(func, timeout = 300) {
-    let timer;
-    return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => { func.apply(this, args); }, timeout);
-    };
-}
-
-async function checkUsernameAvailability() {
-    const usernameInput = document.getElementById('edit-username');
-    const username = usernameInput.value.trim().toLowerCase();
-    const availabilityMsg = document.getElementById('username-availability');
-    
-    if (username === originalUsername) {
-        availabilityMsg.style.display = 'none';
-        return;
-    }
-    
-    if (username.length < 3) {
-        availabilityMsg.style.display = 'block';
-        availabilityMsg.textContent = 'Username must be at least 3 characters';
-        availabilityMsg.className = 'username-availability taken';
-        return;
-    }
-    
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('username', username)
-        .neq('id', profileId);
-    
-    if (error) {
-        console.error('Error checking username:', error);
-        return;
-    }
-    
-    if (data && data.length > 0) {
-        availabilityMsg.style.display = 'block';
-        availabilityMsg.textContent = 'Username is already taken';
-        availabilityMsg.className = 'username-availability taken';
-    } else {
-        availabilityMsg.style.display = 'block';
-        availabilityMsg.textContent = 'Username is available';
-        availabilityMsg.className = 'username-availability available';
-    }
-}
-
-function showLoader() {
-    const loader = document.getElementById('full-page-loader');
-    loader.style.display = 'flex';
-    setTimeout(() => {
-        loader.style.display = 'none';
-    }, 5000); // 5 seconds loader
-}
-
-async function openEditProfile() {
-    showLoader();
-    
-    setTimeout(async () => {
-        const editPage = document.getElementById('edit-profile-page');
-        const { data: profile, error } = await supabase
+// Load profile data
+async function loadProfile() {
+    try {
+        // Show skeleton loader
+        elements.skeleton.style.display = 'flex';
+        elements.errorMessage.style.display = 'none';
+        
+        // Check if user is logged in
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        // If no profile ID in URL, use current user's ID
+        if (!profileId) {
+            profileId = user.id;
+        }
+        
+        // Get profile data
+        const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', profileId)
             .single();
+
+        if (profileError) throw profileError;
+        if (!profile) throw new Error('Profile not found');
         
-        if (error) {
-            console.error('Error loading profile for edit:', error);
-            showError('Failed to load profile for editing');
-            return;
+        // Get connections count
+        const { count: connectionsCount, error: connectionsError } = await supabase
+            .from('connections')
+            .select('*', { count: 'exact', head: true })
+            .or(`and(sender_id.eq.${profileId},status.eq.accepted),and(receiver_id.eq.${profileId},status.eq.accepted)`);
+
+        if (connectionsError) console.error('Error getting connections:', connectionsError);
+        
+        // Populate profile data
+        elements.profileName.textContent = profile.full_name || 'Profile';
+        elements.fullName.textContent = profile.full_name || 'New User';
+        elements.username.textContent = `@${profile.username_slug || profile.username || 'user'}`;
+        elements.connectionsCount.textContent = connectionsCount || 0;
+        
+        // Set bio if available
+        elements.bio.textContent = profile.bio || `${profile.full_name || 'User'} is an aviation professional.`;
+        
+        // Set website if available
+        if (profile.website) {
+            elements.websiteLink.textContent = profile.website;
+            elements.websiteLink.href = profile.website.startsWith('http') ? 
+                profile.website : `https://${profile.website}`;
+            elements.websiteLink.style.display = 'inline-block';
         }
         
-        // Populate form fields
-        document.getElementById('edit-full-name').value = profile.full_name || '';
-        document.getElementById('edit-username').value = profile.username || '';
-        document.getElementById('edit-bio').value = profile.bio || '';
-        document.getElementById('edit-website').value = profile.website || '';
-        document.getElementById('edit-category-display').value = profile.category || '';
-        document.getElementById('edit-category').value = profile.category || '';
-        document.getElementById('edit-experience-display').value = profile.experience || '';
-        document.getElementById('edit-experience').value = profile.experience || '';
-        document.getElementById('edit-skills-display').value = profile.skills || '';
-        document.getElementById('edit-skills').value = profile.skills || '';
+        // Set category if available
+        if (profile.category) {
+            elements.categoryBadge.textContent = profile.category;
+            elements.categoryBadge.style.display = 'inline-block';
+        }
         
-        // Set preview images
-        const avatarPreview = document.getElementById('avatar-preview');
+        // Set avatar image
         if (profile.avatar_url) {
-            avatarPreview.src = profile.avatar_url;
+            elements.profileAvatar.src = profile.avatar_url;
         } else {
+            // Fallback to initials avatar
             const initials = profile.full_name ? 
                 profile.full_name.split(' ').map(n => n[0]).join('') : 'U';
-            avatarPreview.src = `https://ui-avatars.com/api/?name=${initials}&background=0056b3&color=fff&size=120`;
+            elements.profileAvatar.src = `https://ui-avatars.com/api/?name=${initials}&background=0056b3&color=fff&size=120`;
         }
         
-        const coverPreview = document.getElementById('cover-preview');
+        // Set cover photo
         if (profile.cover_photo_url) {
-            coverPreview.src = profile.cover_photo_url;
-        } else {
-            coverPreview.style.backgroundColor = '#0056b3';
+            elements.coverPhoto.style.backgroundImage = `linear-gradient(rgba(0, 86, 179, 0.7), rgba(0, 86, 179, 0.7)), url('${profile.cover_photo_url}')`;
         }
         
-        // Store original username for comparison
-        originalUsername = profile.username || '';
-        
-        // Reset file inputs
-        avatarFile = null;
-        coverFile = null;
-        document.getElementById('edit-avatar-upload').value = '';
-        document.getElementById('edit-cover-upload').value = '';
-        document.getElementById('username-availability').style.display = 'none';
-        
-        // If profile has skills, parse them
-        if (profile.skills) {
-            selectedSkills = profile.skills.split(',').map(skill => skill.trim());
-            updateSelectedSkillsDisplay();
-        }
-        
-        // If profile has category, set it
-        if (profile.category) {
-            selectedCategory = profile.category;
-            highlightSelectedCategory();
-        }
-        
-        // If profile has experience, parse it
+        // Set experience
         if (profile.experience) {
-            try {
-                currentExperience = JSON.parse(profile.experience);
-                populateExperienceForm();
-            } catch (e) {
-                console.error('Error parsing experience:', e);
-            }
+            elements.experienceContainer.innerHTML = `
+                <div class="experience-item">
+                    <div class="experience-details">
+                        <div class="description">${profile.experience}</div>
+                    </div>
+                </div>`;
         }
         
-        editPage.style.display = 'block';
-    }, 5000); // Wait for loader to finish
-}
-
-function closeEditProfile() {
-    document.getElementById('edit-profile-page').style.display = 'none';
-}
-
-function handleAvatarUpload(e) {
-    const file = e.target.files[0];
-    if (file) {
-        avatarFile = file;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            document.getElementById('avatar-preview').src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-function handleCoverUpload(e) {
-    const file = e.target.files[0];
-    if (file) {
-        coverFile = file;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            document.getElementById('cover-preview').src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-async function uploadToCloudinary(file, type) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'web_unsigned_upload');
-    
-    try {
-        const response = await fetch('https://api.cloudinary.com/v1_1/dwwhpznwb/upload', {
-            method: 'POST',
-            body: formData
-        });
+        // Set skills
+        if (profile.skills) {
+            const skillsArray = profile.skills.split(',').map(skill => skill.trim());
+            elements.skillsContainer.innerHTML = skillsArray
+                .filter(skill => skill.length > 0)
+                .map(skill => `<div class="skill-badge">${skill}</div>`)
+                .join('');
+        }
         
-        const data = await response.json();
-        return data.secure_url;
+        // Show verified badge if email is verified
+        elements.verifiedBadge.style.display = 'inline-block';
+
+        // Check connection status if viewing another user's profile
+        if (user.id !== profileId) {
+            await checkConnectionStatus(user.id, profileId);
+        } else {
+            elements.connectBtn.style.display = 'none';
+            elements.editButton.style.display = 'block';
+            elements.editButton.onclick = openEditModal; // Directly use modal for own profile
+        }
+
+        // Hide skeleton and show content
+        elements.skeleton.style.display = 'none';
+        elements.profileInfo.style.display = 'block';
+        elements.experienceSection.style.display = 'block';
+        elements.skillsSection.style.display = 'block';
+
     } catch (error) {
-        console.error(`Error uploading ${type} to Cloudinary:`, error);
-        return null;
+        console.error('Error loading profile:', error);
+        showError(error.message || 'Failed to load profile. Please try again later.');
     }
 }
 
-async function saveProfileChanges(e) {
-    e.preventDefault();
-    
-    const saveButton = document.getElementById('edit-save-button');
-    saveButton.disabled = true;
-    saveButton.textContent = 'Saving...';
-    
-    const fullName = document.getElementById('edit-full-name').value.trim();
-    const username = document.getElementById('edit-username').value.trim().toLowerCase();
-    const bio = document.getElementById('edit-bio').value.trim();
-    const website = document.getElementById('edit-website').value.trim();
-    const category = document.getElementById('edit-category').value;
-    const experience = document.getElementById('edit-experience').value;
-    const skills = document.getElementById('edit-skills').value;
-    
-    // Check username availability one more time
-    if (username !== originalUsername) {
+// Connection management
+async function checkConnectionStatus(currentUserId, profileId) {
+    try {
         const { data, error } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('username', username)
-            .neq('id', profileId);
-        
-        if (data && data.length > 0) {
-            showError('Username is already taken. Please choose another.');
-            saveButton.disabled = false;
-            saveButton.textContent = 'Save';
-            return;
-        }
-    }
-    
-    try {
-        // Upload avatar if changed
-        let avatarUrl = null;
-        if (avatarFile) {
-            avatarUrl = await uploadToCloudinary(avatarFile, 'avatar');
-            if (!avatarUrl) throw new Error('Failed to upload avatar');
-        }
-        
-        // Upload cover if changed
-        let coverUrl = null;
-        if (coverFile) {
-            coverUrl = await uploadToCloudinary(coverFile, 'cover');
-            if (!coverUrl) throw new Error('Failed to upload cover photo');
-        }
-        
-        // Update profile data
-        const updates = {
-            full_name: fullName,
-            username: username,
-            username_slug: username.toLowerCase().replace(/\s+/g, '-'),
-            bio: bio,
-            website: website,
-            category: category,
-            experience: experience,
-            skills: skills,
-            updated_at: new Date().toISOString()
-        };
-        
-        if (avatarUrl) updates.avatar_url = avatarUrl;
-        if (coverUrl) updates.cover_photo_url = coverUrl;
-        
-        const { error: updateError } = await supabase
-            .from('profiles')
-            .update(updates)
-            .eq('id', profileId);
-        
-        if (updateError) throw updateError;
-        
-        // Close edit page and refresh profile
-        closeEditProfile();
-        loadProfile();
-        
-    } catch (error) {
-        console.error('Error saving profile:', error);
-        showError('Failed to save profile changes. Please try again.');
-    } finally {
-        saveButton.disabled = false;
-        saveButton.textContent = 'Save';
-    }
-}
+            .from('connections')
+            .select('id, sender_id, status')
+            .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${profileId}),and(sender_id.eq.${profileId},receiver_id.eq.${currentUserId})`)
+            .single();
 
-// Category Page Functions
-function populateCategories() {
-    const categoryGrid = document.querySelector('.category-grid');
-    categoryGrid.innerHTML = '';
-    
-    aviationCategories.forEach(category => {
-        const item = document.createElement('div');
-        item.className = 'category-item';
-        item.textContent = category;
-        item.addEventListener('click', () => {
-            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('selected'));
-            item.classList.add('selected');
-            selectedCategory = category;
-        });
-        categoryGrid.appendChild(item);
-    });
-}
-
-function highlightSelectedCategory() {
-    if (!selectedCategory) return;
-    
-    const categories = document.querySelectorAll('.category-item');
-    categories.forEach(item => {
-        if (item.textContent === selectedCategory) {
-            item.classList.add('selected');
-        }
-    });
-}
-
-function openCategoryPage() {
-    showLoader();
-    
-    setTimeout(() => {
-        document.getElementById('category-page').style.display = 'block';
-        highlightSelectedCategory();
-    }, 5000);
-}
-
-function closeCategoryPage() {
-    document.getElementById('category-page').style.display = 'none';
-}
-
-function saveCategory() {
-    document.getElementById('edit-category-display').value = selectedCategory;
-    document.getElementById('edit-category').value = selectedCategory;
-    closeCategoryPage();
-}
-
-// Experience Page Functions
-function populateExperienceForm() {
-    if (!currentExperience) return;
-    
-    document.getElementById('experience-position').value = currentExperience.position || '';
-    document.getElementById('experience-company').value = currentExperience.company || '';
-    document.getElementById('experience-location').value = currentExperience.location || '';
-    document.getElementById('experience-start').value = currentExperience.start || '';
-    document.getElementById('experience-end').value = currentExperience.end || '';
-    document.getElementById('experience-current').checked = currentExperience.current || false;
-    document.getElementById('experience-description').value = currentExperience.description || '';
-}
-
-function openExperiencePage() {
-    showLoader();
-    
-    setTimeout(() => {
-        document.getElementById('experience-page').style.display = 'block';
-        populateExperienceForm();
-    }, 5000);
-}
-
-function closeExperiencePage() {
-    document.getElementById('experience-page').style.display = 'none';
-}
-
-function saveExperience() {
-    currentExperience = {
-        position: document.getElementById('experience-position').value.trim(),
-        company: document.getElementById('experience-company').value.trim(),
-        location: document.getElementById('experience-location').value.trim(),
-        start: document.getElementById('experience-start').value,
-        end: document.getElementById('experience-current').checked ? '' : document.getElementById('experience-end').value,
-        current: document.getElementById('experience-current').checked,
-        description: document.getElementById('experience-description').value.trim()
-    };
-    
-    const experienceJson = JSON.stringify(currentExperience);
-    document.getElementById('edit-experience-display').value = 
-        `${currentExperience.position} at ${currentExperience.company}`;
-    document.getElementById('edit-experience').value = experienceJson;
-    
-    closeExperiencePage();
-}
-
-// Skills Page Functions
-function populateSkills() {
-    const skillsGrid = document.querySelector('.skills-grid');
-    skillsGrid.innerHTML = '';
-    
-    aviationSkills.forEach(skill => {
-        const item = document.createElement('div');
-        item.className = 'skill-item';
-        item.textContent = skill;
+        if (error && error.code !== 'PGRST116') throw error; // Ignore "No rows found" error
         
-        if (selectedSkills.includes(skill)) {
-            item.classList.add('selected');
-        }
-        
-        item.addEventListener('click', () => {
-            if (item.classList.contains('selected')) {
-                item.classList.remove('selected');
-                selectedSkills = selectedSkills.filter(s => s !== skill);
-            } else {
-                if (selectedSkills.length < 10) {
-                    item.classList.add('selected');
-                    selectedSkills.push(skill);
+        if (data) {
+            if (data.status === 'pending') {
+                if (data.sender_id === currentUserId) {
+                    elements.connectBtn.textContent = 'Pending';
+                    elements.connectBtn.disabled = true;
                 } else {
-                    showError('You can select maximum 10 skills');
+                    elements.connectBtn.textContent = 'Accept';
+                    elements.connectBtn.onclick = () => acceptConnection(data.id);
                 }
+            } else if (data.status === 'accepted') {
+                elements.connectBtn.textContent = 'Connected';
+                elements.connectBtn.disabled = true;
             }
-            updateSelectedSkillsDisplay();
-        });
+        } else {
+            elements.connectBtn.textContent = 'Connect';
+            elements.connectBtn.onclick = () => sendConnectionRequest(currentUserId, profileId);
+        }
+    } catch (error) {
+        console.error('Error checking connection:', error);
+        elements.connectBtn.style.display = 'none';
+    }
+}
+
+async function sendConnectionRequest(senderId, receiverId) {
+    try {
+        elements.connectBtn.disabled = true;
+        elements.connectBtn.textContent = 'Sending...';
         
-        skillsGrid.appendChild(item);
-    });
+        const { error } = await supabase
+            .from('connections')
+            .insert([{
+                sender_id: senderId,
+                receiver_id: receiverId,
+                status: 'pending'
+            }]);
+
+        if (error) throw error;
+        
+        elements.connectBtn.textContent = 'Pending';
+    } catch (error) {
+        console.error('Error sending connection:', error);
+        elements.connectBtn.textContent = 'Connect';
+        elements.connectBtn.disabled = false;
+        showError('Failed to send connection request');
+    }
 }
 
-function updateSelectedSkillsDisplay() {
-    const selectedList = document.getElementById('selected-skills-list');
-    selectedList.innerHTML = '';
+async function acceptConnection(connectionId) {
+    try {
+        elements.connectBtn.disabled = true;
+        elements.connectBtn.textContent = 'Accepting...';
+        
+        const { error } = await supabase
+            .from('connections')
+            .update({ status: 'accepted' })
+            .eq('id', connectionId);
+
+        if (error) throw error;
+        
+        elements.connectBtn.textContent = 'Connected';
+        await updateConnectionsCount();
+    } catch (error) {
+        console.error('Error accepting connection:', error);
+        elements.connectBtn.textContent = 'Accept';
+        elements.connectBtn.disabled = false;
+        showError('Failed to accept connection');
+    }
+}
+
+async function updateConnectionsCount() {
+    try {
+        const { count, error } = await supabase
+            .from('connections')
+            .select('*', { count: 'exact', head: true })
+            .or(`and(sender_id.eq.${profileId},status.eq.accepted),and(receiver_id.eq.${profileId},status.eq.accepted)`);
+
+        if (error) throw error;
+        
+        elements.connectionsCount.textContent = count || 0;
+    } catch (error) {
+        console.error('Error updating connections count:', error);
+    }
+}
+
+// Error handling
+function showError(message) {
+    elements.skeleton.style.display = 'none';
+    elements.errorMessage.textContent = message;
+    elements.errorMessage.style.display = 'block';
+}
+
+// Share profile function
+function shareProfile() {
+    const profileUrl = `${window.location.origin}${window.location.pathname}?id=${profileId}`;
     
-    selectedSkills.forEach(skill => {
-        const skillElement = document.createElement('div');
-        skillElement.className = 'selected-skill';
-        skillElement.innerHTML = `
-            ${skill}
-            <button type="button" class="remove-skill" data-skill="${skill}">&times;</button>
-        `;
-        selectedList.appendChild(skillElement);
-    });
-    
-    // Add event listeners to remove buttons
-    document.querySelectorAll('.remove-skill').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const skillToRemove = e.target.getAttribute('data-skill');
-            selectedSkills = selectedSkills.filter(s => s !== skillToRemove);
-            updateSelectedSkillsDisplay();
-            
-            // Also remove selection from grid
-            document.querySelectorAll('.skill-item').forEach(item => {
-                if (item.textContent === skillToRemove) {
-                    item.classList.remove('selected');
-                }
-            });
+    if (navigator.share) {
+        navigator.share({
+            title: `${elements.fullName.textContent}'s Profile`,
+            url: profileUrl
+        }).catch(err => {
+            console.log('Error sharing:', err);
+            copyToClipboard(profileUrl);
         });
+    } else {
+        copyToClipboard(profileUrl);
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Profile link copied to clipboard!');
     });
 }
 
-function openSkillsPage() {
-    showLoader();
-    
-    setTimeout(() => {
-        document.getElementById('skills-page').style.display = 'block';
-        updateSelectedSkillsDisplay();
-    }, 5000);
+function toggleOptions() {
+    // Implementation for options menu
+    console.log("Options menu clicked");
 }
 
-function closeSkillsPage() {
-    document.getElementById('skills-page').style.display = 'none';
-}
-
-function saveSkills() {
-    const skillsString = selectedSkills.join(', ');
-    document.getElementById('edit-skills-display').value = skillsString;
-    document.getElementById('edit-skills').value = skillsString;
-    closeSkillsPage();
+async function openEditProfile() {
+    // Check if we're viewing our own profile
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user.id === profileId) {
+        openEditModal(); // Open the new modal editor
+    } else {
+        // Existing behavior for other profiles
+        window.location.href = `edit-profile.html?id=${profileId}`;
+    }
 }
 
 // Initialize the page
-document.addEventListener('DOMContentLoaded', () => {
-    loadProfile();
-    initEditProfile();
-});
+document.addEventListener('DOMContentLoaded', loadProfile);
+    </script>
+
+    <script>
+        async function loadUserPosts(userId) {
+            const { data: posts, error } = await supabase
+                .from('posts')
+                .select(`
+                    *,
+                    profile:user_id (username, full_name, avatar_url, is_verified),
+                    media:post_media (media_url, media_type)
+                `)
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                console.error("Error loading user posts:", error);
+                return;
+            }
+            
+            const postsContainer = document.getElementById('user-posts');
+            postsContainer.innerHTML = '';
+            
+            posts.forEach(post => {
+                const postElement = document.createElement('post-component');
+                postElement.setAttribute('post-data', JSON.stringify(post));
+                postsContainer.appendChild(postElement);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get user ID from URL or current user
+            const userId = getUserIdFromUrl() || currentUser?.id;
+            if (userId) loadUserPosts(userId);
+        });
+    </script>
+
+    <script>
+    // Verify custom element is registered
+    if (!customElements.get('post-component')) {
+        console.error('Post component not registered! Loading posts.js');
+        const script = document.createElement('script');
+        script.src = 'posts.js';
+        document.body.appendChild(script);
+        
+        // Retry loading posts after component is loaded
+        script.onload = loadPosts;
+    }
 </script>
       <script src="posts.js"></script>
     <script src="edit.js"></script>
