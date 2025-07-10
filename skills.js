@@ -1,4 +1,3 @@
-// Skills Editor - Complete Implementation
 class SkillsEditor {
     constructor() {
         this.selectedSkills = [];
@@ -110,22 +109,33 @@ class SkillsEditor {
     }
     
     async open() {
-        // Load current skills from profile
-        const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('skills')
-            .eq('id', profileId)
-            .single();
+        // Show preloader
+        this.elements.preloader.style.display = 'flex';
         
-        if (!error && profile && profile.skills) {
-            this.selectedSkills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
-        } else {
-            this.selectedSkills = [];
+        try {
+            // Load current skills from profile
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('skills')
+                .eq('id', profileId)
+                .single();
+            
+            if (!error && profile && profile.skills) {
+                this.selectedSkills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
+            } else {
+                this.selectedSkills = [];
+            }
+            
+            this.elements.page.style.display = 'block';
+            this.updateSelectedSkillsDisplay();
+            this.populateSkillsGrid();
+        } catch (error) {
+            console.error('Error loading skills:', error);
+            showError('Failed to load skills');
+        } finally {
+            // Hide preloader when done
+            this.elements.preloader.style.display = 'none';
         }
-        
-        this.elements.page.style.display = 'block';
-        this.updateSelectedSkillsDisplay();
-        this.populateSkillsGrid();
     }
     
     close() {
