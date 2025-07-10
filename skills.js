@@ -20,7 +20,7 @@ class SkillsEditor {
             
             // Other
             'Aircraft Sales', 'Customer Service', 'Crisis Management', 'Media Relations',
-            'Technical Writing', 'Data Analysis', 'Flight Simulation', 'Sales'
+            'Technical Writing', 'Data Analysis', 'Flight Simulation'
         ];
         
         this.initElements();
