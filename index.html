@@ -740,7 +740,74 @@
 }
            
         
-        
+ /* Add this to your styles */
+.settings-container {
+    background-color: #f0f2f5;
+    border-radius: 12px;
+    margin: 16px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.dark-mode .settings-container {
+    background-color: #333;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-bottom: 1px solid #e4e6e9;
+}
+
+.dark-mode .setting-item {
+    border-bottom-color: #444;
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-item:hover {
+    background-color: #e4e6e9;
+}
+
+.dark-mode .setting-item:hover {
+    background-color: #444;
+}
+
+.setting-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #e4e6e9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    color: #333;
+}
+
+.dark-mode .setting-icon {
+    background-color: #444;
+    color: #e4e6e9;
+}
+
+.setting-text {
+    flex-grow: 1;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.setting-arrow {
+    color: #657786;
+}
+
+.dark-mode .setting-arrow {
+    color: #888;
+}       
     
     
         
@@ -807,48 +874,47 @@
     </footer>
 
 
-    <!-- Menu Page -->
-    <div class="menu-page" id="menuPage">
-        <div class="menu-header">
-            <div class="menu-back-btn" onclick="toggleMenu()">
-                <i class="fas fa-arrow-left"></i>
-                <span class="menu-title">Menu</span>
-            </div>
-            <div class="menu-search-btn" onclick="window.location.href='search.html'">
-                <i class="fas fa-search"></i>
-            </div>
-        </div>
+    <!-- Update the menu-header section -->
+<div class="menu-header">
+    <div class="menu-back-btn" onclick="toggleMenu()">
+        <i class="fas fa-times"></i> <!-- Changed from arrow-left to times -->
+        <span class="menu-title">Menu</span>
+    </div>
+    
+    </div>
+</div>
 
         <!-- Settings Section -->
-        <div class="settings-section">
-            <div class="setting-item" onclick="window.location.href='manage-account.html'">
-                <div class="setting-icon">
-                    <i class="fas fa-user-cog"></i>
-                </div>
-                <div class="setting-text">Manage Account</div>
-                <i class="fas fa-chevron-right"></i>
-            </div>
-            <div class="setting-item">
-                <div class="setting-icon">
-                    <i class="fas fa-moon"></i>
-                </div>
-                <div class="setting-text">Dark Mode</div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="darkModeToggle">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <div class="setting-item">
-                <div class="setting-icon">
-                    <i class="fas fa-database"></i>
-                </div>
-                <div class="setting-text">Data Saver</div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="dataSaverToggle">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
+        <!-- Replace the settings-section div with this -->
+<div class="settings-container">
+    <div class="setting-item" onclick="window.location.href='manage-account.html'">
+        <div class="setting-icon">
+            <i class="fas fa-user-cog"></i>
         </div>
+        <div class="setting-text">Manage Account</div>
+        <i class="fas fa-chevron-right setting-arrow"></i>
+    </div>
+    <div class="setting-item">
+        <div class="setting-icon">
+            <i class="fas fa-moon"></i>
+        </div>
+        <div class="setting-text">Dark Mode</div>
+        <label class="toggle-switch">
+            <input type="checkbox" id="darkModeToggle">
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+    <div class="setting-item">
+        <div class="setting-icon">
+            <i class="fas fa-database"></i>
+        </div>
+        <div class="setting-text">Data Saver</div>
+        <label class="toggle-switch">
+            <input type="checkbox" id="dataSaverToggle">
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+</div>
 
         <!-- Menu Options -->
         <div class="menu-options">
