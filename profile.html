@@ -661,7 +661,8 @@ body {
     </div>
 </div>
     <script>
-     // Initialize Supabase
+     
+    // Initialize Supabase
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -797,7 +798,7 @@ async function loadProfile() {
         } else {
             elements.connectBtn.style.display = 'none';
             elements.editButton.style.display = 'block';
-            elements.editButton.onclick = openEditModal; // Directly use modal for own profile
+            elements.editButton.onclick = openEditProfile; // Changed from openEditModal to openEditProfile
         }
 
         // Hide skeleton and show content
@@ -942,11 +943,20 @@ function toggleOptions() {
     console.log("Options menu clicked");
 }
 
+// Open edit profile function
 async function openEditProfile() {
     // Check if we're viewing our own profile
     const { data: { user } } = await supabase.auth.getUser();
     if (user.id === profileId) {
-        openEditModal(); // Open the new modal editor
+        // Show the edit profile page
+        const editPage = document.getElementById('edit-profile-page');
+        if (editPage) {
+            editPage.style.display = 'block';
+        } else {
+            console.error('Edit profile page element not found');
+            // Fallback to edit-profile.html if needed
+            window.location.href = `edit-profile.html?id=${profileId}`;
+        }
     } else {
         // Existing behavior for other profiles
         window.location.href = `edit-profile.html?id=${profileId}`;
@@ -954,41 +964,10 @@ async function openEditProfile() {
 }
 
 // Initialize the page
-document.addEventListener('DOMContentLoaded', loadProfile);
-    </script>
-
-    <script>
-        async function loadUserPosts(userId) {
-            const { data: posts, error } = await supabase
-                .from('posts')
-                .select(`
-                    *,
-                    profile:user_id (username, full_name, avatar_url, is_verified),
-                    media:post_media (media_url, media_type)
-                `)
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false });
-            
-            if (error) {
-                console.error("Error loading user posts:", error);
-                return;
-            }
-            
-            const postsContainer = document.getElementById('user-posts');
-            postsContainer.innerHTML = '';
-            
-            posts.forEach(post => {
-                const postElement = document.createElement('post-component');
-                postElement.setAttribute('post-data', JSON.stringify(post));
-                postsContainer.appendChild(postElement);
-            });
-        }
+document.addEventListener('DOMContentLoaded', () => {
+    loadProfile();
+});
         
-        document.addEventListener('DOMContentLoaded', () => {
-            // Get user ID from URL or current user
-            const userId = getUserIdFromUrl() || currentUser?.id;
-            if (userId) loadUserPosts(userId);
-        });
     </script>
 
     <script>
