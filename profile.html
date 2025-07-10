@@ -447,45 +447,52 @@ body {
     </div>
     
     <!-- Edit Profile Modal -->
-    <!-- Edit Profile Page (replaces the modal) -->
-<div class="edit-profile-page" id="edit-profile-page" style="display: none;">
-    <div class="edit-header">
-        <button class="btn-back" id="edit-back-button">
-            <i class="fas fa-arrow-left"></i>
-        </button>
-        <h2>Edit Profile</h2>
-        <button class="btn-save" id="edit-save-button">Save</button>
+    <!-- Edit Profile Page (hidden by default) -->
+<div id="edit-profile-page" style="display: none;">
+    <div class="edit-profile-header">
+        <div class="header-left">
+            <button class="back-button" id="back-from-edit">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-name">Edit Profile</div>
+        </div>
+        <button class="btn btn-save" id="save-profile-changes">Save</button>
     </div>
-    
-    <div class="edit-content">
+
+    <div class="edit-profile-content">
+        <div class="preloader" id="edit-preloader">
+            <div class="spinner"></div>
+        </div>
+
         <form id="edit-profile-form">
-            <!-- Profile Picture Section -->
-            <div class="edit-section">
-                <h3>Profile Picture</h3>
-                <div class="avatar-upload-container">
-                    <img id="avatar-preview" class="avatar-preview" src="" alt="Avatar Preview">
-                    <label for="edit-avatar-upload" class="file-input-label">
-                        <i class="fas fa-camera"></i> Change Photo
-                    </label>
-                    <input type="file" id="edit-avatar-upload" class="file-input" accept="image/*">
-                </div>
-            </div>
-            
             <!-- Cover Photo Section -->
-            <div class="edit-section">
-                <h3>Cover Photo</h3>
-                <div class="cover-upload-container">
+            <div class="form-group cover-photo-section">
+                <div class="cover-photo-container" id="edit-cover-container">
                     <img id="cover-preview" class="cover-preview" src="" alt="Cover Preview">
-                    <label for="edit-cover-upload" class="file-input-label">
+                    <div class="cover-placeholder" id="cover-placeholder">
+                        <i class="fas fa-camera"></i>
+                        <span>Add Cover Photo</span>
+                    </div>
+                    <label for="edit-cover-upload" class="cover-upload-label">
                         <i class="fas fa-camera"></i> Change Cover
                     </label>
                     <input type="file" id="edit-cover-upload" class="file-input" accept="image/*">
                 </div>
             </div>
             
+            <!-- Profile Picture Section -->
+            <div class="form-group avatar-section">
+                <img id="avatar-preview" class="avatar-preview" src="" alt="Avatar Preview">
+                <label for="edit-avatar-upload" class="avatar-upload-label">
+                    <i class="fas fa-camera"></i> Change Photo
+                </label>
+                <input type="file" id="edit-avatar-upload" class="file-input" accept="image/*">
+            </div>
+            
             <!-- Basic Info Section -->
-            <div class="edit-section">
-                <h3>Basic Information</h3>
+            <div class="form-section">
+                <h3 class="section-title">Basic Information</h3>
+                
                 <div class="form-group">
                     <label for="edit-full-name">Full Name</label>
                     <input type="text" id="edit-full-name" required>
@@ -499,7 +506,7 @@ body {
                 
                 <div class="form-group">
                     <label for="edit-bio">Bio</label>
-                    <textarea id="edit-bio"></textarea>
+                    <textarea id="edit-bio" placeholder="Tell others about yourself"></textarea>
                 </div>
                 
                 <div class="form-group">
@@ -509,8 +516,9 @@ body {
             </div>
             
             <!-- Professional Section -->
-            <div class="edit-section">
-                <h3>Professional Information</h3>
+            <div class="form-section">
+                <h3 class="section-title">Professional Information</h3>
+                
                 <div class="form-group">
                     <label for="edit-category">Professional Category</label>
                     <div class="category-selector" id="category-selector">
@@ -525,7 +533,7 @@ body {
                 <div class="form-group">
                     <label for="edit-experience">Professional Experience</label>
                     <div class="experience-selector" id="experience-selector">
-                        <textarea id="edit-experience-display" placeholder="Describe your professional background" readonly></textarea>
+                        <input type="text" id="edit-experience-display" placeholder="Add your experience" readonly>
                         <button type="button" class="btn-select-experience" id="select-experience-btn">
                             <i class="fas fa-chevron-right"></i>
                         </button>
@@ -536,7 +544,7 @@ body {
                 <div class="form-group">
                     <label for="edit-skills">Skills</label>
                     <div class="skills-selector" id="skills-selector">
-                        <textarea id="edit-skills-display" placeholder="Select your skills (max 10)" readonly></textarea>
+                        <input type="text" id="edit-skills-display" placeholder="Select your skills" readonly>
                         <button type="button" class="btn-select-skills" id="select-skills-btn">
                             <i class="fas fa-chevron-right"></i>
                         </button>
@@ -549,58 +557,69 @@ body {
 </div>
 
 <!-- Category Selection Page -->
-<div class="category-page" id="category-page" style="display: none;">
-    <div class="edit-header">
-        <button class="btn-back" id="category-back-button">
-            <i class="fas fa-arrow-left"></i>
-        </button>
-        <h2>Select Category</h2>
-        <button class="btn-save" id="category-save-button">Save</button>
+<div id="category-page" style="display: none;">
+    <div class="edit-profile-header">
+        <div class="header-left">
+            <button class="back-button" id="back-from-category">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-name">Category</div>
+        </div>
+        <button class="btn btn-save" id="save-category">Save</button>
     </div>
-    
+
     <div class="category-content">
-        <div class="category-grid">
-            <!-- Categories will be populated by JavaScript -->
+        <div class="preloader" id="category-preloader">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="category-grid" id="category-grid">
+            <!-- Categories will be populated here -->
         </div>
     </div>
 </div>
 
-<!-- Experience Page -->
-<div class="experience-page" id="experience-page" style="display: none;">
-    <div class="edit-header">
-        <button class="btn-back" id="experience-back-button">
-            <i class="fas fa-arrow-left"></i>
-        </button>
-        <h2>Professional Experience</h2>
-        <button class="btn-save" id="experience-save-button">Save</button>
+<!-- Experience Editor Page -->
+<div id="experience-page" style="display: none;">
+    <div class="edit-profile-header">
+        <div class="header-left">
+            <button class="back-button" id="back-from-experience">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-name">Experience</div>
+        </div>
+        <button class="btn btn-save" id="save-experience">Save</button>
     </div>
-    
+
     <div class="experience-content">
-        <form id="experience-form">
+        <div class="preloader" id="experience-preloader">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="form-section">
             <div class="form-group">
-                <label for="experience-position">Position/Role</label>
+                <label for="experience-position">Position</label>
                 <input type="text" id="experience-position" placeholder="e.g., Captain, First Officer">
             </div>
             
             <div class="form-group">
-                <label for="experience-company">Company/Organization</label>
-                <input type="text" id="experience-company" placeholder="e.g., Emirates, Boeing">
+                <label for="experience-company">Company</label>
+                <input type="text" id="experience-company" placeholder="e.g., Emirates, Delta Airlines">
             </div>
             
             <div class="form-group">
-                <label for="experience-location">Location</label>
-                <input type="text" id="experience-location" placeholder="e.g., Dubai, UAE">
-            </div>
-            
-            <div class="form-group">
-                <label>Time Period</label>
-                <div class="date-range">
-                    <input type="month" id="experience-start">
+                <label for="experience-duration">Duration</label>
+                <div class="duration-selector">
+                    <select id="experience-start-year">
+                        <option value="">Start Year</option>
+                        <!-- Years will be populated by JS -->
+                    </select>
                     <span>to</span>
-                    <input type="month" id="experience-end">
-                    <label class="checkbox-container">
-                        <input type="checkbox" id="experience-current"> I currently work here
-                    </label>
+                    <select id="experience-end-year">
+                        <option value="">End Year</option>
+                        <option value="Present">Present</option>
+                        <!-- Years will be populated by JS -->
+                    </select>
                 </div>
             </div>
             
@@ -608,35 +627,38 @@ body {
                 <label for="experience-description">Description</label>
                 <textarea id="experience-description" placeholder="Describe your responsibilities and achievements"></textarea>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
 <!-- Skills Selection Page -->
-<div class="skills-page" id="skills-page" style="display: none;">
-    <div class="edit-header">
-        <button class="btn-back" id="skills-back-button">
-            <i class="fas fa-arrow-left"></i>
-        </button>
-        <h2>Select Skills</h2>
-        <button class="btn-save" id="skills-save-button">Save</button>
-    </div>
-    
-    <div class="skills-content">
-        <div class="skills-selected" id="skills-selected">
-            <h4>Selected Skills (max 10)</h4>
-            <div class="selected-skills-list" id="selected-skills-list"></div>
+<div id="skills-page" style="display: none;">
+    <div class="edit-profile-header">
+        <div class="header-left">
+            <button class="back-button" id="back-from-skills">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-name">Skills</div>
         </div>
-        
-        <div class="skills-grid">
-            <!-- Skills will be populated by JavaScript -->
-        </div>
+        <button class="btn btn-save" id="save-skills">Save</button>
     </div>
-</div>
 
-<!-- Loading Spinner -->
-<div class="full-page-loader" id="full-page-loader" style="display: none;">
-    <div class="loader-spinner"></div>
+    <div class="skills-content">
+        <div class="preloader" id="skills-preloader">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="skills-selection">
+            <div class="selected-skills" id="selected-skills">
+                <p>Selected Skills: <span id="selected-count">0</span>/10</p>
+                <div class="skills-chips" id="skills-chips"></div>
+            </div>
+            
+            <div class="skills-grid" id="skills-grid">
+                <!-- Skills will be populated here -->
+            </div>
+        </div>
+    </div>
 </div>
     <script>
      // Initialize Supabase
