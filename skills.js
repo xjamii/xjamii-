@@ -168,34 +168,39 @@ class SkillsEditor {
     }
     
     async loadSkills() {
-        try {
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('skills')
-                .eq('id', profileId)
-                .single();
-            
-            if (error) throw error;
-            
-            if (profile && profile.skills) {
-                const skills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
+    try {
+        // Show loading state
+        this.elements.skillsContainer.innerHTML = '<div class="skill-badge">Loading skills...</div>';
+        
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('skills')
+            .eq('id', profileId)
+            .single();
+        
+        if (error) throw error;
+        
+        if (profile && profile.skills) {
+            const skills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
+            if (skills.length > 0) {
                 this.elements.skillsContainer.innerHTML = skills
                     .map(skill => `<div class="skill-badge">${skill}</div>`)
                     .join('');
             } else {
                 this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
             }
-            
-            this.elements.skillsSection.style.display = 'block';
-        } catch (error) {
-            console.error('Error loading skills:', error);
-            this.elements.skillsContainer.innerHTML = 
-                '<div class="error-message">Failed to load skills</div>';
-            this.elements.skillsSection.style.display = 'block';
+        } else {
+            this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
         }
+        
+        this.elements.skillsSection.style.display = 'block';
+    } catch (error) {
+        console.error('Error loading skills:', error);
+        this.elements.skillsContainer.innerHTML = 
+            '<div class="error-message">Failed to load skills</div>';
+        this.elements.skillsSection.style.display = 'block';
     }
 }
-
 // Initialize Skills Editor and add edit button
 function initSkillsEditor() {
     // Check if we're on a profile page with skills section
