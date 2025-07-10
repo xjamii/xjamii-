@@ -447,7 +447,6 @@ body {
     </div>
     
     <!-- Edit Profile Modal -->
-    <!-- Edit Profile Page (hidden by default) -->
 <div id="edit-profile-page" style="display: none;">
     <div class="edit-profile-header">
         <div class="header-left">
@@ -469,10 +468,6 @@ body {
             <div class="form-group cover-photo-section">
                 <div class="cover-photo-container" id="edit-cover-container">
                     <img id="cover-preview" class="cover-preview" src="" alt="Cover Preview">
-                    <div class="cover-placeholder" id="cover-placeholder">
-                        <i class="fas fa-camera"></i>
-                        <span>Add Cover Photo</span>
-                    </div>
                     <label for="edit-cover-upload" class="cover-upload-label">
                         <i class="fas fa-camera"></i> Change Cover
                     </label>
@@ -521,143 +516,13 @@ body {
                 
                 <div class="form-group">
                     <label for="edit-category">Professional Category</label>
-                    <div class="category-selector" id="category-selector">
-                        <input type="text" id="edit-category-display" placeholder="Select your category" readonly>
-                        <button type="button" class="btn-select-category" id="select-category-btn">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                    <input type="hidden" id="edit-category">
-                </div>
-                
-                <div class="form-group">
-                    <label for="edit-experience">Professional Experience</label>
-                    <div class="experience-selector" id="experience-selector">
-                        <input type="text" id="edit-experience-display" placeholder="Add your experience" readonly>
-                        <button type="button" class="btn-select-experience" id="select-experience-btn">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                    <input type="hidden" id="edit-experience">
-                </div>
-                
-                <div class="form-group">
-                    <label for="edit-skills">Skills</label>
-                    <div class="skills-selector" id="skills-selector">
-                        <input type="text" id="edit-skills-display" placeholder="Select your skills" readonly>
-                        <button type="button" class="btn-select-skills" id="select-skills-btn">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                    <input type="hidden" id="edit-skills">
+                    <select id="edit-category" class="category-select">
+                        <option value="">Select your category</option>
+                        <!-- Categories will be populated by JS -->
+                    </select>
                 </div>
             </div>
         </form>
-    </div>
-</div>
-
-<!-- Category Selection Page -->
-<div id="category-page" style="display: none;">
-    <div class="edit-profile-header">
-        <div class="header-left">
-            <button class="back-button" id="back-from-category">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="header-name">Category</div>
-        </div>
-        <button class="btn btn-save" id="save-category">Save</button>
-    </div>
-
-    <div class="category-content">
-        <div class="preloader" id="category-preloader">
-            <div class="spinner"></div>
-        </div>
-
-        <div class="category-grid" id="category-grid">
-            <!-- Categories will be populated here -->
-        </div>
-    </div>
-</div>
-
-<!-- Experience Editor Page -->
-<div id="experience-page" style="display: none;">
-    <div class="edit-profile-header">
-        <div class="header-left">
-            <button class="back-button" id="back-from-experience">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="header-name">Experience</div>
-        </div>
-        <button class="btn btn-save" id="save-experience">Save</button>
-    </div>
-
-    <div class="experience-content">
-        <div class="preloader" id="experience-preloader">
-            <div class="spinner"></div>
-        </div>
-
-        <div class="form-section">
-            <div class="form-group">
-                <label for="experience-position">Position</label>
-                <input type="text" id="experience-position" placeholder="e.g., Captain, First Officer">
-            </div>
-            
-            <div class="form-group">
-                <label for="experience-company">Company</label>
-                <input type="text" id="experience-company" placeholder="e.g., Emirates, Delta Airlines">
-            </div>
-            
-            <div class="form-group">
-                <label for="experience-duration">Duration</label>
-                <div class="duration-selector">
-                    <select id="experience-start-year">
-                        <option value="">Start Year</option>
-                        <!-- Years will be populated by JS -->
-                    </select>
-                    <span>to</span>
-                    <select id="experience-end-year">
-                        <option value="">End Year</option>
-                        <option value="Present">Present</option>
-                        <!-- Years will be populated by JS -->
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="experience-description">Description</label>
-                <textarea id="experience-description" placeholder="Describe your responsibilities and achievements"></textarea>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Skills Selection Page -->
-<div id="skills-page" style="display: none;">
-    <div class="edit-profile-header">
-        <div class="header-left">
-            <button class="back-button" id="back-from-skills">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="header-name">Skills</div>
-        </div>
-        <button class="btn btn-save" id="save-skills">Save</button>
-    </div>
-
-    <div class="skills-content">
-        <div class="preloader" id="skills-preloader">
-            <div class="spinner"></div>
-        </div>
-
-        <div class="skills-selection">
-            <div class="selected-skills" id="selected-skills">
-                <p>Selected Skills: <span id="selected-count">0</span>/10</p>
-                <div class="skills-chips" id="skills-chips"></div>
-            </div>
-            
-            <div class="skills-grid" id="skills-grid">
-                <!-- Skills will be populated here -->
-            </div>
-        </div>
     </div>
 </div>
     <script>
