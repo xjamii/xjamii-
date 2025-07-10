@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aviationin Profile</title>
     <link rel="stylesheet" href="posts.css">
+    <link rel="stylesheet" href="experience.css">
     <link rel="stylesheet" href="edit.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -525,6 +526,84 @@ body {
         </form>
     </div>
 </div>
+
+    <!-- Experience Editor Page -->
+<div id="experience-page" style="display: none;">
+    <div class="experience-header">
+        <div class="header-left">
+            <button class="back-button" id="back-from-experience">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-name">Edit Experience</div>
+        </div>
+        <button class="btn btn-save" id="save-experience">Save</button>
+    </div>
+
+    <div class="experience-content">
+        <div class="preloader" id="experience-preloader">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-group">
+                <label for="experience-position">Position*</label>
+                <input type="text" id="experience-position" placeholder="e.g., Captain, First Officer" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="experience-company">Company*</label>
+                <input type="text" id="experience-company" placeholder="e.g., Emirates, Delta Airlines" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Duration*</label>
+                <div class="duration-fields">
+                    <div class="date-field">
+                        <label for="experience-start-month">Start Month</label>
+                        <select id="experience-start-month" required>
+                            <option value="">Month</option>
+                            <!-- Months will be populated by JS -->
+                        </select>
+                    </div>
+                    <div class="date-field">
+                        <label for="experience-start-year">Start Year</label>
+                        <select id="experience-start-year" required>
+                            <option value="">Year</option>
+                            <!-- Years will be populated by JS -->
+                        </select>
+                    </div>
+                    <div class="date-field">
+                        <label for="experience-end-month">End Month</label>
+                        <select id="experience-end-month">
+                            <option value="">Month</option>
+                            <!-- Months will be populated by JS -->
+                        </select>
+                    </div>
+                    <div class="date-field">
+                        <label for="experience-end-year">End Year</label>
+                        <select id="experience-end-year">
+                            <option value="">Year</option>
+                            <!-- Years will be populated by JS -->
+                        </select>
+                    </div>
+                </div>
+                <div class="current-role">
+                    <input type="checkbox" id="experience-current">
+                    <label for="experience-current">I currently work here</label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="experience-description">Description</label>
+                <textarea id="experience-description" placeholder="Describe your responsibilities and achievements"></textarea>
+            </div>
+            
+            <button class="btn btn-delete" id="delete-experience" style="display: none;">
+                <i class="fas fa-trash"></i> Delete Experience
+            </button>
+        </div>
+    </div>
+</div>
     <script>
      
     // Initialize Supabase
@@ -848,6 +927,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 </script>
       <script src="posts.js"></script>
+      <script src="experience.js"></script>
     <script src="edit.js"></script>
 </body>
 </html>
