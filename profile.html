@@ -719,14 +719,20 @@ async function loadProfile() {
             elements.coverPhoto.style.backgroundImage = `linear-gradient(rgba(0, 86, 179, 0.7), rgba(0, 86, 179, 0.7)), url('${profile.cover_photo_url}')`;
         }
         
-        // Set experience
-        if (profile.experience) {
-            elements.experienceContainer.innerHTML = `
-                <div class="experience-item">
-                    <div class="experience-details">
-                        <div class="description">${profile.experience}</div>
-                    </div>
-                </div>`;
+      // Load experiences through the ExperienceEditor if available
+        if (window.experienceEditor) {
+            await window.experienceEditor.loadExperiences();
+        } else {
+            // Fallback to simple experience display
+            if (profile.experience) {
+                elements.experienceContainer.innerHTML = `
+                    <div class="experience-item">
+                        <div class="experience-details">
+                            <div class="description">${profile.experience}</div>
+                        </div>
+                    </div>`;
+                elements.experienceSection.style.display = 'block';
+            }
         }
         
         // Set skills
