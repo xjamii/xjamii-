@@ -384,7 +384,45 @@ body {
   letter-spacing: 1px;
 }
 
+/* Full Page Loader */
+.full-page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
+}
 
+.spinner-container {
+    text-align: center;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e6f0ff;
+    border-top: 4px solid #0056b3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+.loading-text {
+    color: #0056b3;
+    font-weight: 500;
+    font-size: 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
     </style>
 </head>
 <body>
@@ -410,19 +448,12 @@ body {
     <div class="profile-content">
         <div class="cover-photo" id="cover-photo"></div>
         
-        <!-- Skeleton Loader for Profile Details Only -->
-        <div class="profile-details-skeleton" id="profile-details-skeleton">
-            <div class="skeleton-avatar skeleton-shimmer"></div>
-            <div class="skeleton-name skeleton-shimmer"></div>
-            <div class="skeleton-username skeleton-shimmer"></div>
-            <div class="skeleton-bio skeleton-shimmer"></div>
-            <div class="skeleton-stats">
-                <div class="skeleton-stat skeleton-shimmer"></div>
-                <div class="skeleton-stat skeleton-shimmer"></div>
-                <div class="skeleton-stat skeleton-shimmer"></div>
-            </div>
-            <div class="skeleton-button skeleton-shimmer"></div>
-        </div>
+        <div class="full-page-loader" id="full-page-loader">
+    <div class="spinner-container">
+        <div class="spinner"></div>
+        
+    </div>
+</div>
         
         <!-- Error Message Container -->
         <div class="error-message" id="error-message"></div>
