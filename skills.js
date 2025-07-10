@@ -167,55 +167,35 @@ class SkillsEditor {
         }
     }
     
-    
-    
-                
-        async loadSkills() {
-    try {
-        // First ensure edit button exists
-        this.ensureEditButtonExists();
-        
-        // Check skills directly (no loading message)
-        const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('skills')
-            .eq('id', profileId)
-            .single();
-        
-        if (error) throw error;
-        
-        if (profile?.skills?.trim()) {
-            const skills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
-            this.elements.skillsContainer.innerHTML = skills
-                .map(skill => `<div class="skill-badge">${skill}</div>`)
-                .join('');
-        } else {
-            this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
+    async loadSkills() {
+        try {
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('skills')
+                .eq('id', profileId)
+                .single();
+            
+            if (error) throw error;
+            
+            if (profile && profile.skills) {
+                const skills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
+                this.elements.skillsContainer.innerHTML = skills
+                    .map(skill => `<div class="skill-badge">${skill}</div>`)
+                    .join('');
+            } else {
+                this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
+            }
+            
+            this.elements.skillsSection.style.display = 'block';
+        } catch (error) {
+            console.error('Error loading skills:', error);
+            this.elements.skillsContainer.innerHTML = 
+                '<div class="error-message">Failed to load skills</div>';
+            this.elements.skillsSection.style.display = 'block';
         }
-        
-        this.elements.skillsSection.style.display = 'block';
-    } catch (error) {
-        console.error('Error loading skills:', error);
-        this.elements.skillsContainer.innerHTML = 
-            '<div class="error-message">Failed to load skills</div>';
-        this.elements.skillsSection.style.display = 'block';
     }
 }
 
-// Add this helper method to preserve edit button
-ensureEditButtonExists() {
-    if (!document.querySelector('.skills-edit-btn')) {
-        const editButton = document.createElement('button');
-        editButton.className = 'skills-edit-btn';
-        editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
-        editButton.addEventListener('click', () => this.open());
-        
-        const sectionTitle = this.elements.skillsSection.querySelector('.section-title');
-        if (sectionTitle) {
-            sectionTitle.appendChild(editButton);
-        }
-    }
-}
 // Initialize Skills Editor and add edit button
 function initSkillsEditor() {
     // Check if we're on a profile page with skills section
