@@ -722,7 +722,7 @@ body {
     </div>
 </div>
     <script>
-   // Initialize Supabase
+  // Initialize Supabase
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -825,13 +825,12 @@ async function loadProfile() {
             elements.profileAvatar.src = `https://ui-avatars.com/api/?name=${initials}&background=0056b3&color=fff&size=120`;
         }
         
-        // Set cover photo
         // Set cover photo - pure photo when exists, blue when doesn't
-if (profile.cover_photo_url) {
-    elements.coverPhoto.style.backgroundImage = `url('${profile.cover_photo_url}')`;
-} else {
-    elements.coverPhoto.style.backgroundImage = 'none'; // Ensures only blue shows
-}
+        if (profile.cover_photo_url) {
+            elements.coverPhoto.style.backgroundImage = `url('${profile.cover_photo_url}')`;
+        } else {
+            elements.coverPhoto.style.backgroundImage = 'none'; // Ensures only blue shows
+        }
         
         // Load experiences through the ExperienceEditor if available
         if (window.experienceEditor) {
@@ -867,13 +866,19 @@ if (profile.cover_photo_url) {
         // Show verified badge if email is verified
         elements.verifiedBadge.style.display = 'inline-block';
 
-        // Check connection status if viewing another user's profile
-        if (user.id !== profileId) {
-            await checkConnectionStatus(user.id, profileId);
-        } else {
+        // Check if viewing own profile
+        const isViewingOwnProfile = user.id === profileId;
+        
+        if (isViewingOwnProfile) {
             elements.connectBtn.style.display = 'none';
             elements.editButton.style.display = 'block';
             elements.editButton.onclick = openEditProfile;
+            // Hide message button on own profile
+            document.querySelector('.btn-outline').style.display = 'none'; 
+        } else {
+            elements.editButton.style.display = 'none';
+            // Show message button only if connected
+            await checkConnectionStatus(user.id, profileId);
         }
 
         // Hide spinner and show content
@@ -939,7 +944,6 @@ async function loadPosts() {
     }
 }
 
-// Connection management
 // Connection management functions
 async function checkConnectionStatus(currentUserId, profileId) {
     try {
@@ -965,10 +969,15 @@ async function checkConnectionStatus(currentUserId, profileId) {
             } else if (data.status === 'accepted') {
                 elements.connectBtn.textContent = 'Connected';
                 elements.connectBtn.onclick = () => removeConnection(data.id);
+                // Show message button since they're connected
+                document.querySelector('.btn-outline').style.display = 'inline-block';
+                document.querySelector('.btn-outline').onclick = () => openMessagePage(profileId);
             }
         } else {
             elements.connectBtn.textContent = 'Connect';
             elements.connectBtn.onclick = () => sendConnectionRequest(currentUserId, profileId);
+            // Hide message button if not connected
+            document.querySelector('.btn-outline').style.display = 'none';
         }
     } catch (error) {
         console.error('Error checking connection:', error);
@@ -1051,6 +1060,9 @@ async function acceptConnection(connectionId) {
         elements.connectBtn.textContent = 'Connected';
         elements.connectBtn.disabled = false;
         elements.connectBtn.onclick = () => removeConnection(connectionId);
+        // Show message button since they're now connected
+        document.querySelector('.btn-outline').style.display = 'inline-block';
+        document.querySelector('.btn-outline').onclick = () => openMessagePage(profileId);
     } catch (error) {
         console.error('Error accepting connection:', error);
         elements.connectBtn.disabled = false;
@@ -1073,6 +1085,8 @@ async function removeConnection(connectionId) {
         elements.connectBtn.textContent = 'Connect';
         elements.connectBtn.disabled = false;
         elements.connectBtn.onclick = () => sendConnectionRequest(currentUserId, profileId);
+        // Hide message button since connection is removed
+        document.querySelector('.btn-outline').style.display = 'none';
     } catch (error) {
         console.error('Error removing connection:', error);
         elements.connectBtn.disabled = false;
@@ -1127,6 +1141,10 @@ function copyToClipboard(text) {
 function toggleOptions() {
     // Implementation for options menu
     console.log("Options menu clicked");
+}
+
+function openMessagePage(profileId) {
+    window.location.href = `/message.html?user=${profileId}`;
 }
 
 // Open edit profile function
