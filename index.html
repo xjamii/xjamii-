@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8">
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>X-Jamii</title>
@@ -42,59 +42,62 @@
             color: #e4e6eb;
         }
 
-        
-.footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 80px;
-    background-color: white;
-    border-top: 1px solid #e6ecf0;
-    display: flex;
-    justify-content: space-evenly; /* Changed from space-around to space-evenly */
-    align-items: center;
-    z-index: 1000;
-    padding: 0 10px; /* Reduced padding to allow more space for icons */
-    box-shadow: 0 -2px 10px rgba(255, 255, 255, 0.9);
-}
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background-color: white;
+            border-top: 1px solid #e6ecf0;
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            z-index: 1000;
+            padding: 0 10px;
+            box-shadow: 0 -2px 10px rgba(255, 255, 255, 0.9);
+        }
 
-.create-post-btn {
-    position: relative; /* Changed from absolute to relative */
-    transform: translateY(-20px); /* Lifts the button slightly above the others */
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: #0056b3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
-    border: none;
-    outline: none;
-    transition: all 0.2s;
-    z-index: 1001;
-    margin: 0 5px; /* Added margin to ensure equal spacing */
-}
+        .dark-mode .footer {
+            background-color: #000;
+            border-top-color: #333;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.9);
+        }
 
-.footer-icon {
-    color: #657786;
-    font-size: 22px;
-    cursor: pointer;
-    transition: color 0.2s;
-    flex: 0 1 auto; /* Changed from flex: 1 to allow more control */
-    display: flex;
-    justify-content: center;
-    position: relative;
-    min-width: 0;
-    padding: 0 10px; /* Added padding to ensure equal spacing */
-}
-        
+        .create-post-btn {
+            position: relative;
+            transform: translateY(-20px);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #0056b3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+            border: none;
+            outline: none;
+            transition: all 0.2s;
+            z-index: 1001;
+            margin: 0 5px;
+        }
 
-        /* Keep all your existing hover and dark mode styles */
+        .footer-icon {
+            color: #657786;
+            font-size: 22px;
+            cursor: pointer;
+            transition: color 0.2s;
+            flex: 0 1 auto;
+            display: flex;
+            justify-content: center;
+            position: relative;
+            min-width: 0;
+            padding: 0 10px;
+        }
+
         .create-post-btn:hover {
             background-color: #1a8cd8;
         }
@@ -102,7 +105,7 @@
         .dark-mode .create-post-btn {
             background-color: #1d9bf0;
         }
-        /* Spinner Preloader */
+
         .spinner-preloader {
             position: fixed;
             top: 0;
@@ -134,10 +137,9 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Pull to Refresh Styles */
         #refresh-container {
             position: fixed;
-            top: 120px; /* Adjusted for new header height */
+            top: 120px;
             left: 0;
             width: 100%;
             height: 50px;
@@ -166,7 +168,6 @@
             opacity: 1;
         }
 
-        /* New Header Styles */
         .top-header {
             position: fixed;
             top: 0;
@@ -342,33 +343,9 @@
             border-radius: 2px;
         }
 
-        /* Main Content */
         .main-content {
-            margin-top: 120px; /* Adjusted for new header height */
+            margin-top: 120px;
             width: 100%;
-        }
-
-        /* New Footer Styles */
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 80px;
-            background-color: white;
-            border-top: 1px solid #e6ecf0;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 1000;
-            padding: 0 20px;
-            box-shadow: 0 -2px 10px rgba(255, 255, 255, 0.9);
-        }
-
-        .dark-mode .footer {
-            background-color: #000;
-            border-top-color: #333;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.9);
         }
 
         .footer-icon {
@@ -394,7 +371,6 @@
             color: #1da1f2;
         }
 
-        /* Menu Page Styles */
         .menu-page {
             display: none;
             position: fixed;
@@ -436,6 +412,15 @@
             gap: 16px;
         }
 
+        .menu-back-btn .fa-times {
+            font-size: 20px;
+            transition: transform 0.2s;
+        }
+
+        .menu-back-btn .fa-times:hover {
+            transform: scale(1.1);
+        }
+
         .menu-title {
             font-weight: bold;
             font-size: 18px;
@@ -446,7 +431,6 @@
             cursor: pointer;
         }
 
-        /* Verification Badge */
         .verified-badge {
             color: #1DA1F2;
             font-size: 14px;
@@ -463,104 +447,24 @@
             font-size: 10px;
         }
 
-        /* Settings Section */
-        .settings-section {
-            padding: 16px;
-            border-bottom: 1px solid #ddd;
-            background-color: white;
-        }
-
-        .dark-mode .settings-section {
-            border-bottom-color: #333;
-            background-color: #000;
-        }
-
-        .setting-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 0;
-            cursor: pointer;
-        }
-
-        .setting-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background-color: #f0f2f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-        }
-
-        .dark-mode .setting-icon {
-            background-color: #333;
-        }
-
-        .setting-text {
-            flex-grow: 1;
-            font-size: 16px;
-        }
-
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background-color: #00B0FF;
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(26px);
-        }
-
-        /* Menu Options */
         .menu-options {
-            padding: 16px;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
+            padding: 16px;
         }
 
         .menu-option {
             background-color: #f0f2f5;
-            border-radius: 8px;
-            padding: 12px;
+            border-radius: 12px;
+            padding: 16px;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
         }
 
         .dark-mode .menu-option {
@@ -569,30 +473,74 @@
 
         .menu-option:hover {
             background-color: #e4e6e9;
+            transform: translateY(-2px);
         }
 
         .dark-mode .menu-option:hover {
             background-color: #444;
         }
 
+        .menu-option .toggle-switch {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            width: 40px;
+            height: 20px;
+        }
+
+        .menu-option .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .menu-option .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .menu-option input:checked + .toggle-slider {
+            background-color: #1DA1F2;
+        }
+
+        .menu-option input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        .menu-option-text {
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 8px;
+            position: relative;
+            padding-right: 30px;
+            width: 100%;
+        }
+
         .menu-option-icon {
-            width: 36px;
-            height: 36px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 8px;
             color: white;
-            font-size: 16px;
+            font-size: 20px;
         }
 
-        .menu-option-text {
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        /* Logout Button */
         .logout-section {
             padding: 16px;
             margin-top: 16px;
@@ -626,134 +574,138 @@
             background-color: rgba(255, 0, 0, 0.2);
         }
 
-        /* Notification Badge */
-.footer-icon {
-    position: relative;
-}
+        .footer-icon {
+            position: relative;
+        }
 
-#notificationBadge {
-    position: absolute;
-    top: -5px;
-    right: 5px;
-    background-color: #ff0000;
-    color: white;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    display: none; /* Hidden by default */
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: bold;
-    animation: pulse 1.5s infinite;
-}
+        #notificationBadge {
+            position: absolute;
+            top: -5px;
+            right: 5px;
+            background-color: #ff0000;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
 
-/* Notification Alert Popup */
-.notification-alert {
-    position: fixed;
-    top: 140px;
-    right: 20px;
-    background-color: #ffffff;
-    color: #333;
-    border-radius: 8px;
-    padding: 12px 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 2000;
-    transform: translateY(-100px);
-    opacity: 0;
-    transition: all 0.3s ease;
-    max-width: 300px;
-    display: flex;
-    align-items: center;
-    pointer-events: none;
-}
+        .notification-alert {
+            position: fixed;
+            top: 140px;
+            right: 20px;
+            background-color: #ffffff;
+            color: #333;
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 2000;
+            transform: translateY(-100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 300px;
+            display: flex;
+            align-items: center;
+            pointer-events: none;
+        }
 
-.notification-alert.show {
-    transform: translateY(0);
-    opacity: 1;
-}
+        .notification-alert.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
 
-.notification-alert i {
-    margin-right: 10px;
-    color: #1da1f2;
-}
+        .notification-alert i {
+            margin-right: 10px;
+            color: #1da1f2;
+        }
 
-/* Animation for new notifications */
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
 
-/* Dark Mode Styles */
-.dark-mode .notification-alert {
-    background-color: #333;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
+        .dark-mode .notification-alert {
+            background-color: #333;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
 
-.dark-mode #notificationBadge {
-    background-color: #ff4444;
-}
+        .dark-mode #notificationBadge {
+            background-color: #ff4444;
+        }
 
-/* Responsive Adjustments */
-@media (max-width: 480px) {
-    .notification-alert {
-        top: 120px;
-        right: 10px;
-        left: 10px;
-        max-width: none;
-    }
-}
-
-        /* ===== New Post Interaction Styles ===== */
-
-
-
-
-
-    
+        @media (max-width: 480px) {
+            .notification-alert {
+                top: 120px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+            
+            .menu-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .menu-option {
+                flex-direction: row;
+                text-align: left;
+                align-items: center;
+                padding: 12px 16px;
+            }
+            
+            .menu-option-icon {
+                margin-bottom: 0;
+                margin-right: 12px;
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            
+            .menu-option .toggle-switch {
+                position: static;
+                margin-left: auto;
+            }
+        }
 
         .header-top-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: relative;
-}
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
 
-.help-icon {
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-}
+        .help-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
 
-.help-icon i {
-    font-size: 20px;
-    color: #1DA1F2; /* Twitter Blue */
-    transition: color 0.3s ease;
-}
+        .help-icon i {
+            font-size: 20px;
+            color: #1DA1F2;
+            transition: color 0.3s ease;
+        }
 
-.help-icon i:hover {
-    color: #0d8ddb;
-    cursor: pointer;
-}
-           
-        
-
-    
-
-
-    
+        .help-icon i:hover {
+            color: #0d8ddb;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-
-        <!-- Pull to Refresh Container -->
+    <!-- Pull to Refresh Container -->
     <div id="refresh-container">
         <div class="refresh-spinner"></div>
     </div>
-      <!-- Main Header -->
+
+    <!-- Main Header -->
     <div class="top-header">
         <div class="header-top-row">
             <div class="top-header-left">
@@ -764,7 +716,6 @@
             <div class="logo-container" onclick="window.location.href='index.html'">
                 <img src="https://i.postimg.cc/gkL0Qdsw/file-00000000000061f8b89b5a1f67f8b937.png" alt="Aviationin Logo" class="logo"/>
             </div>
-            
         </div>
         <div class="header-bottom-row">
             <div class="search-bar" onclick="window.location.href='search.html'">
@@ -781,12 +732,6 @@
         </div>
     </div>
 
- 
- 
-                    
-            
-                    
-
     <!-- Bottom Navigation -->
     <footer class="footer">
         <div class="footer-icon" onclick="showFeed()">
@@ -800,57 +745,54 @@
         </button>
         <div class="footer-icon" onclick="window.location.href='notifications.html'">
             <i class="fas fa-bell"></i>
-              </div>
+        </div>
         <div class="footer-icon" onclick="window.location.href='profile.html'">
             <i class="fas fa-user"></i>
         </div>
     </footer>
 
-
-    <!-- Update the menu-header section -->
-<div class="menu-header">
-    <div class="menu-back-btn" onclick="toggleMenu()">
-        <i class="fas fa-times"></i> <!-- Changed from arrow-left to times -->
-        <span class="menu-title">Menu</span>
-    </div>
-    
-    </div>
-</div>
-
-        <!-- Settings Section -->
-        <!-- Replace the settings-section div with this -->
-<div class="settings-container">
-    <div class="setting-item" onclick="window.location.href='manage-account.html'">
-        <div class="setting-icon">
-            <i class="fas fa-user-cog"></i>
+    <!-- Menu Page -->
+    <div class="menu-page" id="menuPage">
+        <div class="menu-header">
+            <div class="menu-back-btn" onclick="toggleMenu()">
+                <i class="fas fa-times"></i>
+                <span class="menu-title">Menu</span>
+            </div>
+            <div class="menu-search-btn" onclick="window.location.href='search.html'">
+                <i class="fas fa-search"></i>
+            </div>
         </div>
-        <div class="setting-text">Manage Account</div>
-        <i class="fas fa-chevron-right setting-arrow"></i>
-    </div>
-    <div class="setting-item">
-        <div class="setting-icon">
-            <i class="fas fa-moon"></i>
-        </div>
-        <div class="setting-text">Dark Mode</div>
-        <label class="toggle-switch">
-            <input type="checkbox" id="darkModeToggle">
-            <span class="toggle-slider"></span>
-        </label>
-    </div>
-    <div class="setting-item">
-        <div class="setting-icon">
-            <i class="fas fa-database"></i>
-        </div>
-        <div class="setting-text">Data Saver</div>
-        <label class="toggle-switch">
-            <input type="checkbox" id="dataSaverToggle">
-            <span class="toggle-slider"></span>
-        </label>
-    </div>
-</div>
 
         <!-- Menu Options -->
         <div class="menu-options">
+            <div class="menu-option" onclick="window.location.href='manage-account.html'">
+                <div class="menu-option-icon" style="background-color: #1DA1F2;">
+                    <i class="fas fa-user-cog"></i>
+                </div>
+                <div class="menu-option-text">Manage Account</div>
+            </div>
+            <div class="menu-option">
+                <div class="menu-option-icon" style="background-color: #1DA1F2;">
+                    <i class="fas fa-moon"></i>
+                </div>
+                <div class="menu-option-text">Dark Mode
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="darkModeToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="menu-option">
+                <div class="menu-option-icon" style="background-color: #1DA1F2;">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="menu-option-text">Data Saver
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="dataSaverToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
             <div class="menu-option" onclick="window.location.href='help.html'">
                 <div class="menu-option-icon" style="background-color: #4CAF50;">
                     <i class="fas fa-question-circle"></i>
@@ -915,16 +857,7 @@
             </div>
         </div>
     </div>
-
-    
-        
-
-        <!-- Notifications Skeleton Preloader -->
-        
-            
-        
-    
-   <script>
+<script>
   // Notification System
 let notificationAlert = null;
 let notificationChannel = null;
