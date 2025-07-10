@@ -816,13 +816,16 @@ async function loadProfile() {
 }
 
 // Load user posts
+// [Previous code remains the same until the loadPosts function]
+
 async function loadPosts() {
     try {
         const { data: posts, error } = await supabase
             .from('posts')
             .select(`
                 *,
-                profile:profiles(*)
+                profile:profiles(*),
+                media:post_media(*)
             `)
             .eq('user_id', profileId)
             .order('created_at', { ascending: false });
@@ -838,10 +841,20 @@ async function loadPosts() {
 
         posts.forEach(post => {
             const postElement = document.createElement('post-component');
-            postElement.setAttribute('post-data', JSON.stringify({
+            
+            // Process media URLs to ensure they're absolute
+            const processedPost = {
                 ...post,
-                profile: post.profile
-            }));
+                profile: post.profile,
+                media: (post.media || []).map(mediaItem => ({
+                    ...mediaItem,
+                    media_url: mediaItem.media_url.startsWith('http') 
+                        ? mediaItem.media_url 
+                        : `${supabaseUrl}/storage/v1/object/public/${mediaItem.media_url}`
+                }))
+            };
+
+            postElement.setAttribute('post-data', JSON.stringify(processedPost));
             elements.userPosts.appendChild(postElement);
         });
 
@@ -850,6 +863,8 @@ async function loadPosts() {
         elements.userPosts.innerHTML = '<div class="error-message">Failed to load posts</div>';
     }
 }
+
+// [Rest of the code remains the same]
 
 // Connection management
 async function checkConnectionStatus(currentUserId, profileId) {
