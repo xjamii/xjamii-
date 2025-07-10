@@ -1,3 +1,4 @@
+// Skills Editor - Complete Implementation
 class SkillsEditor {
     constructor() {
         this.selectedSkills = [];
@@ -38,7 +39,6 @@ class SkillsEditor {
             skillsChips: document.getElementById('skills-chips'),
             skillsSearch: document.getElementById('skills-search'),
             skillsGrid: document.getElementById('skills-grid'),
-            editSectionBtn: document.getElementById('edit-skills-btn'),
             skillsContainer: document.getElementById('skills-container'),
             skillsSection: document.getElementById('skills-section')
         };
@@ -48,10 +48,6 @@ class SkillsEditor {
         this.elements.backButton.addEventListener('click', () => this.close());
         this.elements.saveButton.addEventListener('click', () => this.saveSkills());
         this.elements.skillsSearch.addEventListener('input', () => this.filterSkills());
-        
-        if (this.elements.editSectionBtn) {
-            this.elements.editSectionBtn.addEventListener('click', () => this.open());
-        }
     }
     
     populateSkillsGrid() {
@@ -190,27 +186,49 @@ class SkillsEditor {
     }
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize Skills Editor and add edit button
+function initSkillsEditor() {
     // Check if we're on a profile page with skills section
     if (document.getElementById('skills-section')) {
         window.skillsEditor = new SkillsEditor();
         
-        // Add edit button to skills section
+        // Create and add edit button to skills section
         const skillsSection = document.getElementById('skills-section');
         const sectionTitle = skillsSection.querySelector('.section-title');
         
         if (sectionTitle) {
             const editButton = document.createElement('button');
             editButton.className = 'skills-edit-btn';
-            editButton.id = 'edit-skills-btn';
             editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
+            editButton.addEventListener('click', () => window.skillsEditor.open());
             sectionTitle.appendChild(editButton);
         }
         
-        // Load skills after a short delay
-        setTimeout(() => {
-            window.skillsEditor.loadSkills();
-        }, 100);
+        // Load skills
+        window.skillsEditor.loadSkills();
     }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    initSkillsEditor();
 });
+
+// Helper function to show error messages
+function showError(message) {
+    const errorContainer = document.getElementById('error-message') || document.createElement('div');
+    errorContainer.id = 'error-message';
+    errorContainer.style.color = '#ff4444';
+    errorContainer.style.padding = '10px';
+    errorContainer.style.textAlign = 'center';
+    errorContainer.style.fontWeight = '500';
+    errorContainer.textContent = message;
+    
+    if (!document.getElementById('error-message')) {
+        document.body.prepend(errorContainer);
+    }
+    
+    setTimeout(() => {
+        errorContainer.style.display = 'none';
+    }, 5000);
+}
