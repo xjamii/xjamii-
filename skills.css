@@ -101,13 +101,14 @@
     padding: 20px;
     border-top: 1px solid #eee;
     position: relative;
+    display: flex;
+    justify-content: space-between; /* Ensures title stays left, button goes right */
+    align-items: center; /* Vertically centers title and button */
 }
 
 .skills-section .section-title {
-    display: flex;
-    justify-content: flex-start; /* Changed from space-between */
-    align-items: center;
-    gap: 15px; /* Adds consistent spacing between title and button */
+    margin: 0; /* Removes any default margin */
+    flex-grow: 1; /* Allows title to take available space (pushes button to right) */
 }
 
 .skills-edit-btn {
@@ -119,6 +120,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
+    margin-left: auto; /* Forces button to the far right */
 }
 
 .skills-list {
