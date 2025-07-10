@@ -722,14 +722,14 @@ body {
     </div>
 </div>
     <script>
-  // Initialize Supabase
+   // Initialize Supabase
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// Get username from URL path (e.g., example.com/username)
-const pathParts = window.location.pathname.split('/');
-const usernameSlug = pathParts[pathParts.length - 1].replace('.html', '');
+// Get profile ID from URL or current user
+const urlParams = new URLSearchParams(window.location.search);
+let profileId = urlParams.get('id');
 
 // DOM Elements
 const elements = {
@@ -757,65 +757,46 @@ const elements = {
 // Load profile data
 async function loadProfile() {
     try {
+        // Show spinner instead of skeleton
         document.getElementById('full-page-loader').style.display = 'flex';
         elements.errorMessage.style.display = 'none';
         
-        // 1. Get current user
+        // Check if user is logged in
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         
         if (authError || !user) {
-            window.location.href = '/login';
+            window.location.href = 'login.html';
             return;
         }
         
-        // 2. Determine which profile to load
-        let profile;
-        let isViewingOwnProfile = false;
-        
-        if (usernameSlug && usernameSlug !== 'profile') {
-            // Try loading by username slug
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('username_slug', usernameSlug)
-                .single();
-
-            if (error || !data) {
-                // If username not found, try loading by ID (backward compatibility)
-                if (/^[0-9a-f]{8}-/.test(usernameSlug)) {
-                    const { data: uuidData } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', usernameSlug)
-                        .single();
-                    profile = uuidData;
-                }
-                if (!profile) throw new Error('Profile not found');
-            } else {
-                profile = data;
-            }
-            
-            isViewingOwnProfile = (user.id === profile.id);
-        } else {
-            // Load current user's profile
-            const { data: userProfile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-            profile = userProfile;
-            isViewingOwnProfile = true;
-            
-            // Update URL to clean username version
-            if (profile?.username_slug) {
-                window.history.replaceState({}, '', `/${profile.username_slug}`);
-            }
+        // If no profile ID in URL, use current user's ID
+        if (!profileId) {
+            profileId = user.id;
         }
+        
+        // Get profile data
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', profileId)
+            .single();
 
-        // 3. Populate profile data
+        if (profileError) throw profileError;
+        if (!profile) throw new Error('Profile not found');
+        
+        // Get connections count
+        const { count: connectionsCount, error: connectionsError } = await supabase
+            .from('connections')
+            .select('*', { count: 'exact', head: true })
+            .or(`and(sender_id.eq.${profileId},status.eq.accepted),and(receiver_id.eq.${profileId},status.eq.accepted)`);
+
+        if (connectionsError) console.error('Error getting connections:', connectionsError);
+        
+        // Populate profile data
         elements.profileName.textContent = profile.full_name || 'Profile';
         elements.fullName.textContent = profile.full_name || 'New User';
         elements.username.textContent = `@${profile.username_slug || profile.username || 'user'}`;
+        elements.connectionsCount.textContent = connectionsCount || 0;
         
         // Set bio if available
         elements.bio.textContent = profile.bio || `${profile.full_name || 'User'} is an aviation professional.`;
@@ -844,76 +825,75 @@ async function loadProfile() {
             elements.profileAvatar.src = `https://ui-avatars.com/api/?name=${initials}&background=0056b3&color=fff&size=120`;
         }
         
-        // Set cover photo (without blue overlay)
-        if (profile.cover_photo_url) {
-            elements.coverPhoto.style.backgroundImage = `url('${profile.cover_photo_url}')`;
-            elements.coverPhoto.style.backgroundColor = 'transparent';
+        // Set cover photo
+        // Set cover photo - pure photo when exists, blue when doesn't
+if (profile.cover_photo_url) {
+    elements.coverPhoto.style.backgroundImage = `url('${profile.cover_photo_url}')`;
+} else {
+    elements.coverPhoto.style.backgroundImage = 'none'; // Ensures only blue shows
+}
+        
+        // Load experiences through the ExperienceEditor if available
+        if (window.experienceEditor) {
+            await window.experienceEditor.loadExperiences();
         } else {
-            elements.coverPhoto.style.backgroundImage = 'none';
-            elements.coverPhoto.style.backgroundColor = '#0056b3';
+            // Fallback to simple experience display
+            if (profile.experience) {
+                elements.experienceContainer.innerHTML = `
+                    <div class="experience-item">
+                        <div class="experience-details">
+                            <div class="description">${profile.experience}</div>
+                        </div>
+                    </div>`;
+                elements.experienceSection.style.display = 'block';
+            }
         }
         
-        // Get connections count
-        const { count: connectionsCount, error: connectionsError } = await supabase
-            .from('connections')
-            .select('*', { count: 'exact', head: true })
-            .or(`and(sender_id.eq.${profile.id},status.eq.accepted),and(receiver_id.eq.${profile.id},status.eq.accepted)`);
-
-        if (!connectionsError) {
-            elements.connectionsCount.textContent = connectionsCount || 0;
+        // Load skills through the SkillsEditor if available
+        if (window.skillsEditor) {
+            await window.skillsEditor.loadSkills();
+        } else {
+            // Fallback to simple skills display
+            if (profile.skills) {
+                const skillsArray = profile.skills.split(',').map(skill => skill.trim());
+                elements.skillsContainer.innerHTML = skillsArray
+                    .filter(skill => skill.length > 0)
+                    .map(skill => `<div class="skill-badge">${skill}</div>`)
+                    .join('');
+                elements.skillsSection.style.display = 'block';
+            }
         }
         
         // Show verified badge if email is verified
         elements.verifiedBadge.style.display = 'inline-block';
 
-        // Handle UI based on whether viewing own profile
-        if (isViewingOwnProfile) {
+        // Check connection status if viewing another user's profile
+        if (user.id !== profileId) {
+            await checkConnectionStatus(user.id, profileId);
+        } else {
             elements.connectBtn.style.display = 'none';
             elements.editButton.style.display = 'block';
             elements.editButton.onclick = openEditProfile;
-        } else {
-            elements.editButton.style.display = 'none';
-            await checkConnectionStatus(user.id, profile.id);
         }
 
-        // Load experiences and skills
-        if (window.experienceEditor) {
-            await window.experienceEditor.loadExperiences(profile.id);
-        } else if (profile.experience) {
-            elements.experienceContainer.innerHTML = `
-                <div class="experience-item">
-                    <div class="experience-details">
-                        <div class="description">${profile.experience}</div>
-                    </div>
-                </div>`;
-        }
-        
-        if (window.skillsEditor) {
-            await window.skillsEditor.loadSkills(profile.id);
-        } else if (profile.skills) {
-            const skillsArray = profile.skills.split(',').map(skill => skill.trim());
-            elements.skillsContainer.innerHTML = skillsArray
-                .filter(skill => skill.length > 0)
-                .map(skill => `<div class="skill-badge">${skill}</div>`)
-                .join('');
-        }
-
-        elements.experienceSection.style.display = 'block';
-        elements.skillsSection.style.display = 'block';
+        // Hide spinner and show content
         document.getElementById('full-page-loader').style.display = 'none';
         elements.profileInfo.style.display = 'block';
+        elements.experienceSection.style.display = 'block';
+        elements.skillsSection.style.display = 'block';
 
         // Load user posts
-        await loadPosts(profile.id);
+        await loadPosts();
 
     } catch (error) {
         console.error('Error loading profile:', error);
+        // Hide spinner on error too
         document.getElementById('full-page-loader').style.display = 'none';
         showError(error.message || 'Failed to load profile. Please try again later.');
     }
 }
 
-async function loadPosts(userId) {
+async function loadPosts() {
     try {
         const { data: posts, error } = await supabase
             .from('posts')
@@ -922,7 +902,7 @@ async function loadPosts(userId) {
                 profile:profiles(*),
                 media:post_media(*)
             `)
-            .eq('user_id', userId)
+            .eq('user_id', profileId)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -936,6 +916,8 @@ async function loadPosts(userId) {
 
         posts.forEach(post => {
             const postElement = document.createElement('post-component');
+            
+            // Process media URLs to ensure they're absolute
             const processedPost = {
                 ...post,
                 profile: post.profile,
@@ -946,6 +928,7 @@ async function loadPosts(userId) {
                         : `${supabaseUrl}/storage/v1/object/public/${mediaItem.media_url}`
                 }))
             };
+
             postElement.setAttribute('post-data', JSON.stringify(processedPost));
             elements.userPosts.appendChild(postElement);
         });
@@ -956,6 +939,7 @@ async function loadPosts(userId) {
     }
 }
 
+// Connection management
 // Connection management functions
 async function checkConnectionStatus(currentUserId, profileId) {
     try {
@@ -970,15 +954,17 @@ async function checkConnectionStatus(currentUserId, profileId) {
         if (data) {
             if (data.status === 'pending') {
                 if (data.sender_id === currentUserId) {
+                    // Current user sent the request
                     elements.connectBtn.textContent = 'Pending';
-                    elements.connectBtn.disabled = true;
+                    elements.connectBtn.onclick = () => cancelConnectionRequest(data.id);
                 } else {
+                    // Current user received the request
                     elements.connectBtn.textContent = 'Accept';
                     elements.connectBtn.onclick = () => acceptConnection(data.id);
                 }
             } else if (data.status === 'accepted') {
                 elements.connectBtn.textContent = 'Connected';
-                elements.connectBtn.disabled = true;
+                elements.connectBtn.onclick = () => removeConnection(data.id);
             }
         } else {
             elements.connectBtn.textContent = 'Connect';
@@ -1006,11 +992,47 @@ async function sendConnectionRequest(senderId, receiverId) {
         if (error) throw error;
         
         elements.connectBtn.textContent = 'Pending';
+        elements.connectBtn.disabled = false;
+        elements.connectBtn.onclick = () => cancelConnectionRequest(/* we'll need to get the connection ID */);
+        
+        // Refetch the connection to get its ID
+        const { data } = await supabase
+            .from('connections')
+            .select('id')
+            .eq('sender_id', senderId)
+            .eq('receiver_id', receiverId)
+            .single();
+            
+        if (data) {
+            elements.connectBtn.onclick = () => cancelConnectionRequest(data.id);
+        }
     } catch (error) {
         console.error('Error sending connection:', error);
         elements.connectBtn.textContent = 'Connect';
         elements.connectBtn.disabled = false;
         showError('Failed to send connection request');
+    }
+}
+
+async function cancelConnectionRequest(connectionId) {
+    try {
+        elements.connectBtn.disabled = true;
+        elements.connectBtn.textContent = 'Canceling...';
+        
+        const { error } = await supabase
+            .from('connections')
+            .delete()
+            .eq('id', connectionId);
+
+        if (error) throw error;
+        
+        elements.connectBtn.textContent = 'Connect';
+        elements.connectBtn.disabled = false;
+        elements.connectBtn.onclick = () => sendConnectionRequest(currentUserId, profileId);
+    } catch (error) {
+        console.error('Error canceling connection:', error);
+        elements.connectBtn.disabled = false;
+        showError('Failed to cancel connection request');
     }
 }
 
@@ -1027,12 +1049,34 @@ async function acceptConnection(connectionId) {
         if (error) throw error;
         
         elements.connectBtn.textContent = 'Connected';
-        await updateConnectionsCount();
+        elements.connectBtn.disabled = false;
+        elements.connectBtn.onclick = () => removeConnection(connectionId);
     } catch (error) {
         console.error('Error accepting connection:', error);
-        elements.connectBtn.textContent = 'Accept';
         elements.connectBtn.disabled = false;
         showError('Failed to accept connection');
+    }
+}
+
+async function removeConnection(connectionId) {
+    try {
+        elements.connectBtn.disabled = true;
+        elements.connectBtn.textContent = 'Removing...';
+        
+        const { error } = await supabase
+            .from('connections')
+            .delete()
+            .eq('id', connectionId);
+
+        if (error) throw error;
+        
+        elements.connectBtn.textContent = 'Connect';
+        elements.connectBtn.disabled = false;
+        elements.connectBtn.onclick = () => sendConnectionRequest(currentUserId, profileId);
+    } catch (error) {
+        console.error('Error removing connection:', error);
+        elements.connectBtn.disabled = false;
+        showError('Failed to remove connection');
     }
 }
 
@@ -1051,14 +1095,15 @@ async function updateConnectionsCount() {
     }
 }
 
-// Helper functions
+// Error handling
 function showError(message) {
     elements.errorMessage.textContent = message;
     elements.errorMessage.style.display = 'block';
 }
 
+// Share profile function
 function shareProfile() {
-    const profileUrl = `${window.location.origin}/${elements.username.textContent.replace('@', '')}`;
+    const profileUrl = `${window.location.origin}${window.location.pathname}?id=${profileId}`;
     
     if (navigator.share) {
         navigator.share({
@@ -1080,23 +1125,34 @@ function copyToClipboard(text) {
 }
 
 function toggleOptions() {
+    // Implementation for options menu
     console.log("Options menu clicked");
 }
 
+// Open edit profile function
 async function openEditProfile() {
+    // Check if we're viewing our own profile
     const { data: { user } } = await supabase.auth.getUser();
-    window.location.href = '/edit-profile';
+    if (user.id === profileId) {
+        // Show the edit profile page
+        const editPage = document.getElementById('edit-profile-page');
+        if (editPage) {
+            editPage.style.display = 'block';
+        } else {
+            console.error('Edit profile page element not found');
+            // Fallback to edit-profile.html if needed
+            window.location.href = `edit-profile.html?id=${profileId}`;
+        }
+    } else {
+        // Existing behavior for other profiles
+        window.location.href = `edit-profile.html?id=${profileId}`;
+    }
 }
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
     loadProfile();
 });
-
-// Utility function to generate profile links
-export function getProfileLink(user) {
-    return `/${user.username_slug || user.id}`;
-}
 </script>
       <script src="posts.js"></script>
       <script src="skills.js"></script>
