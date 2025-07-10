@@ -720,7 +720,7 @@ body {
     </div>
 </div>
     <script>
-    // Initialize Supabase
+   // Initialize Supabase
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -731,7 +731,6 @@ let profileId = urlParams.get('id');
 
 // DOM Elements
 const elements = {
-    skeleton: document.getElementById('profile-details-skeleton'),
     errorMessage: document.getElementById('error-message'),
     profileInfo: document.getElementById('profile-info'),
     experienceSection: document.getElementById('experience-section'),
@@ -756,8 +755,8 @@ const elements = {
 // Load profile data
 async function loadProfile() {
     try {
-        // Show skeleton loader
-        elements.skeleton.style.display = 'flex';
+        // Show spinner instead of skeleton
+        document.getElementById('full-page-loader').style.display = 'flex';
         elements.errorMessage.style.display = 'none';
         
         // Check if user is logged in
@@ -872,8 +871,8 @@ async function loadProfile() {
             elements.editButton.onclick = openEditProfile;
         }
 
-        // Hide skeleton and show content
-        elements.skeleton.style.display = 'none';
+        // Hide spinner and show content
+        document.getElementById('full-page-loader').style.display = 'none';
         elements.profileInfo.style.display = 'block';
         elements.experienceSection.style.display = 'block';
         elements.skillsSection.style.display = 'block';
@@ -883,12 +882,11 @@ async function loadProfile() {
 
     } catch (error) {
         console.error('Error loading profile:', error);
+        // Hide spinner on error too
+        document.getElementById('full-page-loader').style.display = 'none';
         showError(error.message || 'Failed to load profile. Please try again later.');
     }
 }
-
-// Load user posts
-// [Previous code remains the same until the loadPosts function]
 
 async function loadPosts() {
     try {
@@ -935,8 +933,6 @@ async function loadPosts() {
         elements.userPosts.innerHTML = '<div class="error-message">Failed to load posts</div>';
     }
 }
-
-// [Rest of the code remains the same]
 
 // Connection management
 async function checkConnectionStatus(currentUserId, profileId) {
@@ -1035,7 +1031,6 @@ async function updateConnectionsCount() {
 
 // Error handling
 function showError(message) {
-    elements.skeleton.style.display = 'none';
     elements.errorMessage.textContent = message;
     elements.errorMessage.style.display = 'block';
 }
