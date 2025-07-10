@@ -824,9 +824,12 @@ async function loadProfile() {
         }
         
         // Set cover photo
-        if (profile.cover_photo_url) {
-            elements.coverPhoto.style.backgroundImage = `linear-gradient(rgba(0, 86, 179, 0.7), rgba(0, 86, 179, 0.7)), url('${profile.cover_photo_url}')`;
-        }
+        // Set cover photo - pure photo when exists, blue when doesn't
+if (profile.cover_photo_url) {
+    elements.coverPhoto.style.backgroundImage = `url('${profile.cover_photo_url}')`;
+} else {
+    elements.coverPhoto.style.backgroundImage = 'none'; // Ensures only blue shows
+}
         
         // Load experiences through the ExperienceEditor if available
         if (window.experienceEditor) {
