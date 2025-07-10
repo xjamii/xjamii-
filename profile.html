@@ -353,44 +353,39 @@ body {
 }
         
         
-/* Professional Section Header */
-.section-header.posts-header {
-    padding: 16px 20px;
-    background-color: white;
-    border-top: 1px solid #eef3f8;
-    border-bottom: 1px solid #eef3f8;
-    margin-top: 10px;
+/* Instagram Style Posts Header */
+.instagram-posts-header {
+  padding: 20px 0;
+  text-align: center;
+  border-top: 1px solid #dbdbdb;
+  margin: 15px 0 0;
 }
 
-.section-title-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.header-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.section-icon {
-    width: 32px;
-    height: 32px;
-    background-color: #f0f7ff;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.icon-wrapper {
+  display: flex;
+  align-items: center;
 }
 
-.section-icon i {
-    color: #0056b3;
-    font-size: 16px;
+.instagram-icon {
+  width: 24px;
+  height: 24px;
 }
 
-.section-title {
-    margin: 0;
-    font-size: 17px;
-    font-weight: 600;
-    color: #2d3748;
-    letter-spacing: 0.2px;
+.instagram-posts-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
-        
+
     </style>
 </head>
 <body>
@@ -485,16 +480,16 @@ body {
     </div>
 </div>
 
-       <!-- Professional Posts Header -->
-<div class="section-header posts-header">
-    <div class="section-title-container">
-        <div class="section-icon">
-            <i class="fas fa-clipboard-list"></i>
-        </div>
-        <h2 class="section-title">Professional Updates</h2>
+       <div class="instagram-posts-header">
+  <div class="header-content">
+    <div class="icon-wrapper">
+      <svg aria-label="Posts" class="instagram-icon" fill="#262626" height="16" viewBox="0 0 48 48" width="16">
+        <path d="M45 1.5H3c-.8 0-1.5.7-1.5 1.5v42c0 .8.7 1.5 1.5 1.5h42c.8 0 1.5-.7 1.5-1.5V3c0-.8-.7-1.5-1.5-1.5zm-40.5 3h11v11h-11v-11zm0 14h11v11h-11v-11zm11 25h-11v-11h11v11zm14 0h-11v-11h11v11zm0-14h-11v-11h11v11zm0-14h-11v-11h11v11zm14 28h-11v-11h11v11zm0-14h-11v-11h11v11zm0-14h-11v-11h11v11z"></path>
+      </svg>
     </div>
-</div> 
-
+    <h2>POSTS</h2>
+  </div>
+</div>
     <div id="user-posts">
         <!-- User posts will be loaded here -->
     </div>
