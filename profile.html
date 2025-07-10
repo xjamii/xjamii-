@@ -630,6 +630,23 @@ body {
         <div class="preloader" id="skills-preloader">
             <div class="spinner"></div>
         </div>
+
+        <div class="form-section">
+            <div class="selected-skills">
+                <p>Selected Skills: <span id="selected-count">0</span>/10</p>
+                <div class="skills-chips" id="skills-chips"></div>
+            </div>
+            
+            <div class="skills-search">
+                <input type="text" id="skills-search" placeholder="Search skills...">
+            </div>
+            
+            <div class="skills-grid" id="skills-grid">
+                <!-- Skills will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
     <script>
      
     // Initialize Supabase
