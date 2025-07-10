@@ -353,7 +353,43 @@ body {
 }
         
         
+/* Professional Section Header */
+.section-header.posts-header {
+    padding: 16px 20px;
+    background-color: white;
+    border-top: 1px solid #eef3f8;
+    border-bottom: 1px solid #eef3f8;
+    margin-top: 10px;
+}
 
+.section-title-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.section-icon {
+    width: 32px;
+    height: 32px;
+    background-color: #f0f7ff;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.section-icon i {
+    color: #0056b3;
+    font-size: 16px;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: #2d3748;
+    letter-spacing: 0.2px;
+}
         
     </style>
 </head>
@@ -449,6 +485,15 @@ body {
     </div>
 </div>
 
+       <!-- Professional Posts Header -->
+<div class="section-header posts-header">
+    <div class="section-title-container">
+        <div class="section-icon">
+            <i class="fas fa-clipboard-list"></i>
+        </div>
+        <h2 class="section-title">Professional Updates</h2>
+    </div>
+</div> 
 
     <div id="user-posts">
         <!-- User posts will be loaded here -->
