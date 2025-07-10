@@ -294,12 +294,11 @@ function populateCategories() {
         'Helicopter Pilot', 'HEMS Pilot', 'Offshore Pilot', 'Flight Paramedic',
         
         // New Categories Added
-        'Aircraft', 
+        'Aircraft Company', 
         'Company', 
         'Airport', 
         'Private Plane Charter', 
-        'Pilot', 
-        'Sales', 
+        'Pilot',        
         'Management',
         
         // Other existing categories
