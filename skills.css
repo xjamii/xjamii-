@@ -129,6 +129,17 @@
     gap: 8px;
 }
 
+.no-skills {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+    width: 100%;
+    font-size: 14px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin: 10px 0;
+}
 .skill-badge {
     background-color: #f0f4f8;
     color: #0056b3;
