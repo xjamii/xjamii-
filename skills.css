@@ -1,0 +1,136 @@
+/* Skills Editor Styles */
+#skills-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: white;
+    z-index: 1000;
+    overflow-y: auto;
+    display: none;
+}
+
+.skills-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: white;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.skills-content {
+    padding: 20px;
+}
+
+.selected-skills {
+    margin-bottom: 20px;
+}
+
+.selected-skills p {
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.skills-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 40px;
+}
+
+.skill-chip {
+    background-color: #e6f0ff;
+    color: #0056b3;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.skill-chip i {
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.skills-search {
+    margin-bottom: 20px;
+}
+
+.skills-search input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.skill-item {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.skill-item:hover {
+    background-color: #f5f7fa;
+}
+
+.skill-item.selected {
+    background-color: #0056b3;
+    color: white;
+    border-color: #0056b3;
+}
+
+/* Skills Display Styles */
+.skills-section {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    position: relative;
+}
+
+.skills-section .section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.skills-edit-btn {
+    background: none;
+    border: none;
+    color: #0056b3;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.skill-badge {
+    background-color: #f0f4f8;
+    color: #0056b3;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 13px;
+    font-weight: 500;
+}
