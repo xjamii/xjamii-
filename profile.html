@@ -3,134 +3,1082 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Who to Follow - Facebook</title>
+    <title>Aviationin Profile</title>
+    <link rel="stylesheet" href="posts.css">
+    <link rel="stylesheet" href="edit.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .who-to-follow {
-            width: 300px;
-            background: #f0f2f5;
-            border-radius: 10px;
-            padding: 15px;
-            font-family: Arial, sans-serif;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
+        /* [Keep all your existing CSS styles] */
+     /* Base Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Header Styles */
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.back-button {
+    color: #0056b3;
+    font-size: 18px;
+    text-decoration: none;
+}
+
+.header-name {
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.edit-button, .more-options {
+    color: #0056b3;
+    font-size: 16px;
+    cursor: pointer;
+    display: none;
+}
+
+/* Profile Content Styles */
+.profile-content {
+    margin-top: 60px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.cover-photo {
+    height: 150px;
+    background-color: #0056b3;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+/* Profile Info Styles */
+.profile-info {
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    margin-top: -70px;
+}
+
+.avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 5px solid white;
+    object-fit: cover;
+    margin-bottom: 15px;
+}
+
+.profile-details {
+    margin-top: 10px;
+}
+
+.profile-name {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.profile-name h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.verified-badge {
+    color: #0056b3;
+    font-size: 16px;
+    display: none;
+}
+
+.username {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.connections {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.bio {
+    color: #444;
+    font-size: 15px;
+    margin: 15px auto;
+    max-width: 80%;
+    line-height: 1.5;
+}
+
+.website-link {
+    color: #0056b3;
+    text-decoration: none;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.category-badge {
+    background-color: #e6f0ff;
+    color: #0056b3;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn {
+    background-color: #0056b3;
+    color: white;
+}
+
+.btn-outline {
+    background-color: white;
+    color: #0056b3;
+    border: 1px solid #0056b3;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* Experience Section */
+.experience-section, .skills-section {
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
+
+.section-title {
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.experience-item {
+    margin-bottom: 15px;
+}
+
+.experience-details {
+    margin-left: 10px;
+}
+
+.experience-details .description {
+    color: #444;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* Skills Section */
+.skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.skill-badge {
+    background-color: #f0f4f8;
+    color: #0056b3;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .profile-info {
+        padding: 15px;
+    }
+    
+    .bio {
+        max-width: 95%;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 200px;
+    }
+}
+
+/* [Keep all your existing skeleton loader styles here] */
+.profile-details-skeleton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    margin-top: 70px;
+}
+
+.skeleton-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid white;
+}
+
+.skeleton-name {
+    width: 200px;
+    height: 30px;
+    background-color: #e0e0e0;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.skeleton-username {
+    width: 150px;
+    height: 20px;
+    background-color: #e0e0e0;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.skeleton-bio {
+    width: 80%;
+    height: 60px;
+    background-color: #e0e0e0;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.skeleton-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.skeleton-stat {
+    width: 60px;
+    height: 20px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+}
+
+.skeleton-button {
+    width: 100px;
+    height: 40px;
+    background-color: #e0e0e0;
+    border-radius: 20px;
+    margin-bottom: 15px;
+}
+
+.skeleton-shimmer {
+    background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.error-message {
+    color: #ff4444;
+    text-align: center;
+    padding: 20px;
+    font-weight: 500;
+    display: none;
+}
         
-        .who-to-follow h2 {
-            margin: 0 0 15px 0;
-            font-size: 18px;
-            color: #050505;
-        }
         
-        .suggestion {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+
         
-        .profile-pic {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 10px;
-            object-fit: cover;
-        }
-        
-        .user-info {
-            flex-grow: 1;
-        }
-        
-        .name {
-            font-weight: bold;
-            color: #050505;
-            font-size: 14px;
-        }
-        
-        .username {
-            color: #65676B;
-            font-size: 12px;
-        }
-        
-        .follow-btn {
-            background-color: #1877F2;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 5px 12px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        
-        .follow-btn:hover {
-            background-color: #166FE5;
-        }
-        
-        .show-more {
-            color: #1877F2;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 5px;
-        }
     </style>
 </head>
 <body>
-    <div class="who-to-follow">
-        <h2>Who to Follow</h2>
-        
-        <div class="suggestion">
-            <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Profile" class="profile-pic">
-            <div class="user-info">
-                <div class="name">Emma Watson</div>
-                <div class="username">@emmawatson</div>
-            </div>
-            <button class="follow-btn">Follow</button>
+    <!-- Header with Back Button and Options -->
+    <div class="profile-header">
+        <div class="header-left">
+            <a href="index.html" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="header-name" id="profile-name">Profile</div>
         </div>
-        
-        <div class="suggestion">
-            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" class="profile-pic">
-            <div class="user-info">
-                <div class="name">Chris Evans</div>
-                <div class="username">@notcapamerica</div>
+        <div class="header-actions">
+            <div class="edit-button" id="edit-button">
+                <i class="fas fa-pencil-alt"></i>
             </div>
-            <button class="follow-btn">Follow</button>
-        </div>
-        
-        <div class="suggestion">
-            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Profile" class="profile-pic">
-            <div class="user-info">
-                <div class="name">Taylor Swift</div>
-                <div class="username">@taylorswift</div>
+            <div class="more-options" onclick="toggleOptions()">
+                <i class="fas fa-ellipsis-h"></i>
             </div>
-            <button class="follow-btn">Follow</button>
         </div>
-        
-        <div class="suggestion">
-            <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="Profile" class="profile-pic">
-            <div class="user-info">
-                <div class="name">Elon Musk</div>
-                <div class="username">@elonmusk</div>
-            </div>
-            <button class="follow-btn">Follow</button>
-        </div>
-        
-        <div class="suggestion">
-            <img src="https://randomuser.me/api/portraits/women/63.jpg" alt="Profile" class="profile-pic">
-            <div class="user-info">
-                <div class="name">Michelle Obama</div>
-                <div class="username">@michelleobama</div>
-            </div>
-            <button class="follow-btn">Follow</button>
-        </div>
-        
-        <div class="suggestion">
-            <img src="https://randomuser.me/api/portraits/men/85.jpg" alt="Profile" class="profile-pic">
-            <div class="user-info">
-                <div class="name">Dwayne Johnson</div>
-                <div class="username">@therock</div>
-            </div>
-            <button class="follow-btn">Follow</button>
-        </div>
-        
-        <div class="show-more">Show more</div>
     </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content">
+        <div class="cover-photo" id="cover-photo"></div>
+        
+        <!-- Skeleton Loader for Profile Details Only -->
+        <div class="profile-details-skeleton" id="profile-details-skeleton">
+            <div class="skeleton-avatar skeleton-shimmer"></div>
+            <div class="skeleton-name skeleton-shimmer"></div>
+            <div class="skeleton-username skeleton-shimmer"></div>
+            <div class="skeleton-bio skeleton-shimmer"></div>
+            <div class="skeleton-stats">
+                <div class="skeleton-stat skeleton-shimmer"></div>
+                <div class="skeleton-stat skeleton-shimmer"></div>
+                <div class="skeleton-stat skeleton-shimmer"></div>
+            </div>
+            <div class="skeleton-button skeleton-shimmer"></div>
+        </div>
+        
+        <!-- Error Message Container -->
+        <div class="error-message" id="error-message"></div>
+        
+        <!-- Actual Profile Content (hidden initially) -->
+        <div class="profile-info" id="profile-info" style="display: none;">
+            <img src="" alt="Profile Avatar" class="avatar" id="profile-avatar">
+            <div class="profile-details">
+                <div class="profile-name">
+                    <h1 id="full-name">Loading...</h1>
+                    <i class="fas fa-check-circle verified-badge" id="verified-badge"></i>
+                </div>
+                <div class="username" id="username">@loading</div>
+                <div class="connections">
+                    <i class="fas fa-link"></i> <span id="connections-count">0</span> Connections
+                </div>
+                <p class="bio" id="bio">
+                    Loading profile information...
+                </p>
+                <a href="#" class="website-link" id="website-link" style="display: none;"></a>
+                <div class="category-badge" id="category-badge" style="display: none;"></div>
+                <div class="action-buttons">
+                    <button class="btn" id="connect-btn">Connect</button>
+                    <button class="btn btn-outline">Message</button>
+                    <button class="btn btn-outline" onclick="shareProfile()"><i class="fas fa-share"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Experience Section -->
+        <div class="experience-section" id="experience-section" style="display: none;">
+            <h2 class="section-title"><i class="fas fa-briefcase"></i> Professional Experience</h2>
+            <div id="experience-container">
+                <div class="experience-item">
+                    <div class="experience-details">
+                        <div class="description" id="experience-text">Loading experience...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Skills Section -->
+        <div class="skills-section" id="skills-section" style="display: none;">
+            <h2 class="section-title"><i class="fas fa-star"></i> Skills & Endorsements</h2>
+            <div class="skills-list" id="skills-container">
+                <div class="skill-badge">Loading skills...</div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="user-posts">
+        <!-- User posts will be loaded here -->
+    </div>
+    
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="edit-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Profile</h3>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-profile-form">
+                    <div class="form-group">
+                        <label for="edit-avatar">Profile Picture</label>
+                        <img id="avatar-preview" class="avatar-preview" src="" alt="Avatar Preview">
+                        <label for="edit-avatar-upload" class="file-input-label">
+                            <i class="fas fa-camera"></i> Change Photo
+                        </label>
+                        <input type="file" id="edit-avatar-upload" class="file-input" accept="image/*">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-cover">Cover Photo</label>
+                        <img id="cover-preview" class="cover-preview" src="" alt="Cover Preview">
+                        <label for="edit-cover-upload" class="file-input-label">
+                            <i class="fas fa-camera"></i> Change Cover
+                        </label>
+                        <input type="file" id="edit-cover-upload" class="file-input" accept="image/*">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-full-name">Full Name</label>
+                        <input type="text" id="edit-full-name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-username">Username</label>
+                        <input type="text" id="edit-username" required>
+                        <div class="username-availability" id="username-availability"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-bio">Bio</label>
+                        <textarea id="edit-bio"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-website">Website</label>
+                        <input type="url" id="edit-website" placeholder="https://example.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-category">Professional Category</label>
+                        <select id="edit-category">
+                            <option value="">Select Category</option>
+                            <option value="Pilot">Pilot</option>
+                            <option value="Flight Attendant">Flight Attendant</option>
+                            <option value="Engineer">Aircraft Engineer</option>
+                            <option value="Air Traffic Controller">Air Traffic Controller</option>
+                            <option value="Management">Management</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-experience">Professional Experience</label>
+                        <textarea id="edit-experience" placeholder="Describe your professional background"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-skills">Skills (comma separated)</label>
+                        <textarea id="edit-skills" placeholder="e.g., CRM, Flight Planning, Safety Management"></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" id="cancel-edit">Cancel</button>
+                        <button type="submit" class="btn btn-save">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+    let avatarFile = null;
+let coverFile = null;
+let originalUsername = '';
+let selectedCategory = '';
+let selectedSkills = [];
+let currentExperience = {
+    position: '',
+    company: '',
+    location: '',
+    start: '',
+    end: '',
+    current: false,
+    description: ''
+};
+
+// Aviation categories
+const aviationCategories = [
+    'Pilot (Captain)', 'Pilot (First Officer)', 'Pilot (Helicopter)', 
+    'Flight Attendant', 'Cabin Crew Manager', 'Purser',
+    'Aircraft Engineer', 'Avionics Technician', 'Maintenance Controller',
+    'Air Traffic Controller', 'ATC Supervisor', 'Flight Dispatcher',
+    'Aircraft Broker', 'Sales Director', 'Leasing Manager',
+    'Ground Handling', 'Ramp Agent', 'Load Controller',
+    'Flight Instructor', 'Simulator Instructor', 'Check Captain',
+    'Safety Officer', 'Quality Assurance', 'Compliance Manager',
+    'Operations Manager', 'Chief Pilot', 'Director of Operations',
+    'CEO/Executive', 'Finance Director', 'HR Director',
+    'Marketing Manager', 'Customer Service', 'Flight Planner',
+    'Fuel Manager', 'Catering Manager', 'Security Manager'
+];
+
+// Aviation skills
+const aviationSkills = [
+    'CRM', 'TEM', 'SMS', 'SOP Development',
+    'Flight Planning', 'Fuel Management', 'Weight & Balance',
+    'Aircraft Systems', 'Avionics', 'Troubleshooting',
+    'Maintenance Planning', 'NDT', 'Component Repair',
+    'Air Law', 'Meteorology', 'Navigation',
+    'Human Factors', 'Crew Resource Management', 'Safety Management',
+    'Emergency Procedures', 'First Aid', 'Security Procedures',
+    'Customer Service', 'Cabin Safety', 'In-Flight Service',
+    'Sales & Marketing', 'Contract Negotiation', 'Leasing',
+    'Financial Analysis', 'Budgeting', 'Regulatory Compliance'
+];
+
+// Initialize edit functionality
+function initEditProfile() {
+    const editButton = document.getElementById('edit-button');
+    const backButton = document.getElementById('edit-back-button');
+    const saveButton = document.getElementById('edit-save-button');
+    const editPage = document.getElementById('edit-profile-page');
+    
+    // Category selection
+    const categoryBtn = document.getElementById('select-category-btn');
+    const categoryBackBtn = document.getElementById('category-back-button');
+    const categorySaveBtn = document.getElementById('category-save-button');
+    const categoryPage = document.getElementById('category-page');
+    
+    // Experience selection
+    const experienceBtn = document.getElementById('select-experience-btn');
+    const experienceBackBtn = document.getElementById('experience-back-button');
+    const experienceSaveBtn = document.getElementById('experience-save-button');
+    const experiencePage = document.getElementById('experience-page');
+    
+    // Skills selection
+    const skillsBtn = document.getElementById('select-skills-btn');
+    const skillsBackBtn = document.getElementById('skills-back-button');
+    const skillsSaveBtn = document.getElementById('skills-save-button');
+    const skillsPage = document.getElementById('skills-page');
+    
+    // File uploads
+    const avatarUpload = document.getElementById('edit-avatar-upload');
+    const coverUpload = document.getElementById('edit-cover-upload');
+    const usernameInput = document.getElementById('edit-username');
+    
+    // Event listeners
+    editButton.addEventListener('click', openEditProfile);
+    backButton.addEventListener('click', closeEditProfile);
+    saveButton.addEventListener('click', saveProfileChanges);
+    
+    categoryBtn.addEventListener('click', openCategoryPage);
+    categoryBackBtn.addEventListener('click', closeCategoryPage);
+    categorySaveBtn.addEventListener('click', saveCategory);
+    
+    experienceBtn.addEventListener('click', openExperiencePage);
+    experienceBackBtn.addEventListener('click', closeExperiencePage);
+    experienceSaveBtn.addEventListener('click', saveExperience);
+    
+    skillsBtn.addEventListener('click', openSkillsPage);
+    skillsBackBtn.addEventListener('click', closeSkillsPage);
+    skillsSaveBtn.addEventListener('click', saveSkills);
+    
+    avatarUpload.addEventListener('change', handleAvatarUpload);
+    coverUpload.addEventListener('change', handleCoverUpload);
+    
+    // Real-time username availability check
+    usernameInput.addEventListener('input', debounce(checkUsernameAvailability, 500));
+    
+    // Populate category and skills pages
+    populateCategories();
+    populateSkills();
+}
+
+function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+}
+
+async function checkUsernameAvailability() {
+    const usernameInput = document.getElementById('edit-username');
+    const username = usernameInput.value.trim().toLowerCase();
+    const availabilityMsg = document.getElementById('username-availability');
+    
+    if (username === originalUsername) {
+        availabilityMsg.style.display = 'none';
+        return;
+    }
+    
+    if (username.length < 3) {
+        availabilityMsg.style.display = 'block';
+        availabilityMsg.textContent = 'Username must be at least 3 characters';
+        availabilityMsg.className = 'username-availability taken';
+        return;
+    }
+    
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .neq('id', profileId);
+    
+    if (error) {
+        console.error('Error checking username:', error);
+        return;
+    }
+    
+    if (data && data.length > 0) {
+        availabilityMsg.style.display = 'block';
+        availabilityMsg.textContent = 'Username is already taken';
+        availabilityMsg.className = 'username-availability taken';
+    } else {
+        availabilityMsg.style.display = 'block';
+        availabilityMsg.textContent = 'Username is available';
+        availabilityMsg.className = 'username-availability available';
+    }
+}
+
+function showLoader() {
+    const loader = document.getElementById('full-page-loader');
+    loader.style.display = 'flex';
+    setTimeout(() => {
+        loader.style.display = 'none';
+    }, 5000); // 5 seconds loader
+}
+
+async function openEditProfile() {
+    showLoader();
+    
+    setTimeout(async () => {
+        const editPage = document.getElementById('edit-profile-page');
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', profileId)
+            .single();
+        
+        if (error) {
+            console.error('Error loading profile for edit:', error);
+            showError('Failed to load profile for editing');
+            return;
+        }
+        
+        // Populate form fields
+        document.getElementById('edit-full-name').value = profile.full_name || '';
+        document.getElementById('edit-username').value = profile.username || '';
+        document.getElementById('edit-bio').value = profile.bio || '';
+        document.getElementById('edit-website').value = profile.website || '';
+        document.getElementById('edit-category-display').value = profile.category || '';
+        document.getElementById('edit-category').value = profile.category || '';
+        document.getElementById('edit-experience-display').value = profile.experience || '';
+        document.getElementById('edit-experience').value = profile.experience || '';
+        document.getElementById('edit-skills-display').value = profile.skills || '';
+        document.getElementById('edit-skills').value = profile.skills || '';
+        
+        // Set preview images
+        const avatarPreview = document.getElementById('avatar-preview');
+        if (profile.avatar_url) {
+            avatarPreview.src = profile.avatar_url;
+        } else {
+            const initials = profile.full_name ? 
+                profile.full_name.split(' ').map(n => n[0]).join('') : 'U';
+            avatarPreview.src = `https://ui-avatars.com/api/?name=${initials}&background=0056b3&color=fff&size=120`;
+        }
+        
+        const coverPreview = document.getElementById('cover-preview');
+        if (profile.cover_photo_url) {
+            coverPreview.src = profile.cover_photo_url;
+        } else {
+            coverPreview.style.backgroundColor = '#0056b3';
+        }
+        
+        // Store original username for comparison
+        originalUsername = profile.username || '';
+        
+        // Reset file inputs
+        avatarFile = null;
+        coverFile = null;
+        document.getElementById('edit-avatar-upload').value = '';
+        document.getElementById('edit-cover-upload').value = '';
+        document.getElementById('username-availability').style.display = 'none';
+        
+        // If profile has skills, parse them
+        if (profile.skills) {
+            selectedSkills = profile.skills.split(',').map(skill => skill.trim());
+            updateSelectedSkillsDisplay();
+        }
+        
+        // If profile has category, set it
+        if (profile.category) {
+            selectedCategory = profile.category;
+            highlightSelectedCategory();
+        }
+        
+        // If profile has experience, parse it
+        if (profile.experience) {
+            try {
+                currentExperience = JSON.parse(profile.experience);
+                populateExperienceForm();
+            } catch (e) {
+                console.error('Error parsing experience:', e);
+            }
+        }
+        
+        editPage.style.display = 'block';
+    }, 5000); // Wait for loader to finish
+}
+
+function closeEditProfile() {
+    document.getElementById('edit-profile-page').style.display = 'none';
+}
+
+function handleAvatarUpload(e) {
+    const file = e.target.files[0];
+    if (file) {
+        avatarFile = file;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            document.getElementById('avatar-preview').src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function handleCoverUpload(e) {
+    const file = e.target.files[0];
+    if (file) {
+        coverFile = file;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            document.getElementById('cover-preview').src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+async function uploadToCloudinary(file, type) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'web_unsigned_upload');
+    
+    try {
+        const response = await fetch('https://api.cloudinary.com/v1_1/dwwhpznwb/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        return data.secure_url;
+    } catch (error) {
+        console.error(`Error uploading ${type} to Cloudinary:`, error);
+        return null;
+    }
+}
+
+async function saveProfileChanges(e) {
+    e.preventDefault();
+    
+    const saveButton = document.getElementById('edit-save-button');
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving...';
+    
+    const fullName = document.getElementById('edit-full-name').value.trim();
+    const username = document.getElementById('edit-username').value.trim().toLowerCase();
+    const bio = document.getElementById('edit-bio').value.trim();
+    const website = document.getElementById('edit-website').value.trim();
+    const category = document.getElementById('edit-category').value;
+    const experience = document.getElementById('edit-experience').value;
+    const skills = document.getElementById('edit-skills').value;
+    
+    // Check username availability one more time
+    if (username !== originalUsername) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('username', username)
+            .neq('id', profileId);
+        
+        if (data && data.length > 0) {
+            showError('Username is already taken. Please choose another.');
+            saveButton.disabled = false;
+            saveButton.textContent = 'Save';
+            return;
+        }
+    }
+    
+    try {
+        // Upload avatar if changed
+        let avatarUrl = null;
+        if (avatarFile) {
+            avatarUrl = await uploadToCloudinary(avatarFile, 'avatar');
+            if (!avatarUrl) throw new Error('Failed to upload avatar');
+        }
+        
+        // Upload cover if changed
+        let coverUrl = null;
+        if (coverFile) {
+            coverUrl = await uploadToCloudinary(coverFile, 'cover');
+            if (!coverUrl) throw new Error('Failed to upload cover photo');
+        }
+        
+        // Update profile data
+        const updates = {
+            full_name: fullName,
+            username: username,
+            username_slug: username.toLowerCase().replace(/\s+/g, '-'),
+            bio: bio,
+            website: website,
+            category: category,
+            experience: experience,
+            skills: skills,
+            updated_at: new Date().toISOString()
+        };
+        
+        if (avatarUrl) updates.avatar_url = avatarUrl;
+        if (coverUrl) updates.cover_photo_url = coverUrl;
+        
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', profileId);
+        
+        if (updateError) throw updateError;
+        
+        // Close edit page and refresh profile
+        closeEditProfile();
+        loadProfile();
+        
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        showError('Failed to save profile changes. Please try again.');
+    } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save';
+    }
+}
+
+// Category Page Functions
+function populateCategories() {
+    const categoryGrid = document.querySelector('.category-grid');
+    categoryGrid.innerHTML = '';
+    
+    aviationCategories.forEach(category => {
+        const item = document.createElement('div');
+        item.className = 'category-item';
+        item.textContent = category;
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedCategory = category;
+        });
+        categoryGrid.appendChild(item);
+    });
+}
+
+function highlightSelectedCategory() {
+    if (!selectedCategory) return;
+    
+    const categories = document.querySelectorAll('.category-item');
+    categories.forEach(item => {
+        if (item.textContent === selectedCategory) {
+            item.classList.add('selected');
+        }
+    });
+}
+
+function openCategoryPage() {
+    showLoader();
+    
+    setTimeout(() => {
+        document.getElementById('category-page').style.display = 'block';
+        highlightSelectedCategory();
+    }, 5000);
+}
+
+function closeCategoryPage() {
+    document.getElementById('category-page').style.display = 'none';
+}
+
+function saveCategory() {
+    document.getElementById('edit-category-display').value = selectedCategory;
+    document.getElementById('edit-category').value = selectedCategory;
+    closeCategoryPage();
+}
+
+// Experience Page Functions
+function populateExperienceForm() {
+    if (!currentExperience) return;
+    
+    document.getElementById('experience-position').value = currentExperience.position || '';
+    document.getElementById('experience-company').value = currentExperience.company || '';
+    document.getElementById('experience-location').value = currentExperience.location || '';
+    document.getElementById('experience-start').value = currentExperience.start || '';
+    document.getElementById('experience-end').value = currentExperience.end || '';
+    document.getElementById('experience-current').checked = currentExperience.current || false;
+    document.getElementById('experience-description').value = currentExperience.description || '';
+}
+
+function openExperiencePage() {
+    showLoader();
+    
+    setTimeout(() => {
+        document.getElementById('experience-page').style.display = 'block';
+        populateExperienceForm();
+    }, 5000);
+}
+
+function closeExperiencePage() {
+    document.getElementById('experience-page').style.display = 'none';
+}
+
+function saveExperience() {
+    currentExperience = {
+        position: document.getElementById('experience-position').value.trim(),
+        company: document.getElementById('experience-company').value.trim(),
+        location: document.getElementById('experience-location').value.trim(),
+        start: document.getElementById('experience-start').value,
+        end: document.getElementById('experience-current').checked ? '' : document.getElementById('experience-end').value,
+        current: document.getElementById('experience-current').checked,
+        description: document.getElementById('experience-description').value.trim()
+    };
+    
+    const experienceJson = JSON.stringify(currentExperience);
+    document.getElementById('edit-experience-display').value = 
+        `${currentExperience.position} at ${currentExperience.company}`;
+    document.getElementById('edit-experience').value = experienceJson;
+    
+    closeExperiencePage();
+}
+
+// Skills Page Functions
+function populateSkills() {
+    const skillsGrid = document.querySelector('.skills-grid');
+    skillsGrid.innerHTML = '';
+    
+    aviationSkills.forEach(skill => {
+        const item = document.createElement('div');
+        item.className = 'skill-item';
+        item.textContent = skill;
+        
+        if (selectedSkills.includes(skill)) {
+            item.classList.add('selected');
+        }
+        
+        item.addEventListener('click', () => {
+            if (item.classList.contains('selected')) {
+                item.classList.remove('selected');
+                selectedSkills = selectedSkills.filter(s => s !== skill);
+            } else {
+                if (selectedSkills.length < 10) {
+                    item.classList.add('selected');
+                    selectedSkills.push(skill);
+                } else {
+                    showError('You can select maximum 10 skills');
+                }
+            }
+            updateSelectedSkillsDisplay();
+        });
+        
+        skillsGrid.appendChild(item);
+    });
+}
+
+function updateSelectedSkillsDisplay() {
+    const selectedList = document.getElementById('selected-skills-list');
+    selectedList.innerHTML = '';
+    
+    selectedSkills.forEach(skill => {
+        const skillElement = document.createElement('div');
+        skillElement.className = 'selected-skill';
+        skillElement.innerHTML = `
+            ${skill}
+            <button type="button" class="remove-skill" data-skill="${skill}">&times;</button>
+        `;
+        selectedList.appendChild(skillElement);
+    });
+    
+    // Add event listeners to remove buttons
+    document.querySelectorAll('.remove-skill').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const skillToRemove = e.target.getAttribute('data-skill');
+            selectedSkills = selectedSkills.filter(s => s !== skillToRemove);
+            updateSelectedSkillsDisplay();
+            
+            // Also remove selection from grid
+            document.querySelectorAll('.skill-item').forEach(item => {
+                if (item.textContent === skillToRemove) {
+                    item.classList.remove('selected');
+                }
+            });
+        });
+    });
+}
+
+function openSkillsPage() {
+    showLoader();
+    
+    setTimeout(() => {
+        document.getElementById('skills-page').style.display = 'block';
+        updateSelectedSkillsDisplay();
+    }, 5000);
+}
+
+function closeSkillsPage() {
+    document.getElementById('skills-page').style.display = 'none';
+}
+
+function saveSkills() {
+    const skillsString = selectedSkills.join(', ');
+    document.getElementById('edit-skills-display').value = skillsString;
+    document.getElementById('edit-skills').value = skillsString;
+    closeSkillsPage();
+}
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', () => {
+    loadProfile();
+    initEditProfile();
+});
+</script>
+      <script src="posts.js"></script>
+    <script src="edit.js"></script>
 </body>
 </html>
