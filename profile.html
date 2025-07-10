@@ -355,21 +355,33 @@ body {
         
 
 
-.simple-posts-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  padding: 20px 0;
-  border-top: 1px solid #dbdbdb;
-  color: #262626;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.grid-posts-header {
+  text-align: center;
+  padding: 25px 0;
 }
 
-.simple-posts-header i {
-  font-size: 18px;
+.grid-icon {
+  display: grid;
+  grid-template-columns: repeat(3, 6px);
+  grid-gap: 3px;
+  margin: 0 auto 8px;
+  width: fit-content;
+}
+
+.grid-icon span {
+  display: block;
+  width: 6px;
+  height: 6px;
+  background: #262626;
+}
+
+.grid-posts-header h3 {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 
@@ -467,9 +479,13 @@ body {
     </div>
 </div>
 
-       <div class="simple-posts-header">
-  <i class="fas fa-square"></i>
-  <span>POSTS</span>
+       <div class="grid-posts-header">
+  <div class="grid-icon">
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
+  <h3>POSTS</h3>
 </div>
     <div id="user-posts">
         <!-- User posts will be loaded here -->
