@@ -1,1 +1,848 @@
-ggggggggg
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search | Aviationin</title>
+    <link rel="stylesheet" href="posts.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .search-header {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .back-button {
+            color: #0056b3;
+            font-size: 18px;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+
+        .search-container {
+            flex: 1;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            background-color: #f5f7fa;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #0056b3;
+        }
+
+        /* Tabs */
+        .search-tabs {
+            display: flex;
+            margin-top: 60px;
+            border-bottom: 1px solid #eee;
+            background-color: white;
+            position: sticky;
+            top: 60px;
+            z-index: 90;
+        }
+
+        .search-tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px 0;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .search-tab.active {
+            color: #0056b3;
+            border-bottom: 2px solid #0056b3;
+        }
+
+        /* Content Sections */
+        .search-content {
+            padding: 15px;
+        }
+
+        .search-section {
+            display: none;
+        }
+
+        .search-section.active {
+            display: block;
+        }
+
+        /* Results */
+        .search-results {
+            margin-top: 10px;
+        }
+
+        .profile-result {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            position: relative;
+            padding-right: 80px; /* Space for connect button */
+        }
+
+        .profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-weight: 600;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .profile-username {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .verified-badge {
+            color: #0056b3;
+            font-size: 14px;
+        }
+
+        .connect-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 5px 15px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .connect-btn.pending {
+            background-color: #e0e0e0;
+            color: #666;
+        }
+
+        .connect-btn.connected {
+            background-color: #e6f0ff;
+            color: #0056b3;
+        }
+
+        /* Loading States */
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #e6f0ff;
+            border-top: 3px solid #0056b3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        /* Post Results */
+        .post-result {
+            background-color: white;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Suggestions */
+        .suggestions-container {
+            margin-top: 10px;
+        }
+
+        .suggestion-title {
+            padding: 15px 15px 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Infinite scroll loader */
+        .infinite-scroll-loader {
+            text-align: center;
+            padding: 15px;
+            display: none;
+        }
+
+        /* Profile link */
+        .profile-link {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            text-decoration: none;
+            color: inherit;
+        }
+    </style>
+</head>
+<body>
+    <!-- Search Header -->
+    <div class="search-header">
+        <a href="index.html" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="search-container">
+            <input type="text" class="search-input" id="search-input" placeholder="Search professionals or posts..." autocomplete="off">
+        </div>
+    </div>
+
+    <!-- Search Tabs -->
+    <div class="search-tabs">
+        <div class="search-tab active" data-tab="profiles">Professionals</div>
+        <div class="search-tab" data-tab="posts">Posts</div>
+    </div>
+
+    <!-- Search Content -->
+    <div class="search-content">
+        <!-- Professionals Section -->
+        <div class="search-section active" id="profiles-section">
+            <div class="suggestions-container" id="suggestions-container">
+                <div class="suggestion-title">Suggested Professionals</div>
+                <div class="search-results" id="suggestions-results"></div>
+            </div>
+            <div class="search-results" id="profiles-results"></div>
+            <div class="infinite-scroll-loader" id="profiles-scroll-loader">
+                <div class="spinner"></div>
+                <div>Loading more professionals...</div>
+            </div>
+            <div class="no-results" id="profiles-no-results">
+                <i class="fas fa-user-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                <div>No professionals found</div>
+            </div>
+            <div class="loading-spinner" id="profiles-loading" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- Posts Section -->
+        <div class="search-section" id="posts-section">
+            <div class="search-results" id="posts-results"></div>
+            <div class="infinite-scroll-loader" id="posts-scroll-loader">
+                <div class="spinner"></div>
+                <div>Loading more posts...</div>
+            </div>
+            <div class="no-results" id="posts-no-results">
+                <i class="fas fa-comment-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                <div>No posts found</div>
+            </div>
+            <div class="loading-spinner" id="posts-loading" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // DOM Elements
+        const elements = {
+            searchInput: document.getElementById('search-input'),
+            tabs: document.querySelectorAll('.search-tab'),
+            sections: document.querySelectorAll('.search-section'),
+            profilesResults: document.getElementById('profiles-results'),
+            postsResults: document.getElementById('posts-results'),
+            profilesNoResults: document.getElementById('profiles-no-results'),
+            postsNoResults: document.getElementById('posts-no-results'),
+            profilesLoading: document.getElementById('profiles-loading'),
+            postsLoading: document.getElementById('posts-loading'),
+            suggestionsContainer: document.getElementById('suggestions-container'),
+            suggestionsResults: document.getElementById('suggestions-results'),
+            profilesScrollLoader: document.getElementById('profiles-scroll-loader'),
+            postsScrollLoader: document.getElementById('posts-scroll-loader')
+        };
+
+        // Variables
+        let currentTab = 'profiles';
+        let searchTimeout;
+        let lastSearchTerm = '';
+        let profilesPage = 0;
+        let postsPage = 0;
+        let isProfilesLoading = false;
+        let isPostsLoading = false;
+        let hasMoreProfiles = true;
+        let hasMorePosts = true;
+        let currentUserId = null;
+
+        // Event Listeners
+        elements.searchInput.addEventListener('input', handleSearchInput);
+        
+        elements.tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Update active tab
+                elements.tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTab = tab.dataset.tab;
+                
+                // Update active section
+                elements.sections.forEach(section => section.classList.remove('active'));
+                document.getElementById(`${currentTab}-section`).classList.add('active');
+                
+                // Reset pagination
+                if (currentTab === 'profiles') {
+                    profilesPage = 0;
+                    hasMoreProfiles = true;
+                } else {
+                    postsPage = 0;
+                    hasMorePosts = true;
+                }
+                
+                // If there's a search term, perform search for the new tab
+                if (lastSearchTerm.trim()) {
+                    performSearch(lastSearchTerm);
+                } else if (currentTab === 'profiles') {
+                    // Show suggestions if no search term and on profiles tab
+                    loadSuggestedProfiles();
+                }
+            });
+        });
+
+        // Infinite scroll
+        window.addEventListener('scroll', handleScroll);
+
+        // Functions
+        async function handleScroll() {
+            const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+            const nearBottom = scrollTop + clientHeight >= scrollHeight - 500;
+
+            if (nearBottom && !isProfilesLoading && !isPostsLoading) {
+                if (currentTab === 'profiles' && hasMoreProfiles && lastSearchTerm) {
+                    profilesPage++;
+                    await loadMoreProfiles();
+                } else if (currentTab === 'posts' && hasMorePosts && lastSearchTerm) {
+                    postsPage++;
+                    await loadMorePosts();
+                }
+            }
+        }
+
+        async function handleSearchInput(e) {
+            const searchTerm = e.target.value.trim();
+            lastSearchTerm = searchTerm;
+            
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+            
+            if (searchTerm.length === 0) {
+                // Clear results if search is empty and show suggestions
+                clearResults();
+                if (currentTab === 'profiles') {
+                    elements.suggestionsContainer.style.display = 'block';
+                    loadSuggestedProfiles();
+                }
+                return;
+            }
+            
+            // Hide suggestions when searching
+            elements.suggestionsContainer.style.display = 'none';
+            
+            // Reset pagination
+            if (currentTab === 'profiles') {
+                profilesPage = 0;
+                hasMoreProfiles = true;
+                elements.profilesResults.innerHTML = '';
+            } else {
+                postsPage = 0;
+                hasMorePosts = true;
+                elements.postsResults.innerHTML = '';
+            }
+            
+            // Show loading state
+            showLoading();
+            
+            // Set new timeout to debounce search
+            searchTimeout = setTimeout(() => {
+                performSearch(searchTerm);
+            }, 500);
+        }
+
+        function showLoading() {
+            if (currentTab === 'profiles') {
+                elements.profilesLoading.style.display = 'block';
+                elements.profilesNoResults.style.display = 'none';
+            } else {
+                elements.postsLoading.style.display = 'block';
+                elements.postsNoResults.style.display = 'none';
+            }
+        }
+
+        function hideLoading() {
+            if (currentTab === 'profiles') {
+                elements.profilesLoading.style.display = 'none';
+            } else {
+                elements.postsLoading.style.display = 'none';
+            }
+        }
+
+        function clearResults() {
+            if (currentTab === 'profiles') {
+                elements.profilesResults.innerHTML = '';
+                elements.profilesNoResults.style.display = 'block';
+            } else {
+                elements.postsResults.innerHTML = '';
+                elements.postsNoResults.style.display = 'block';
+            }
+        }
+
+        async function performSearch(searchTerm) {
+            try {
+                if (currentTab === 'profiles') {
+                    await searchProfiles(searchTerm);
+                } else {
+                    await searchPosts(searchTerm);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                hideLoading();
+                showNoResults();
+            }
+        }
+
+        async function searchProfiles(searchTerm) {
+            // Search profiles by name or username
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .or(`full_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
+                .limit(20);
+            
+            hideLoading();
+            
+            if (error) throw error;
+            
+            elements.profilesResults.innerHTML = '';
+            
+            if (!data || data.length === 0) {
+                elements.profilesNoResults.innerHTML = `
+                    <i class="fas fa-user-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <div>No professionals found for "${searchTerm}"</div>
+                `;
+                elements.profilesNoResults.style.display = 'block';
+                return;
+            }
+            
+            // Display results
+            appendProfilesResults(data);
+            
+            // Check if we have current user ID for connection status
+            if (!currentUserId) {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) currentUserId = user.id;
+            }
+            
+            // Update connection status for each profile
+            if (currentUserId) {
+                await updateConnectionStatuses(data);
+            }
+        }
+
+        async function searchPosts(searchTerm) {
+            // Search posts by content
+            const { data, error } = await supabase
+                .from('posts')
+                .select(`
+                    *,
+                    profile:profiles(*),
+                    media:post_media(*)
+                `)
+                .ilike('content', `%${searchTerm}%`)
+                .order('created_at', { ascending: false })
+                .limit(20);
+            
+            hideLoading();
+            
+            if (error) throw error;
+            
+            elements.postsResults.innerHTML = '';
+            
+            if (!data || data.length === 0) {
+                elements.postsNoResults.innerHTML = `
+                    <i class="fas fa-comment-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <div>No posts found for "${searchTerm}"</div>
+                `;
+                elements.postsNoResults.style.display = 'block';
+                return;
+            }
+            
+            // Display results using your post-component
+            appendPostsResults(data);
+        }
+
+        async function loadMoreProfiles() {
+            if (isProfilesLoading || !hasMoreProfiles) return;
+            
+            isProfilesLoading = true;
+            elements.profilesScrollLoader.style.display = 'block';
+            
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .or(`full_name.ilike.%${lastSearchTerm}%,username.ilike.%${lastSearchTerm}%`)
+                .range(profilesPage * 20, (profilesPage + 1) * 20 - 1);
+            
+            isProfilesLoading = false;
+            elements.profilesScrollLoader.style.display = 'none';
+            
+            if (error) {
+                console.error('Error loading more profiles:', error);
+                return;
+            }
+            
+            if (!data || data.length === 0) {
+                hasMoreProfiles = false;
+                return;
+            }
+            
+            appendProfilesResults(data);
+            
+            // Update connection status for new profiles
+            if (currentUserId) {
+                await updateConnectionStatuses(data);
+            }
+        }
+
+        async function loadMorePosts() {
+            if (isPostsLoading || !hasMorePosts) return;
+            
+            isPostsLoading = true;
+            elements.postsScrollLoader.style.display = 'block';
+            
+            const { data, error } = await supabase
+                .from('posts')
+                .select(`
+                    *,
+                    profile:profiles(*),
+                    media:post_media(*)
+                `)
+                .ilike('content', `%${lastSearchTerm}%`)
+                .order('created_at', { ascending: false })
+                .range(postsPage * 20, (postsPage + 1) * 20 - 1);
+            
+            isPostsLoading = false;
+            elements.postsScrollLoader.style.display = 'none';
+            
+            if (error) {
+                console.error('Error loading more posts:', error);
+                return;
+            }
+            
+            if (!data || data.length === 0) {
+                hasMorePosts = false;
+                return;
+            }
+            
+            appendPostsResults(data);
+        }
+
+        function appendProfilesResults(profiles) {
+            profiles.forEach(profile => {
+                const profileElement = createProfileElement(profile);
+                elements.profilesResults.appendChild(profileElement);
+            });
+        }
+
+        function appendPostsResults(posts) {
+            posts.forEach(post => {
+                const postElement = createPostElement(post);
+                elements.postsResults.appendChild(postElement);
+            });
+        }
+
+        function createProfileElement(profile) {
+            const profileElement = document.createElement('div');
+            profileElement.className = 'profile-result';
+            
+            // Get avatar URL or generate initials
+            const avatarUrl = profile.avatar_url || getInitialsAvatar(profile.full_name);
+            
+            profileElement.innerHTML = `
+                <a href="/profile.html?id=${profile.id}" class="profile-link">
+                    <img src="${avatarUrl}" 
+                         class="profile-avatar" 
+                         onerror="this.src='${getInitialsAvatar(profile.full_name)}'">
+                    <div class="profile-info">
+                        <div class="profile-name">
+                            ${profile.full_name || 'Aviation Professional'}
+                            ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+                        </div>
+                        <div class="profile-username">@${profile.username || 'user'}</div>
+                    </div>
+                </a>
+                <button class="connect-btn" data-user-id="${profile.id}">Connect</button>
+            `;
+            
+            // Add click handler for connect button
+            const connectBtn = profileElement.querySelector('.connect-btn');
+            connectBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const userId = e.currentTarget.dataset.userId;
+                await handleConnection(userId, e.currentTarget);
+            });
+            
+            return profileElement;
+        }
+
+        function createPostElement(post) {
+            const postElement = document.createElement('post-component');
+            
+            // Process media URLs to ensure they're absolute
+            const processedPost = {
+                ...post,
+                profile: post.profile,
+                media: (post.media || []).map(mediaItem => ({
+                    ...mediaItem,
+                    media_url: mediaItem.media_url.startsWith('http') 
+                        ? mediaItem.media_url 
+                        : `${supabaseUrl}/storage/v1/object/public/${mediaItem.media_url}`
+                }))
+            };
+
+            postElement.setAttribute('post-data', JSON.stringify(processedPost));
+            return postElement;
+        }
+
+        async function loadSuggestedProfiles() {
+            try {
+                // Check if user is logged in
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    elements.suggestionsContainer.style.display = 'none';
+                    return;
+                }
+                
+                currentUserId = user.id;
+                
+                // Get suggested profiles (non-connected users)
+                const { data, error } = await supabase.rpc('get_suggested_profiles', {
+                    current_user_id: user.id,
+                    limit_count: 10
+                });
+                
+                if (error) throw error;
+                
+                elements.suggestionsResults.innerHTML = '';
+                
+                if (!data || data.length === 0) {
+                    elements.suggestionsContainer.style.display = 'none';
+                    return;
+                }
+                
+                // Display suggested profiles
+                data.forEach(profile => {
+                    const profileElement = createProfileElement(profile);
+                    elements.suggestionsResults.appendChild(profileElement);
+                });
+                
+                // Update connection status for suggestions
+                await updateConnectionStatuses(data);
+                
+            } catch (error) {
+                console.error('Error loading suggestions:', error);
+                elements.suggestionsContainer.style.display = 'none';
+            }
+        }
+
+        async function updateConnectionStatuses(profiles) {
+            if (!currentUserId) return;
+            
+            // Get all connections involving these profiles and current user
+            const { data: connections, error } = await supabase
+                .from('connections')
+                .select('*')
+                .or(`and(sender_id.eq.${currentUserId},receiver_id.in.(${profiles.map(p => `"${p.id}"`).join(',')})),and(sender_id.in.(${profiles.map(p => `"${p.id}"`).join(',')}),receiver_id.eq.${currentUserId})`);
+            
+            if (error) {
+                console.error('Error fetching connections:', error);
+                return;
+            }
+            
+            // Update each profile's connect button
+            profiles.forEach(profile => {
+                const connection = connections.find(c => 
+                    (c.sender_id === currentUserId && c.receiver_id === profile.id) ||
+                    (c.sender_id === profile.id && c.receiver_id === currentUserId)
+                );
+                
+                const connectBtn = document.querySelector(`.connect-btn[data-user-id="${profile.id}"]`);
+                if (!connectBtn) return;
+                
+                if (connection) {
+                    if (connection.status === 'pending') {
+                        if (connection.sender_id === currentUserId) {
+                            connectBtn.textContent = 'Pending';
+                            connectBtn.classList.add('pending');
+                            connectBtn.classList.remove('connected');
+                        } else {
+                            connectBtn.textContent = 'Accept';
+                            connectBtn.classList.remove('pending', 'connected');
+                        }
+                    } else if (connection.status === 'accepted') {
+                        connectBtn.textContent = 'Connected';
+                        connectBtn.classList.add('connected');
+                        connectBtn.classList.remove('pending');
+                    }
+                } else {
+                    connectBtn.textContent = 'Connect';
+                    connectBtn.classList.remove('pending', 'connected');
+                }
+            });
+        }
+
+        async function handleConnection(userId, button) {
+            try {
+                if (!currentUserId) {
+                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    
+                    if (authError || !user) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    currentUserId = user.id;
+                }
+                
+                // Check existing connection status
+                const { data: connection, error: connectionError } = await supabase
+                    .from('connections')
+                    .select('id, sender_id, status')
+                    .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
+                    .single();
+                
+                if (connectionError && connectionError.code !== 'PGRST116') throw connectionError;
+                
+                if (connection) {
+                    if (connection.status === 'pending') {
+                        if (connection.sender_id === currentUserId) {
+                            // Current user sent the request - cancel it
+                            await supabase
+                                .from('connections')
+                                .delete()
+                                .eq('id', connection.id);
+                            
+                            button.textContent = 'Connect';
+                            button.classList.remove('pending', 'connected');
+                        } else {
+                            // Current user received the request - accept it
+                            await supabase
+                                .from('connections')
+                                .update({ status: 'accepted' })
+                                .eq('id', connection.id);
+                            
+                            button.textContent = 'Connected';
+                            button.classList.add('connected');
+                            button.classList.remove('pending');
+                        }
+                    } else if (connection.status === 'accepted') {
+                        // Remove connection
+                        await supabase
+                            .from('connections')
+                            .delete()
+                            .eq('id', connection.id);
+                        
+                        button.textContent = 'Connect';
+                        button.classList.remove('pending', 'connected');
+                    }
+                } else {
+                    // Send new connection request
+                    await supabase
+                        .from('connections')
+                        .insert([{
+                            sender_id: currentUserId,
+                            receiver_id: userId,
+                            status: 'pending'
+                        }]);
+                    
+                    button.textContent = 'Pending';
+                    button.classList.add('pending');
+                    button.classList.remove('connected');
+                }
+            } catch (error) {
+                console.error('Connection error:', error);
+                alert('Failed to update connection. Please try again.');
+            }
+        }
+
+        function getInitialsAvatar(name) {
+            const initials = name ? 
+                name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U';
+            return `data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><rect width='50' height='50' fill='%230056b3'/><text x='50%' y='50%' font-size='20' fill='white' text-anchor='middle' dy='.3em'>${initials}</text></svg>`;
+        }
+
+        function showNoResults() {
+            if (currentTab === 'profiles') {
+                elements.profilesNoResults.style.display = 'block';
+            } else {
+                elements.postsNoResults.style.display = 'block';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Focus search input on page load
+            elements.searchInput.focus();
+            
+            // Load suggested profiles
+            await loadSuggestedProfiles();
+        });
+    </script>
+    <script src="posts.js"></script>
+</body>
+</html>
