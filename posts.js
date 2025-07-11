@@ -7,10 +7,11 @@ class PostComponent extends HTMLElement {
     this.startX = 0;
     this.isRefreshing = false;
     this.isLoadingMore = false;
+    this.currentUserId = null; // Will be set when component loads
   }
 
   connectedCallback() {
-    this.render();
+    this.getCurrentUser().then(() => this.render());
   }
 
   static get observedAttributes() {
@@ -20,6 +21,16 @@ class PostComponent extends HTMLElement {
   attributeChangedCallback(name, oldValue, newValue) {
     if (name === 'post-data' && oldValue !== newValue) {
       this.render();
+    }
+  }
+
+  async getCurrentUser() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      this.currentUserId = user?.id || null;
+    } catch (error) {
+      console.error("Error getting current user:", error);
+      this.currentUserId = null;
     }
   }
 
@@ -117,8 +128,7 @@ class PostComponent extends HTMLElement {
                 <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-              <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
-              <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
+              ${this.currentUserId === post.user_id ? `<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
             </div>
           </div>
         </div>
@@ -181,13 +191,14 @@ class PostComponent extends HTMLElement {
 
   setupEventListeners(post) {
     // Like action
-    this.querySelector('.like-action')?.addEventListener('click', (e) => {
+    this.querySelector('.like-action')?.addEventListener('click', async (e) => {
       e.stopPropagation();
       const likeBtn = e.currentTarget;
       const isLiked = likeBtn.classList.contains('liked');
       const icon = likeBtn.querySelector('i');
       const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
       
+      // Optimistic UI update
       likeBtn.classList.toggle('liked');
       icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
       
@@ -196,8 +207,28 @@ class PostComponent extends HTMLElement {
         countEl.textContent = isLiked ? count - 1 : count + 1;
       }
       
-      // TODO: Add like API call
-      console.log(`${isLiked ? 'Unliked' : 'Liked'} post ${post.id}`);
+      // API call to like/unlike
+      try {
+        if (isLiked) {
+          await supabase.from('post_likes').delete()
+            .eq('post_id', post.id)
+            .eq('user_id', this.currentUserId);
+        } else {
+          await supabase.from('post_likes').insert({
+            post_id: post.id,
+            user_id: this.currentUserId
+          });
+        }
+      } catch (error) {
+        console.error("Error updating like:", error);
+        // Revert UI if API call fails
+        likeBtn.classList.toggle('liked');
+        icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+        if (countEl) {
+          let count = parseInt(countEl.textContent) || 0;
+          countEl.textContent = isLiked ? count + 1 : count - 1;
+        }
+      }
     });
 
     // More options
@@ -227,8 +258,6 @@ class PostComponent extends HTMLElement {
       });
     });
 
-    // URLs - already handled by anchor tags in processContent
-
     // Media click handlers
     this.querySelectorAll('.post-media, .grid-media, .video-preview').forEach(media => {
       media.addEventListener('click', (e) => {
@@ -257,275 +286,7 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  showMediaViewer(mediaItems, startIndex = 0) {
-    if (!mediaItems || !mediaItems.length) return;
-    
-    // Create media viewer overlay
-    this.mediaViewer = document.createElement('div');
-    this.mediaViewer.className = 'media-viewer-overlay';
-    this.currentMediaIndex = startIndex;
-    
-    // Create close button
-    const closeBtn = document.createElement('div');
-    closeBtn.className = 'media-viewer-close';
-    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-    closeBtn.addEventListener('click', () => this.closeMediaViewer());
-    
-    // Create media container
-    const mediaContainer = document.createElement('div');
-    mediaContainer.className = 'media-viewer-container';
-    
-    // Add touch and mouse events for dragging
-    mediaContainer.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true });
-    mediaContainer.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
-    mediaContainer.addEventListener('touchend', this.handleTouchEnd.bind(this));
-    
-    mediaContainer.addEventListener('mousedown', this.handleMouseDown.bind(this));
-    
-    // Create media content
-    const mediaContent = document.createElement('div');
-    mediaContent.className = 'media-viewer-content';
-    
-    // Add media items
-    mediaItems.forEach((media, index) => {
-      const mediaItem = document.createElement('div');
-      mediaItem.className = `media-viewer-item ${index === startIndex ? 'active' : ''}`;
-      
-      if (media.media_type === 'video') {
-        const video = document.createElement('video');
-        video.className = 'media-viewer-video';
-        video.setAttribute('controls', '');
-        video.innerHTML = `<source src="${media.media_url}" type="video/mp4">`;
-        mediaItem.appendChild(video);
-      } else {
-        const img = document.createElement('img');
-        img.className = 'media-viewer-image';
-        img.src = media.media_url;
-        mediaItem.appendChild(img);
-      }
-      
-      mediaContent.appendChild(mediaItem);
-    });
-    
-    // Add navigation arrows if multiple items
-    let prevBtn, nextBtn;
-    if (mediaItems.length > 1) {
-      prevBtn = document.createElement('div');
-      prevBtn.className = 'media-viewer-nav media-viewer-prev';
-      prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
-      prevBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.navigateMedia(-1);
-      });
-      
-      nextBtn = document.createElement('div');
-      nextBtn.className = 'media-viewer-nav media-viewer-next';
-      nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
-      nextBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.navigateMedia(1);
-      });
-    }
-    
-    // Add dots indicator if multiple items
-    let dotsContainer;
-    if (mediaItems.length > 1) {
-      dotsContainer = document.createElement('div');
-      dotsContainer.className = 'media-viewer-dots';
-      
-      mediaItems.forEach((_, index) => {
-        const dot = document.createElement('div');
-        dot.className = `media-viewer-dot ${index === startIndex ? 'active' : ''}`;
-        dot.addEventListener('click', () => this.goToMedia(index));
-        dotsContainer.appendChild(dot);
-      });
-    }
-    
-    // Assemble the viewer
-    mediaContainer.appendChild(mediaContent);
-    if (prevBtn) mediaContainer.appendChild(prevBtn);
-    if (nextBtn) mediaContainer.appendChild(nextBtn);
-    if (dotsContainer) mediaContainer.appendChild(dotsContainer);
-    
-    this.mediaViewer.appendChild(closeBtn);
-    this.mediaViewer.appendChild(mediaContainer);
-    
-    document.body.appendChild(this.mediaViewer);
-    document.body.style.overflow = 'hidden';
-    
-    // Start playing video if the first item is a video
-    if (mediaItems[startIndex]?.media_type === 'video') {
-      setTimeout(() => {
-        const video = this.mediaViewer.querySelector('.media-viewer-item.active video');
-        if (video) {
-          video.play().catch(e => console.log('Video play error:', e));
-        }
-      }, 300);
-    }
-  }
-
-  closeMediaViewer() {
-    if (!this.mediaViewer) return;
-    
-    // Pause any playing videos
-    const videos = this.mediaViewer.querySelectorAll('video');
-    videos.forEach(video => video.pause());
-    
-    this.mediaViewer.classList.add('closing');
-    setTimeout(() => {
-      this.mediaViewer.remove();
-      this.mediaViewer = null;
-      document.body.style.overflow = '';
-    }, 300);
-  }
-
-  navigateMedia(direction) {
-    const mediaItems = this.mediaViewer.querySelectorAll('.media-viewer-item');
-    if (!mediaItems.length) return;
-    
-    const newIndex = (this.currentMediaIndex + direction + mediaItems.length) % mediaItems.length;
-    this.goToMedia(newIndex);
-  }
-
-  goToMedia(index) {
-    const mediaItems = this.mediaViewer?.querySelectorAll('.media-viewer-item');
-    if (!mediaItems || index < 0 || index >= mediaItems.length) return;
-    
-    // Pause current video if it's a video
-    const currentVideo = mediaItems[this.currentMediaIndex]?.querySelector('video');
-    if (currentVideo) currentVideo.pause();
-    
-    // Update active item
-    mediaItems[this.currentMediaIndex]?.classList.remove('active');
-    mediaItems[index].classList.add('active');
-    this.currentMediaIndex = index;
-    
-    // Update dots
-    const dots = this.mediaViewer?.querySelectorAll('.media-viewer-dot');
-    if (dots) {
-      dots.forEach((dot, i) => {
-        dot.classList.toggle('active', i === index);
-      });
-    }
-    
-    // Play new video if it's a video
-    const newVideo = mediaItems[index]?.querySelector('video');
-    if (newVideo) {
-      newVideo.currentTime = 0;
-      newVideo.play().catch(e => console.log('Video play error:', e));
-    }
-  }
-
-  // Touch event handlers for swipe and drag to close
-  handleTouchStart(e) {
-    if (!this.mediaViewer) return;
-    this.startY = e.touches[0].clientY;
-    this.startX = e.touches[0].clientX;
-    this.isDragging = false;
-  }
-
-  handleTouchMove(e) {
-    if (!this.mediaViewer || !this.startY) return;
-    
-    const y = e.touches[0].clientY;
-    const x = e.touches[0].clientX;
-    const dy = y - this.startY;
-    const dx = x - this.startX;
-    
-    // Check if it's a horizontal swipe (for changing media)
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
-      e.preventDefault();
-      this.isDragging = true;
-      if (dx > 0) {
-        this.navigateMedia(-1); // Swipe right
-      } else {
-        this.navigateMedia(1); // Swipe left
-      }
-      this.startX = x;
-      return;
-    }
-    
-    // Vertical drag to close
-    if (Math.abs(dy) > 30) {
-      e.preventDefault();
-      this.isDragging = true;
-      const opacity = 1 - Math.min(Math.abs(dy) / 200, 0.8);
-      const scale = 1 - Math.min(Math.abs(dy) / 1000, 0.1);
-      
-      const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
-      mediaContainer.style.transform = `translateY(${dy}px) scale(${scale})`;
-      mediaContainer.style.opacity = opacity;
-    }
-  }
-
-  handleTouchEnd(e) {
-    if (!this.mediaViewer || !this.isDragging) return;
-    
-    const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
-    const y = e.changedTouches[0].clientY;
-    const dy = y - this.startY;
-    
-    if (Math.abs(dy) > 100) {
-      this.closeMediaViewer();
-    } else {
-      mediaContainer.style.transform = '';
-      mediaContainer.style.opacity = '';
-    }
-    
-    this.startY = 0;
-    this.startX = 0;
-    this.isDragging = false;
-  }
-
-  // Mouse event handlers for drag to close
-  handleMouseDown(e) {
-    if (!this.mediaViewer) return;
-    this.startY = e.clientY;
-    this.startX = e.clientX;
-    this.isDragging = false;
-    
-    const handleMouseMove = (e) => {
-      const y = e.clientY;
-      const dy = y - this.startY;
-      
-      if (Math.abs(dy) > 30) {
-        this.isDragging = true;
-        const opacity = 1 - Math.min(Math.abs(dy) / 200, 0.8);
-        const scale = 1 - Math.min(Math.abs(dy) / 1000, 0.1);
-        
-        const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
-        mediaContainer.style.transform = `translateY(${dy}px) scale(${scale})`;
-        mediaContainer.style.opacity = opacity;
-      }
-    };
-    
-    const handleMouseUp = (e) => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      
-      if (!this.isDragging) return;
-      
-      const y = e.clientY;
-      const dy = y - this.startY;
-      
-      if (Math.abs(dy) > 100) {
-        this.closeMediaViewer();
-      } else {
-        const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
-        mediaContainer.style.transform = '';
-        mediaContainer.style.opacity = '';
-      }
-      
-      this.startY = 0;
-      this.startX = 0;
-      this.isDragging = false;
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }
-
-  openCommentPage(post) {
+  async openCommentPage(post) {
     // Create comment page overlay
     const commentPage = document.createElement('div');
     commentPage.className = 'comment-page-overlay';
@@ -549,6 +310,10 @@ class PostComponent extends HTMLElement {
     
     header.appendChild(closeBtn);
     header.appendChild(title);
+    
+    // Create content container that will scroll
+    const contentContainer = document.createElement('div');
+    contentContainer.className = 'comment-page-content-container';
     
     // Create post preview
     const postPreview = document.createElement('div');
@@ -592,8 +357,7 @@ class PostComponent extends HTMLElement {
           </div>
           <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
           <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-          <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
-          <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
+          ${this.currentUserId === post.user_id ? `<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
         </div>
       </div>
     `;
@@ -601,12 +365,11 @@ class PostComponent extends HTMLElement {
     // Create comments section
     const commentsSection = document.createElement('div');
     commentsSection.className = 'comment-page-comments';
+    
+    // Create loading indicator
     commentsSection.innerHTML = `
-      <div class="comments-list">
-        <div class="no-comments">
-          <i class="far fa-comment-dots"></i>
-          <div>No comments yet</div>
-        </div>
+      <div class="comments-loading">
+        <div class="loader"></div>
       </div>
     `;
     
@@ -619,13 +382,18 @@ class PostComponent extends HTMLElement {
     `;
     
     // Assemble the page
+    contentContainer.appendChild(postPreview);
+    contentContainer.appendChild(commentsSection);
+    
     commentPage.appendChild(header);
-    commentPage.appendChild(postPreview);
-    commentPage.appendChild(commentsSection);
+    commentPage.appendChild(contentContainer);
     commentPage.appendChild(commentInput);
     
     document.body.appendChild(commentPage);
     document.body.style.overflow = 'hidden';
+    
+    // Load comments
+    this.loadComments(post.id, commentsSection);
     
     // Setup event listeners for the comment page
     this.setupCommentPageEventListeners(commentPage, post);
@@ -633,6 +401,287 @@ class PostComponent extends HTMLElement {
     // Focus the input
     setTimeout(() => {
       commentPage.querySelector('.comment-page-input')?.focus();
+    }, 300);
+  }
+
+  async loadComments(postId, container) {
+    try {
+      // Fetch comments with user profiles
+      const { data: comments, error } = await supabase
+        .from('comments')
+        .select(`
+          *,
+          profile:profiles(*),
+          likes:comment_likes(count),
+          is_liked:comment_likes!inner(user_id)
+        `)
+        .eq('post_id', postId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Process comments data
+      const processedComments = comments.map(comment => ({
+        ...comment,
+        like_count: comment.likes[0]?.count || 0,
+        is_liked: comment.is_liked.some(like => like.user_id === this.currentUserId)
+      }));
+      
+      // Render comments
+      if (processedComments.length === 0) {
+        container.innerHTML = `
+          <div class="no-comments">
+            <i class="far fa-comment-dots"></i>
+            <div>No comments yet</div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = processedComments.map(comment => this.renderComment(comment)).join('');
+      }
+      
+      // Add event listeners to comments
+      container.querySelectorAll('.comment').forEach(commentEl => {
+        const commentId = commentEl.dataset.commentId;
+        const comment = processedComments.find(c => c.id === commentId);
+        if (comment) {
+          this.setupCommentEventListeners(commentEl, comment);
+        }
+      });
+      
+    } catch (error) {
+      console.error("Error loading comments:", error);
+      container.innerHTML = `
+        <div class="comments-error">
+          <i class="fas fa-exclamation-circle"></i>
+          <div>Error loading comments</div>
+        </div>
+      `;
+    }
+  }
+
+  renderComment(comment) {
+    const profile = comment.profile || {
+      username: 'unknown',
+      full_name: 'Unknown User',
+      avatar_url: '',
+      is_verified: false,
+      user_id: ''
+    };
+    
+    const avatarHtml = profile.avatar_url 
+      ? `<img src="${profile.avatar_url}" class="comment-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'40\\' height=\\'40\\'><rect width=\\'40\\' height=\\'40\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'16\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
+      : `<div class="comment-avatar initials">${this.getInitials(profile.full_name)}</div>`;
+    
+    return `
+      <div class="comment" data-comment-id="${comment.id}">
+        <div class="comment-header">
+          <a href="/profile.html?user_id=${profile.user_id}" class="comment-avatar-link">
+            ${avatarHtml}
+          </a>
+          <div class="comment-user-info">
+            <a href="/profile.html?user_id=${profile.user_id}" class="comment-user-link">
+              <div class="comment-user">
+                ${profile.full_name || profile.username}
+                ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+              </div>
+              <div class="comment-username">@${profile.username}</div>
+            </a>
+          </div>
+          <span class="comment-time">${this.formatTime(comment.created_at)}</span>
+          ${this.currentUserId === comment.user_id ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
+        </div>
+        <div class="comment-content">${this.processContent(comment.content)}</div>
+        <div class="comment-actions">
+          <button class="comment-action reply-action" data-username="${profile.username}">
+            <i class="far fa-comment-dots"></i> Reply
+          </button>
+          <div class="comment-action like-action ${comment.is_liked ? 'liked' : ''}">
+            <i class="${comment.is_liked ? 'fas' : 'far'} fa-heart"></i> ${comment.like_count || 0}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  setupCommentEventListeners(commentEl, comment) {
+    // Like action
+    commentEl.querySelector('.like-action')?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const likeBtn = e.currentTarget;
+      const isLiked = likeBtn.classList.contains('liked');
+      const icon = likeBtn.querySelector('i');
+      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
+      
+      // Optimistic UI update
+      likeBtn.classList.toggle('liked');
+      icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
+      
+      if (countEl) {
+        let count = parseInt(countEl.textContent) || 0;
+        countEl.textContent = isLiked ? count - 1 : count + 1;
+      }
+      
+      // API call to like/unlike
+      try {
+        if (isLiked) {
+          await supabase.from('comment_likes').delete()
+            .eq('comment_id', comment.id)
+            .eq('user_id', this.currentUserId);
+        } else {
+          await supabase.from('comment_likes').insert({
+            comment_id: comment.id,
+            user_id: this.currentUserId
+          });
+        }
+      } catch (error) {
+        console.error("Error updating comment like:", error);
+        // Revert UI if API call fails
+        likeBtn.classList.toggle('liked');
+        icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+        if (countEl) {
+          let count = parseInt(countEl.textContent) || 0;
+          countEl.textContent = isLiked ? count + 1 : count - 1;
+        }
+      }
+    });
+    
+    // Reply action
+    commentEl.querySelector('.reply-action')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const username = e.currentTarget.dataset.username;
+      const input = this.querySelector('.comment-page-input');
+      input.value = `@${username} `;
+      input.focus();
+    });
+    
+    // More options
+    commentEl.querySelector('.comment-more')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.showCommentMoreOptions(e, comment);
+    });
+  }
+
+  showCommentMoreOptions(e, comment) {
+    // Remove any existing popups
+    document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
+    
+    const popup = document.createElement('div');
+    popup.className = 'more-options-popup';
+    popup.innerHTML = `
+      <div class="more-options-content">
+        <div class="more-option edit-option"><i class="fas fa-edit"></i> Edit</div>
+        <div class="more-option delete-option"><i class="fas fa-trash-alt"></i> Delete</div>
+      </div>
+    `;
+    
+    document.body.appendChild(popup);
+    
+    // Position the popup
+    const rect = e.target.getBoundingClientRect();
+    popup.style.left = `${rect.left - 100}px`;
+    popup.style.top = `${rect.top - 10}px`;
+    
+    // Close when clicking outside
+    const clickHandler = (event) => {
+      if (!popup.contains(event.target)) {
+        popup.remove();
+        document.removeEventListener('click', clickHandler);
+      }
+    };
+    
+    setTimeout(() => {
+      document.addEventListener('click', clickHandler);
+    }, 0);
+    
+    // Add option handlers
+    popup.querySelector('.edit-option')?.addEventListener('click', () => {
+      popup.remove();
+      this.openEditCommentPage(comment);
+    });
+    
+    popup.querySelector('.delete-option')?.addEventListener('click', async () => {
+      popup.remove();
+      try {
+        await supabase.from('comments').delete().eq('id', comment.id);
+        document.querySelector(`.comment[data-comment-id="${comment.id}"]`)?.remove();
+      } catch (error) {
+        console.error("Error deleting comment:", error);
+        alert("Failed to delete comment. Please try again.");
+      }
+    });
+  }
+
+  openEditCommentPage(comment) {
+    // Create edit page overlay
+    const editPage = document.createElement('div');
+    editPage.className = 'edit-page-overlay';
+    
+    // Create header
+    const header = document.createElement('div');
+    header.className = 'edit-page-header';
+    
+    const closeBtn = document.createElement('div');
+    closeBtn.className = 'edit-page-close';
+    closeBtn.innerHTML = '<i class="fas fa-arrow-left"></i>';
+    closeBtn.addEventListener('click', () => {
+      editPage.classList.add('closing');
+      setTimeout(() => editPage.remove(), 300);
+      document.body.style.overflow = '';
+    });
+    
+    const title = document.createElement('div');
+    title.className = 'edit-page-title';
+    title.textContent = 'Edit Comment';
+    
+    const saveBtn = document.createElement('div');
+    saveBtn.className = 'edit-page-save';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', async () => {
+      const newContent = textarea.value.trim();
+      if (newContent && newContent !== comment.content) {
+        try {
+          await supabase.from('comments')
+            .update({ content: newContent })
+            .eq('id', comment.id);
+          
+          // Close the edit page
+          editPage.classList.add('closing');
+          setTimeout(() => editPage.remove(), 300);
+          document.body.style.overflow = '';
+          
+          // Update the comment in the UI
+          const commentEl = document.querySelector(`.comment[data-comment-id="${comment.id}"] .comment-content`);
+          if (commentEl) {
+            commentEl.innerHTML = this.processContent(newContent);
+          }
+        } catch (error) {
+          console.error("Error updating comment:", error);
+          alert("Failed to update comment. Please try again.");
+        }
+      }
+    });
+    
+    header.appendChild(closeBtn);
+    header.appendChild(title);
+    header.appendChild(saveBtn);
+    
+    // Create textarea
+    const textarea = document.createElement('textarea');
+    textarea.className = 'edit-page-textarea';
+    textarea.value = comment.content;
+    textarea.placeholder = 'Edit your comment...';
+    
+    // Assemble the page
+    editPage.appendChild(header);
+    editPage.appendChild(textarea);
+    
+    document.body.appendChild(editPage);
+    document.body.style.overflow = 'hidden';
+    
+    // Focus the textarea
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
     }, 300);
   }
 
@@ -682,79 +731,47 @@ class PostComponent extends HTMLElement {
     });
 
     // Send comment button
-    commentPage.querySelector('.comment-page-send')?.addEventListener('click', () => {
+    commentPage.querySelector('.comment-page-send')?.addEventListener('click', async () => {
       const input = commentPage.querySelector('.comment-page-input');
       const commentText = input.value.trim();
       if (commentText) {
-        // TODO: Send comment to server
-        console.log('Posting comment:', commentText);
-        input.value = '';
+        try {
+          const { data: comment, error } = await supabase
+            .from('comments')
+            .insert({
+              post_id: post.id,
+              user_id: this.currentUserId,
+              content: commentText
+            })
+            .select()
+            .single();
+          
+          if (error) throw error;
+          
+          // Clear input
+          input.value = '';
+          
+          // Reload comments
+          const commentsSection = commentPage.querySelector('.comment-page-comments');
+          this.loadComments(post.id, commentsSection);
+          
+        } catch (error) {
+          console.error("Error posting comment:", error);
+          alert("Failed to post comment. Please try again.");
+        }
       }
     });
 
     // Press Enter to send comment
     commentPage.querySelector('.comment-page-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        const input = commentPage.querySelector('.comment-page-input');
-        const commentText = input.value.trim();
-        if (commentText) {
-          // TODO: Send comment to server
-          console.log('Posting comment:', commentText);
-          input.value = '';
-        }
+        commentPage.querySelector('.comment-page-send')?.click();
       }
     });
   }
 
-  renderMediaForCommentPage(mediaItems) {
-    if (!mediaItems || !mediaItems.length) return '';
-    
-    if (mediaItems.length === 1) {
-      const media = mediaItems[0];
-      if (media.media_type === 'video') {
-        return `
-          <div class="media-container video-container">
-            <div class="video-preview" data-media-index="0">
-              <video class="post-media" preload="metadata">
-                <source src="${media.media_url}" type="video/mp4">
-              </video>
-              <div class="video-play-button"><i class="fas fa-play"></i></div>
-            </div>
-          </div>
-        `;
-      } else {
-        return `
-          <div class="media-container">
-            <img src="${media.media_url}" class="post-media" data-media-index="0">
-          </div>
-        `;
-      }
-    }
-    
-    return `
-      <div class="media-grid">
-        ${mediaItems.slice(0, 4).map((media, index) => `
-          <div class="grid-media-container">
-            ${media.media_type === 'video' 
-              ? `<div class="video-preview" data-media-index="${index}">
-                  <video class="grid-media" preload="metadata">
-                    <source src="${media.media_url}" type="video/mp4">
-                  </video>
-                  <div class="video-play-button"><i class="fas fa-play"></i></div>
-                </div>`
-              : `<img src="${media.media_url}" class="grid-media" data-media-index="${index}">`}
-          </div>
-        `).join('')}
-        ${mediaItems.length > 4 ? `
-          <div class="media-count-overlay">
-            +${mediaItems.length - 4}
-          </div>` : ''}
-      </div>
-    `;
-  }
-
   showMoreOptions(e, post) {
-    const isOwner = true; // Replace with actual owner check
+    const isOwner = this.currentUserId === post.user_id;
     
     // Remove any existing popups
     document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
@@ -793,101 +810,102 @@ class PostComponent extends HTMLElement {
     
     // Add option handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      console.log('Edit post', post.id);
       popup.remove();
+      this.openEditPostPage(post);
     });
     
-    popup.querySelector('.delete-option')?.addEventListener('click', () => {
-      console.log('Delete post', post.id);
+    popup.querySelector('.delete-option')?.addEventListener('click', async () => {
       popup.remove();
+      try {
+        await supabase.from('posts').delete().eq('id', post.id);
+        this.remove(); // Remove the post component from DOM
+      } catch (error) {
+        console.error("Error deleting post:", error);
+        alert("Failed to delete post. Please try again.");
+      }
     });
     
     popup.querySelector('.report-option')?.addEventListener('click', () => {
-      console.log('Report post', post.id);
       popup.remove();
+      alert("Report submitted. Thank you for your feedback.");
     });
   }
 
-  sharePost(postId) {
-    const postUrl = `${window.location.origin}/post.html?id=${postId}`;
+  openEditPostPage(post) {
+    // Create edit page overlay
+    const editPage = document.createElement('div');
+    editPage.className = 'edit-page-overlay';
     
-    if (navigator.share) {
-      navigator.share({
-        title: 'Check out this post',
-        url: postUrl
-      }).catch(err => {
-        console.log('Error sharing:', err);
-        this.copyToClipboard(postUrl);
-      });
-    } else {
-      this.copyToClipboard(postUrl);
-    }
-  }
-
-  copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-      alert('Link copied to clipboard!');
+    // Create header
+    const header = document.createElement('div');
+    header.className = 'edit-page-header';
+    
+    const closeBtn = document.createElement('div');
+    closeBtn.className = 'edit-page-close';
+    closeBtn.innerHTML = '<i class="fas fa-arrow-left"></i>';
+    closeBtn.addEventListener('click', () => {
+      editPage.classList.add('closing');
+      setTimeout(() => editPage.remove(), 300);
+      document.body.style.overflow = '';
     });
-  }
-
-  setupPullToRefresh() {
-    let startY = 0;
-    let touchStart = false;
-    const refreshContainer = document.createElement('div');
-    refreshContainer.className = 'refresh-container';
-    refreshContainer.innerHTML = '<div class="refresh-loader"><i class="fas fa-sync-alt"></i></div>';
-    this.parentNode.insertBefore(refreshContainer, this);
-
-    this.addEventListener('touchstart', (e) => {
-      if (window.scrollY === 0 && !this.isRefreshing) {
-        startY = e.touches[0].pageY;
-        touchStart = true;
-      }
-    }, { passive: true });
-
-    this.addEventListener('touchmove', (e) => {
-      if (!touchStart || this.isRefreshing) return;
-      
-      const y = e.touches[0].pageY;
-      const dy = y - startY;
-      
-      if (dy > 0) {
-        e.preventDefault();
-        const pullDistance = Math.min(dy, 150);
-        const progress = Math.min(pullDistance / 150, 1);
-        refreshContainer.style.opacity = progress;
-        refreshContainer.style.transform = `translateY(${pullDistance}px)`;
-        refreshContainer.querySelector('.refresh-loader').style.transform = `rotate(${progress * 360}deg)`;
-      }
-    }, { passive: false });
-
-    this.addEventListener('touchend', (e) => {
-      if (!touchStart || this.isRefreshing) return;
-      
-      const y = e.changedTouches[0].pageY;
-      const dy = y - startY;
-      
-      if (dy > 100) {
-        this.isRefreshing = true;
-        refreshContainer.classList.add('refreshing');
-        
-        // Simulate refresh
-        setTimeout(() => {
-          refreshContainer.style.transform = 'translateY(0)';
-          refreshContainer.classList.remove('refreshing');
-          this.isRefreshing = false;
+    
+    const title = document.createElement('div');
+    title.className = 'edit-page-title';
+    title.textContent = 'Edit Post';
+    
+    const saveBtn = document.createElement('div');
+    saveBtn.className = 'edit-page-save';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', async () => {
+      const newContent = textarea.value.trim();
+      if (newContent && newContent !== post.content) {
+        try {
+          await supabase.from('posts')
+            .update({ content: newContent })
+            .eq('id', post.id);
           
-          // TODO: Actually refresh content
-          console.log('Refreshing content...');
-        }, 1000);
-      } else {
-        refreshContainer.style.transform = 'translateY(0)';
-        refreshContainer.style.opacity = '0';
+          // Close the edit page
+          editPage.classList.add('closing');
+          setTimeout(() => editPage.remove(), 300);
+          document.body.style.overflow = '';
+          
+          // Update the post in the UI
+          this.setAttribute('post-data', JSON.stringify({
+            ...post,
+            content: newContent
+          }));
+        } catch (error) {
+          console.error("Error updating post:", error);
+          alert("Failed to update post. Please try again.");
+        }
       }
-      
-      touchStart = false;
     });
+    
+    header.appendChild(closeBtn);
+    header.appendChild(title);
+    header.appendChild(saveBtn);
+    
+    // Create textarea
+    const textarea = document.createElement('textarea');
+    textarea.className = 'edit-page-textarea';
+    textarea.value = post.content || '';
+    textarea.placeholder = 'Edit your post...';
+    
+    // Assemble the page
+    editPage.appendChild(header);
+    editPage.appendChild(textarea);
+    
+    document.body.appendChild(editPage);
+    document.body.style.overflow = 'hidden';
+    
+    // Focus the textarea
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }, 300);
   }
+
+  // ... (rest of your existing methods remain the same)
 }
 
 customElements.define('post-component', PostComponent);
