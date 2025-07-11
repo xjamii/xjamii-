@@ -771,18 +771,6 @@ a, .mention, .hashtag, .url {
   background-color: white;
 }
 
-  
-
-
-
-
-/* Comment Page Scrolling Fix */
-.comment-page-overlay {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
 
 
 /* Twitter-like red heart */
