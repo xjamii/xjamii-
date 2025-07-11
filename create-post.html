@@ -1021,43 +1021,6 @@ function setLoadingState(isLoading) {
     }
 }
 
-         async function createPost(content, mediaFiles = []) {
-  try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError) throw authError;
-
-    // 1. Create the post
-    const { data: post, error: postError } = await supabase
-      .from('posts')
-      .insert({
-        user_id: user.id,
-        content: content
-      })
-      .select()
-      .single();
-
-    if (postError) throw postError;
-
-    // 2. Handle media uploads if any
-    if (mediaFiles.length > 0) {
-      const { error: mediaError } = await supabase
-        .from('post_media')
-        .insert(mediaFiles.map(file => ({
-          post_id: post.id,
-          media_url: file.url,
-          media_type: file.type
-        })));
-
-      if (mediaError) throw mediaError;
-    }
-
-    return { success: true, post };
-  } catch (error) {
-    console.error('Error creating post:', error);
-    return { success: false, error: error.message };
-  }
-}
-
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     init().catch(e => console.error("Initialization failed:", e));
