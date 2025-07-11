@@ -771,4 +771,183 @@ a, .mention, .hashtag, .url {
   background-color: white;
 }
 
-  
+  /* Comment Page Scrolling Fix */
+.comment-page-overlay {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.comment-page-content-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Comment Styles */
+.comment {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.comment-header {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.comment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 12px;
+}
+
+.comment-avatar.initials {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #0056b3;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.comment-user-info {
+  flex: 1;
+}
+
+.comment-user {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.comment-username {
+  color: #777;
+  font-size: 13px;
+}
+
+.comment-time {
+  font-size: 12px;
+  color: #999;
+  position: absolute;
+  right: 15px;
+  top: 0;
+}
+
+.comment-content {
+  margin-left: 52px;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 15px;
+  margin-left: 52px;
+  margin-top: 8px;
+}
+
+.comment-action {
+  display: flex;
+  align-items: center;
+  color: #777;
+  font-size: 13px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.comment-action i {
+  margin-right: 5px;
+}
+
+.comment-action.like-action.liked {
+  color: #f91880;
+}
+
+.comment-action:hover {
+  color: #1d9bf0;
+}
+
+.comment-action.like-action:hover {
+  color: #f91880;
+}
+
+.comment-more {
+  color: #777;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.comment-more:hover {
+  color: #333;
+}
+
+/* Edit Page Styles */
+.edit-page-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 1000;
+}
+
+.edit-page-header {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.edit-page-title {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.edit-page-close {
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.edit-page-save {
+  color: #1d9bf0;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.edit-page-textarea {
+  width: 100%;
+  height: calc(100vh - 60px);
+  border: none;
+  resize: none;
+  padding: 15px;
+  font-size: 16px;
+  outline: none;
+}
+
+/* Twitter-like red heart */
+.post-action.like-action.liked {
+  color: #f91880;
+}
+
+.post-action.like-action.liked i {
+  color: #f91880;
+}
+
+.post-action.like-action:hover {
+  color: #f91880;
+}
+
+.post-action.like-action:hover i {
+  color: #f91880;
+}
