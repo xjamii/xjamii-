@@ -1,5 +1,3 @@
-
-
 class PostComponent extends HTMLElement {
   constructor() {
     super();
@@ -182,15 +180,14 @@ class PostComponent extends HTMLElement {
   }
 
   setupEventListeners(post) {
-    // Like action - updated for Supabase
-    this.querySelector('.like-action')?.addEventListener('click', async (e) => {
+    // Like action
+    this.querySelector('.like-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       const likeBtn = e.currentTarget;
       const isLiked = likeBtn.classList.contains('liked');
       const icon = likeBtn.querySelector('i');
       const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
       
-      // Optimistic UI update
       likeBtn.classList.toggle('liked');
       icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
       
@@ -199,34 +196,8 @@ class PostComponent extends HTMLElement {
         countEl.textContent = isLiked ? count - 1 : count + 1;
       }
       
-      // Supabase like/unlike
-      try {
-        const { error } = isLiked 
-          ? await supabase
-              .from('likes')
-              .delete()
-              .eq('post_id', post.id)
-              .eq('profile_id', supabase.auth.user()?.id)
-          : await supabase
-              .from('likes')
-              .insert([
-                { 
-                  post_id: post.id, 
-                  profile_id: supabase.auth.user()?.id 
-                }
-              ]);
-        
-        if (error) throw error;
-      } catch (error) {
-        console.error('Error toggling like:', error);
-        // Revert UI if API call fails
-        likeBtn.classList.toggle('liked');
-        icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-        if (countEl) {
-          let count = parseInt(countEl.textContent) || 0;
-          countEl.textContent = isLiked ? count + 1 : count - 1;
-        }
-      }
+      // TODO: Add like API call
+      console.log(`${isLiked ? 'Unliked' : 'Liked'} post ${post.id}`);
     });
 
     // More options
