@@ -789,3 +789,133 @@ a, .mention, .hashtag, .url {
 .post-action.like-action:hover i {
   color: #f91880;
 }
+
+/* Like Button Styles */
+like-button {
+  display: inline-block;
+}
+
+.like-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.like-action:hover {
+  background-color: rgba(254, 84, 102, 0.1);
+}
+
+.like-action.liked {
+  color: var(--like-color);
+}
+
+.like-action i {
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.like-action:hover i {
+  transform: scale(1.1);
+}
+
+.like-action.liked i {
+  animation: like-pulse 0.45s ease;
+}
+
+@keyframes like-pulse {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.2); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* Updates to existing post actions to accommodate like button */
+.post-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.post-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.post-action:hover {
+  background-color: var(--hover-bg);
+}
+
+.post-action.comment-action:hover {
+  color: var(--comment-color);
+  background-color: rgba(0, 186, 124, 0.1);
+}
+
+.post-action.share-action:hover {
+  color: var(--share-color);
+  background-color: rgba(0, 149, 246, 0.1);
+}
+
+.post-action.views {
+  margin-left: auto;
+  color: var(--text-tertiary);
+}
+
+.post-more {
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: 4px;
+}
+
+.post-more:hover {
+  background-color: var(--hover-bg);
+}
+
+/* Comment page specific like button styles */
+.comment-page-post .post-actions {
+  padding: 12px 0;
+  margin: 12px 0;
+}
+
+.comment-page-post .like-action {
+  font-size: 15px;
+}
+
+.comment-page-post .like-action i {
+  font-size: 17px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .post-action {
+    padding: 6px;
+    font-size: 13px;
+  }
+  
+  .like-action {
+    padding: 6px;
+    font-size: 13px;
+  }
+  
+  .like-action i {
+    font-size: 15px;
+  }
+}
