@@ -55,6 +55,36 @@ class PostComponent extends HTMLElement {
     return content;
   }
 
+  async toggleLike(postId, isCurrentlyLiked) {
+    try {
+      const { data, error } = await supabase
+        .from('likes')
+        .upsert({
+          post_id: postId,
+          profile_id: currentUserId // You need to get this from your auth system
+        }, {
+          onConflict: 'post_id,profile_id'
+        });
+      
+      if (!isCurrentlyLiked) {
+        // Like was added
+        return { success: true, newLikeState: true };
+      } else {
+        // Like was removed
+        const { error: deleteError } = await supabase
+          .from('likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('profile_id', currentUserId);
+        
+        return { success: !deleteError, newLikeState: false };
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+      return { success: false };
+    }
+  }
+
   render() {
     try {
       const postData = this.getAttribute('post-data');
@@ -181,23 +211,36 @@ class PostComponent extends HTMLElement {
 
   setupEventListeners(post) {
     // Like action
-    this.querySelector('.like-action')?.addEventListener('click', (e) => {
+    this.querySelector('.like-action')?.addEventListener('click', async (e) => {
       e.stopPropagation();
       const likeBtn = e.currentTarget;
       const isLiked = likeBtn.classList.contains('liked');
-      const icon = likeBtn.querySelector('i');
-      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
       
+      // Optimistic UI update
       likeBtn.classList.toggle('liked');
+      const icon = likeBtn.querySelector('i');
       icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
       
+      // Update count immediately
+      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
       if (countEl) {
         let count = parseInt(countEl.textContent) || 0;
         countEl.textContent = isLiked ? count - 1 : count + 1;
       }
       
-      // TODO: Add like API call
-      console.log(`${isLiked ? 'Unliked' : 'Liked'} post ${post.id}`);
+      // Call API to update like status
+      const { success, newLikeState } = await this.toggleLike(post.id, isLiked);
+      
+      // Revert if API call failed
+      if (!success) {
+        likeBtn.classList.toggle('liked');
+        icon.className = newLikeState ? 'fas fa-heart' : 'far fa-heart';
+        if (countEl) {
+          let count = parseInt(countEl.textContent) || 0;
+          countEl.textContent = newLikeState ? count + 1 : count - 1;
+        }
+        alert('Failed to update like status');
+      }
     });
 
     // More options
