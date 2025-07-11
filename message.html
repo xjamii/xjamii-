@@ -6,6 +6,8 @@
     <title>Messages - Aviation Network</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         .message-container {
             height: calc(100vh - 140px);
@@ -61,7 +63,7 @@
             <div class="flex items-center">
                 <img id="receiver-avatar" src="" alt="Profile" class="w-8 h-8 rounded-full mr-2">
                 <div>
-                    <h1 id="receiver-name" class="font-semibold text-gray-800"></h1>
+                    <h1 id="receiver-name" class="font-semibold text-gray-800">Messages</h1>
                     <p id="typing-indicator" class="text-xs text-gray-500 hidden">
                         <span class="typing-indicator"></span>
                         <span class="typing-indicator"></span>
@@ -74,7 +76,7 @@
 
     <!-- Messages Container -->
     <div id="messages-container" class="message-container overflow-y-auto p-4 space-y-3 pb-20">
-        <!-- Messages will be loaded here -->
+        <div class="text-center text-gray-500 py-4">Loading messages...</div>
     </div>
 
     <!-- Message Input -->
@@ -89,8 +91,7 @@
     </div>
 
     <!-- Initialize Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
+        <script>
         // Initialize Supabase
         const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
         const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
@@ -111,7 +112,6 @@
         let currentUser;
         let receiverId;
         let receiverProfile;
-        let typingTimeout;
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async () => {
@@ -120,7 +120,7 @@
             receiverId = urlParams.get('user');
             
             if (!receiverId) {
-                alert('No user specified');
+                showError('No user specified');
                 window.location.href = '/';
                 return;
             }
@@ -151,12 +151,6 @@
                 }
             });
 
-            // Set up typing indicator
-            elements.messageInput.addEventListener('input', () => {
-                // In a real app, you would send a "typing" event to the server here
-                showTypingIndicator();
-            });
-
             // Load existing messages
             await loadMessages();
 
@@ -178,9 +172,7 @@
 
                 receiverProfile = profile;
                 
-                // Update UI
-                elements.receiverName.textContent = profile.full_name || 'User';
-                
+                // Update avatar only (we keep "Messages" as the header text)
                 if (profile.avatar_url) {
                     elements.receiverAvatar.src = profile.avatar_url;
                 } else {
@@ -191,8 +183,8 @@
                 }
             } catch (error) {
                 console.error('Error loading receiver profile:', error);
-                alert('Failed to load profile');
-                window.location.href = '/';
+                // Still show "Messages" as header text even if profile fails to load
+                elements.receiverAvatar.src = 'https://ui-avatars.com/api/?name=U&background=0056b3&color=fff&size=120';
             }
         }
 
@@ -218,10 +210,12 @@
                     
                     // Scroll to bottom
                     scrollToBottom();
+                } else {
+                    elements.messagesContainer.innerHTML = '<div class="text-center text-gray-500 py-4">No messages yet. Start the conversation!</div>';
                 }
             } catch (error) {
                 console.error('Error loading messages:', error);
-                alert('Failed to load messages');
+                showError('Failed to load messages');
             }
         }
 
@@ -255,10 +249,7 @@
             if (!content) return;
             
             try {
-                // Clear input
-                elements.messageInput.value = '';
-                
-                // Create message object (will be added to UI optimistically)
+                // Create message object
                 const message = {
                     sender_id: currentUser.id,
                     receiver_id: receiverId,
@@ -267,7 +258,10 @@
                     is_read: false
                 };
                 
-                // Add to UI immediately
+                // Clear input
+                elements.messageInput.value = '';
+                
+                // Add to UI immediately (optimistic update)
                 addMessageToUI(message);
                 scrollToBottom();
                 
@@ -278,17 +272,11 @@
                     .select();
                 
                 if (error) throw error;
-                
-                // Update the message in UI with the actual database ID
-                if (data && data[0]) {
-                    const lastMessage = elements.messagesContainer.lastChild;
-                    if (lastMessage) {
-                        lastMessage.dataset.messageId = data[0].id;
-                    }
-                }
             } catch (error) {
                 console.error('Error sending message:', error);
-                alert('Failed to send message');
+                // Show error and restore message
+                showError('Failed to send message');
+                elements.messageInput.value = content;
             }
         }
 
@@ -311,17 +299,12 @@
             elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
         }
 
-        // Show typing indicator
-        function showTypingIndicator() {
-            elements.typingIndicator.classList.remove('hidden');
-            
-            // Clear previous timeout if it exists
-            if (typingTimeout) clearTimeout(typingTimeout);
-            
-            // Hide after 3 seconds of inactivity
-            typingTimeout = setTimeout(() => {
-                elements.typingIndicator.classList.add('hidden');
-            }, 3000);
+        // Show error message
+        function showError(message) {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'text-center text-red-500 py-2';
+            errorElement.textContent = message;
+            elements.messagesContainer.appendChild(errorElement);
         }
 
         // Set up real-time subscription
