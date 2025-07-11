@@ -207,7 +207,6 @@
         /* Suggestions */
         .suggestions-container {
             margin-top: 10px;
-            display: block; /* Ensure suggestions container is visible by default */
         }
 
         .suggestion-title {
@@ -285,6 +284,7 @@
             <div class="search-results" id="profiles-results"></div>
             <div class="infinite-scroll-loader" id="profiles-scroll-loader">
                 <div class="spinner"></div>
+                <div>Loading more professionals...</div>
             </div>
             <div class="no-results" id="profiles-no-results">
                 <i class="fas fa-user-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
@@ -300,6 +300,7 @@
             <div class="search-results" id="posts-results"></div>
             <div class="infinite-scroll-loader" id="posts-scroll-loader">
                 <div class="spinner"></div>
+                
             </div>
             <div class="no-results" id="posts-no-results">
                 <i class="fas fa-comment-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
@@ -346,8 +347,6 @@
         let hasMoreProfiles = true;
         let hasMorePosts = true;
         let currentUserId = null;
-        let suggestionsOffset = 0;
-        const suggestionsLimit = 10;
 
         // Event Listeners
         elements.searchInput.addEventListener('input', handleSearchInput);
@@ -367,7 +366,6 @@
                 if (currentTab === 'profiles') {
                     profilesPage = 0;
                     hasMoreProfiles = true;
-                    suggestionsOffset = 0;
                 } else {
                     postsPage = 0;
                     hasMorePosts = true;
@@ -399,11 +397,8 @@
                     postsPage++;
                     await loadMorePosts();
                 } else if (currentTab === 'profiles' && !lastSearchTerm) {
-                    // Only show loader if we have more suggestions to load
-                    if (hasMoreProfiles) {
-                        elements.profilesScrollLoader.style.display = 'block';
-                        await loadMoreSuggestions();
-                    }
+                    // Load more suggestions when scrolling
+                    await loadMoreSuggestions();
                 }
             }
         }
@@ -420,9 +415,7 @@
                 clearResults();
                 if (currentTab === 'profiles') {
                     elements.suggestionsContainer.style.display = 'block';
-                    suggestionsOffset = 0;
-                    hasMoreProfiles = true;
-                    await loadSuggestedProfiles();
+                    loadSuggestedProfiles();
                 }
                 return;
             }
@@ -641,11 +634,12 @@
             if (isProfilesLoading || !hasMoreProfiles) return;
             
             isProfilesLoading = true;
+            elements.profilesScrollLoader.style.display = 'block';
             
             const { data, error } = await supabase.rpc('get_suggested_profiles', {
                 current_user_id: currentUserId,
-                limit_count: suggestionsLimit,
-                offset_count: suggestionsOffset
+                limit_count: 10,
+                offset_count: elements.suggestionsResults.children.length
             });
             
             isProfilesLoading = false;
@@ -659,14 +653,6 @@
             if (!data || data.length === 0) {
                 hasMoreProfiles = false;
                 return;
-            }
-            
-            // Update offset for next load
-            suggestionsOffset += data.length;
-            
-            // If we got less than the limit, we've reached the end
-            if (data.length < suggestionsLimit) {
-                hasMoreProfiles = false;
             }
             
             appendSuggestionsResults(data);
@@ -766,8 +752,7 @@
                 // Get suggested profiles (non-connected users)
                 const { data, error } = await supabase.rpc('get_suggested_profiles', {
                     current_user_id: user.id,
-                    limit_count: suggestionsLimit,
-                    offset_count: 0
+                    limit_count: 10
                 });
                 
                 // Hide loading spinner
@@ -778,14 +763,6 @@
                 if (!data || data.length === 0) {
                     elements.suggestionsContainer.style.display = 'none';
                     return;
-                }
-                
-                // Update offset for next load
-                suggestionsOffset = data.length;
-                
-                // If we got less than the limit, we've reached the end
-                if (data.length < suggestionsLimit) {
-                    hasMoreProfiles = false;
                 }
                 
                 // Display suggested profiles
