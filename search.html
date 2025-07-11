@@ -207,6 +207,7 @@
         /* Suggestions */
         .suggestions-container {
             margin-top: 10px;
+            display: block; /* Ensure suggestions container is visible by default */
         }
 
         .suggestion-title {
@@ -421,7 +422,7 @@
                     elements.suggestionsContainer.style.display = 'block';
                     suggestionsOffset = 0;
                     hasMoreProfiles = true;
-                    loadSuggestedProfiles();
+                    await loadSuggestedProfiles();
                 }
                 return;
             }
