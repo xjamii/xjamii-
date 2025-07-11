@@ -109,7 +109,7 @@
             margin-bottom: 10px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
             position: relative;
-            padding-right: 80px; /* Space for connect button */
+            padding-right: 80px;
         }
 
         .profile-avatar {
@@ -154,16 +154,19 @@
             padding: 5px 15px;
             font-size: 14px;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .connect-btn.hidden {
+            display: none;
         }
 
         .connect-btn.pending {
-            background-color: #e0e0e0;
-            color: #666;
+            background-color: #0056b3;
         }
 
         .connect-btn.connected {
-            background-color: #e6f0ff;
-            color: #0056b3;
+            background-color: #0056b3;
         }
 
         /* Loading States */
@@ -210,6 +213,25 @@
             padding: 15px 15px 5px;
             font-weight: 600;
             color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .suggestions-loading {
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .suggestions-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e6f0ff;
+            border-top: 2px solid #0056b3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
         }
 
         /* Infinite scroll loader */
@@ -251,7 +273,12 @@
         <!-- Professionals Section -->
         <div class="search-section active" id="profiles-section">
             <div class="suggestions-container" id="suggestions-container">
-                <div class="suggestion-title">Suggested Professionals</div>
+                <div class="suggestion-title">
+                    Suggested Professionals
+                    <div class="suggestions-loading" id="suggestions-loading">
+                        <div class="suggestions-spinner"></div>
+                    </div>
+                </div>
                 <div class="search-results" id="suggestions-results"></div>
             </div>
             <div class="search-results" id="profiles-results"></div>
@@ -304,6 +331,7 @@
             postsLoading: document.getElementById('posts-loading'),
             suggestionsContainer: document.getElementById('suggestions-container'),
             suggestionsResults: document.getElementById('suggestions-results'),
+            suggestionsLoading: document.getElementById('suggestions-loading'),
             profilesScrollLoader: document.getElementById('profiles-scroll-loader'),
             postsScrollLoader: document.getElementById('posts-scroll-loader')
         };
@@ -368,6 +396,9 @@
                 } else if (currentTab === 'posts' && hasMorePosts && lastSearchTerm) {
                     postsPage++;
                     await loadMorePosts();
+                } else if (currentTab === 'profiles' && !lastSearchTerm) {
+                    // Load more suggestions when scrolling
+                    await loadMoreSuggestions();
                 }
             }
         }
@@ -486,6 +517,15 @@
                 if (user) currentUserId = user.id;
             }
             
+            // Hide connect button for current user's profile
+            if (currentUserId) {
+                const currentUserProfile = data.find(p => p.id === currentUserId);
+                if (currentUserProfile) {
+                    const btn = document.querySelector(`.connect-btn[data-user-id="${currentUserId}"]`);
+                    if (btn) btn.classList.add('hidden');
+                }
+            }
+            
             // Update connection status for each profile
             if (currentUserId) {
                 await updateConnectionStatuses(data);
@@ -590,6 +630,34 @@
             appendPostsResults(data);
         }
 
+        async function loadMoreSuggestions() {
+            if (isProfilesLoading || !hasMoreProfiles) return;
+            
+            isProfilesLoading = true;
+            elements.profilesScrollLoader.style.display = 'block';
+            
+            const { data, error } = await supabase.rpc('get_suggested_profiles', {
+                current_user_id: currentUserId,
+                limit_count: 10,
+                offset_count: elements.suggestionsResults.children.length
+            });
+            
+            isProfilesLoading = false;
+            elements.profilesScrollLoader.style.display = 'none';
+            
+            if (error) {
+                console.error('Error loading more suggestions:', error);
+                return;
+            }
+            
+            if (!data || data.length === 0) {
+                hasMoreProfiles = false;
+                return;
+            }
+            
+            appendSuggestionsResults(data);
+        }
+
         function appendProfilesResults(profiles) {
             profiles.forEach(profile => {
                 const profileElement = createProfileElement(profile);
@@ -601,6 +669,13 @@
             posts.forEach(post => {
                 const postElement = createPostElement(post);
                 elements.postsResults.appendChild(postElement);
+            });
+        }
+
+        function appendSuggestionsResults(profiles) {
+            profiles.forEach(profile => {
+                const profileElement = createProfileElement(profile);
+                elements.suggestionsResults.appendChild(profileElement);
             });
         }
 
@@ -660,6 +735,10 @@
 
         async function loadSuggestedProfiles() {
             try {
+                // Show loading spinner
+                elements.suggestionsLoading.style.display = 'block';
+                elements.suggestionsResults.innerHTML = '';
+                
                 // Check if user is logged in
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
                 
@@ -676,9 +755,10 @@
                     limit_count: 10
                 });
                 
-                if (error) throw error;
+                // Hide loading spinner
+                elements.suggestionsLoading.style.display = 'none';
                 
-                elements.suggestionsResults.innerHTML = '';
+                if (error) throw error;
                 
                 if (!data || data.length === 0) {
                     elements.suggestionsContainer.style.display = 'none';
@@ -694,8 +774,16 @@
                 // Update connection status for suggestions
                 await updateConnectionStatuses(data);
                 
+                // Hide connect button for current user's profile if it appears
+                const currentUserProfile = data.find(p => p.id === currentUserId);
+                if (currentUserProfile) {
+                    const btn = document.querySelector(`.connect-btn[data-user-id="${currentUserId}"]`);
+                    if (btn) btn.classList.add('hidden');
+                }
+                
             } catch (error) {
                 console.error('Error loading suggestions:', error);
+                elements.suggestionsLoading.style.display = 'none';
                 elements.suggestionsContainer.style.display = 'none';
             }
         }
@@ -771,14 +859,20 @@
                 if (connection) {
                     if (connection.status === 'pending') {
                         if (connection.sender_id === currentUserId) {
-                            // Current user sent the request - cancel it
-                            await supabase
-                                .from('connections')
-                                .delete()
-                                .eq('id', connection.id);
+                            // Current user sent the request - show Cancel for 2 seconds then revert
+                            button.textContent = 'Cancel';
+                            await new Promise(resolve => setTimeout(resolve, 2000));
                             
-                            button.textContent = 'Connect';
-                            button.classList.remove('pending', 'connected');
+                            // If user didn't click again, cancel the request
+                            if (button.textContent === 'Cancel') {
+                                await supabase
+                                    .from('connections')
+                                    .delete()
+                                    .eq('id', connection.id);
+                                
+                                button.textContent = 'Connect';
+                                button.classList.remove('pending', 'connected');
+                            }
                         } else {
                             // Current user received the request - accept it
                             await supabase
