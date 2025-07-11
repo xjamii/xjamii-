@@ -40,12 +40,12 @@
         }
 
         .header-title {
-            font-weight: 600;
             font-size: 18px;
+            font-weight: 600;
             flex: 1;
         }
 
-        .search-icon {
+        .search-button {
             color: #0056b3;
             font-size: 18px;
             text-decoration: none;
@@ -57,7 +57,35 @@
             padding: 15px;
         }
 
+        /* Tabs */
+        .notifications-tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            background-color: white;
+            position: sticky;
+            top: 60px;
+            z-index: 90;
+        }
+
+        .notifications-tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px 0;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .notifications-tab.active {
+            color: #0056b3;
+            border-bottom: 2px solid #0056b3;
+        }
+
         /* Notification Items */
+        .notification-list {
+            margin-top: 10px;
+        }
+
         .notification-item {
             display: flex;
             padding: 15px;
@@ -80,19 +108,12 @@
             margin-right: 15px;
         }
 
-        .notification-info {
+        .notification-content {
             flex: 1;
         }
 
-        .notification-message {
+        .notification-text {
             margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .notification-message a {
-            color: #0056b3;
-            font-weight: 500;
-            text-decoration: none;
         }
 
         .notification-time {
@@ -102,18 +123,16 @@
 
         .notification-actions {
             display: flex;
-            gap: 10px;
             margin-top: 10px;
+            gap: 10px;
         }
 
         .notification-action-btn {
-            padding: 5px 12px;
+            padding: 5px 10px;
             border-radius: 15px;
             font-size: 12px;
-            font-weight: 500;
             cursor: pointer;
             border: none;
-            outline: none;
         }
 
         .accept-btn {
@@ -121,9 +140,26 @@
             color: white;
         }
 
-        .ignore-btn {
+        .decline-btn {
             background-color: #f0f0f0;
             color: #333;
+        }
+
+        .notification-badge {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #0056b3;
+        }
+
+        /* Empty State */
+        .no-notifications {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
         }
 
         /* Loading States */
@@ -146,47 +182,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        .no-notifications {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
-        }
-
-        /* Tabs */
-        .notification-tabs {
-            display: flex;
-            border-bottom: 1px solid #eee;
-            background-color: white;
-            position: sticky;
-            top: 60px;
-            z-index: 90;
-        }
-
-        .notification-tab {
-            flex: 1;
-            text-align: center;
-            padding: 15px 0;
-            font-weight: 500;
-            color: #666;
-            cursor: pointer;
-        }
-
-        .notification-tab.active {
-            color: #0056b3;
-            border-bottom: 2px solid #0056b3;
-        }
-
-        /* Unread indicator */
-        .unread-indicator {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 8px;
-            height: 8px;
-            background-color: #0056b3;
-            border-radius: 50%;
-        }
     </style>
 </head>
 <body>
@@ -196,34 +191,33 @@
             <i class="fas fa-arrow-left"></i>
         </a>
         <div class="header-title">Notifications</div>
-        <a href="search.html" class="search-icon">
+        <a href="search.html" class="search-button">
             <i class="fas fa-search"></i>
         </a>
     </div>
 
-    <!-- Notification Tabs -->
-    <div class="notification-tabs">
-        <div class="notification-tab active" data-tab="all">All</div>
-        <div class="notification-tab" data-tab="requests">Requests</div>
-        <div class="notification-tab" data-tab="posts">Posts</div>
+    <!-- Notifications Tabs -->
+    <div class="notifications-tabs">
+        <div class="notifications-tab active" data-tab="all">All</div>
+        <div class="notifications-tab" data-tab="requests">Requests</div>
+        <div class="notifications-tab" data-tab="posts">Posts</div>
     </div>
 
     <!-- Notifications Content -->
     <div class="notifications-content">
-        <div class="notifications-list" id="all-notifications">
+        <div class="notification-list" id="all-notifications">
             <!-- All notifications will be loaded here -->
-        </div>
-        
-        <div class="notifications-list" id="requests-notifications" style="display: none;">
-            <!-- Connection requests will be loaded here -->
-        </div>
-        
-        <div class="notifications-list" id="posts-notifications" style="display: none;">
-            <!-- Post notifications will be loaded here -->
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
         </div>
 
-        <div class="loading-spinner" id="notifications-loading">
-            <div class="spinner"></div>
+        <div class="notification-list" id="requests-notifications" style="display: none;">
+            <!-- Connection requests will be loaded here -->
+        </div>
+
+        <div class="notification-list" id="posts-notifications" style="display: none;">
+            <!-- Post notifications will be loaded here -->
         </div>
 
         <div class="no-notifications" id="no-notifications" style="display: none;">
@@ -240,17 +234,16 @@
 
         // DOM Elements
         const elements = {
+            tabs: document.querySelectorAll('.notifications-tab'),
             allNotifications: document.getElementById('all-notifications'),
             requestsNotifications: document.getElementById('requests-notifications'),
             postsNotifications: document.getElementById('posts-notifications'),
-            loadingSpinner: document.getElementById('notifications-loading'),
-            noNotifications: document.getElementById('no-notifications'),
-            tabs: document.querySelectorAll('.notification-tab')
+            noNotifications: document.getElementById('no-notifications')
         };
 
         // Variables
         let currentUserId = null;
-        let currentTab = 'all';
+        let notificationChannel = null;
 
         // Event Listeners
         elements.tabs.forEach(tab => {
@@ -258,29 +251,28 @@
                 // Update active tab
                 elements.tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                currentTab = tab.dataset.tab;
                 
-                // Show the correct notifications list
-                document.querySelectorAll('.notifications-list').forEach(list => {
-                    list.style.display = 'none';
-                });
+                // Show corresponding content
+                elements.allNotifications.style.display = 'none';
+                elements.requestsNotifications.style.display = 'none';
+                elements.postsNotifications.style.display = 'none';
                 
-                document.getElementById(`${currentTab}-notifications`).style.display = 'block';
-                
-                // Mark notifications as read when switching tabs
-                if (currentTab === 'all') {
-                    markNotificationsAsRead();
+                if (tab.dataset.tab === 'all') {
+                    elements.allNotifications.style.display = 'block';
+                } else if (tab.dataset.tab === 'requests') {
+                    elements.requestsNotifications.style.display = 'block';
+                } else if (tab.dataset.tab === 'posts') {
+                    elements.postsNotifications.style.display = 'block';
                 }
+                
+                // Load notifications for the selected tab
+                loadNotifications(tab.dataset.tab);
             });
         });
 
         // Functions
-        async function loadNotifications() {
+        async function loadNotifications(type = 'all') {
             try {
-                // Show loading state
-                elements.loadingSpinner.style.display = 'block';
-                elements.noNotifications.style.display = 'none';
-                
                 // Check if user is logged in
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
                 
@@ -291,57 +283,71 @@
                 
                 currentUserId = user.id;
                 
-                // Get all notifications for the user
-                const { data: notifications, error } = await supabase
+                // Show loading state
+                const container = type === 'all' ? elements.allNotifications : 
+                                type === 'requests' ? elements.requestsNotifications : 
+                                elements.postsNotifications;
+                
+                container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+                elements.noNotifications.style.display = 'none';
+                
+                // Build the query based on type
+                let query = supabase
                     .from('notifications')
-                    .select(`
-                        *,
-                        sender:profiles(full_name, username, avatar_url)
-                    `)
-                    .eq('user_id', user.id)
+                    .select('*')
+                    .eq('user_id', currentUserId)
                     .order('created_at', { ascending: false });
+                
+                if (type === 'requests') {
+                    query = query.eq('type', 'connection_request');
+                } else if (type === 'posts') {
+                    query = query.eq('type', 'new_post');
+                }
+                
+                const { data: notifications, error } = await query;
                 
                 if (error) throw error;
                 
-                // Clear existing notifications
-                elements.allNotifications.innerHTML = '';
-                elements.requestsNotifications.innerHTML = '';
-                elements.postsNotifications.innerHTML = '';
+                // Clear container
+                container.innerHTML = '';
                 
                 if (!notifications || notifications.length === 0) {
-                    elements.noNotifications.style.display = 'block';
-                    elements.loadingSpinner.style.display = 'none';
+                    if (type === 'all') {
+                        elements.noNotifications.style.display = 'block';
+                    } else {
+                        container.innerHTML = `
+                            <div class="no-notifications">
+                                <i class="fas fa-bell-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                                <div>No ${type} notifications</div>
+                            </div>
+                        `;
+                    }
                     return;
                 }
                 
-                // Process and display notifications
+                // Render notifications
                 notifications.forEach(notification => {
                     const notificationElement = createNotificationElement(notification);
-                    
-                    // Add to all notifications
-                    elements.allNotifications.appendChild(notificationElement.cloneNode(true));
-                    
-                    // Add to specific tab if applicable
-                    if (notification.type === 'connection_request' || notification.type === 'connection_accepted') {
-                        elements.requestsNotifications.appendChild(notificationElement.cloneNode(true));
-                    } else if (notification.type === 'new_post') {
-                        elements.postsNotifications.appendChild(notificationElement.cloneNode(true));
-                    }
+                    container.appendChild(notificationElement);
                 });
                 
-                elements.loadingSpinner.style.display = 'none';
-                
                 // Mark notifications as read
-                await markNotificationsAsRead();
+                if (type === 'all') {
+                    await markNotificationsAsRead();
+                }
                 
             } catch (error) {
                 console.error('Error loading notifications:', error);
-                elements.loadingSpinner.style.display = 'none';
-                elements.noNotifications.style.display = 'block';
-                elements.noNotifications.innerHTML = `
-                    <i class="fas fa-exclamation-circle" style="font-size: 24px; margin-bottom: 10px;"></i>
-                    <div>Failed to load notifications</div>
-                    <button onclick="loadNotifications()" style="margin-top: 10px; padding: 5px 10px; background-color: #0056b3; color: white; border: none; border-radius: 5px;">Try Again</button>
+                const container = type === 'all' ? elements.allNotifications : 
+                                type === 'requests' ? elements.requestsNotifications : 
+                                elements.postsNotifications;
+                
+                container.innerHTML = `
+                    <div class="no-notifications">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <div>Failed to load notifications</div>
+                        <button onclick="loadNotifications('${type}')" style="margin-top: 10px; padding: 5px 10px; background: #0056b3; color: white; border: none; border-radius: 5px;">Try Again</button>
+                    </div>
                 `;
             }
         }
@@ -351,194 +357,134 @@
             notificationElement.className = `notification-item ${notification.read ? '' : 'unread'}`;
             
             // Get avatar URL or generate initials
-            const sender = notification.sender || {};
-            const avatarUrl = sender.avatar_url || getInitialsAvatar(sender.full_name || 'U');
+            const avatarUrl = notification.sender_avatar || getInitialsAvatar(notification.sender_name);
             
-            // Determine notification content based on type
-            let message = '';
-            let actions = '';
-            let link = '#';
-            
-            switch (notification.type) {
-                case 'connection_request':
-                    message = `<a href="/profile.html?id=${sender.id}">${sender.full_name || sender.username || 'Someone'}</a> wants to connect with you`;
-                    actions = `
-                        <div class="notification-actions">
-                            <button class="notification-action-btn accept-btn" data-notification-id="${notification.id}" data-sender-id="${sender.id}">Accept</button>
-                            <button class="notification-action-btn ignore-btn" data-notification-id="${notification.id}">Ignore</button>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'connection_accepted':
-                    message = `<a href="/profile.html?id=${sender.id}">${sender.full_name || sender.username || 'Someone'}</a> accepted your connection request`;
-                    link = `/profile.html?id=${sender.id}`;
-                    break;
-                    
-                case 'new_post':
-                    message = `<a href="/profile.html?id=${sender.id}">${sender.full_name || sender.username || 'Someone'}</a> posted something new`;
-                    link = `/post.html?id=${notification.post_id}`;
-                    break;
-                    
-                default:
-                    message = notification.message || 'You have a new notification';
-            }
-            
-            notificationElement.innerHTML = `
-                <a href="${link}" class="notification-link">
-                    <img src="${avatarUrl}" 
-                         class="notification-avatar" 
-                         onerror="this.src='${getInitialsAvatar(sender.full_name || 'U')}'">
-                    <div class="notification-info">
-                        <div class="notification-message">${message}</div>
-                        <div class="notification-time">${formatNotificationTime(notification.created_at)}</div>
-                        ${actions}
+            // Base notification content
+            let content = `
+                <img src="${avatarUrl}" 
+                     class="notification-avatar" 
+                     onerror="this.src='${getInitialsAvatar(notification.sender_name)}'">
+                <div class="notification-content">
+                    <div class="notification-text">
+                        <strong>${notification.sender_name}</strong> ${notification.message}
                     </div>
-                    ${notification.read ? '' : '<div class="unread-indicator"></div>'}
-                </a>
+                    <div class="notification-time">${formatNotificationTime(notification.created_at)}</div>
             `;
             
-            // Add event listeners for action buttons
+            // Add actions for connection requests
             if (notification.type === 'connection_request') {
-                const acceptBtn = notificationElement.querySelector('.accept-btn');
-                const ignoreBtn = notificationElement.querySelector('.ignore-btn');
-                
-                if (acceptBtn) {
-                    acceptBtn.addEventListener('click', async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        await handleConnectionAction(notification.sender_id, 'accept', notification.id);
-                    });
-                }
-                
-                if (ignoreBtn) {
-                    ignoreBtn.addEventListener('click', async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        await handleConnectionAction(notification.sender_id, 'ignore', notification.id);
-                    });
-                }
+                content += `
+                    <div class="notification-actions">
+                        <button class="notification-action-btn accept-btn" data-notification-id="${notification.id}" data-sender-id="${notification.sender_id}">Accept</button>
+                        <button class="notification-action-btn decline-btn" data-notification-id="${notification.id}" data-sender-id="${notification.sender_id}">Decline</button>
+                    </div>
+                `;
             }
+            
+            content += `</div>`;
+            
+            // Add badge for unread notifications
+            if (!notification.read) {
+                content += `<div class="notification-badge"></div>`;
+            }
+            
+            notificationElement.innerHTML = content;
+            
+            // Add click handler for the notification
+            if (notification.link) {
+                notificationElement.style.cursor = 'pointer';
+                notificationElement.addEventListener('click', () => {
+                    window.location.href = notification.link;
+                });
+            }
+            
+            // Add click handlers for action buttons
+            notificationElement.querySelectorAll('.accept-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    await handleConnectionAction(notification.sender_id, 'accept', notification.id, btn);
+                });
+            });
+            
+            notificationElement.querySelectorAll('.decline-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    await handleConnectionAction(notification.sender_id, 'decline', notification.id, btn);
+                });
+            });
             
             return notificationElement;
         }
 
-        async function handleConnectionAction(senderId, action, notificationId) {
+        async function handleConnectionAction(senderId, action, notificationId, button) {
             try {
+                button.disabled = true;
+                button.innerHTML = action === 'accept' ? '<i class="fas fa-spinner fa-spin"></i>' : '<i class="fas fa-spinner fa-spin"></i>';
+                
                 if (action === 'accept') {
                     // Update connection status to 'accepted'
                     const { error } = await supabase
                         .from('connections')
                         .update({ status: 'accepted' })
-                        .eq('sender_id', senderId)
-                        .eq('receiver_id', currentUserId);
+                        .or(`and(sender_id.eq.${senderId},receiver_id.eq.${currentUserId}),and(sender_id.eq.${currentUserId},receiver_id.eq.${senderId})`);
                     
                     if (error) throw error;
                     
-                    // Create a notification for the sender
-                    await createNotification(
-                        senderId,
-                        currentUserId,
-                        'connection_accepted',
-                        `${(await getProfileName(currentUserId))} accepted your connection request`
-                    );
+                    // Update notification
+                    await supabase
+                        .from('notifications')
+                        .update({ 
+                            message: 'accepted your connection request',
+                            read: false,
+                            link: `/profile.html?id=${senderId}`
+                        })
+                        .eq('id', notificationId);
+                    
+                    button.innerHTML = 'Accepted';
+                } else {
+                    // Delete the connection request
+                    const { error } = await supabase
+                        .from('connections')
+                        .delete()
+                        .or(`and(sender_id.eq.${senderId},receiver_id.eq.${currentUserId}),and(sender_id.eq.${currentUserId},receiver_id.eq.${senderId})`);
+                    
+                    if (error) throw error;
+                    
+                    // Remove the notification
+                    await supabase
+                        .from('notifications')
+                        .delete()
+                        .eq('id', notificationId);
+                    
+                    button.innerHTML = 'Declined';
+                    setTimeout(() => {
+                        button.closest('.notification-item').remove();
+                    }, 1000);
                 }
                 
-                // Delete the notification (whether accepted or ignored)
-                await supabase
-                    .from('notifications')
-                    .delete()
-                    .eq('id', notificationId);
-                
-                // Reload notifications
-                loadNotifications();
+                // Update the notification list
+                loadNotifications('requests');
                 
             } catch (error) {
                 console.error('Error handling connection action:', error);
+                button.disabled = false;
+                button.innerHTML = action === 'accept' ? 'Accept' : 'Decline';
                 alert('Failed to process request. Please try again.');
             }
         }
 
         async function markNotificationsAsRead() {
             try {
-                if (!currentUserId) return;
-                
                 await supabase
                     .from('notifications')
                     .update({ read: true })
                     .eq('user_id', currentUserId)
                     .eq('read', false);
                 
-                // Update the notification badge count
-                updateNotificationBadge();
-                
+                // Update the badge count
+                updateUnreadCount();
             } catch (error) {
                 console.error('Error marking notifications as read:', error);
-            }
-        }
-
-        async function updateNotificationBadge() {
-            try {
-                if (!currentUserId) return;
-                
-                const { count, error } = await supabase
-                    .from('notifications')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', currentUserId)
-                    .eq('read', false);
-                
-                if (error) throw error;
-                
-                // Update the badge in the navbar (if we're on the index page)
-                const badge = document.getElementById('notificationBadge');
-                if (badge) {
-                    if (count > 0) {
-                        badge.textContent = count > 9 ? '9+' : count;
-                        badge.style.display = 'flex';
-                    } else {
-                        badge.style.display = 'none';
-                    }
-                }
-                
-            } catch (error) {
-                console.error('Error updating notification badge:', error);
-            }
-        }
-
-        async function createNotification(userId, senderId, type, message, postId = null) {
-            try {
-                const { error } = await supabase
-                    .from('notifications')
-                    .insert([{
-                        user_id: userId,
-                        sender_id: senderId,
-                        type: type,
-                        message: message,
-                        post_id: postId
-                    }]);
-                
-                if (error) throw error;
-                
-            } catch (error) {
-                console.error('Error creating notification:', error);
-            }
-        }
-
-        async function getProfileName(userId) {
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('full_name, username')
-                    .eq('id', userId)
-                    .single();
-                
-                if (error) throw error;
-                
-                return data.full_name || data.username || 'User';
-                
-            } catch (error) {
-                console.error('Error getting profile name:', error);
-                return 'User';
             }
         }
 
@@ -559,21 +505,33 @@
             return `data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><rect width='50' height='50' fill='%230056b3'/><text x='50%' y='50%' font-size='20' fill='white' text-anchor='middle' dy='.3em'>${initials}</text></svg>`;
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadNotifications();
-            
-            // Set up real-time notifications
-            setupNotificationListener();
-        });
+        async function updateUnreadCount() {
+            try {
+                const { count, error } = await supabase
+                    .from('notifications')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUserId)
+                    .eq('read', false);
+                
+                if (error) throw error;
+                
+                // Update the badge in the parent window (index.html)
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'updateNotificationBadge',
+                        count: count || 0
+                    }, '*');
+                }
+                
+                // Also update localStorage for the current window
+                localStorage.setItem('unreadNotifications', count || 0);
+                
+            } catch (error) {
+                console.error('Error updating unread count:', error);
+            }
+        }
 
-        // Real-time notification listener
-        let notificationChannel = null;
-        
-        async function setupNotificationListener() {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            if (error || !user) return;
-            
+        async function setupRealtimeNotifications() {
             if (notificationChannel) {
                 supabase.removeChannel(notificationChannel);
             }
@@ -586,20 +544,39 @@
                         event: 'INSERT',
                         schema: 'public',
                         table: 'notifications',
-                        filter: `user_id=eq.${user.id}`
+                        filter: `user_id=eq.${currentUserId}`
                     },
                     (payload) => {
-                        // If we're on the notifications page, reload the list
-                        if (window.location.pathname.includes('notifications.html')) {
-                            loadNotifications();
-                        } else {
-                            // Otherwise, just update the badge count
-                            updateNotificationBadge();
+                        // Add the new notification to the top of the list
+                        if (document.querySelector('.notifications-tab.active').dataset.tab === 'all') {
+                            const container = document.getElementById('all-notifications');
+                            const notificationElement = createNotificationElement(payload.new);
+                            
+                            if (container.firstChild.classList.contains('loading-spinner')) {
+                                container.innerHTML = '';
+                            }
+                            
+                            container.insertBefore(notificationElement, container.firstChild);
+                            
+                            // Hide "no notifications" message if it's shown
+                            document.getElementById('no-notifications').style.display = 'none';
                         }
+                        
+                        // Update the badge count
+                        updateUnreadCount();
                     }
                 )
                 .subscribe();
         }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Load all notifications by default
+            await loadNotifications('all');
+            
+            // Set up real-time notifications
+            await setupRealtimeNotifications();
+        });
     </script>
 </body>
 </html>
