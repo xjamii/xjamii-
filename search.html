@@ -237,17 +237,8 @@
         /* Infinite scroll loader */
         .infinite-scroll-loader {
             text-align: center;
-            padding: 15px;
+            padding: 10px 0;
             display: none;
-        }
-
-        /* Profile link */
-        .profile-link {
-            display: flex;
-            align-items: center;
-            flex: 1;
-            text-decoration: none;
-            color: inherit;
         }
     </style>
 </head>
@@ -283,8 +274,7 @@
             </div>
             <div class="search-results" id="profiles-results"></div>
             <div class="infinite-scroll-loader" id="profiles-scroll-loader">
-                <div class="spinner"></div>
-                <div>Loading more professionals...</div>
+                <div class="spinner" style="width: 20px; height: 20px; border-width: 2px;"></div>
             </div>
             <div class="no-results" id="profiles-no-results">
                 <i class="fas fa-user-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
@@ -299,8 +289,7 @@
         <div class="search-section" id="posts-section">
             <div class="search-results" id="posts-results"></div>
             <div class="infinite-scroll-loader" id="posts-scroll-loader">
-                <div class="spinner"></div>
-                
+                <div class="spinner" style="width: 20px; height: 20px; border-width: 2px;"></div>
             </div>
             <div class="no-results" id="posts-no-results">
                 <i class="fas fa-comment-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
@@ -347,6 +336,8 @@
         let hasMoreProfiles = true;
         let hasMorePosts = true;
         let currentUserId = null;
+        let suggestionsPage = 0;
+        const PAGE_SIZE = 10; // Number of items to load per page
 
         // Event Listeners
         elements.searchInput.addEventListener('input', handleSearchInput);
@@ -387,7 +378,7 @@
         // Functions
         async function handleScroll() {
             const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-            const nearBottom = scrollTop + clientHeight >= scrollHeight - 500;
+            const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
 
             if (nearBottom && !isProfilesLoading && !isPostsLoading) {
                 if (currentTab === 'profiles' && hasMoreProfiles && lastSearchTerm) {
@@ -396,7 +387,7 @@
                 } else if (currentTab === 'posts' && hasMorePosts && lastSearchTerm) {
                     postsPage++;
                     await loadMorePosts();
-                } else if (currentTab === 'profiles' && !lastSearchTerm) {
+                } else if (currentTab === 'profiles' && !lastSearchTerm && hasMoreProfiles) {
                     // Load more suggestions when scrolling
                     await loadMoreSuggestions();
                 }
@@ -415,6 +406,8 @@
                 clearResults();
                 if (currentTab === 'profiles') {
                     elements.suggestionsContainer.style.display = 'block';
+                    suggestionsPage = 0;
+                    hasMoreProfiles = true;
                     loadSuggestedProfiles();
                 }
                 return;
@@ -491,7 +484,7 @@
                 .from('profiles')
                 .select('*')
                 .or(`full_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
-                .limit(20);
+                .range(profilesPage * PAGE_SIZE, (profilesPage + 1) * PAGE_SIZE - 1);
             
             hideLoading();
             
@@ -530,6 +523,12 @@
             if (currentUserId) {
                 await updateConnectionStatuses(data);
             }
+            
+            // Check if there are more results
+            hasMoreProfiles = data.length === PAGE_SIZE;
+            if (!hasMoreProfiles) {
+                elements.profilesScrollLoader.style.display = 'none';
+            }
         }
 
         async function searchPosts(searchTerm) {
@@ -543,7 +542,7 @@
                 `)
                 .ilike('content', `%${searchTerm}%`)
                 .order('created_at', { ascending: false })
-                .limit(20);
+                .range(postsPage * PAGE_SIZE, (postsPage + 1) * PAGE_SIZE - 1);
             
             hideLoading();
             
@@ -562,6 +561,12 @@
             
             // Display results using your post-component
             appendPostsResults(data);
+            
+            // Check if there are more results
+            hasMorePosts = data.length === PAGE_SIZE;
+            if (!hasMorePosts) {
+                elements.postsScrollLoader.style.display = 'none';
+            }
         }
 
         async function loadMoreProfiles() {
@@ -574,18 +579,19 @@
                 .from('profiles')
                 .select('*')
                 .or(`full_name.ilike.%${lastSearchTerm}%,username.ilike.%${lastSearchTerm}%`)
-                .range(profilesPage * 20, (profilesPage + 1) * 20 - 1);
+                .range(profilesPage * PAGE_SIZE, (profilesPage + 1) * PAGE_SIZE - 1);
             
             isProfilesLoading = false;
-            elements.profilesScrollLoader.style.display = 'none';
             
             if (error) {
                 console.error('Error loading more profiles:', error);
+                elements.profilesScrollLoader.style.display = 'none';
                 return;
             }
             
             if (!data || data.length === 0) {
                 hasMoreProfiles = false;
+                elements.profilesScrollLoader.style.display = 'none';
                 return;
             }
             
@@ -594,6 +600,12 @@
             // Update connection status for new profiles
             if (currentUserId) {
                 await updateConnectionStatuses(data);
+            }
+            
+            // Check if there are more results
+            hasMoreProfiles = data.length === PAGE_SIZE;
+            if (!hasMoreProfiles) {
+                elements.profilesScrollLoader.style.display = 'none';
             }
         }
 
@@ -612,22 +624,91 @@
                 `)
                 .ilike('content', `%${lastSearchTerm}%`)
                 .order('created_at', { ascending: false })
-                .range(postsPage * 20, (postsPage + 1) * 20 - 1);
+                .range(postsPage * PAGE_SIZE, (postsPage + 1) * PAGE_SIZE - 1);
             
             isPostsLoading = false;
-            elements.postsScrollLoader.style.display = 'none';
             
             if (error) {
                 console.error('Error loading more posts:', error);
+                elements.postsScrollLoader.style.display = 'none';
                 return;
             }
             
             if (!data || data.length === 0) {
                 hasMorePosts = false;
+                elements.postsScrollLoader.style.display = 'none';
                 return;
             }
             
             appendPostsResults(data);
+            
+            // Check if there are more results
+            hasMorePosts = data.length === PAGE_SIZE;
+            if (!hasMorePosts) {
+                elements.postsScrollLoader.style.display = 'none';
+            }
+        }
+
+        async function loadSuggestedProfiles() {
+            try {
+                // Show loading spinner
+                elements.suggestionsLoading.style.display = 'block';
+                if (suggestionsPage === 0) {
+                    elements.suggestionsResults.innerHTML = '';
+                }
+                
+                // Check if user is logged in
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    elements.suggestionsContainer.style.display = 'none';
+                    return;
+                }
+                
+                currentUserId = user.id;
+                
+                // Get suggested profiles (non-connected users)
+                const { data, error } = await supabase.rpc('get_suggested_profiles', {
+                    current_user_id: user.id,
+                    limit_count: PAGE_SIZE,
+                    offset_count: suggestionsPage * PAGE_SIZE
+                });
+                
+                // Hide loading spinner
+                elements.suggestionsLoading.style.display = 'none';
+                
+                if (error) throw error;
+                
+                if (!data || data.length === 0) {
+                    hasMoreProfiles = false;
+                    if (suggestionsPage === 0) {
+                        elements.suggestionsContainer.style.display = 'none';
+                    }
+                    return;
+                }
+                
+                // Display suggested profiles
+                appendSuggestionsResults(data);
+                
+                // Update connection status for suggestions
+                await updateConnectionStatuses(data);
+                
+                // Hide connect button for current user's profile if it appears
+                const currentUserProfile = data.find(p => p.id === currentUserId);
+                if (currentUserProfile) {
+                    const btn = document.querySelector(`.connect-btn[data-user-id="${currentUserId}"]`);
+                    if (btn) btn.classList.add('hidden');
+                }
+                
+                // Check if there are more results
+                hasMoreProfiles = data.length === PAGE_SIZE;
+                suggestionsPage++;
+                
+            } catch (error) {
+                console.error('Error loading suggestions:', error);
+                elements.suggestionsLoading.style.display = 'none';
+                elements.suggestionsContainer.style.display = 'none';
+            }
         }
 
         async function loadMoreSuggestions() {
@@ -636,26 +717,13 @@
             isProfilesLoading = true;
             elements.profilesScrollLoader.style.display = 'block';
             
-            const { data, error } = await supabase.rpc('get_suggested_profiles', {
-                current_user_id: currentUserId,
-                limit_count: 10,
-                offset_count: elements.suggestionsResults.children.length
-            });
+            await loadSuggestedProfiles();
             
             isProfilesLoading = false;
-            elements.profilesScrollLoader.style.display = 'none';
             
-            if (error) {
-                console.error('Error loading more suggestions:', error);
-                return;
+            if (!hasMoreProfiles) {
+                elements.profilesScrollLoader.style.display = 'none';
             }
-            
-            if (!data || data.length === 0) {
-                hasMoreProfiles = false;
-                return;
-            }
-            
-            appendSuggestionsResults(data);
         }
 
         function appendProfilesResults(profiles) {
@@ -731,61 +799,6 @@
 
             postElement.setAttribute('post-data', JSON.stringify(processedPost));
             return postElement;
-        }
-
-        async function loadSuggestedProfiles() {
-            try {
-                // Show loading spinner
-                elements.suggestionsLoading.style.display = 'block';
-                elements.suggestionsResults.innerHTML = '';
-                
-                // Check if user is logged in
-                const { data: { user }, error: authError } = await supabase.auth.getUser();
-                
-                if (authError || !user) {
-                    elements.suggestionsContainer.style.display = 'none';
-                    return;
-                }
-                
-                currentUserId = user.id;
-                
-                // Get suggested profiles (non-connected users)
-                const { data, error } = await supabase.rpc('get_suggested_profiles', {
-                    current_user_id: user.id,
-                    limit_count: 10
-                });
-                
-                // Hide loading spinner
-                elements.suggestionsLoading.style.display = 'none';
-                
-                if (error) throw error;
-                
-                if (!data || data.length === 0) {
-                    elements.suggestionsContainer.style.display = 'none';
-                    return;
-                }
-                
-                // Display suggested profiles
-                data.forEach(profile => {
-                    const profileElement = createProfileElement(profile);
-                    elements.suggestionsResults.appendChild(profileElement);
-                });
-                
-                // Update connection status for suggestions
-                await updateConnectionStatuses(data);
-                
-                // Hide connect button for current user's profile if it appears
-                const currentUserProfile = data.find(p => p.id === currentUserId);
-                if (currentUserProfile) {
-                    const btn = document.querySelector(`.connect-btn[data-user-id="${currentUserId}"]`);
-                    if (btn) btn.classList.add('hidden');
-                }
-                
-            } catch (error) {
-                console.error('Error loading suggestions:', error);
-                elements.suggestionsLoading.style.display = 'none';
-                elements.suggestionsContainer.style.display = 'none';
-            }
         }
 
         async function updateConnectionStatuses(profiles) {
