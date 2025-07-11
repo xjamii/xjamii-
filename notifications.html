@@ -227,7 +227,7 @@
     </div>
 
     <script>
-      // notifications.js
+   // notifications.js
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -301,8 +301,7 @@ async function loadNotifications(type = 'all') {
                     full_name,
                     username,
                     avatar_url,
-                    category,
-                    verified
+                    category
                 )
             `)
             .eq('user_id', currentUserId)
@@ -370,15 +369,9 @@ async function createNotificationElement(notification) {
     const sender = notification.sender || {};
     const senderName = sender.full_name || 'Unknown User';
     const username = sender.username ? `@${sender.username}` : '';
-    const isVerified = sender.verified || false;
     
     // Get avatar URL or generate initials
     let avatarUrl = sender.avatar_url || getInitialsAvatar(senderName);
-    
-    // Verification badge HTML
-    const verifiedBadge = isVerified ? 
-        '<i class="fas fa-check-circle verified-badge" style="color: #0056b3; font-size: 14px; margin-left: 4px;"></i>' : 
-        '';
     
     // Base notification content
     let content = `
@@ -387,7 +380,7 @@ async function createNotificationElement(notification) {
              onerror="this.src='${getInitialsAvatar(senderName)}'">
         <div class="notification-content">
             <div class="notification-text">
-                <strong>${senderName}</strong>${verifiedBadge} ${username ? `(${username}) ` : ''}${notification.message}
+                <strong>${senderName}</strong> ${username ? `(${username}) ` : ''}${notification.message}
             </div>
             <div class="notification-time">${formatNotificationTime(notification.created_at)}</div>
     `;
@@ -574,10 +567,10 @@ async function setupRealtimeNotifications() {
                 filter: `user_id=eq.${currentUserId}`
             },
             async (payload) => {
-                // Fetch the sender's profile details including verification status
+                // Fetch the sender's profile details
                 const { data: sender, error } = await supabase
                     .from('profiles')
-                    .select('id, full_name, username, avatar_url, verified')
+                    .select('*')
                     .eq('id', payload.new.sender_id)
                     .single();
                 
