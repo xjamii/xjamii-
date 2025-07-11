@@ -10,8 +10,9 @@ class PostComponent extends HTMLElement {
     this.currentUserId = null; // Will be set when component loads
   }
 
-  connectedCallback() {
-    this.getCurrentUser().then(() => this.render());
+  async connectedCallback() {
+    await this.getCurrentUser(); // Wait for user to be fetched before rendering
+    this.render();
   }
 
   static get observedAttributes() {
@@ -26,8 +27,10 @@ class PostComponent extends HTMLElement {
 
   async getCurrentUser() {
     try {
+      console.log("Fetching current user...");
       const { data: { user } } = await supabase.auth.getUser();
       this.currentUserId = user?.id || null;
+      console.log("Current user ID:", this.currentUserId);
     } catch (error) {
       console.error("Error getting current user:", error);
       this.currentUserId = null;
@@ -192,36 +195,53 @@ class PostComponent extends HTMLElement {
   setupEventListeners(post) {
     // Like action
     this.querySelector('.like-action')?.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const likeBtn = e.currentTarget;
-      const isLiked = likeBtn.classList.contains('liked');
-      const icon = likeBtn.querySelector('i');
-      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
-      
-      // Optimistic UI update
-      likeBtn.classList.toggle('liked');
-      icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
-      
-      if (countEl) {
-        let count = parseInt(countEl.textContent) || 0;
-        countEl.textContent = isLiked ? count - 1 : count + 1;
-      }
-      
-      // API call to like/unlike
       try {
-        if (isLiked) {
-          await supabase.from('post_likes').delete()
-            .eq('post_id', post.id)
-            .eq('user_id', this.currentUserId);
+        e.stopPropagation();
+        const likeBtn = e.currentTarget;
+        const isLiked = likeBtn.classList.contains('liked');
+        const icon = likeBtn.querySelector('i');
+        let countEl = likeBtn.childNodes[2]; // Get the text node
+        
+        // If it's a span (from previous updates), get that instead
+        if (likeBtn.querySelector('span')) {
+          countEl = likeBtn.querySelector('span');
+        }
+        
+        // Optimistic UI update
+        likeBtn.classList.toggle('liked');
+        icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
+        
+        if (countEl) {
+          let count = parseInt(countEl.textContent) || 0;
+          countEl.textContent = isLiked ? count - 1 : count + 1;
+        }
+        
+        // API call to like/unlike
+        if (this.currentUserId) {
+          if (isLiked) {
+            await supabase.from('post_likes').delete()
+              .eq('post_id', post.id)
+              .eq('user_id', this.currentUserId);
+          } else {
+            await supabase.from('post_likes').insert({
+              post_id: post.id,
+              user_id: this.currentUserId
+            });
+          }
         } else {
-          await supabase.from('post_likes').insert({
-            post_id: post.id,
-            user_id: this.currentUserId
-          });
+          throw new Error("User not logged in");
         }
       } catch (error) {
         console.error("Error updating like:", error);
         // Revert UI if API call fails
+        const likeBtn = e.currentTarget;
+        const isLiked = likeBtn.classList.contains('liked');
+        const icon = likeBtn.querySelector('i');
+        let countEl = likeBtn.childNodes[2];
+        if (likeBtn.querySelector('span')) {
+          countEl = likeBtn.querySelector('span');
+        }
+        
         likeBtn.classList.toggle('liked');
         icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
         if (countEl) {
@@ -238,15 +258,27 @@ class PostComponent extends HTMLElement {
     });
 
     // Share action
-    this.querySelector('.share-action')?.addEventListener('click', (e) => {
+    this.querySelector('.share-action')?.addEventListener('click', async (e) => {
       e.stopPropagation();
-      this.sharePost(post.id);
+      try {
+        await this.sharePost(post.id);
+      } catch (error) {
+        console.error("Error sharing post:", error);
+        // Fallback to copy link
+        const postUrl = `${window.location.origin}/post.html?id=${post.id}`;
+        this.copyToClipboard(postUrl);
+      }
     });
 
     // Comment action - open comment page
     this.querySelector('.comment-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.openCommentPage(post);
+      console.log("Opening comment page for post:", post);
+      if (post && post.id) {
+        this.openCommentPage(post);
+      } else {
+        console.error("Post data is invalid:", post);
+      }
     });
 
     // Mentions
@@ -402,6 +434,53 @@ class PostComponent extends HTMLElement {
     setTimeout(() => {
       commentPage.querySelector('.comment-page-input')?.focus();
     }, 300);
+  }
+
+  renderMediaForCommentPage(mediaItems) {
+    if (!mediaItems || !mediaItems.length) return '';
+    
+    if (mediaItems.length === 1) {
+      const media = mediaItems[0];
+      if (media.media_type === 'video') {
+        return `
+          <div class="media-container video-container">
+            <div class="video-preview" data-media-index="0">
+              <video class="post-media" preload="metadata">
+                <source src="${media.media_url}" type="video/mp4">
+              </video>
+              <div class="video-play-button"><i class="fas fa-play"></i></div>
+            </div>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="media-container">
+            <img src="${media.media_url}" class="post-media" data-media-index="0">
+          </div>
+        `;
+      }
+    }
+    
+    return `
+      <div class="media-grid">
+        ${mediaItems.slice(0, 4).map((media, index) => `
+          <div class="grid-media-container">
+            ${media.media_type === 'video' 
+              ? `<div class="video-preview" data-media-index="${index}">
+                  <video class="grid-media" preload="metadata">
+                    <source src="${media.media_url}" type="video/mp4">
+                  </video>
+                  <div class="video-play-button"><i class="fas fa-play"></i></div>
+                </div>`
+              : `<img src="${media.media_url}" class="grid-media" data-media-index="${index}">`}
+          </div>
+        `).join('')}
+        ${mediaItems.length > 4 ? `
+          <div class="media-count-overlay">
+            +${mediaItems.length - 4}
+          </div>` : ''}
+      </div>
+    `;
   }
 
   async loadComments(postId, container) {
@@ -687,19 +766,47 @@ class PostComponent extends HTMLElement {
 
   setupCommentPageEventListeners(commentPage, post) {
     // Like action
-    commentPage.querySelector('.like-action')?.addEventListener('click', (e) => {
+    commentPage.querySelector('.like-action')?.addEventListener('click', async (e) => {
       e.stopPropagation();
       const likeBtn = e.currentTarget;
       const isLiked = likeBtn.classList.contains('liked');
       const icon = likeBtn.querySelector('i');
       const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
       
+      // Optimistic UI update
       likeBtn.classList.toggle('liked');
       icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
       
       if (countEl) {
         let count = parseInt(countEl.textContent) || 0;
         countEl.textContent = isLiked ? count - 1 : count + 1;
+      }
+      
+      // API call to like/unlike
+      try {
+        if (this.currentUserId) {
+          if (isLiked) {
+            await supabase.from('post_likes').delete()
+              .eq('post_id', post.id)
+              .eq('user_id', this.currentUserId);
+          } else {
+            await supabase.from('post_likes').insert({
+              post_id: post.id,
+              user_id: this.currentUserId
+            });
+          }
+        } else {
+          throw new Error("User not logged in");
+        }
+      } catch (error) {
+        console.error("Error updating like:", error);
+        // Revert UI if API call fails
+        likeBtn.classList.toggle('liked');
+        icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+        if (countEl) {
+          let count = parseInt(countEl.textContent) || 0;
+          countEl.textContent = isLiked ? count + 1 : count - 1;
+        }
       }
     });
 
@@ -710,9 +817,16 @@ class PostComponent extends HTMLElement {
     });
 
     // Share action
-    commentPage.querySelector('.share-action')?.addEventListener('click', (e) => {
+    commentPage.querySelector('.share-action')?.addEventListener('click', async (e) => {
       e.stopPropagation();
-      this.sharePost(post.id);
+      try {
+        await this.sharePost(post.id);
+      } catch (error) {
+        console.error("Error sharing post:", error);
+        // Fallback to copy link
+        const postUrl = `${window.location.origin}/post.html?id=${post.id}`;
+        this.copyToClipboard(postUrl);
+      }
     });
 
     // Comment button focuses input
@@ -905,7 +1019,373 @@ class PostComponent extends HTMLElement {
     }, 300);
   }
 
-  // ... (rest of your existing methods remain the same)
+  async sharePost(postId) {
+    const postUrl = `${window.location.origin}/post.html?id=${postId}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Check out this post',
+          url: postUrl
+        });
+      } catch (err) {
+        console.log('Error sharing:', err);
+        // Fallback to copy to clipboard
+        await this.copyToClipboard(postUrl);
+      }
+    } else {
+      await this.copyToClipboard(postUrl);
+    }
+  }
+
+  async copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('Link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        alert('Link copied to clipboard!');
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+        alert('Failed to copy link. Please try again.');
+      }
+      document.body.removeChild(textarea);
+    }
+  }
+
+  setupPullToRefresh() {
+    let startY = 0;
+    let touchStart = false;
+    const refreshContainer = document.createElement('div');
+    refreshContainer.className = 'refresh-container';
+    refreshContainer.innerHTML = '<div class="refresh-loader"><i class="fas fa-sync-alt"></i></div>';
+    this.parentNode.insertBefore(refreshContainer, this);
+
+    this.addEventListener('touchstart', (e) => {
+      if (window.scrollY === 0 && !this.isRefreshing) {
+        startY = e.touches[0].pageY;
+        touchStart = true;
+      }
+    }, { passive: true });
+
+    this.addEventListener('touchmove', (e) => {
+      if (!touchStart || this.isRefreshing) return;
+      
+      const y = e.touches[0].pageY;
+      const dy = y - startY;
+      
+      if (dy > 0) {
+        e.preventDefault();
+        const pullDistance = Math.min(dy, 150);
+        const progress = Math.min(pullDistance / 150, 1);
+        refreshContainer.style.opacity = progress;
+        refreshContainer.style.transform = `translateY(${pullDistance}px)`;
+        refreshContainer.querySelector('.refresh-loader').style.transform = `rotate(${progress * 360}deg)`;
+      }
+    }, { passive: false });
+
+    this.addEventListener('touchend', (e) => {
+      if (!touchStart || this.isRefreshing) return;
+      
+      const y = e.changedTouches[0].pageY;
+      const dy = y - startY;
+      
+      if (dy > 100) {
+        this.isRefreshing = true;
+        refreshContainer.classList.add('refreshing');
+        
+        // Simulate refresh
+        setTimeout(() => {
+          refreshContainer.style.transform = 'translateY(0)';
+          refreshContainer.classList.remove('refreshing');
+          this.isRefreshing = false;
+          
+          // TODO: Actually refresh content
+          console.log('Refreshing content...');
+        }, 1000);
+      } else {
+        refreshContainer.style.transform = 'translateY(0)';
+        refreshContainer.style.opacity = '0';
+      }
+      
+      touchStart = false;
+    });
+  }
+
+  showMediaViewer(mediaItems, startIndex = 0) {
+    if (!mediaItems || !mediaItems.length) return;
+    
+    // Create media viewer overlay
+    this.mediaViewer = document.createElement('div');
+    this.mediaViewer.className = 'media-viewer-overlay';
+    this.currentMediaIndex = startIndex;
+    
+    // Create close button
+    const closeBtn = document.createElement('div');
+    closeBtn.className = 'media-viewer-close';
+    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.addEventListener('click', () => this.closeMediaViewer());
+    
+    // Create media container
+    const mediaContainer = document.createElement('div');
+    mediaContainer.className = 'media-viewer-container';
+    
+    // Add touch and mouse events for dragging
+    mediaContainer.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true });
+    mediaContainer.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+    mediaContainer.addEventListener('touchend', this.handleTouchEnd.bind(this));
+    
+    mediaContainer.addEventListener('mousedown', this.handleMouseDown.bind(this));
+    
+    // Create media content
+    const mediaContent = document.createElement('div');
+    mediaContent.className = 'media-viewer-content';
+    
+    // Add media items
+    mediaItems.forEach((media, index) => {
+      const mediaItem = document.createElement('div');
+      mediaItem.className = `media-viewer-item ${index === startIndex ? 'active' : ''}`;
+      
+      if (media.media_type === 'video') {
+        const video = document.createElement('video');
+        video.className = 'media-viewer-video';
+        video.setAttribute('controls', '');
+        video.innerHTML = `<source src="${media.media_url}" type="video/mp4">`;
+        mediaItem.appendChild(video);
+      } else {
+        const img = document.createElement('img');
+        img.className = 'media-viewer-image';
+        img.src = media.media_url;
+        mediaItem.appendChild(img);
+      }
+      
+      mediaContent.appendChild(mediaItem);
+    });
+    
+    // Add navigation arrows if multiple items
+    let prevBtn, nextBtn;
+    if (mediaItems.length > 1) {
+      prevBtn = document.createElement('div');
+      prevBtn.className = 'media-viewer-nav media-viewer-prev';
+      prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+      prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.navigateMedia(-1);
+      });
+      
+      nextBtn = document.createElement('div');
+      nextBtn.className = 'media-viewer-nav media-viewer-next';
+      nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+      nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.navigateMedia(1);
+      });
+    }
+    
+    // Add dots indicator if multiple items
+    let dotsContainer;
+    if (mediaItems.length > 1) {
+      dotsContainer = document.createElement('div');
+      dotsContainer.className = 'media-viewer-dots';
+      
+      mediaItems.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.className = `media-viewer-dot ${index === startIndex ? 'active' : ''}`;
+        dot.addEventListener('click', () => this.goToMedia(index));
+        dotsContainer.appendChild(dot);
+      });
+    }
+    
+    // Assemble the viewer
+    mediaContainer.appendChild(mediaContent);
+    if (prevBtn) mediaContainer.appendChild(prevBtn);
+    if (nextBtn) mediaContainer.appendChild(nextBtn);
+    if (dotsContainer) mediaContainer.appendChild(dotsContainer);
+    
+    this.mediaViewer.appendChild(closeBtn);
+    this.mediaViewer.appendChild(mediaContainer);
+    
+    document.body.appendChild(this.mediaViewer);
+    document.body.style.overflow = 'hidden';
+    
+    // Start playing video if the first item is a video
+    if (mediaItems[startIndex]?.media_type === 'video') {
+      setTimeout(() => {
+        const video = this.mediaViewer.querySelector('.media-viewer-item.active video');
+        if (video) {
+          video.play().catch(e => console.log('Video play error:', e));
+        }
+      }, 300);
+    }
+  }
+
+  closeMediaViewer() {
+    if (!this.mediaViewer) return;
+    
+    // Pause any playing videos
+    const videos = this.mediaViewer.querySelectorAll('video');
+    videos.forEach(video => video.pause());
+    
+    this.mediaViewer.classList.add('closing');
+    setTimeout(() => {
+      this.mediaViewer.remove();
+      this.mediaViewer = null;
+      document.body.style.overflow = '';
+    }, 300);
+  }
+
+  navigateMedia(direction) {
+    const mediaItems = this.mediaViewer.querySelectorAll('.media-viewer-item');
+    if (!mediaItems.length) return;
+    
+    const newIndex = (this.currentMediaIndex + direction + mediaItems.length) % mediaItems.length;
+    this.goToMedia(newIndex);
+  }
+
+  goToMedia(index) {
+    const mediaItems = this.mediaViewer?.querySelectorAll('.media-viewer-item');
+    if (!mediaItems || index < 0 || index >= mediaItems.length) return;
+    
+    // Pause current video if it's a video
+    const currentVideo = mediaItems[this.currentMediaIndex]?.querySelector('video');
+    if (currentVideo) currentVideo.pause();
+    
+    // Update active item
+    mediaItems[this.currentMediaIndex]?.classList.remove('active');
+    mediaItems[index].classList.add('active');
+    this.currentMediaIndex = index;
+    
+    // Update dots
+    const dots = this.mediaViewer?.querySelectorAll('.media-viewer-dot');
+    if (dots) {
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+      });
+    }
+    
+    // Play new video if it's a video
+    const newVideo = mediaItems[index]?.querySelector('video');
+    if (newVideo) {
+      newVideo.currentTime = 0;
+      newVideo.play().catch(e => console.log('Video play error:', e));
+    }
+  }
+
+  // Touch event handlers for swipe and drag to close
+  handleTouchStart(e) {
+    if (!this.mediaViewer) return;
+    this.startY = e.touches[0].clientY;
+    this.startX = e.touches[0].clientX;
+    this.isDragging = false;
+  }
+
+  handleTouchMove(e) {
+    if (!this.mediaViewer || !this.startY) return;
+    
+    const y = e.touches[0].clientY;
+    const x = e.touches[0].clientX;
+    const dy = y - this.startY;
+    const dx = x - this.startX;
+    
+    // Check if it's a horizontal swipe (for changing media)
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
+      e.preventDefault();
+      this.isDragging = true;
+      if (dx > 0) {
+        this.navigateMedia(-1); // Swipe right
+      } else {
+        this.navigateMedia(1); // Swipe left
+      }
+      this.startX = x;
+      return;
+    }
+    
+    // Vertical drag to close
+    if (Math.abs(dy) > 30) {
+      e.preventDefault();
+      this.isDragging = true;
+      const opacity = 1 - Math.min(Math.abs(dy) / 200, 0.8);
+      const scale = 1 - Math.min(Math.abs(dy) / 1000, 0.1);
+      
+      const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
+      mediaContainer.style.transform = `translateY(${dy}px) scale(${scale})`;
+      mediaContainer.style.opacity = opacity;
+    }
+  }
+
+  handleTouchEnd(e) {
+    if (!this.mediaViewer || !this.isDragging) return;
+    
+    const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
+    const y = e.changedTouches[0].clientY;
+    const dy = y - this.startY;
+    
+    if (Math.abs(dy) > 100) {
+      this.closeMediaViewer();
+    } else {
+      mediaContainer.style.transform = '';
+      mediaContainer.style.opacity = '';
+    }
+    
+    this.startY = 0;
+    this.startX = 0;
+    this.isDragging = false;
+  }
+
+  // Mouse event handlers for drag to close
+  handleMouseDown(e) {
+    if (!this.mediaViewer) return;
+    this.startY = e.clientY;
+    this.startX = e.clientX;
+    this.isDragging = false;
+    
+    const handleMouseMove = (e) => {
+      const y = e.clientY;
+      const dy = y - this.startY;
+      
+      if (Math.abs(dy) > 30) {
+        this.isDragging = true;
+        const opacity = 1 - Math.min(Math.abs(dy) / 200, 0.8);
+        const scale = 1 - Math.min(Math.abs(dy) / 1000, 0.1);
+        
+        const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
+        mediaContainer.style.transform = `translateY(${dy}px) scale(${scale})`;
+        mediaContainer.style.opacity = opacity;
+      }
+    };
+    
+    const handleMouseUp = (e) => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      
+      if (!this.isDragging) return;
+      
+      const y = e.clientY;
+      const dy = y - this.startY;
+      
+      if (Math.abs(dy) > 100) {
+        this.closeMediaViewer();
+      } else {
+        const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
+        mediaContainer.style.transform = '';
+        mediaContainer.style.opacity = '';
+      }
+      
+      this.startY = 0;
+      this.startX = 0;
+      this.isDragging = false;
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }
 }
 
 customElements.define('post-component', PostComponent);
