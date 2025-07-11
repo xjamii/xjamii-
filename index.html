@@ -826,7 +826,7 @@
         </div>
     </div>
 <script>
-  // Notification System
+        // Notification System
 let notificationAlert = null;
 let notificationChannel = null;
 
@@ -835,7 +835,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     await checkUsername();
     setupNotificationListener();
     loadUnreadNotificationsCount();
-    showFeed(); // Start with feed visible
+    showFeed();
+    
+    // Check for unread notifications count in localStorage on page load
+    const unreadCount = localStorage.getItem('unreadNotifications');
+    if (unreadCount) {
+        updateNotificationBadge(parseInt(unreadCount));
+    }
 });
 
 // VIEW TOGGLE FUNCTIONS
@@ -923,7 +929,117 @@ async function loadProfileData() {
     }
 }
 
-// EXISTING FUNCTIONALITY (unchanged)
+// NOTIFICATION FUNCTIONS
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+    
+    if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'flex';
+        
+        // Add pulse animation if there are new notifications
+        badge.style.animation = 'pulse 1.5s infinite';
+        
+        // Store the count in localStorage
+        localStorage.setItem('unreadNotifications', count);
+    } else {
+        badge.style.display = 'none';
+        localStorage.removeItem('unreadNotifications');
+    }
+}
+
+async function loadUnreadNotificationsCount() {
+    try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        
+        const { count, error } = await supabase
+            .from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('read', false);
+        
+        if (error) throw error;
+        
+        updateNotificationBadge(count || 0);
+    } catch (error) {
+        console.error('Error loading notifications count:', error);
+    }
+}
+
+async function setupNotificationListener() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) return;
+
+    if (notificationChannel) {
+        supabase.removeChannel(notificationChannel);
+    }
+
+    notificationChannel = supabase
+        .channel('notifications')
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'notifications',
+                filter: `user_id=eq.${user.id}`
+            },
+            (payload) => {
+                // Get current count
+                const currentCount = parseInt(localStorage.getItem('unreadNotifications') || '0');
+                
+                // Increment count for new notification
+                const newCount = currentCount + 1;
+                
+                // Update badge
+                updateNotificationBadge(newCount);
+                
+                // Show notification alert
+                showNotificationAlert(payload.new.message || 'You have a new notification');
+            }
+        )
+        .subscribe();
+}
+
+function showNotificationAlert(message) {
+    if (notificationAlert) {
+        notificationAlert.remove();
+    }
+    
+    notificationAlert = document.createElement('div');
+    notificationAlert.className = 'notification-alert';
+    notificationAlert.innerHTML = `
+        <div class="notification-alert-content">
+            <i class="fas fa-bell"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notificationAlert);
+    
+    setTimeout(() => {
+        notificationAlert.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        notificationAlert.classList.remove('show');
+        setTimeout(() => {
+            notificationAlert.remove();
+            notificationAlert = null;
+        }, 300);
+    }, 3000);
+}
+
+// Listen for messages from notifications.html
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'updateNotificationBadge') {
+        updateNotificationBadge(event.data.count);
+    }
+});
+
+// EXISTING FUNCTIONALITY
 async function checkUsername() {
     try {
         const { data: { user }, error } = await supabase.auth.getUser();
@@ -965,191 +1081,8 @@ function getInitials(name) {
         .substring(0, 2);
 }
 
-async function loadUnreadNotificationsCount() {
-    try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-        
-        const { count, error } = await supabase
-            .from('notifications')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('read', false);
-        
-        if (error) throw error;
-        
-        const badge = document.getElementById('notificationBadge');
-        if (count > 0) {
-            badge.textContent = count > 9 ? '9+' : count;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Error loading notifications count:', error);
-    }
-}
-
-async function setupNotificationListener() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) return;
-
-    if (notificationChannel) {
-        supabase.removeChannel(notificationChannel);
-    }
-
-    notificationChannel = supabase
-        .channel('notifications')
-        .on(
-            'postgres_changes',
-            {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'notifications',
-                filter: `user_id=eq.${user.id}`
-            },
-            (payload) => {
-                loadUnreadNotificationsCount();
-                showNotificationAlert(payload.new.message || 'You have a new notification');
-            }
-        )
-        .subscribe();
-}
-
-function showNotificationAlert(message) {
-    if (notificationAlert) {
-        notificationAlert.remove();
-    }
-    
-    notificationAlert = document.createElement('div');
-    notificationAlert.className = 'notification-alert';
-    notificationAlert.innerHTML = `
-        <div class="notification-alert-content">
-            <i class="fas fa-bell"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(notificationAlert);
-    
-    setTimeout(() => {
-        notificationAlert.classList.add('show');
-    }, 10);
-    
-    setTimeout(() => {
-        notificationAlert.classList.remove('show');
-        setTimeout(() => {
-            notificationAlert.remove();
-            notificationAlert = null;
-        }, 300);
-    }, 3000);
-}
-
-async function loadNotifications() {
-    try {
-        document.getElementById('notificationsSkeleton').style.display = 'block';
-        document.getElementById('notificationsContainer').style.display = 'none';
-        
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data: notifications } = await supabase
-            .from('notifications')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-        
-        document.getElementById('notificationsSkeleton').style.display = 'none';
-        const container = document.getElementById('notificationsContainer');
-        container.style.display = 'block';
-        
-        if (notifications.length === 0) {
-            container.innerHTML = '<div class="no-notifications">No notifications yet</div>';
-        } else {
-            container.innerHTML = notifications.map(notification => `
-                <div class="notification-item ${notification.read ? '' : 'unread'}">
-                    <div class="notification-avatar initials">
-                        ${getInitials(notification.sender_name || 'User')}
-                    </div>
-                    <div class="notification-content">
-                        <div class="notification-text">
-                            <strong>${notification.sender_name}</strong> ${notification.message}
-                        </div>
-                        <div class="notification-time">
-                            ${formatNotificationTime(notification.created_at)}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        await supabase
-            .from('notifications')
-            .update({ read: true })
-            .eq('user_id', user.id)
-            .eq('read', false);
-        
-        loadUnreadNotificationsCount();
-    } catch (error) {
-        console.error('Error loading notifications:', error);
-        document.getElementById('notificationsSkeleton').style.display = 'none';
-        document.getElementById('notificationsContainer').innerHTML = 
-            '<div class="no-notifications">Error loading notifications</div>';
-        document.getElementById('notificationsContainer').style.display = 'block';
-    }
-}
-
-function formatNotificationTime(dateString) {
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    return date.toLocaleDateString();
-}
-
-function toggleMenu() {
-    const menuPage = document.getElementById('menuPage');
-    menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
-}
-
-function showNotifications() {
-    const notificationsPage = document.getElementById('notificationsPage');
-    notificationsPage.style.display = 'block';
-    loadNotifications();
-}
-
-function hideNotifications() {
-    document.getElementById('notificationsPage').style.display = 'none';
-}
-
-async function logout() {
-    try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        window.location.href = 'welcome.html';
-    } catch (error) {
-        console.error('Error logging out:', error);
-        alert('Failed to log out. Please try again.');
-    }
-}
-
-// Dark Mode Toggle
-const darkModeToggle = document.getElementById('darkModeToggle');
-darkModeToggle.addEventListener('change', function() {
-    document.body.classList.toggle('dark-mode', this.checked);
-    localStorage.setItem('darkMode', this.checked);
-});
-
-if (localStorage.getItem('darkMode') === 'true') {
-    document.body.classList.add('dark-mode');
-    darkModeToggle.checked = true;
-}
-
-    </script>
-
-    <script>
-        async function loadPosts() {
+// POSTS LOADING FUNCTION
+async function loadPosts() {
     try {
         console.log("[1] Starting to load posts...");
         
@@ -1207,19 +1140,46 @@ if (localStorage.getItem('darkMode') === 'true') {
         `;
     }
 }
-    </script>
 
-    <script>
-    // Verify custom element is registered
-    if (!customElements.get('post-component')) {
-        console.error('Post component not registered! Loading posts.js');
-        const script = document.createElement('script');
-        script.src = 'posts.js';
-        document.body.appendChild(script);
-        
-        // Retry loading posts after component is loaded
-        script.onload = loadPosts;
+// MENU FUNCTIONS
+function toggleMenu() {
+    const menuPage = document.getElementById('menuPage');
+    menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
+}
+
+async function logout() {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        window.location.href = 'welcome.html';
+    } catch (error) {
+        console.error('Error logging out:', error);
+        alert('Failed to log out. Please try again.');
     }
+}
+
+// Dark Mode Toggle
+const darkModeToggle = document.getElementById('darkModeToggle');
+darkModeToggle.addEventListener('change', function() {
+    document.body.classList.toggle('dark-mode', this.checked);
+    localStorage.setItem('darkMode', this.checked);
+});
+
+if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+    darkModeToggle.checked = true;
+}
+
+// Verify custom element is registered
+if (!customElements.get('post-component')) {
+    console.error('Post component not registered! Loading posts.js');
+    const script = document.createElement('script');
+    script.src = 'posts.js';
+    document.body.appendChild(script);
+    
+    // Retry loading posts after component is loaded
+    script.onload = loadPosts;
+}
 </script>
 <script src="profile.js"></script>
     <script src="suggestions.js"></script>
