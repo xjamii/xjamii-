@@ -773,7 +773,10 @@ a, .mention, .hashtag, .url {
 
   
 
-
+.comment-page-content-container {
+  
+  overflow-y: auto;
+}
 
 
 /* Comment Page Scrolling Fix */
