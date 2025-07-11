@@ -7,6 +7,7 @@ class PostComponent extends HTMLElement {
     this.startX = 0;
     this.isRefreshing = false;
     this.isLoadingMore = false;
+    this.supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_KEY');
   }
 
   connectedCallback() {
@@ -180,14 +181,23 @@ class PostComponent extends HTMLElement {
   }
 
   setupEventListeners(post) {
-    // Like action
-    this.querySelector('.like-action')?.addEventListener('click', (e) => {
+    // Like action with Supabase integration
+    this.querySelector('.like-action')?.addEventListener('click', async (e) => {
       e.stopPropagation();
+      
+      // Check authentication
+      const user = this.supabase.auth.user();
+      if (!user) {
+        alert('Please log in to like posts');
+        return;
+      }
+
       const likeBtn = e.currentTarget;
       const isLiked = likeBtn.classList.contains('liked');
       const icon = likeBtn.querySelector('i');
       const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
       
+      // Optimistic UI update
       likeBtn.classList.toggle('liked');
       icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
       
@@ -196,8 +206,45 @@ class PostComponent extends HTMLElement {
         countEl.textContent = isLiked ? count - 1 : count + 1;
       }
       
-      // TODO: Add like API call
-      console.log(`${isLiked ? 'Unliked' : 'Liked'} post ${post.id}`);
+      // Supabase like/unlike
+      try {
+        const { error } = isLiked 
+          ? await this.supabase
+              .from('likes')
+              .delete()
+              .eq('post_id', post.id)
+              .eq('profile_id', user.id)
+          : await this.supabase
+              .from('likes')
+              .insert([
+                { 
+                  post_id: post.id, 
+                  profile_id: user.id 
+                }
+              ]);
+        
+        if (error) throw error;
+        
+        // Update like count from database
+        const { count, error: countError } = await this.supabase
+          .from('likes')
+          .select('*', { count: 'exact' })
+          .eq('post_id', post.id);
+        
+        if (!countError && countEl) {
+          countEl.textContent = count;
+        }
+      } catch (error) {
+        console.error('Error toggling like:', error);
+        // Revert UI if API call fails
+        likeBtn.classList.toggle('liked');
+        icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+        if (countEl) {
+          let count = parseInt(countEl.textContent) || 0;
+          countEl.textContent = isLiked ? count + 1 : count - 1;
+        }
+        alert('Failed to update like. Please try again.');
+      }
     });
 
     // More options
@@ -227,8 +274,6 @@ class PostComponent extends HTMLElement {
       });
     });
 
-    // URLs - already handled by anchor tags in processContent
-
     // Media click handlers
     this.querySelectorAll('.post-media, .grid-media, .video-preview').forEach(media => {
       media.addEventListener('click', (e) => {
@@ -244,7 +289,7 @@ class PostComponent extends HTMLElement {
       this.openCommentPage(post);
     });
 
-    // Post content click handler (opens comment page)
+    // Post content click handler
     this.querySelector('.post-content')?.addEventListener('click', (e) => {
       if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
         this.openCommentPage(post);
