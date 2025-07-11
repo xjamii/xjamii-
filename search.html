@@ -2,716 +2,530 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="theme-color" content="#ECEFF1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search | X-Jamii</title>
+    <title>Search | Aviationin</title>
+    <link rel="stylesheet" href="posts.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
+        /* Base Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        }
-
-        body {
-            background-color: #f5f5f5;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
         }
 
         /* Header Styles */
         .search-header {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            background-color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e0e0e0;
+            right: 0;
             z-index: 100;
         }
 
         .back-button {
-            color: #000;
-            font-size: 20px;
+            color: #0056b3;
+            font-size: 18px;
             text-decoration: none;
-        }
-
-        .logo-container {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .logo {
-            height: 50px;
+            margin-right: 15px;
         }
 
         .search-container {
-            margin-top: 70px;
-            padding: 20px;
-            width: 100%;
-        }
-
-        .search-input-container {
-            position: relative;
-            margin-bottom: 20px;
+            flex: 1;
         }
 
         .search-input {
             width: 100%;
-            padding: 15px 20px 15px 45px;
-            border-radius: 25px;
+            padding: 10px 15px;
+            border-radius: 20px;
             border: 1px solid #ddd;
-            font-size: 16px;
+            font-size: 14px;
+            background-color: #f5f7fa;
             outline: none;
-            background-color: #f0f2f5;
         }
 
         .search-input:focus {
-            background-color: white;
-            border-color: #00B0FF;
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #777;
+            border-color: #0056b3;
         }
 
         /* Tabs */
         .search-tabs {
             display: flex;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 20px;
+            margin-top: 60px;
+            border-bottom: 1px solid #eee;
+            background-color: white;
+            position: sticky;
+            top: 60px;
+            z-index: 90;
         }
 
         .search-tab {
             flex: 1;
             text-align: center;
             padding: 15px 0;
-            font-weight: 600;
-            color: #777;
+            font-weight: 500;
+            color: #666;
             cursor: pointer;
-            position: relative;
         }
 
         .search-tab.active {
-            color: #00B0FF;
+            color: #0056b3;
+            border-bottom: 2px solid #0056b3;
         }
 
-        .search-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background-color: #00B0FF;
+        /* Content Sections */
+        .search-content {
+            padding: 15px;
         }
 
-        /* Tab Content */
-        .tab-content {
+        .search-section {
             display: none;
         }
 
-        .tab-content.active {
+        .search-section.active {
             display: block;
         }
 
-        /* People Tab Content */
-        .user-card {
+        /* Results */
+        .search-results {
+            margin-top: 10px;
+        }
+
+        .profile-result {
             display: flex;
             align-items: center;
             padding: 15px;
             background-color: white;
             border-radius: 10px;
             margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
 
-        .user-avatar {
+        .profile-avatar {
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background-color: #f0f2f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            object-fit: cover;
             margin-right: 15px;
-            font-weight: bold;
-            color: #555;
-            cursor: pointer;
-            overflow: hidden;
         }
 
-        .user-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .profile-info {
+            flex: 1;
         }
 
-        .user-info {
-            flex-grow: 1;
-        }
-
-        .user-name {
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-        }
-
-        .user-username {
-            color: #777;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .follow-button {
-            background-color: #000;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 16px;
+        .profile-name {
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
+            margin-bottom: 3px;
         }
 
-        .follow-button:hover {
-            background-color: #333;
-        }
-
-        .follow-button.following {
-            background-color: #f0f2f5;
-            color: #000;
-        }
-
-        .verified-badge {
-            color: #00B0FF;
+        .profile-username {
+            color: #666;
             font-size: 14px;
         }
 
-        /* Posts Tab Content */
-        .post {
-            background-color: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .post-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .post-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #f0f2f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 10px;
-            font-weight: bold;
-            color: #555;
-            cursor: pointer;
-            overflow: hidden;
-        }
-
-        .post-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .post-user-info {
-            flex-grow: 1;
-        }
-
-        .post-user {
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-        }
-
-        .post-username {
-            color: #777;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        .post-content {
-            margin-bottom: 10px;
-            line-height: 1.4;
-        }
-
-        .post-time {
-            color: #777;
+        .profile-category {
             font-size: 12px;
+            color: #0056b3;
+            background-color: #e6f0ff;
+            padding: 3px 8px;
+            border-radius: 10px;
+            display: inline-block;
             margin-top: 5px;
         }
 
-        /* Empty States */
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #777;
+        .connect-btn {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 5px 15px;
+            font-size: 14px;
+            cursor: pointer;
         }
 
-        .empty-icon {
-            font-size: 50px;
-            margin-bottom: 15px;
-            color: #ccc;
-        }
-
+        /* Loading States */
         .loading-spinner {
-            display: flex;
-            justify-content: center;
+            text-align: center;
             padding: 20px;
         }
 
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #00B0FF;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #e6f0ff;
+            border-top: 3px solid #0056b3;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin: 0 auto;
         }
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        /* Post Results */
+        .post-result {
+            background-color: white;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="search-header">
+    <!-- Search Header -->
+    <div class="search-header">
         <a href="index.html" class="back-button">
             <i class="fas fa-arrow-left"></i>
         </a>
-        
-        <div class="logo-container">
-            <img src='https://i.postimg.cc/dDPMSQzN/file-00000000393061f8ab41ab42d88c9f40.png' class="logo"/>
-        </div>
-        
-        <div style="width: 24px;"></div> <!-- Spacer for alignment -->
-    </header>
-
-    <!-- Main Content -->
-    <div class="search-container">
-        <div class="search-input-container">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" id="search-input" placeholder="Search X-Jamii">
-        </div>
-
-        <!-- Tabs -->
-        <div class="search-tabs">
-            <div class="search-tab active" data-tab="posts">Posts</div>
-            <div class="search-tab" data-tab="people">People</div>
-        </div>
-
-        <!-- Tab Contents -->
-        <div class="tab-content active" id="posts-tab">
-            <div class="empty-state" id="posts-empty">
-                <div class="empty-icon">
-                    <i class="far fa-newspaper"></i>
-                </div>
-                <h3>Search for posts</h3>
-                <p>Try searching for keywords or hashtags</p>
-            </div>
-            <div id="posts-results"></div>
-        </div>
-
-        <div class="tab-content" id="people-tab">
-            <div class="empty-state" id="people-empty">
-                <div class="empty-icon">
-                    <i class="fas fa-users"></i>
-                </div>
-                <h3>Search for people</h3>
-                <p>Try searching for usernames or names</p>
-            </div>
-            <div id="people-results"></div>
+        <div class="search-container">
+            <input type="text" class="search-input" id="search-input" placeholder="Search professionals or posts..." autocomplete="off">
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyC3wBG1yIxl3FB4oVp-7rDGlj_LE3SP2b8",
-            authDomain: "x-jamii.firebaseapp.com",
-            projectId: "x-jamii",
-            storageBucket: "x-jamii.appspot.com",
-            messagingSenderId: "927548667044",
-            appId: "1:927548667044:web:835e597909f51a2e4da231",
-            measurementId: "G-9S45DQ04HZ"
-        };
+    <!-- Search Tabs -->
+    <div class="search-tabs">
+        <div class="search-tab active" data-tab="profiles">Professionals</div>
+        <div class="search-tab" data-tab="posts">Posts</div>
+    </div>
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+    <!-- Search Content -->
+    <div class="search-content">
+        <!-- Professionals Section -->
+        <div class="search-section active" id="profiles-section">
+            <div class="search-results" id="profiles-results">
+                <!-- Results will be loaded here -->
+                <div class="no-results" id="profiles-no-results">
+                    <i class="fas fa-search" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <div>Search for aviation professionals</div>
+                </div>
+            </div>
+            <div class="loading-spinner" id="profiles-loading" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- Posts Section -->
+        <div class="search-section" id="posts-section">
+            <div class="search-results" id="posts-results">
+                <!-- Results will be loaded here -->
+                <div class="no-results" id="posts-no-results">
+                    <i class="fas fa-search" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <div>Search for aviation posts</div>
+                </div>
+            </div>
+            <div class="loading-spinner" id="posts-loading" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // DOM Elements
-        const searchInput = document.getElementById('search-input');
-        const postsTab = document.getElementById('posts-tab');
-        const peopleTab = document.getElementById('people-tab');
-        const postsResults = document.getElementById('posts-results');
-        const peopleResults = document.getElementById('people-results');
-        const postsEmpty = document.getElementById('posts-empty');
-        const peopleEmpty = document.getElementById('people-empty');
+        const elements = {
+            searchInput: document.getElementById('search-input'),
+            tabs: document.querySelectorAll('.search-tab'),
+            sections: document.querySelectorAll('.search-section'),
+            profilesResults: document.getElementById('profiles-results'),
+            postsResults: document.getElementById('posts-results'),
+            profilesNoResults: document.getElementById('profiles-no-results'),
+            postsNoResults: document.getElementById('posts-no-results'),
+            profilesLoading: document.getElementById('profiles-loading'),
+            postsLoading: document.getElementById('posts-loading')
+        };
 
-        // Current user
-        let currentUser = null;
+        // Variables
+        let currentTab = 'profiles';
+        let searchTimeout;
+        let lastSearchTerm = '';
 
-        // Tab switching functionality
-        const tabs = document.querySelectorAll('.search-tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-
-        tabs.forEach(tab => {
+        // Event Listeners
+        elements.searchInput.addEventListener('input', handleSearchInput);
+        
+        elements.tabs.forEach(tab => {
             tab.addEventListener('click', () => {
-                // Remove active class from all tabs and contents
-                tabs.forEach(t => t.classList.remove('active'));
-                tabContents.forEach(c => c.classList.remove('active'));
-                
-                // Add active class to clicked tab
+                // Update active tab
+                elements.tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
+                currentTab = tab.dataset.tab;
                 
-                // Show corresponding content
-                const tabId = tab.getAttribute('data-tab');
-                document.getElementById(`${tabId}-tab`).classList.add('active');
+                // Update active section
+                elements.sections.forEach(section => section.classList.remove('active'));
+                document.getElementById(`${currentTab}-section`).classList.add('active');
                 
-                // Trigger search again when switching tabs
-                if (searchInput.value.trim()) {
-                    performSearch(searchInput.value.trim());
+                // If there's a search term, perform search for the new tab
+                if (lastSearchTerm.trim()) {
+                    performSearch(lastSearchTerm);
                 }
             });
         });
 
-        // Search functionality
-        let searchTimeout;
-        searchInput.addEventListener('input', function() {
+        // Functions
+        function handleSearchInput(e) {
+            const searchTerm = e.target.value.trim();
+            lastSearchTerm = searchTerm;
+            
+            // Clear previous timeout
             clearTimeout(searchTimeout);
-            const query = this.value.trim();
             
-            if (query.length > 0) {
-                searchTimeout = setTimeout(() => {
-                    performSearch(query);
-                }, 500);
-            } else {
+            if (searchTerm.length === 0) {
+                // Clear results if search is empty
                 clearResults();
+                return;
             }
-        });
-
-        function performSearch(query) {
-            const activeTab = document.querySelector('.search-tab.active').getAttribute('data-tab');
             
-            if (activeTab === 'posts') {
-                searchPosts(query);
-            } else if (activeTab === 'people') {
-                searchPeople(query);
-            }
+            // Show loading state
+            showLoading();
+            
+            // Set new timeout to debounce search
+            searchTimeout = setTimeout(() => {
+                performSearch(searchTerm);
+            }, 500);
         }
 
-        async function searchPosts(query) {
-            postsResults.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
-            postsEmpty.style.display = 'none';
-            
-            try {
-                // Search in post content
-                const postsSnapshot = await db.collection('posts')
-                    .orderBy('timestamp', 'desc')
-                    .where('content', '>=', query)
-                    .where('content', '<=', query + '\uf8ff')
-                    .limit(20)
-                    .get();
-                
-                postsResults.innerHTML = '';
-                
-                if (postsSnapshot.empty) {
-                    postsEmpty.style.display = 'block';
-                    postsEmpty.querySelector('h3').textContent = 'No posts found';
-                    postsEmpty.querySelector('p').textContent = 'Try different keywords';
-                    return;
-                }
-                
-                const posts = await Promise.all(
-                    postsSnapshot.docs.map(async doc => {
-                        const post = doc.data();
-                        post.id = doc.id;
-                        
-                        // Get user data
-                        const userSnap = await db.collection('users').doc(post.userId).get();
-                        post.user = userSnap.data();
-                        
-                        return post;
-                    })
-                );
-                
-                posts.forEach(post => {
-                    postsResults.appendChild(createPostElement(post));
-                });
-                
-            } catch (error) {
-                console.error("Error searching posts:", error);
-                postsResults.innerHTML = '';
-                postsEmpty.style.display = 'block';
-                postsEmpty.querySelector('h3').textContent = 'Error loading posts';
-                postsEmpty.querySelector('p').textContent = 'Please try again later';
+        function showLoading() {
+            if (currentTab === 'profiles') {
+                elements.profilesLoading.style.display = 'block';
+                elements.profilesNoResults.style.display = 'none';
+            } else {
+                elements.postsLoading.style.display = 'block';
+                elements.postsNoResults.style.display = 'none';
             }
         }
 
-        function createPostElement(post) {
-            const postEl = document.createElement('div');
-            postEl.className = 'post';
-            
-            // Format timestamp
-            const postTime = post.timestamp?.toDate() || new Date();
-            const timeString = formatTime(postTime);
-            
-            postEl.innerHTML = `
-                <div class="post-header">
-                    <div class="post-avatar" onclick="navigateToProfile('${post.user?.username || ''}')">
-                        ${post.user?.photoURL ? 
-                            `<img src="${post.user.photoURL}" alt="${post.user.displayName}">` : 
-                            (post.user?.displayName?.charAt(0) || 'U')}
-                    </div>
-                    <div class="post-user-info">
-                        <div class="post-user" onclick="navigateToProfile('${post.user?.username || ''}')">
-                            ${post.user?.displayName || 'User'}
-                            ${post.user?.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-                        </div>
-                        <div class="post-username" onclick="navigateToProfile('${post.user?.username || ''}')">
-                            @${post.user?.username || 'user'}
-                        </div>
-                    </div>
-                </div>
-                <div class="post-content">${formatPostContent(post.content)}</div>
-                <div class="post-time">${timeString}</div>
-            `;
-            
-            return postEl;
-        }
-
-        async function searchPeople(query) {
-            peopleResults.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
-            peopleEmpty.style.display = 'none';
-            
-            try {
-                // Search in display names
-                const nameSnapshot = await db.collection('users')
-                    .where('displayName', '>=', query)
-                    .where('displayName', '<=', query + '\uf8ff')
-                    .limit(10)
-                    .get();
-                
-                // Search in usernames
-                const usernameSnapshot = await db.collection('users')
-                    .where('username', '>=', query)
-                    .where('username', '<=', query + '\uf8ff')
-                    .limit(10)
-                    .get();
-                
-                // Combine results
-                const people = [];
-                const seenIds = new Set();
-                
-                nameSnapshot.forEach(doc => {
-                    if (!seenIds.has(doc.id)) {
-                        people.push(doc.data());
-                        seenIds.add(doc.id);
-                    }
-                });
-                
-                usernameSnapshot.forEach(doc => {
-                    if (!seenIds.has(doc.id)) {
-                        people.push(doc.data());
-                        seenIds.add(doc.id);
-                    }
-                });
-                
-                peopleResults.innerHTML = '';
-                
-                if (people.length === 0) {
-                    peopleEmpty.style.display = 'block';
-                    peopleEmpty.querySelector('h3').textContent = 'No people found';
-                    peopleEmpty.querySelector('p').textContent = 'Try different search terms';
-                    return;
-                }
-                
-                // Check follow status for each user
-                const peopleWithFollowStatus = await Promise.all(
-                    people.map(async person => {
-                        if (!currentUser) return person;
-                        
-                        const followDoc = await db.collection('users')
-                            .doc(currentUser.uid)
-                            .collection('following')
-                            .doc(person.uid)
-                            .get();
-                        
-                        person.isFollowing = followDoc.exists;
-                        return person;
-                    })
-                );
-                
-                peopleWithFollowStatus.forEach(person => {
-                    peopleResults.appendChild(createPersonElement(person));
-                });
-                
-            } catch (error) {
-                console.error("Error searching people:", error);
-                peopleResults.innerHTML = '';
-                peopleEmpty.style.display = 'block';
-                peopleEmpty.querySelector('h3').textContent = 'Error loading people';
-                peopleEmpty.querySelector('p').textContent = 'Please try again later';
+        function hideLoading() {
+            if (currentTab === 'profiles') {
+                elements.profilesLoading.style.display = 'none';
+            } else {
+                elements.postsLoading.style.display = 'none';
             }
-        }
-
-        function createPersonElement(person) {
-            const personEl = document.createElement('div');
-            personEl.className = 'user-card';
-            
-            personEl.innerHTML = `
-                <div class="user-avatar" onclick="navigateToProfile('${person.username || ''}')">
-                    ${person.photoURL ? 
-                        `<img src="${person.photoURL}" alt="${person.displayName}">` : 
-                        (person.displayName?.charAt(0) || 'U')}
-                </div>
-                <div class="user-info" onclick="navigateToProfile('${person.username || ''}')">
-                    <div class="user-name">
-                        ${person.displayName || 'User'}
-                        ${person.verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-                    </div>
-                    <div class="user-username">@${person.username || 'user'}</div>
-                </div>
-                ${currentUser && currentUser.uid !== person.uid ? 
-                    `<button class="follow-button ${person.isFollowing ? 'following' : ''}" 
-                            data-user-id="${person.uid}">
-                        ${person.isFollowing ? 'Following' : 'Follow'}
-                    </button>` : ''}
-            `;
-            
-            return personEl;
         }
 
         function clearResults() {
-            postsResults.innerHTML = '';
-            peopleResults.innerHTML = '';
-            postsEmpty.style.display = 'block';
-            peopleEmpty.style.display = 'block';
-            postsEmpty.querySelector('h3').textContent = 'Search for posts';
-            postsEmpty.querySelector('p').textContent = 'Try searching for keywords or hashtags';
-            peopleEmpty.querySelector('h3').textContent = 'Search for people';
-            peopleEmpty.querySelector('p').textContent = 'Try searching for usernames or names';
+            if (currentTab === 'profiles') {
+                elements.profilesResults.innerHTML = '';
+                elements.profilesNoResults.style.display = 'block';
+            } else {
+                elements.postsResults.innerHTML = '';
+                elements.postsNoResults.style.display = 'block';
+            }
         }
 
-        // Format post content (for links, hashtags, mentions)
-        function formatPostContent(text) {
-            if (!text) return '';
+        async function performSearch(searchTerm) {
+            try {
+                if (currentTab === 'profiles') {
+                    await searchProfiles(searchTerm);
+                } else {
+                    await searchPosts(searchTerm);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                hideLoading();
+                showNoResults();
+            }
+        }
+
+        async function searchProfiles(searchTerm) {
+            // Search profiles by name, username, or category
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .or(`full_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
+                .limit(20);
             
-            // URLs
-            text = text.replace(/(https?:\/\/[^\s]+)/g, url => {
-                return `<a href="${url}" target="_blank">${url}</a>`;
+            hideLoading();
+            
+            if (error) throw error;
+            
+            elements.profilesResults.innerHTML = '';
+            
+            if (!data || data.length === 0) {
+                elements.profilesNoResults.innerHTML = `
+                    <i class="fas fa-user-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <div>No professionals found for "${searchTerm}"</div>
+                `;
+                elements.profilesNoResults.style.display = 'block';
+                return;
+            }
+            
+            // Display results
+            data.forEach(profile => {
+                const profileElement = document.createElement('div');
+                profileElement.className = 'profile-result';
+                profileElement.innerHTML = `
+                    <img src="${profile.avatar_url || getInitialsAvatar(profile.full_name)}" 
+                         class="profile-avatar" 
+                         onerror="this.src='${getInitialsAvatar(profile.full_name)}'">
+                    <div class="profile-info">
+                        <div class="profile-name">
+                            ${profile.full_name || 'Aviation Professional'}
+                            ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge" style="color: #0056b3; font-size: 14px;"></i>' : ''}
+                        </div>
+                        <div class="profile-username">@${profile.username || 'user'}</div>
+                        ${profile.category ? `<div class="profile-category">${profile.category}</div>` : ''}
+                    </div>
+                    <button class="connect-btn" data-user-id="${profile.id}">Connect</button>
+                `;
+                
+                elements.profilesResults.appendChild(profileElement);
             });
             
-            // Hashtags
-            text = text.replace(/#(\w+)/g, '<a href="/hashtag/$1" class="hashtag">#$1</a>');
-            
-            // Mentions
-            text = text.replace(/@(\w+)/g, '<a href="/profile/$1" class="mention">@$1</a>');
-            
-            return text;
+            // Add event listeners to connect buttons
+            document.querySelectorAll('.connect-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const userId = e.currentTarget.dataset.userId;
+                    await handleConnection(userId, e.currentTarget);
+                });
+            });
         }
 
-        // Format time
-        function formatTime(date) {
-            const now = new Date();
-            const diff = now - date;
+        async function searchPosts(searchTerm) {
+            // Search posts by content
+            const { data, error } = await supabase
+                .from('posts')
+                .select(`
+                    *,
+                    profile:profiles(*),
+                    media:post_media(*)
+                `)
+                .ilike('content', `%${searchTerm}%`)
+                .order('created_at', { ascending: false })
+                .limit(20);
             
-            const minute = 60 * 1000;
-            const hour = minute * 60;
-            const day = hour * 24;
+            hideLoading();
             
-            if (diff < minute) return 'Just now';
-            if (diff < hour) return `${Math.floor(diff / minute)}m`;
-            if (diff < day) return `${Math.floor(diff / hour)}h`;
-            if (diff < day * 7) return `${Math.floor(diff / day)}d`;
-            return date.toLocaleDateString();
-        }
-
-        // Follow button functionality
-        document.addEventListener('click', async function(e) {
-            if (e.target.closest('.follow-button')) {
-                const followButton = e.target.closest('.follow-button');
-                const userId = followButton.getAttribute('data-user-id');
+            if (error) throw error;
+            
+            elements.postsResults.innerHTML = '';
+            
+            if (!data || data.length === 0) {
+                elements.postsNoResults.innerHTML = `
+                    <i class="fas fa-comment-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <div>No posts found for "${searchTerm}"</div>
+                `;
+                elements.postsNoResults.style.display = 'block';
+                return;
+            }
+            
+            // Display results using your post-component
+            data.forEach(post => {
+                const postElement = document.createElement('post-component');
                 
-                if (!currentUser) {
-                    alert('Please sign in to follow users');
+                // Process media URLs to ensure they're absolute
+                const processedPost = {
+                    ...post,
+                    profile: post.profile,
+                    media: (post.media || []).map(mediaItem => ({
+                        ...mediaItem,
+                        media_url: mediaItem.media_url.startsWith('http') 
+                            ? mediaItem.media_url 
+                            : `${supabaseUrl}/storage/v1/object/public/${mediaItem.media_url}`
+                    }))
+                };
+
+                postElement.setAttribute('post-data', JSON.stringify(processedPost));
+                elements.postsResults.appendChild(postElement);
+            });
+        }
+
+        function getInitialsAvatar(name) {
+            const initials = name ? 
+                name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U';
+            return `data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><rect width='50' height='50' fill='%230056b3'/><text x='50%' y='50%' font-size='20' fill='white' text-anchor='middle' dy='.3em'>${initials}</text></svg>`;
+        }
+
+        async function handleConnection(userId, button) {
+            try {
+                // Check if user is logged in
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    window.location.href = 'login.html';
                     return;
                 }
                 
-                const isFollowing = followButton.classList.contains('following');
+                // Check existing connection status
+                const { data: connection, error: connectionError } = await supabase
+                    .from('connections')
+                    .select('id, sender_id, status')
+                    .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
+                    .single();
                 
-                try {
-                    if (isFollowing) {
-                        // Unfollow
-                        await db.collection('users')
-                            .doc(currentUser.uid)
-                            .collection('following')
-                            .doc(userId)
-                            .delete();
+                if (connectionError && connectionError.code !== 'PGRST116') throw connectionError;
+                
+                if (connection) {
+                    if (connection.status === 'pending') {
+                        if (connection.sender_id === user.id) {
+                            // Current user sent the request - cancel it
+                            await supabase
+                                .from('connections')
+                                .delete()
+                                .eq('id', connection.id);
+                            
+                            button.textContent = 'Connect';
+                        } else {
+                            // Current user received the request - accept it
+                            await supabase
+                                .from('connections')
+                                .update({ status: 'accepted' })
+                                .eq('id', connection.id);
+                            
+                            button.textContent = 'Connected';
+                        }
+                    } else if (connection.status === 'accepted') {
+                        // Remove connection
+                        await supabase
+                            .from('connections')
+                            .delete()
+                            .eq('id', connection.id);
                         
-                        followButton.textContent = 'Follow';
-                        followButton.classList.remove('following');
-                    } else {
-                        // Follow
-                        await db.collection('users')
-                            .doc(currentUser.uid)
-                            .collection('following')
-                            .doc(userId)
-                            .set({
-                                followedAt: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                        
-                        followButton.textContent = 'Following';
-                        followButton.classList.add('following');
+                        button.textContent = 'Connect';
                     }
-                } catch (error) {
-                    console.error("Error toggling follow:", error);
-                    alert('Failed to update follow status');
+                } else {
+                    // Send new connection request
+                    await supabase
+                        .from('connections')
+                        .insert([{
+                            sender_id: user.id,
+                            receiver_id: userId,
+                            status: 'pending'
+                        }]);
+                    
+                    button.textContent = 'Pending';
                 }
+            } catch (error) {
+                console.error('Connection error:', error);
+                alert('Failed to update connection. Please try again.');
             }
-        });
-
-        // Navigation to profile
-        window.navigateToProfile = function(username) {
-            window.location.href = `/profile/${username}`;
-        };
+        }
 
         // Initialize
-        auth.onAuthStateChanged(user => {
-            currentUser = user;
-            if (searchInput.value.trim()) {
-                performSearch(searchInput.value.trim());
-            }
+        document.addEventListener('DOMContentLoaded', () => {
+            // Focus search input on page load
+            elements.searchInput.focus();
         });
     </script>
+    <script src="posts.js"></script>
 </body>
 </html>
