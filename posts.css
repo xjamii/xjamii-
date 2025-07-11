@@ -773,13 +773,15 @@ a, .mention, .hashtag, .url {
 
   
 
-.comment-page-content-container {
-  flex: 1;
-  overflow-y: auto;
+
+
+
+/* Comment Page Scrolling Fix */
+.comment-page-overlay {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
-
-
-
 
 
 
