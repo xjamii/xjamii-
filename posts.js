@@ -113,12 +113,9 @@ class PostComponent extends HTMLElement {
             ${this.renderMedia(post.media || [])}
             <div class="post-actions">
               <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
-              <like-button 
-                post-id="${post.id}"
-                profile-id="${post.current_user_id || ''}"
-                like-count="${post.like_count || 0}"
-                has-liked="${post.is_liked || false}">
-              </like-button>
+              <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
+                <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
+              </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
               <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
               <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
@@ -183,6 +180,26 @@ class PostComponent extends HTMLElement {
   }
 
   setupEventListeners(post) {
+    // Like action
+    this.querySelector('.like-action')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const likeBtn = e.currentTarget;
+      const isLiked = likeBtn.classList.contains('liked');
+      const icon = likeBtn.querySelector('i');
+      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
+      
+      likeBtn.classList.toggle('liked');
+      icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
+      
+      if (countEl) {
+        let count = parseInt(countEl.textContent) || 0;
+        countEl.textContent = isLiked ? count - 1 : count + 1;
+      }
+      
+      // TODO: Add like API call
+      console.log(`${isLiked ? 'Unliked' : 'Liked'} post ${post.id}`);
+    });
+
     // More options
     this.querySelector('.post-more')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -570,12 +587,9 @@ class PostComponent extends HTMLElement {
         ${post.content ? `<p class="post-content">${this.processContent(post.content)}</p>` : ''}
         ${this.renderMediaForCommentPage(post.media || [])}
         <div class="post-actions">
-          <like-button 
-            post-id="${post.id}"
-            profile-id="${post.current_user_id || ''}"
-            like-count="${post.like_count || 0}"
-            has-liked="${post.is_liked || false}">
-          </like-button>
+          <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
+            <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
+          </div>
           <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
           <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
           <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
@@ -623,6 +637,23 @@ class PostComponent extends HTMLElement {
   }
 
   setupCommentPageEventListeners(commentPage, post) {
+    // Like action
+    commentPage.querySelector('.like-action')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const likeBtn = e.currentTarget;
+      const isLiked = likeBtn.classList.contains('liked');
+      const icon = likeBtn.querySelector('i');
+      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
+      
+      likeBtn.classList.toggle('liked');
+      icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
+      
+      if (countEl) {
+        let count = parseInt(countEl.textContent) || 0;
+        countEl.textContent = isLiked ? count - 1 : count + 1;
+      }
+    });
+
     // More options
     commentPage.querySelector('.post-more')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -859,49 +890,4 @@ class PostComponent extends HTMLElement {
   }
 }
 
-// Like button component
-class LikeButton extends HTMLElement {
-  constructor() {
-    super();
-    this.postId = this.getAttribute('post-id');
-    this.profileId = this.getAttribute('profile-id');
-    this.likeCount = parseInt(this.getAttribute('like-count') || 0);
-    this.hasLiked = this.getAttribute('has-liked') === 'true';
-    
-    this.render();
-    this.setupEventListeners();
-  }
-
-  render() {
-    this.innerHTML = `
-      <button class="like-action ${this.hasLiked ? 'liked' : ''}">
-        <i class="${this.hasLiked ? 'fas' : 'far'} fa-heart"></i>
-        <span class="like-count">${this.likeCount}</span>
-      </button>
-    `;
-  }
-
-  setupEventListeners() {
-    this.querySelector('.like-action').addEventListener('click', async () => {
-      try {
-        const response = await fetch(`/api/posts/${this.postId}/likes`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profileId: this.profileId })
-        });
-        
-        const { likeCount, hasLiked } = await response.json();
-        
-        this.likeCount = likeCount;
-        this.hasLiked = hasLiked;
-        this.render();
-        
-      } catch (error) {
-        console.error('Error toggling like:', error);
-      }
-    });
-  }
-}
-
 customElements.define('post-component', PostComponent);
-customElements.define('like-button', LikeButton);
