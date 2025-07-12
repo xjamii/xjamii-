@@ -26,71 +26,79 @@ class PostComponent extends HTMLElement {
     });
   }
 
-  async recordView() {
+
+    async recordView() {
   const postData = this.getAttribute('post-data');
   if (!postData) return;
   
   try {
     const post = JSON.parse(postData);
-    const { error } = await supabase
-      .rpc('increment_views', { post_id: post.id });
     
-    if (!error) {
-      this.viewCounted = true;
-      console.log("✅ View counted for post:", post.id);
+    // First mark as counted to prevent duplicate triggers
+    this.viewCounted = true; 
+    console.log("⏳ View count queued for post:", post.id);
+    
+    // Set 10-second delay before updating
+    setTimeout(async () => {
+      const { error } = await supabase
+        .rpc('increment_views', { post_id: post.id });
       
-      const viewsEl = this.querySelector('.views');
-      if (viewsEl) {
-        // 1. Get current elements
-        const icon = viewsEl.querySelector('i');
-        const countSpan = viewsEl.querySelector('span') || document.createElement('span');
-        const currentViews = parseInt(countSpan.textContent || viewsEl.textContent) || 0;
-        
-        // 2. Create animation elements
-        const container = document.createElement('div');
-        container.className = 'view-counter-animation';
-        container.style.cssText = `
-          display: inline-flex;
-          flex-direction: column;
-          overflow: hidden;
-          height: 20px;
-          vertical-align: middle;
-        `;
-        
-        const oldNumber = document.createElement('div');
-        oldNumber.textContent = currentViews;
-        
-        const newNumber = document.createElement('div');
-        newNumber.textContent = currentViews + 1;
-        
-        // 3. Set up animation
-        container.appendChild(oldNumber);
-        container.appendChild(newNumber);
-        
-        // 4. Replace existing content
-        viewsEl.innerHTML = '';
-        viewsEl.appendChild(icon);
-        viewsEl.appendChild(container);
-        
-        // 5. Trigger animation
-        setTimeout(() => {
-          container.style.transform = `translateY(-20px)`;
-          container.style.transition = `transform 0.3s ease-out`;
-        }, 10);
-        
-        // 6. Clean up after animation
-        setTimeout(() => {
-          viewsEl.innerHTML = `
-            <i class="fas fa-chart-bar"></i>
-            <span>${currentViews + 1}</span>
+      if (!error) {
+        const viewsEl = this.querySelector('.views');
+        if (viewsEl) {
+          // 1. Get current elements
+          const icon = viewsEl.querySelector('i');
+          const countSpan = viewsEl.querySelector('span') || document.createElement('span');
+          const currentViews = parseInt(countSpan.textContent || viewsEl.textContent) || 0;
+          
+          // 2. Create animation elements
+          const container = document.createElement('div');
+          container.className = 'view-counter-animation';
+          container.style.cssText = `
+            display: inline-flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 20px;
+            vertical-align: middle;
           `;
-        }, 800);
+          
+          const oldNumber = document.createElement('div');
+          oldNumber.textContent = currentViews;
+          
+          const newNumber = document.createElement('div');
+          newNumber.textContent = currentViews + 1;
+          
+          // 3. Set up animation
+          container.appendChild(oldNumber);
+          container.appendChild(newNumber);
+          
+          // 4. Replace existing content
+          viewsEl.innerHTML = '';
+          viewsEl.appendChild(icon);
+          viewsEl.appendChild(container);
+          
+          // 5. Trigger animation after 10s + small delay
+          setTimeout(() => {
+            container.style.transform = `translateY(-20px)`;
+            container.style.transition = `transform 0.3s ease-out`;
+          }, 50);
+          
+          // 6. Clean up after animation
+          setTimeout(() => {
+            viewsEl.innerHTML = `
+              <i class="fas fa-chart-bar"></i>
+              <span>${currentViews + 1}</span>
+            `;
+          }, 350); // 300ms animation + 50ms delay
+        }
       }
-    }
+    }, 10000); // 10 second delay before any updates happen
   } catch (err) {
     console.error("View recording failed:", err);
+    this.viewCounted = false; // Reset if failed
   }
 }
+
 
   // Modify connectedCallback to include view tracking
   connectedCallback() {
