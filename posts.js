@@ -1,7 +1,3 @@
-
-
-
-
 class PostComponent extends HTMLElement {
   constructor() {
     super();
@@ -59,63 +55,99 @@ class PostComponent extends HTMLElement {
     return content;
   }
 
-async toggleLike(postId, isCurrentlyLiked) {
-  try {
-    // 1. Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      console.error('Authentication error:', authError);
-      return { success: false, error: 'Not authenticated' };
-    }
-    
-    const currentUserId = user.id;
-    console.log(`Toggling like for post ${postId} by user ${currentUserId}`);
-
-    if (!isCurrentlyLiked) {
-      // Add like
+  async checkLikeStatus(postId) {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return false; // User not authenticated
+      }
+      
       const { data, error } = await supabase
         .from('likes')
-        .insert([{ 
-          post_id: postId, 
-          profile_id: currentUserId 
-        }])
-        .select();
-      
-      if (error) {
-        console.error('Like insertion error:', error);
-        throw error;
-      }
-      console.log('Like added successfully:', data);
-      return { success: true, newLikeState: true };
-    } else {
-      // Remove like
-      const { error } = await supabase
-        .from('likes')
-        .delete()
+        .select('*')
         .eq('post_id', postId)
-        .eq('profile_id', currentUserId);
+        .eq('profile_id', user.id)
+        .single();
       
-      if (error) {
-        console.error('Like deletion error:', error);
-        throw error;
+      if (error && error.code !== 'PGRST116') { // Ignore "no rows found" error
+        console.error('Error checking like status:', error);
+        return false;
       }
-      console.log('Like removed successfully');
-      return { success: true, newLikeState: false };
+      
+      return !!data; // Returns true if like exists, false otherwise
+    } catch (err) {
+      console.error('Error in checkLikeStatus:', err);
+      return false;
     }
-  } catch (err) {
-    console.error('Error in toggleLike:', {
-      message: err.message,
-      code: err.code,
-      details: err.details
-    });
-    return { 
-      success: false, 
-      error: err.message 
-    };
   }
-}
-  render() {
+
+  async toggleLike(postId, isCurrentlyLiked) {
+    try {
+      // 1. Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        return { success: false, error: 'Not authenticated' };
+      }
+      
+      const currentUserId = user.id;
+      console.log(`Toggling like for post ${postId} by user ${currentUserId}`);
+
+      if (!isCurrentlyLiked) {
+        // Add like
+        const { data, error } = await supabase
+          .from('likes')
+          .insert([{ 
+            post_id: postId, 
+            profile_id: currentUserId 
+          }])
+          .select();
+        
+        if (error) {
+          console.error('Like insertion error:', error);
+          throw error;
+        }
+        console.log('Like added successfully:', data);
+        
+        // Update the post's like count in the database
+        await supabase.rpc('increment_like_count', { post_id: postId });
+        
+        return { success: true, newLikeState: true };
+      } else {
+        // Remove like
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('profile_id', currentUserId);
+        
+        if (error) {
+          console.error('Like deletion error:', error);
+          throw error;
+        }
+        console.log('Like removed successfully');
+        
+        // Update the post's like count in the database
+        await supabase.rpc('decrement_like_count', { post_id: postId });
+        
+        return { success: true, newLikeState: false };
+      }
+    } catch (err) {
+      console.error('Error in toggleLike:', {
+        message: err.message,
+        code: err.code,
+        details: err.details
+      });
+      return { 
+        success: false, 
+        error: err.message 
+      };
+    }
+  }
+
+  async render() {
     try {
       const postData = this.getAttribute('post-data');
       if (!postData) {
@@ -135,6 +167,10 @@ async toggleLike(postId, isCurrentlyLiked) {
         is_verified: false,
         user_id: ''
       };
+
+      // Check like status from database
+      const isLiked = await this.checkLikeStatus(post.id);
+      post.is_liked = isLiked; // Update the post object with current like status
 
       // Create avatar HTML
       const avatarHtml = profile.avatar_url 
@@ -242,41 +278,45 @@ async toggleLike(postId, isCurrentlyLiked) {
   setupEventListeners(post) {
     // Like action
     this.querySelector('.like-action')?.addEventListener('click', async (e) => {
-  e.stopPropagation();
-  const likeBtn = e.currentTarget;
-  const isLiked = likeBtn.classList.contains('liked');
-  
-  // Optimistic UI update
-  likeBtn.classList.toggle('liked');
-  const icon = likeBtn.querySelector('i');
-  icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
-  
-  // Update count immediately
-  const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
-  if (countEl) {
-    let count = parseInt(countEl.textContent) || 0;
-    countEl.textContent = isLiked ? count - 1 : count + 1;
-  }
-  
-  try {
-    const { success, error } = await this.toggleLike(post.id, isLiked);
-    
-    if (!success) {
-      throw new Error(error || 'Failed to update like');
-    }
-  } catch (error) {
-    // Revert UI if API call failed
-    likeBtn.classList.toggle('liked');
-    icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-    if (countEl) {
-      let count = parseInt(countEl.textContent) || 0;
-      countEl.textContent = isLiked ? count + 1 : count - 1;
-    }
-    
-    console.error('Like update failed:', error);
-    alert(`Error: ${error.message}. Please try again.`);
-  }
-});
+      e.stopPropagation();
+      const likeBtn = e.currentTarget;
+      const isLiked = likeBtn.classList.contains('liked');
+      
+      // Optimistic UI update
+      likeBtn.classList.toggle('liked');
+      const icon = likeBtn.querySelector('i');
+      icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
+      
+      // Update count immediately
+      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
+      if (countEl) {
+        let count = parseInt(countEl.textContent) || 0;
+        countEl.textContent = isLiked ? count - 1 : count + 1;
+      }
+      
+      try {
+        const { success, error } = await this.toggleLike(post.id, isLiked);
+        
+        if (!success) {
+          throw new Error(error || 'Failed to update like');
+        }
+        
+        // Update the post object with the new state
+        post.is_liked = !isLiked;
+        post.like_count = parseInt(countEl.textContent);
+      } catch (error) {
+        // Revert UI if API call failed
+        likeBtn.classList.toggle('liked');
+        icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+        if (countEl) {
+          let count = parseInt(countEl.textContent) || 0;
+          countEl.textContent = isLiked ? count + 1 : count - 1;
+        }
+        
+        console.error('Like update failed:', error);
+        alert(`Error: ${error.message}. Please try again.`);
+      }
+    });
 
     // More options
     this.querySelector('.post-more')?.addEventListener('click', (e) => {
@@ -716,19 +756,44 @@ async toggleLike(postId, isCurrentlyLiked) {
 
   setupCommentPageEventListeners(commentPage, post) {
     // Like action
-    commentPage.querySelector('.like-action')?.addEventListener('click', (e) => {
+    commentPage.querySelector('.like-action')?.addEventListener('click', async (e) => {
       e.stopPropagation();
       const likeBtn = e.currentTarget;
       const isLiked = likeBtn.classList.contains('liked');
-      const icon = likeBtn.querySelector('i');
-      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
       
+      // Optimistic UI update
       likeBtn.classList.toggle('liked');
+      const icon = likeBtn.querySelector('i');
       icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
       
+      // Update count immediately
+      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
       if (countEl) {
         let count = parseInt(countEl.textContent) || 0;
         countEl.textContent = isLiked ? count - 1 : count + 1;
+      }
+      
+      try {
+        const { success, error } = await this.toggleLike(post.id, isLiked);
+        
+        if (!success) {
+          throw new Error(error || 'Failed to update like');
+        }
+        
+        // Update the post object with the new state
+        post.is_liked = !isLiked;
+        post.like_count = parseInt(countEl.textContent);
+      } catch (error) {
+        // Revert UI if API call failed
+        likeBtn.classList.toggle('liked');
+        icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+        if (countEl) {
+          let count = parseInt(countEl.textContent) || 0;
+          countEl.textContent = isLiked ? count + 1 : count - 1;
+        }
+        
+        console.error('Like update failed:', error);
+        alert(`Error: ${error.message}. Please try again.`);
       }
     });
 
