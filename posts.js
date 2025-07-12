@@ -85,6 +85,10 @@ async toggleLike(postId, isCurrentlyLiked) {
         throw error;
       }
       console.log('Like added successfully:', data);
+      
+      // Update the post's like count in the database
+      await supabase.rpc('increment_like_count', { post_id: postId });
+      
       return { success: true, newLikeState: true };
     } else {
       // Remove like
@@ -99,6 +103,10 @@ async toggleLike(postId, isCurrentlyLiked) {
         throw error;
       }
       console.log('Like removed successfully');
+      
+      // Update the post's like count in the database
+      await supabase.rpc('decrement_like_count', { post_id: postId });
+      
       return { success: true, newLikeState: false };
     }
   } catch (err) {
@@ -111,6 +119,33 @@ async toggleLike(postId, isCurrentlyLiked) {
       success: false, 
       error: err.message 
     };
+  }
+}
+
+  async checkLikeStatus(postId) {
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return false; // User not authenticated
+    }
+    
+    const { data, error } = await supabase
+      .from('likes')
+      .select('*')
+      .eq('post_id', postId)
+      .eq('profile_id', user.id)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') { // Ignore "no rows found" error
+      console.error('Error checking like status:', error);
+      return false;
+    }
+    
+    return !!data; // Returns true if like exists, false otherwise
+  } catch (err) {
+    console.error('Error in checkLikeStatus:', err);
+    return false;
   }
 }
   render() {
