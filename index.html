@@ -1132,6 +1132,38 @@ async function loadPosts() {
   }
 }
 
+  // After loadPosts(), add this:
+function subscribeToViewUpdates() {
+  const channel = supabase
+    .channel('post_views')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'posts',
+      },
+      (payload) => {
+        // Find the post-component and update its view count
+        const postElement = document.querySelector(`post-component[data-post-id="${payload.new.id}"]`);
+        if (postElement) {
+          const viewsEl = postElement.querySelector('.views');
+          if (viewsEl) viewsEl.textContent = payload.new.views;
+        }
+      }
+    )
+    .subscribe();
+
+  return channel;
+}
+
+// Call this after loading posts
+let viewChannel;
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadPosts();
+  viewChannel = subscribeToViewUpdates(); // Start listening
+});
+
 // MENU FUNCTIONS
 function toggleMenu() {
     const menuPage = document.getElementById('menuPage');
