@@ -168,10 +168,7 @@ class PostComponent extends HTMLElement {
         user_id: ''
       };
 
-      // Check like status from database
-      const isLiked = await this.checkLikeStatus(post.id);
-      post.is_liked = isLiked; // Update the post object with current like status
-
+      
       // Create avatar HTML
       const avatarHtml = profile.avatar_url 
         ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
