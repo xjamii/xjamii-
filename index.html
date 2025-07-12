@@ -1083,62 +1083,53 @@ function getInitials(name) {
 
 // POSTS LOADING FUNCTION
 async function loadPosts() {
-    try {
-        console.log("[1] Starting to load posts...");
-        
-        // 1. Check authentication first
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-            console.error("[Auth Error]", authError);
-            window.location.href = 'login.html';
-            return;
-        }
-        console.log("[2] User authenticated:", user.id);
+  try {
+    // 1. Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError) throw authError;
 
-        // 2. Fetch posts with related data
-        console.log("[3] Fetching posts from Supabase...");
-        const { data: posts, error } = await supabase
-            .from('posts')
-            .select(`
-                *,
-                profile:user_id (username, full_name, avatar_url, is_verified),
-                media:post_media (media_url, media_type)
-            `)
-            .order('created_at', { ascending: false });
-        
-        if (error) {
-            console.error("[4] Supabase query error:", error);
-            throw error;
-        }
-        console.log("[5] Posts fetched successfully. Count:", posts.length);
+    // 2. Fetch ALL posts with media and profiles
+    const { data: posts, error: postsError } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profile:user_id (username, full_name, avatar_url, is_verified),
+        media:post_media (media_url, media_type)
+      `)
+      .order('created_at', { ascending: false });
 
-        // 3. Render posts
-        const postsContainer = document.getElementById('posts-container');
-        postsContainer.innerHTML = '';
-        
-        if (posts.length === 0) {
-            console.log("[6] No posts found");
-            postsContainer.innerHTML = '<div class="no-posts">No posts yet. Be the first to post!</div>';
-            return;
-        }
+    if (postsError) throw postsError;
 
-        console.log("[7] Rendering posts...");
-        posts.forEach(post => {
-            console.log("[8] Rendering post ID:", post.id);
-            const postElement = document.createElement('post-component');
-            postElement.setAttribute('post-data', JSON.stringify(post));
-            postsContainer.appendChild(postElement);
-        });
-        
-    } catch (error) {
-        console.error("[9] Critical error in loadPosts:", error);
-        document.getElementById('posts-container').innerHTML = `
-            <div class="error-message">
-                Failed to load posts. <button onclick="loadPosts()">Try again</button>
-                <p>${error.message}</p>
-            </div>
-        `;
-    }
+    // 3. Fetch ALL likes by this user (single query)
+    const { data: userLikes, error: likesError } = await supabase
+      .from('likes')
+      .select('post_id')
+      .eq('profile_id', user.id);
+
+    if (likesError) throw likesError;
+
+    // 4. Create a Set of liked post IDs for fast lookup
+    const likedPostIds = new Set(userLikes.map(like => like.post_id));
+
+    // 5. Attach like status to each post
+    const postsWithLikes = posts.map(post => ({
+      ...post,
+      is_liked: likedPostIds.has(post.id)  // true/false
+    }));
+
+    // 6. Render posts
+    const postsContainer = document.getElementById('posts-container');
+    postsContainer.innerHTML = '';
+    postsWithLikes.forEach(post => {
+      const postElement = document.createElement('post-component');
+      postElement.setAttribute('post-data', JSON.stringify(post));
+      postsContainer.appendChild(postElement);
+    });
+
+  } catch (error) {
+    console.error("Error loading posts:", error);
+    // Show error UI
+  }
 }
 
 // MENU FUNCTIONS
