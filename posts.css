@@ -926,7 +926,7 @@ like-button {
   overflow: hidden;
   height: 20px;
   vertical-align: middle;
-  transition: transform 0.3s ease-out;
+  transition: transform 0.7s ease-out;
 }
 
 /* Optional: Add this if you want the numbers to fade */
