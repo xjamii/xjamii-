@@ -75,7 +75,7 @@ class PostComponent extends HTMLElement {
         // 5. Trigger animation
         setTimeout(() => {
           container.style.transform = `translateY(-20px)`;
-          container.style.transition = `transform 0.7s ease-out`;
+          container.style.transition = `transform 0.3s ease-out`;
         }, 10);
         
         // 6. Clean up after animation
@@ -84,7 +84,7 @@ class PostComponent extends HTMLElement {
             <i class="fas fa-chart-bar"></i>
             <span>${currentViews + 1}</span>
           `;
-        }, 300);
+        }, 800);
       }
     }
   } catch (err) {
