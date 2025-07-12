@@ -27,29 +27,45 @@ class PostComponent extends HTMLElement {
   }
 
   async recordView() {
-    const postData = this.getAttribute('post-data');
-    if (!postData) return;
+  const postData = this.getAttribute('post-data');
+  if (!postData) return;
+  
+  try {
+    const post = JSON.parse(postData);
+    const { error } = await supabase
+      .rpc('increment_views', { post_id: post.id });
     
-    try {
-      const post = JSON.parse(postData);
-      const { error } = await supabase
-        .rpc('increment_views', { post_id: post.id });
+    if (!error) {
+      this.viewCounted = true;
+      console.log("✅ View counted for post:", post.id);
       
-      if (!error) {
-        this.viewCounted = true;
-        console.log("✅ View counted for post:", post.id);
+      // Update ONLY the number while preserving the icon
+      const viewsEl = this.querySelector('.views');
+      if (viewsEl) {
+        // Find the existing icon and text nodes
+        const icon = viewsEl.querySelector('i');
+        const textNodes = Array.from(viewsEl.childNodes)
+          .filter(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
         
-        // Update the view count display immediately
-        const viewsEl = this.querySelector('.views');
-        if (viewsEl) {
-          const currentViews = parseInt(viewsEl.textContent) || 0;
-          viewsEl.textContent = currentViews + 1;
+        // Calculate new count
+        const currentCount = textNodes.length 
+          ? parseInt(textNodes[0].textContent.trim()) || 0 
+          : 0;
+        
+        // Update just the text content while preserving the icon
+        if (textNodes.length) {
+          textNodes[0].textContent = ` ${currentCount + 1}`;
+        } else {
+          // If no text node exists, create one after the icon
+          const countText = document.createTextNode(` ${currentCount + 1}`);
+          viewsEl.appendChild(countText);
         }
       }
-    } catch (err) {
-      console.error("View recording failed:", err);
     }
+  } catch (err) {
+    console.error("View recording failed:", err);
   }
+}
 
   // Modify connectedCallback to include view tracking
   connectedCallback() {
