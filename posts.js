@@ -7,6 +7,7 @@ class PostComponent extends HTMLElement {
     this.startX = 0;
     this.isRefreshing = false;
     this.isLoadingMore = false;
+    this.isLiked = false; // Track like status locally
   }
 
   connectedCallback() {
@@ -82,7 +83,7 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  async toggleLike(postId, isCurrentlyLiked) {
+  async toggleLike(postId) {
     try {
       // 1. Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -93,28 +94,23 @@ class PostComponent extends HTMLElement {
       }
       
       const currentUserId = user.id;
-      console.log(`Toggling like for post ${postId} by user ${currentUserId}`);
 
-      if (!isCurrentlyLiked) {
+      if (!this.isLiked) {
         // Add like
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('likes')
           .insert([{ 
             post_id: postId, 
             profile_id: currentUserId 
-          }])
-          .select();
+          }]);
         
-        if (error) {
-          console.error('Like insertion error:', error);
-          throw error;
-        }
-        console.log('Like added successfully:', data);
+        if (error) throw error;
         
         // Update the post's like count in the database
         await supabase.rpc('increment_like_count', { post_id: postId });
         
-        return { success: true, newLikeState: true };
+        this.isLiked = true;
+        return { success: true };
       } else {
         // Remove like
         const { error } = await supabase
@@ -123,23 +119,16 @@ class PostComponent extends HTMLElement {
           .eq('post_id', postId)
           .eq('profile_id', currentUserId);
         
-        if (error) {
-          console.error('Like deletion error:', error);
-          throw error;
-        }
-        console.log('Like removed successfully');
+        if (error) throw error;
         
         // Update the post's like count in the database
         await supabase.rpc('decrement_like_count', { post_id: postId });
         
-        return { success: true, newLikeState: false };
+        this.isLiked = false;
+        return { success: true };
       }
     } catch (err) {
-      console.error('Error in toggleLike:', {
-        message: err.message,
-        code: err.code,
-        details: err.details
-      });
+      console.error('Error in toggleLike:', err);
       return { 
         success: false, 
         error: err.message 
@@ -147,7 +136,7 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  async render() {
+  render() {
     try {
       const postData = this.getAttribute('post-data');
       if (!postData) {
@@ -168,9 +157,8 @@ class PostComponent extends HTMLElement {
         user_id: ''
       };
 
-      // Check like status from database
-      const isLiked = await this.checkLikeStatus(post.id);
-      post.is_liked = isLiked; // Update the post object with current like status
+      // Set initial like status from post data
+      this.isLiked = post.is_liked || false;
 
       // Create avatar HTML
       const avatarHtml = profile.avatar_url 
@@ -209,8 +197,8 @@ class PostComponent extends HTMLElement {
             ${this.renderMedia(post.media || [])}
             <div class="post-actions">
               <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
-              <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
-                <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
+              <div class="post-action like-action ${this.isLiked ? 'liked' : ''}">
+                <i class="${this.isLiked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
               <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
@@ -222,12 +210,29 @@ class PostComponent extends HTMLElement {
 
       this.setupEventListeners(post);
 
+      // Check like status in the background after rendering
+      if (post.id) {
+        this.checkLikeStatus(post.id).then(isLiked => {
+          this.isLiked = isLiked;
+          const likeBtn = this.querySelector('.like-action');
+          if (likeBtn) {
+            likeBtn.classList.toggle('liked', isLiked);
+            const icon = likeBtn.querySelector('i');
+            if (icon) {
+              icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+            }
+          }
+        });
+      }
+
     } catch (error) {
       console.error("Error rendering post:", error);
       this.innerHTML = `<div class="post-error">Error loading post</div>`;
     }
   }
 
+  // ... [Keep all other methods exactly the same as in your new version] ...
+}
   renderMedia(mediaItems) {
     if (!mediaItems || !mediaItems.length) return '';
     
