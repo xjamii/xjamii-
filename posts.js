@@ -147,6 +147,24 @@ class PostComponent extends HTMLElement {
     }
   }
 
+
+
+  // ✅ Add this method
+  async incrementViews(postId) {
+    const { error } = await supabase
+      .rpc('increment_views', { post_id: postId });
+    
+    if (error) console.error("Failed to update views:", error);
+  }
+
+  // ✅ Call it when the post loads
+  connectedCallback() {
+    this.render();
+    const postId = JSON.parse(this.getAttribute('post-data')).id;
+    this.incrementViews(postId); // Track view
+  }
+}
+
   async render() {
     try {
       const postData = this.getAttribute('post-data');
