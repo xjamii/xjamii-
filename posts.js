@@ -1,16 +1,67 @@
 class PostComponent extends HTMLElement {
   constructor() {
     super();
+    // Keep your existing properties
     this.mediaViewer = null;
     this.currentMediaIndex = 0;
     this.startY = 0;
     this.startX = 0;
     this.isRefreshing = false;
     this.isLoadingMore = false;
+    
+    // Add view tracking properties
+    this.viewCounted = false;
+    this.observer = new IntersectionObserver(this.handleIntersect.bind(this), {
+      threshold: 0.5,
+      rootMargin: '0px 0px -100px 0px'
+    });
   }
 
+  // Add these new methods for view tracking
+  handleIntersect(entries) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !this.viewCounted) {
+        this.recordView();
+      }
+    });
+  }
+
+  async recordView() {
+    const postData = this.getAttribute('post-data');
+    if (!postData) return;
+    
+    try {
+      const post = JSON.parse(postData);
+      const { error } = await supabase
+        .rpc('increment_views', { post_id: post.id });
+      
+      if (!error) {
+        this.viewCounted = true;
+        console.log("✅ View counted for post:", post.id);
+        
+        // Update the view count display immediately
+        const viewsEl = this.querySelector('.views');
+        if (viewsEl) {
+          const currentViews = parseInt(viewsEl.textContent) || 0;
+          viewsEl.textContent = currentViews + 1;
+        }
+      }
+    } catch (err) {
+      console.error("View recording failed:", err);
+    }
+  }
+
+  // Modify connectedCallback to include view tracking
   connectedCallback() {
     this.render();
+    this.observer.observe(this); // Start intersection observer
+  }
+
+  // Add cleanup for observer
+  disconnectedCallback() {
+    if (this.observer) {
+      this.observer.unobserve(this);
+    }
   }
 
   static get observedAttributes() {
