@@ -933,3 +933,12 @@ like-button {
 .view-counter-animation div {
   transition: opacity 0.2s ease;
 }
+
+/* Add these to your stylesheet */
+.like-action, .views {
+  transition: color 0.3s ease;
+}
+
+.like-action.liked {
+  color: #ff0000; /* Or your preferred liked color */
+}
