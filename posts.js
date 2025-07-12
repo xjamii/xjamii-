@@ -84,7 +84,7 @@ class PostComponent extends HTMLElement {
             <i class="fas fa-chart-bar"></i>
             <span>${currentViews + 1}</span>
           `;
-        }, 300);
+        }, 700);
       }
     }
   } catch (err) {
