@@ -57,83 +57,40 @@ class PostComponent extends HTMLElement {
 
 async toggleLike(postId, isCurrentlyLiked) {
   try {
-    // 1. Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      console.error('Authentication error:', authError);
-      return { success: false, error: 'Not authenticated' };
-    }
-    
-    const currentUserId = user.id;
-    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
     if (!isCurrentlyLiked) {
-      // Add like - use upsert to prevent duplicates
-      const { data, error } = await supabase
+      // Add like
+      const { error } = await supabase
         .from('likes')
-        .upsert(
-          { 
-            post_id: postId, 
-            profile_id: currentUserId 
-          },
-          { onConflict: 'post_id,profile_id' }
-        )
-        .select();
-      
+        .insert({ post_id: postId, profile_id: user.id });
       if (error) throw error;
-      return { success: true, newLikeState: true };
     } else {
       // Remove like
       const { error } = await supabase
         .from('likes')
         .delete()
         .eq('post_id', postId)
-        .eq('profile_id', currentUserId);
-      
+        .eq('profile_id', user.id);
       if (error) throw error;
-      return { success: true, newLikeState: false };
     }
-  } catch (err) {
-    console.error('Error in toggleLike:', err);
-    return { success: false, error: err.message };
+
+    // Get updated count (trigger maintains this)
+    const { count } = await supabase
+      .from('likes')
+      .select('*', { count: 'exact' })
+      .eq('post_id', postId);
+
+    return {
+      success: true,
+      newLikeState: !isCurrentlyLiked,
+      newLikeCount: count || 0
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 }
-
-// In your setupEventListeners, modify the like handler:
-this.querySelector('.like-action')?.addEventListener('click', async (e) => {
-  e.stopPropagation();
-  const likeBtn = e.currentTarget;
-  const isLiked = likeBtn.classList.contains('liked');
-  
-  // Optimistic UI update
-  likeBtn.classList.toggle('liked');
-  const icon = likeBtn.querySelector('i');
-  icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
-  
-  // Update count immediately
-  const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
-  let count = parseInt(countEl.textContent) || 0;
-  countEl.textContent = isLiked ? count - 1 : count + 1;
-  
-  try {
-    const { success, error } = await this.toggleLike(post.id, isLiked);
-    
-    if (!success) {
-      // Revert UI if API call failed
-      throw new Error(error || 'Failed to update like');
-    }
-    
-    // If successful, the state is already updated
-  } catch (error) {
-    // Revert UI if API call failed
-    likeBtn.classList.toggle('liked');
-    icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-    countEl.textContent = isLiked ? count + 1 : count - 1;
-    
-    console.error('Like update failed:', error);
-    alert(`Error: ${error.message}. Please try again.`);
-  }
-});
   render() {
     try {
       const postData = this.getAttribute('post-data');
@@ -260,7 +217,7 @@ this.querySelector('.like-action')?.addEventListener('click', async (e) => {
 
   setupEventListeners(post) {
     // Like action
-    this.querySelector('.like-action')?.addEventListener('click', async (e) => {
+this.querySelector('.like-action')?.addEventListener('click', async (e) => {
   e.stopPropagation();
   const likeBtn = e.currentTarget;
   const isLiked = likeBtn.classList.contains('liked');
@@ -270,30 +227,27 @@ this.querySelector('.like-action')?.addEventListener('click', async (e) => {
   const icon = likeBtn.querySelector('i');
   icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
   
-  // Update count immediately
-  const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
-  if (countEl) {
-    let count = parseInt(countEl.textContent) || 0;
-    countEl.textContent = isLiked ? count - 1 : count + 1;
-  }
-  
+  // Update count optimistically
+  const countEl = likeBtn.querySelector('span');
+  let count = parseInt(countEl.textContent) || 0;
+  countEl.textContent = isLiked ? count - 1 : count + 1;
+
   try {
-    const { success, error } = await this.toggleLike(post.id, isLiked);
+    const { success, newLikeState, newLikeCount } = await this.toggleLike(post.id, isLiked);
     
-    if (!success) {
-      throw new Error(error || 'Failed to update like');
-    }
+    if (!success) throw new Error("Like update failed");
+    
+    // Ensure UI matches server state
+    likeBtn.classList.toggle('liked', newLikeState);
+    icon.className = newLikeState ? 'fas fa-heart' : 'far fa-heart';
+    countEl.textContent = newLikeCount;
+    
   } catch (error) {
-    // Revert UI if API call failed
+    // Revert on error
     likeBtn.classList.toggle('liked');
     icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-    if (countEl) {
-      let count = parseInt(countEl.textContent) || 0;
-      countEl.textContent = isLiked ? count + 1 : count - 1;
-    }
-    
-    console.error('Like update failed:', error);
-    alert(`Error: ${error.message}. Please try again.`);
+    countEl.textContent = count;
+    console.error("Like failed:", error);
   }
 });
 
