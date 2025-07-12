@@ -1,7 +1,8 @@
+
 class PostComponent extends HTMLElement {
   constructor() {
     super();
-    // Keep your existing properties
+    // Existing properties
     this.mediaViewer = null;
     this.currentMediaIndex = 0;
     this.startY = 0;
@@ -9,7 +10,7 @@ class PostComponent extends HTMLElement {
     this.isRefreshing = false;
     this.isLoadingMore = false;
     
-    // Add view tracking properties
+    // View tracking
     this.viewCounted = false;
     this.observer = new IntersectionObserver(this.handleIntersect.bind(this), {
       threshold: 0.5,
@@ -17,93 +18,125 @@ class PostComponent extends HTMLElement {
     });
   }
 
-  // Add these new methods for view tracking
+  // View tracking with 10-second delay and count-up
   handleIntersect(entries) {
     entries.forEach(entry => {
       if (entry.isIntersecting && !this.viewCounted) {
-        this.recordView();
+        setTimeout(() => {
+          this.recordView();
+        }, 10000); // 10-second delay
       }
     });
   }
 
   async recordView() {
-  const postData = this.getAttribute('post-data');
-  if (!postData) return;
-  
-  try {
-    const post = JSON.parse(postData);
-    const { error } = await supabase
-      .rpc('increment_views', { post_id: post.id });
+    const postData = this.getAttribute('post-data');
+    if (!postData) return;
     
-    if (!error) {
-      this.viewCounted = true;
-      console.log("✅ View counted for post:", post.id);
+    try {
+      const post = JSON.parse(postData);
+      const { error } = await supabase
+        .rpc('increment_views', { post_id: post.id });
       
-      const viewsEl = this.querySelector('.views');
-      if (viewsEl) {
-        // 1. Get current elements
-        const icon = viewsEl.querySelector('i');
-        const countSpan = viewsEl.querySelector('span') || document.createElement('span');
-        const currentViews = parseInt(countSpan.textContent || viewsEl.textContent) || 0;
-        
-        // 2. Create animation elements
-        const container = document.createElement('div');
-        container.className = 'view-counter-animation';
-        container.style.cssText = `
-          display: inline-flex;
-          flex-direction: column;
-          overflow: hidden;
-          height: 20px;
-          vertical-align: middle;
-        `;
-        
-        const oldNumber = document.createElement('div');
-        oldNumber.textContent = currentViews;
-        
-        const newNumber = document.createElement('div');
-        newNumber.textContent = currentViews + 1;
-        
-        // 3. Set up animation
-        container.appendChild(oldNumber);
-        container.appendChild(newNumber);
-        
-        // 4. Replace existing content
-        viewsEl.innerHTML = '';
-        viewsEl.appendChild(icon);
-        viewsEl.appendChild(container);
-        
-        // 5. Trigger animation
-        setTimeout(() => {
-          container.style.transform = `translateY(-20px)`;
-          container.style.transition = `transform 0.3s ease-out`;
-        }, 10);
-        
-        // 6. Clean up after animation
-        setTimeout(() => {
-          viewsEl.innerHTML = `
-            <i class="fas fa-chart-bar"></i>
-            <span>${currentViews + 1}</span>
-          `;
-        }, 700);
+      if (!error) {
+        this.viewCounted = true;
+        this.animateCounter('views', post.views || 0, (post.views || 0) + 1);
       }
+    } catch (err) {
+      console.error("View recording failed:", err);
     }
-  } catch (err) {
-    console.error("View recording failed:", err);
   }
-}
 
-  // Modify connectedCallback to include view tracking
+  // Generic count-up animator (used for both views and likes)
+  animateCounter(type, startValue, endValue) {
+    const element = this.querySelector(`.${type}`);
+    if (!element) return;
+    
+    const duration = 1500; // 1.5 second animation
+    const startTime = performance.now();
+    const icon = type === 'views' ? 
+      '<i class="fas fa-chart-bar"></i>' : 
+      '<i class="far fa-heart"></i>';
+    
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const currentValue = Math.floor(startValue + (endValue - startValue) * progress);
+      
+      element.innerHTML = `${icon} ${currentValue}`;
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Final update to ensure perfect number
+        element.innerHTML = `${icon} ${endValue}`;
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }
+
+  // Modified like handler with count-up animation
+  async toggleLike(postId, isCurrentlyLiked) {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      
+      const likeBtn = this.querySelector('.like-action');
+      const icon = likeBtn.querySelector('i');
+      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
+      let currentCount = parseInt(countEl?.textContent || 0);
+      
+      // Optimistic UI update
+      likeBtn.classList.toggle('liked');
+      icon.className = isCurrentlyLiked ? 'far fa-heart' : 'fas fa-heart';
+      
+      // Immediate visual feedback before API call
+      this.animateCounter('like-action', currentCount, isCurrentlyLiked ? currentCount - 1 : currentCount + 1);
+      
+      // API call
+      const { error } = await supabase
+        .from('likes')
+        [isCurrentlyLiked ? 'delete' : 'insert']({
+          post_id: postId,
+          profile_id: user.id
+        });
+      
+      if (error) throw error;
+      
+      // Update like count in database
+      await supabase.rpc(
+        isCurrentlyLiked ? 'decrement_like_count' : 'increment_like_count', 
+        { post_id: postId }
+      );
+      
+    } catch (error) {
+      console.error('Like update failed:', error);
+      // Revert animation if error occurs
+      const likeBtn = this.querySelector('.like-action');
+      const icon = likeBtn.querySelector('i');
+      likeBtn.classList.toggle('liked');
+      icon.className = likeBtn.classList.contains('liked') ? 'fas fa-heart' : 'far fa-heart';
+    }
+  }
+
+  // Existing methods (unchanged)
   connectedCallback() {
     this.render();
-    this.observer.observe(this); // Start intersection observer
+    this.observer.observe(this);
   }
 
-  // Add cleanup for observer
   disconnectedCallback() {
     if (this.observer) {
       this.observer.unobserve(this);
     }
   }
+
+  // ... keep ALL other existing methods exactly as they are ...
+  // render(), setupEventListeners(), etc.
+  
+
+
 
   static get observedAttributes() {
     return ['post-data'];
@@ -174,70 +207,7 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  async toggleLike(postId, isCurrentlyLiked) {
-    try {
-      // 1. Check authentication
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error('Authentication error:', authError);
-        return { success: false, error: 'Not authenticated' };
-      }
-      
-      const currentUserId = user.id;
-      console.log(`Toggling like for post ${postId} by user ${currentUserId}`);
 
-      if (!isCurrentlyLiked) {
-        // Add like
-        const { data, error } = await supabase
-          .from('likes')
-          .insert([{ 
-            post_id: postId, 
-            profile_id: currentUserId 
-          }])
-          .select();
-        
-        if (error) {
-          console.error('Like insertion error:', error);
-          throw error;
-        }
-        console.log('Like added successfully:', data);
-        
-        // Update the post's like count in the database
-        await supabase.rpc('increment_like_count', { post_id: postId });
-        
-        return { success: true, newLikeState: true };
-      } else {
-        // Remove like
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('post_id', postId)
-          .eq('profile_id', currentUserId);
-        
-        if (error) {
-          console.error('Like deletion error:', error);
-          throw error;
-        }
-        console.log('Like removed successfully');
-        
-        // Update the post's like count in the database
-        await supabase.rpc('decrement_like_count', { post_id: postId });
-        
-        return { success: true, newLikeState: false };
-      }
-    } catch (err) {
-      console.error('Error in toggleLike:', {
-        message: err.message,
-        code: err.code,
-        details: err.details
-      });
-      return { 
-        success: false, 
-        error: err.message 
-      };
-    }
-  }
 
 
 
