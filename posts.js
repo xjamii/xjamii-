@@ -27,23 +27,25 @@ class PostComponent extends HTMLElement {
   }
 
 
-    async recordView() {
+ async recordView() {
   const postData = this.getAttribute('post-data');
   if (!postData) return;
   
   try {
     const post = JSON.parse(postData);
     
-    // First mark as counted to prevent duplicate triggers
-    this.viewCounted = true; 
-    console.log("⏳ View count queued for post:", post.id);
+    // Wait 10 seconds before counting the view
+    await new Promise(resolve => setTimeout(resolve, 10000));
     
-    // Set 10-second delay before updating
-    setTimeout(async () => {
+    // Only proceed if still visible after 10 seconds
+    if (!this.isConnected || !this.viewCounted) {
       const { error } = await supabase
         .rpc('increment_views', { post_id: post.id });
       
       if (!error) {
+        this.viewCounted = true;
+        console.log("✅ View counted for post:", post.id);
+        
         const viewsEl = this.querySelector('.views');
         if (viewsEl) {
           // 1. Get current elements
@@ -85,19 +87,20 @@ class PostComponent extends HTMLElement {
           
           // 6. Clean up after animation
           setTimeout(() => {
-            viewsEl.innerHTML = `
-              <i class="fas fa-chart-bar"></i>
-              <span>${currentViews + 1}</span>
-            `;
-          }, 350); // 300ms animation + 50ms delay
+            if (viewsEl.isConnected) { // Check if still in DOM
+              viewsEl.innerHTML = `
+                <i class="fas fa-chart-bar"></i>
+                <span>${currentViews + 1}</span>
+              `;
+            }
+          }, 800);
         }
       }
-    }, 10000); // 10 second delay before any updates happen
+    }
   } catch (err) {
     console.error("View recording failed:", err);
-    this.viewCounted = false; // Reset if failed
   }
-}
+}   
 
 
   // Modify connectedCallback to include view tracking
