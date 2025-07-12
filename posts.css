@@ -919,3 +919,17 @@ like-button {
     font-size: 15px;
   }
 }
+
+.view-counter-animation {
+  display: inline-flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 20px;
+  vertical-align: middle;
+  transition: transform 0.3s ease-out;
+}
+
+/* Optional: Add this if you want the numbers to fade */
+.view-counter-animation div {
+  transition: opacity 0.2s ease;
+}
