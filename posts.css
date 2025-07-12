@@ -926,7 +926,7 @@ like-button {
   overflow: hidden;
   height: 20px;
   vertical-align: middle;
-  transition: transform 0.7s ease-out;
+  transition: transform 0.3s ease-out;
 }
 
 /* Optional: Add this if you want the numbers to fade */
@@ -935,10 +935,3 @@ like-button {
 }
 
 /* Add these to your stylesheet */
-.like-action, .views {
-  transition: color 0.3s ease;
-}
-
-.like-action.liked {
-  color: #ff0000; /* Or your preferred liked color */
-}
