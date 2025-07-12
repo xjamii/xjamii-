@@ -39,27 +39,52 @@ class PostComponent extends HTMLElement {
       this.viewCounted = true;
       console.log("✅ View counted for post:", post.id);
       
-      // Update ONLY the number while preserving the icon
       const viewsEl = this.querySelector('.views');
       if (viewsEl) {
-        // Find the existing icon and text nodes
+        // 1. Get current elements
         const icon = viewsEl.querySelector('i');
-        const textNodes = Array.from(viewsEl.childNodes)
-          .filter(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+        const countSpan = viewsEl.querySelector('span') || document.createElement('span');
+        const currentViews = parseInt(countSpan.textContent || viewsEl.textContent) || 0;
         
-        // Calculate new count
-        const currentCount = textNodes.length 
-          ? parseInt(textNodes[0].textContent.trim()) || 0 
-          : 0;
+        // 2. Create animation elements
+        const container = document.createElement('div');
+        container.className = 'view-counter-animation';
+        container.style.cssText = `
+          display: inline-flex;
+          flex-direction: column;
+          overflow: hidden;
+          height: 20px;
+          vertical-align: middle;
+        `;
         
-        // Update just the text content while preserving the icon
-        if (textNodes.length) {
-          textNodes[0].textContent = ` ${currentCount + 1}`;
-        } else {
-          // If no text node exists, create one after the icon
-          const countText = document.createTextNode(` ${currentCount + 1}`);
-          viewsEl.appendChild(countText);
-        }
+        const oldNumber = document.createElement('div');
+        oldNumber.textContent = currentViews;
+        
+        const newNumber = document.createElement('div');
+        newNumber.textContent = currentViews + 1;
+        
+        // 3. Set up animation
+        container.appendChild(oldNumber);
+        container.appendChild(newNumber);
+        
+        // 4. Replace existing content
+        viewsEl.innerHTML = '';
+        viewsEl.appendChild(icon);
+        viewsEl.appendChild(container);
+        
+        // 5. Trigger animation
+        setTimeout(() => {
+          container.style.transform = `translateY(-20px)`;
+          container.style.transition = `transform 0.3s ease-out`;
+        }, 10);
+        
+        // 6. Clean up after animation
+        setTimeout(() => {
+          viewsEl.innerHTML = `
+            <i class="fas fa-chart-bar"></i>
+            <span>${currentViews + 1}</span>
+          `;
+        }, 300);
       }
     }
   } catch (err) {
