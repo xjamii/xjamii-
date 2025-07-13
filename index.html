@@ -847,25 +847,30 @@
         
 let viewChannel = null;
 
-// Initialize app with enhanced notification handling
 document.addEventListener('DOMContentLoaded', async () => {
-    await checkUsername();
-    showFeed();
-    
-    // Initialize notification system
-    if (typeof initializeNotificationSystem === 'function') {
-        await initializeNotificationSystem();
-    }
-    
-    await loadPosts();
-    viewChannel = subscribeToViewUpdates();
-    
-    // Add visibility change handler
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            refreshNotificationState();
+    // Show loading state
+    const postsContainer = document.getElementById('posts-container');
+    postsContainer.innerHTML = '<div class="posts-loading"><div class="loader"></div></div>';
+
+    // Initialize auth first
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        
+        // Then check username and load posts
+        await checkUsername();
+        await loadPosts();
+        
+        // Initialize other systems
+        if (typeof initializeNotificationSystem === 'function') {
+            await initializeNotificationSystem();
         }
-    });
+        
+        viewChannel = subscribeToViewUpdates();
+    } catch (error) {
+        console.error("Initialization error:", error);
+        postsContainer.innerHTML = '<div class="post-error">Please login to view posts</div>';
+    }
 });
 
 // Consolidated notification refresh function
