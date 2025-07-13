@@ -1,42 +1,61 @@
 class PostActions {
-  static async toggleLike(post) {
+  static likeCooldowns = new Map();
+
+  static async toggleLike(post, buttonElement, countElement) {
+    const postId = post.id;
+
+    // Prevent double-clicking within 2 seconds
+    if (this.likeCooldowns.get(postId)) return;
+
+    this.likeCooldowns.set(postId, true);
+    setTimeout(() => this.likeCooldowns.delete(postId), 2000);
+
+    // Optimistic UI update
+    const wasLiked = post.is_liked;
+    post.is_liked = !wasLiked;
+    post.like_count = wasLiked ? post.like_count - 1 : post.like_count + 1;
+
+    // Update UI immediately
+    buttonElement.classList.toggle('liked', post.is_liked);
+    countElement.textContent = post.like_count;
+
+    // Background save
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
       if (authError || !user) {
-        return { success: false, error: 'Not authenticated' };
+        throw new Error('Not authenticated');
       }
 
       const currentUserId = user.id;
 
-      if (!post.is_liked) {
+      if (!wasLiked) {
         const { error } = await supabase
           .from('likes')
-          .insert([{ post_id: post.id, profile_id: currentUserId }])
+          .insert([{ post_id: postId, profile_id: currentUserId }])
           .select();
+        if (error) throw error;
 
-        if (error) {
-          return { success: false };
-        }
-
-        await supabase.rpc('increment_like_count', { post_id: post.id });
-        return { success: true, newLikeState: true };
+        await supabase.rpc('increment_like_count', { post_id: postId });
       } else {
         const { error } = await supabase
           .from('likes')
           .delete()
-          .eq('post_id', post.id)
+          .eq('post_id', postId)
           .eq('profile_id', currentUserId);
+        if (error) throw error;
 
-        if (error) {
-          return { success: false };
-        }
-
-        await supabase.rpc('decrement_like_count', { post_id: post.id });
-        return { success: true, newLikeState: false };
+        await supabase.rpc('decrement_like_count', { post_id: postId });
       }
-    } catch {
-      return { success: false };
+
+    } catch (err) {
+      console.warn('Like action failed:', err.message || err);
+
+      // Revert UI on failure
+      post.is_liked = wasLiked;
+      post.like_count = wasLiked ? post.like_count + 1 : post.like_count - 1;
+
+      buttonElement.classList.toggle('liked', post.is_liked);
+      countElement.textContent = post.like_count;
     }
   }
 
