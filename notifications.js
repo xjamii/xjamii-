@@ -1,86 +1,65 @@
-import { supabase } from './supabase';
+// notification.js
+let notificationAlert = null;
+let notificationChannel = null;
 
-export const NotificationTypes = {
-  NEW_POST: 'new_post',
-  COMMENT: 'comment',
-  LIKE: 'like',
-  CONNECTION_REQUEST: 'connection_request'
-};
+export async function initNotificationSystem(supabase, userId, onCountUpdate) {
+  if (!userId) return;
 
-export async function sendNotification({
-  userId,
-  senderId,
-  type,
-  message,
-  link = null
-}) {
-  const { data, error } = await supabase
-    .from('notifications')
-    .insert([{
-      user_id: userId,
-      sender_id: senderId,
-      type,
-      message,
-      link,
-      read: false
-    }])
-    .select();
-
-  if (error) {
-    console.error('Error sending notification:', error);
-    return { error };
+  // Clear existing channel if it exists
+  if (notificationChannel) {
+    supabase.removeChannel(notificationChannel);
   }
 
-  // Increment notification count
-  await supabase.rpc('increment_notification_count', {
-    user_id: userId
-  });
-
-  return { data };
-}
-
-export async function markAsRead(userId) {
-  return await supabase.rpc('mark_notifications_read', {
-    user_id: userId
-  });
-}
-
-export function setupRealtimeNotifications(userId, callback) {
-  const channel = supabase
-    .channel('notifications_changes')
+  notificationChannel = supabase
+    .channel('notifications')
     .on(
       'postgres_changes',
       {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'notifications',
         filter: `user_id=eq.${userId}`
       },
-      payload => {
-        callback(payload);
-        // Update badge count in real-time
-        updateUnreadCount(userId);
+      (payload) => {
+        const currentCount = parseInt(localStorage.getItem('unreadNotifications') || '0');
+        const newCount = currentCount + 1;
+        localStorage.setItem('unreadNotifications', newCount);
+
+        if (typeof onCountUpdate === 'function') {
+          onCountUpdate(newCount);
+        }
+
+        showNotificationAlert(payload.new.message || 'You have a new notification');
       }
     )
     .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
 }
 
-export async function updateUnreadCount(userId) {
-  const { count, error } = await supabase
-    .from('notifications')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('read', false);
-
-  if (!error) {
-    // Update localStorage and UI
-    localStorage.setItem('unreadNotifications', count || 0);
-    window.dispatchEvent(new CustomEvent('notificationCountUpdated', {
-      detail: { count: count || 0 }
-    }));
+function showNotificationAlert(message) {
+  if (notificationAlert) {
+    notificationAlert.remove();
   }
+
+  notificationAlert = document.createElement('div');
+  notificationAlert.className = 'notification-alert';
+  notificationAlert.innerHTML = `
+    <div class="notification-alert-content">
+      <i class="fas fa-bell"></i>
+      <span>${message}</span>
+    </div>
+  `;
+
+  document.body.appendChild(notificationAlert);
+
+  setTimeout(() => {
+    notificationAlert.classList.add('show');
+  }, 10);
+
+  setTimeout(() => {
+    notificationAlert.classList.remove('show');
+    setTimeout(() => {
+      notificationAlert.remove();
+      notificationAlert = null;
+    }, 300);
+  }, 3000);
 }
