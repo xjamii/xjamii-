@@ -829,61 +829,236 @@
       
 
 
-    // 4. Create a Set of liked post IDs for fast lookup
-    const likedPostIds = new Set(userLikes.map(like => like.post_id));
+        // Initialize app
+document.addEventListener('DOMContentLoaded', async () => {
+    await checkUsername();
+    showFeed();
 
-    // 5. Attach like status to each post
-    const postsWithLikes = posts.map(post => ({
-      ...post,
-      is_liked: likedPostIds.has(post.id)  // true/false
-    }));
+    // Load notifications and subscribe (delegated to notifications.js)
+    if (typeof loadUnreadNotificationsCount === 'function') {
+        loadUnreadNotificationsCount();
+    }
+    if (typeof setupNotificationListener === 'function') {
+        setupNotificationListener();
+    }
 
-    // 6. Render posts
-    const postsContainer = document.getElementById('posts-container');
-    postsContainer.innerHTML = '';
-    postsWithLikes.forEach(post => {
-      const postElement = document.createElement('post-component');
-      postElement.setAttribute('post-data', JSON.stringify(post));
-      postsContainer.appendChild(postElement);
-    });
+    // Show stored unread count on load
+    const unreadCount = localStorage.getItem('unreadNotifications');
+    if (unreadCount) {
+        updateNotificationBadge(parseInt(unreadCount));
+    }
 
-  } catch (error) {
-    console.error("Error loading posts:", error);
-    // Show error UI
-  }
+    await loadPosts();
+    viewChannel = subscribeToViewUpdates();
+});
+
+// VIEW TOGGLE FUNCTIONS
+function showFeed() {
+    document.getElementById('profileSection').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'block';
+    document.querySelector('.top-header').style.display = 'flex';
+    document.title = 'X-Jamii';
+    updateActiveNavIcon('home');
 }
 
-// SUBSCRIBE TO POST VIEW UPDATES
-function subscribeToViewUpdates() {
-  const channel = supabase
-    .channel('post_views')
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'posts',
-      },
-      (payload) => {
-        // Find the post-component and update its view count
-        const postElement = document.querySelector(`post-component[data-post-id="${payload.new.id}"]`);
-        if (postElement) {
-          const viewsEl = postElement.querySelector('.views');
-          if (viewsEl) viewsEl.textContent = payload.new.views;
+async function showProfile() {
+    document.querySelector('.main-content').style.display = 'none';
+    document.querySelector('.top-header').style.display = 'none';
+
+    if (!document.getElementById('profileSection').innerHTML) {
+        await loadProfileSection();
+    }
+
+    document.getElementById('profileSection').style.display = 'block';
+    document.title = 'Profile | X-Jamii';
+    updateActiveNavIcon('profile');
+
+    await loadProfileData();
+}
+
+function updateActiveNavIcon(activeIcon) {
+    const icons = document.querySelectorAll('.footer-icon');
+    icons.forEach(icon => icon.classList.remove('active'));
+
+    if (activeIcon === 'home') {
+        icons[0].classList.add('active');
+    } else if (activeIcon === 'profile') {
+        icons[3].classList.add('active');
+    }
+}
+
+// LOAD PROFILE SECTION
+async function loadProfileSection() {
+    const response = await fetch('profile.html');
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    document.getElementById('profileSection').innerHTML = doc.querySelector('.profile-container').outerHTML;
+}
+
+// LOAD PROFILE DATA
+async function loadProfileData() {
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+
+        document.getElementById('skeleton-loader').style.display = 'flex';
+        document.getElementById('profile-content').style.display = 'none';
+
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+        if (profileError) throw profileError;
+
+        const displayName = profile.full_name || profile.username || 'User';
+        document.getElementById('profile-avatar').textContent = displayName.charAt(0).toUpperCase();
+        document.getElementById('profile-username').textContent = `@${profile.username}`;
+        document.getElementById('header-title').textContent = displayName;
+
+        document.getElementById('skeleton-loader').style.display = 'none';
+        document.getElementById('profile-content').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        document.getElementById('skeleton-loader').style.display = 'none';
+        document.getElementById('profile-content').innerHTML = '<div class="error-message">Error loading profile</div>';
+        document.getElementById('profile-content').style.display = 'block';
+    }
+}
+
+// UPDATE NOTIFICATION BADGE (used by notifications.js)
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+
+    if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'flex';
+        badge.style.animation = 'pulse 1.5s infinite';
+        localStorage.setItem('unreadNotifications', count);
+    } else {
+        badge.style.display = 'none';
+        localStorage.removeItem('unreadNotifications');
+    }
+}
+
+// LISTEN FOR MESSAGE FROM NOTIFICATIONS IFRAME OR SCRIPT
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'updateNotificationBadge') {
+        updateNotificationBadge(event.data.count);
+    }
+});
+
+// CHECK USERNAME
+async function checkUsername() {
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+
+        if (user) {
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('username, full_name, avatar_url')
+                .eq('id', user.id)
+                .single();
+
+            if (profileError || !profile || !profile.username) {
+                window.location.href = 'create-username.html';
+            } else {
+                setProfilePicture(profile);
+            }
         }
-      }
-    )
-    .subscribe();
-
-  return channel;
+    } catch (error) {
+        console.error("Error checking username:", error);
+    }
 }
 
-// MENU FUNCTIONS
+function setProfilePicture(profile) {
+    const profilePic = document.getElementById('profilePic');
+    if (profile.avatar_url) {
+        profilePic.innerHTML = `<img src="${profile.avatar_url}" alt="Profile">`;
+    } else {
+        const initials = getInitials(profile.full_name || 'User');
+        profilePic.textContent = initials;
+        profilePic.classList.add('initials');
+    }
+}
+
+function getInitials(name) {
+    return name.split(' ').map(part => part.charAt(0).toUpperCase()).join('').substring(0, 2);
+}
+
+// LOAD POSTS
+async function loadPosts() {
+    try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+
+        const { data: posts, error: postsError } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (username, full_name, avatar_url, is_verified),
+                media:post_media (media_url, media_type)
+            `)
+            .order('created_at', { ascending: false });
+
+        if (postsError) throw postsError;
+
+        const { data: userLikes, error: likesError } = await supabase
+            .from('likes')
+            .select('post_id')
+            .eq('profile_id', user.id);
+
+        if (likesError) throw likesError;
+
+        const likedPostIds = new Set(userLikes.map(like => like.post_id));
+        const postsWithLikes = posts.map(post => ({
+            ...post,
+            is_liked: likedPostIds.has(post.id)
+        }));
+
+        const postsContainer = document.getElementById('posts-container');
+        postsContainer.innerHTML = '';
+        postsWithLikes.forEach(post => {
+            const postElement = document.createElement('post-component');
+            postElement.setAttribute('post-data', JSON.stringify(post));
+            postsContainer.appendChild(postElement);
+        });
+
+    } catch (error) {
+        console.error("Error loading posts:", error);
+    }
+}
+
+// REAL-TIME VIEW TRACKING
+function subscribeToViewUpdates() {
+    const channel = supabase
+        .channel('post_views')
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'posts',
+        }, (payload) => {
+            const postElement = document.querySelector(`post-component[data-post-id="${payload.new.id}"]`);
+            if (postElement) {
+                const viewsEl = postElement.querySelector('.views');
+                if (viewsEl) viewsEl.textContent = payload.new.views;
+            }
+        })
+        .subscribe();
+    return channel;
+}
+
+// MENU
 function toggleMenu() {
     const menuPage = document.getElementById('menuPage');
     menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
 }
 
+// LOGOUT
 async function logout() {
     try {
         const { error } = await supabase.auth.signOut();
@@ -895,9 +1070,9 @@ async function logout() {
     }
 }
 
-// Dark Mode Toggle
+// DARK MODE
 const darkModeToggle = document.getElementById('darkModeToggle');
-darkModeToggle.addEventListener('change', function() {
+darkModeToggle.addEventListener('change', function () {
     document.body.classList.toggle('dark-mode', this.checked);
     localStorage.setItem('darkMode', this.checked);
 });
@@ -905,54 +1080,15 @@ darkModeToggle.addEventListener('change', function() {
 if (localStorage.getItem('darkMode') === 'true') {
     document.body.classList.add('dark-mode');
     darkModeToggle.checked = true;
-// Initialize Supabase client
-const supabase = window.supabase.createClient(
-  'https://dadrhoxjhjbnhhrtkgbf.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI'
-);
-
-// DOM Ready
-document.addEventListener('DOMContentLoaded', () => {
-  setupAuthListener();
-  handleUIBasedOnAuth();
-  setupLogoutButton();
-});
-
-// Monitor auth changes (e.g. sign-in/out)
-function setupAuthListener() {
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_OUT') {
-      location.reload();
-    } else if (event === 'SIGNED_IN') {
-      handleUIBasedOnAuth();
-    }
-  });
 }
 
-// Show/hide UI based on login
-async function handleUIBasedOnAuth() {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const loggedInElements = document.querySelectorAll('.auth-logged-in');
-  const loggedOutElements = document.querySelectorAll('.auth-logged-out');
-
-  if (user) {
-    loggedInElements.forEach(el => el.style.display = 'block');
-    loggedOutElements.forEach(el => el.style.display = 'none');
-  } else {
-    loggedInElements.forEach(el => el.style.display = 'none');
-    loggedOutElements.forEach(el => el.style.display = 'block');
-  }
-}
-
-// Logout
-function setupLogoutButton() {
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-    });
-  }
+// LAZY LOAD post-component SCRIPT IF NOT REGISTERED
+if (!customElements.get('post-component')) {
+    console.error('Post component not registered! Loading posts.js');
+    const script = document.createElement('script');
+    script.src = 'posts.js';
+    document.body.appendChild(script);
+    script.onload = loadPosts;
 }
 </script>
 <script src="api.js"></script>
