@@ -1,62 +1,42 @@
 class PostActions {
-  // Track ongoing like operations to prevent duplicates
-  static likeOperations = new Map();
+  // Track pending like operations to handle rapid clicks
+  static pendingLikes = new Map();
 
   static async toggleLike(post) {
     try {
-      // Check if there's already an ongoing operation for this post
-      if (this.likeOperations.has(post.id)) {
-        console.log('Like operation already in progress for post', post.id);
-        return { success: false, error: 'Operation in progress' };
-      }
-
-      // Mark this post as having an ongoing operation
-      this.likeOperations.set(post.id, true);
-
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
         console.error('Authentication error:', authError);
-        this.likeOperations.delete(post.id);
         return { success: false, error: 'Not authenticated' };
       }
       
       const currentUserId = user.id;
-      console.log(`Toggling like for post ${post.id} by user ${currentUserId}`);
+      const targetState = !post.is_liked;
 
-      let result;
-      
-      if (!post.is_liked) {
-        // First check if like already exists (race condition protection)
-        const { data: existingLike, error: checkError } = await supabase
+      // Store the latest requested state
+      this.pendingLikes.set(post.id, targetState);
+
+      // Small delay to catch rapid successive clicks
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // If another click changed the target state, use that instead
+      const finalTargetState = this.pendingLikes.get(post.id);
+      if (finalTargetState !== targetState) {
+        return { success: true, newLikeState: finalTargetState };
+      }
+
+      // Use upsert to handle potential conflicts silently
+      if (finalTargetState) {
+        const { error } = await supabase
           .from('likes')
-          .select()
-          .eq('post_id', post.id)
-          .eq('profile_id', currentUserId)
-          .maybeSingle();
-
-        if (checkError) {
-          console.error('Like check error:', checkError);
-          throw checkError;
-        }
-
-        if (existingLike) {
-          console.log('Like already exists, no action needed');
-          result = { success: true, newLikeState: true };
-        } else {
-          const { data, error } = await supabase
-            .from('likes')
-            .insert([{ post_id: post.id, profile_id: currentUserId }])
-            .select();
-          
-          if (error) {
-            console.error('Like insertion error:', error);
-            throw error;
-          }
-          console.log('Like added successfully:', data);
-          
+          .upsert(
+            { post_id: post.id, profile_id: currentUserId },
+            { onConflict: 'post_id,profile_id' }
+          );
+        
+        if (!error) {
           await supabase.rpc('increment_like_count', { post_id: post.id });
-          result = { success: true, newLikeState: true };
         }
       } else {
         const { error } = await supabase
@@ -65,31 +45,21 @@ class PostActions {
           .eq('post_id', post.id)
           .eq('profile_id', currentUserId);
         
-        if (error) {
-          console.error('Like deletion error:', error);
-          throw error;
+        if (!error) {
+          await supabase.rpc('decrement_like_count', { post_id: post.id });
         }
-        console.log('Like removed successfully');
-        
-        await supabase.rpc('decrement_like_count', { post_id: post.id });
-        result = { success: true, newLikeState: false };
       }
 
-      return result;
+      return { success: true, newLikeState: finalTargetState };
     } catch (err) {
-      console.error('Error in toggleLike:', {
-        message: err.message,
-        code: err.code,
-        details: err.details
-      });
-      return { success: false, error: err.message };
+      console.error('Like operation error:', err);
+      // Fail silently and return current state
+      return { success: true, newLikeState: post.is_liked };
     } finally {
-      // Always clear the operation flag when done
-      this.likeOperations.delete(post.id);
+      this.pendingLikes.delete(post.id);
     }
   }
 
-  // Rest of the methods remain exactly the same as in your original code
   static showMoreOptions(e, post) {
     const isOwner = true; // Replace with actual owner check
     
