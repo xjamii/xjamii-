@@ -425,34 +425,51 @@ async function updateUnreadCount() {
   }
 }
 
-// Realtime Setup
+// Replace the existing setupRealtime() function with:
 async function setupRealtime() {
-  if (notificationChannel) supabase.removeChannel(notificationChannel);
+    if (notificationChannel) supabase.removeChannel(notificationChannel);
 
-  notificationChannel = supabase
-    .channel('notifications')
-    .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'notifications',
-      filter: `user_id=eq.${currentUserId}`
-    }, payload => {
-      const n = payload.new;
-      const config = notificationTypes[n.type] || { tab: 'all' };
-      const active = document.querySelector('.notifications-tab.active')?.dataset.tab || 'all';
-
-      if (active === 'all' || active === config.tab) {
-        const container = containers[active];
-        const item = createNotification(n);
-        if (container.firstChild?.classList?.contains('loading-spinner')) container.innerHTML = '';
-        container.insertBefore(item, container.firstChild);
-        noNotifications.style.display = 'none';
-      }
-
-      updateUnreadCount();
-      new Audio('/notification.mp3').play().catch(() => {});
-    })
-    .subscribe();
+    notificationChannel = supabase
+        .channel('notifications-ui')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${currentUserId}`
+        }, async (payload) => {
+            const activeTab = document.querySelector('.notifications-tab.active')?.dataset.tab || 'all';
+            
+            switch(payload.eventType) {
+                case 'INSERT':
+                    const n = payload.new;
+                    const config = notificationTypes[n.type] || { tab: 'all' };
+                    
+                    if (activeTab === 'all' || activeTab === config.tab) {
+                        const container = containers[activeTab];
+                        if (container.firstChild?.classList?.contains('loading-spinner')) {
+                            container.innerHTML = '';
+                        }
+                        container.prepend(createNotification(n));
+                        noNotifications.style.display = 'none';
+                    }
+                    break;
+                    
+                case 'UPDATE':
+                    if (payload.new.read) {
+                        document.querySelectorAll(`.notification-item[data-id="${payload.new.id}"]`)
+                            .forEach(el => el.classList.remove('unread'));
+                    }
+                    break;
+                    
+                case 'DELETE':
+                    document.querySelectorAll(`.notification-item[data-id="${payload.old.id}"]`)
+                        .forEach(el => el.remove());
+                    break;
+            }
+            
+            await updateUnreadCount();
+        })
+        .subscribe();
 }
 
 // Init
