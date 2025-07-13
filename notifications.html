@@ -228,7 +228,8 @@
 
     <script>
         
-                // Initialize Supabase
+
+// Initialize Supabase
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -244,6 +245,7 @@ const noNotifications = document.getElementById('no-notifications');
 
 const notificationTypes = {
   connection_request: { icon: 'fas fa-user-plus', color: '#2196F3', tab: 'requests' },
+  connection_accepted: { icon: 'fas fa-user-check', color: '#4CAF50', tab: 'requests' },
   new_post: { icon: 'fas fa-paper-plane', color: '#FF9800', tab: 'posts' },
   comment: { icon: 'far fa-comment', color: '#4CAF50', tab: 'posts' },
   comment_like: { icon: 'fas fa-heart', color: '#E91E63', tab: 'posts' }
@@ -267,7 +269,7 @@ tabs.forEach(tab => {
   });
 });
 
-// Notification Fetcher
+// Notification Fetcher with sender profile data
 async function loadNotifications(type = 'all') {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return (window.location.href = 'login.html');
@@ -277,33 +279,56 @@ async function loadNotifications(type = 'all') {
   container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
   noNotifications.style.display = 'none';
 
-  let query = supabase.from('notifications').select('*').eq('user_id', currentUserId).order('created_at', { ascending: false });
-  if (type === 'requests') query = query.eq('type', 'connection_request');
+  let query = supabase
+    .from('notifications')
+    .select(`
+      *,
+      sender: sender_id (username, full_name, avatar_url, is_verified)
+    `)
+    .eq('user_id', currentUserId)
+    .order('created_at', { ascending: false });
+
+  if (type === 'requests') query = query.or('type.eq.connection_request,type.eq.connection_accepted');
   if (type === 'posts') query = query.or('type.eq.new_post,type.eq.comment,type.eq.comment_like');
 
   const { data, error: fetchError } = await query;
   if (fetchError) return renderError(container, type);
 
-  container.innerHTML = '';
-  if (!data.length) return renderEmpty(container, type);
+  // Process notifications with sender info
+  const processedData = data.map(n => ({
+    ...n,
+    sender_name: n.sender?.full_name || 'User',
+    sender_username: n.sender?.username,
+    sender_avatar: n.sender?.avatar_url,
+    sender_verified: n.sender?.is_verified
+  }));
 
-  data.forEach(n => container.appendChild(createNotification(n)));
+  container.innerHTML = '';
+  if (!processedData.length) return renderEmpty(container, type);
+
+  processedData.forEach(n => container.appendChild(createNotification(n)));
 
   if (type === 'all') markNotificationsAsRead();
 }
 
-// Notification Renderer
+// Enhanced Notification Renderer
 function createNotification(n) {
   const config = notificationTypes[n.type] || { icon: 'fas fa-bell', color: '#0056b3', tab: 'all' };
-  const avatar = n.sender_avatar || getInitialsAvatar(n.sender_name);
+  const initials = n.sender_name ? n.sender_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U';
+  const avatar = n.sender_avatar || `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><rect width='50' height='50' fill='%230056b3'/><text x='50%' y='50%' font-size='20' fill='white' text-anchor='middle' dy='.3em'>${initials}</text></svg>`;
+  
   const element = document.createElement('div');
   element.className = `notification-item ${n.read ? '' : 'unread'}`;
+  element.dataset.id = n.id;
+  
   element.innerHTML = `
     <img src="${avatar}" class="notification-avatar" onerror="this.src='${getInitialsAvatar(n.sender_name)}'">
     <div class="notification-content">
       <div class="notification-text">
         <i class="${config.icon}" style="margin-right: 5px; color: ${config.color};"></i>
-        <strong>${n.sender_name}</strong> ${n.message}
+        <strong>${n.sender_name || 'User'} ${n.sender_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}</strong>
+        ${n.sender_username ? `<span class="notification-username">@${n.sender_username}</span>` : ''}
+        ${n.message}
       </div>
       <div class="notification-time">${formatTime(n.created_at)}</div>
       ${n.type === 'connection_request' ? `
@@ -315,22 +340,81 @@ function createNotification(n) {
     ${!n.read ? '<div class="notification-badge"></div>' : ''}
   `;
 
-  if (n.link) {
-    element.style.cursor = 'pointer';
-    element.addEventListener('click', () => window.location.href = n.link);
-  }
-
-  element.querySelectorAll('.accept-btn').forEach(btn => {
-    btn.addEventListener('click', e => handleConnectionAction(btn, 'accept'));
+  // Handle notification click (excluding action buttons)
+  element.addEventListener('click', (e) => {
+    if (!e.target.closest('.notification-action-btn') && n.sender_id) {
+      window.location.href = `/profile.html?id=${n.sender_id}`;
+    }
   });
+
+  // Handle action buttons
+  element.querySelectorAll('.accept-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await handleConnectionAction(btn, 'accept');
+      btn.closest('.notification-actions').style.display = 'none';
+    });
+  });
+
   element.querySelectorAll('.decline-btn').forEach(btn => {
-    btn.addEventListener('click', e => handleConnectionAction(btn, 'decline'));
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await handleConnectionAction(btn, 'decline');
+      btn.closest('.notification-actions').style.display = 'none';
+    });
   });
 
   return element;
 }
 
-// Helpers
+// Connection Action Handler
+async function handleConnectionAction(button, action) {
+  const id = button.dataset.id;
+  const senderId = button.dataset.sender;
+  const notificationItem = button.closest('.notification-item');
+  
+  try {
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    if (action === 'accept') {
+      await supabase.from('connections')
+        .update({ status: 'accepted' })
+        .or(`and(sender_id.eq.${senderId},receiver_id.eq.${currentUserId}),and(sender_id.eq.${currentUserId},receiver_id.eq.${senderId})`);
+      
+      // Update notification in database
+      await supabase.from('notifications')
+        .update({ 
+          type: 'connection_accepted',
+          message: 'accepted your connection request',
+          read: false
+        })
+        .eq('id', id);
+        
+      // Update UI
+      notificationItem.querySelector('.notification-text').innerHTML += `
+        <div class="connection-status">Connection accepted</div>
+      `;
+      
+    } else {
+      await supabase.from('connections')
+        .delete()
+        .or(`and(sender_id.eq.${senderId},receiver_id.eq.${currentUserId}),and(sender_id.eq.${currentUserId},receiver_id.eq.${senderId})`);
+      
+      await supabase.from('notifications').delete().eq('id', id);
+      notificationItem.querySelector('.notification-text').innerHTML += `
+        <div class="connection-status">Connection declined</div>
+      `;
+    }
+
+  } catch (err) {
+    console.error(err);
+    button.innerHTML = action === 'accept' ? 'Accept' : 'Decline';
+    button.disabled = false;
+  }
+}
+
+// Helper Functions
 function getInitialsAvatar(name = '') {
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><rect width='50' height='50' fill='%230056b3'/><text x='50%' y='50%' font-size='20' fill='white' text-anchor='middle' dy='.3em'>${initials}</text></svg>`;
@@ -350,66 +434,34 @@ function renderEmpty(container, type) {
   if (type === 'all') {
     noNotifications.style.display = 'block';
   } else {
-    container.innerHTML = `<div class="no-notifications"><i class="fas fa-bell-slash" style="font-size: 24px;"></i><div>No ${type} notifications</div></div>`;
+    container.innerHTML = `<div class="no-notifications"><i class="fas fa-bell-slash"></i><div>No ${type} notifications</div></div>`;
   }
 }
 
 function renderError(container, type) {
   container.innerHTML = `
     <div class="no-notifications">
-      <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
+      <i class="fas fa-exclamation-triangle"></i>
       <div>Failed to load notifications</div>
       <button onclick="loadNotifications('${type}')">Try Again</button>
     </div>
   `;
 }
 
-// Connection Handling
-async function handleConnectionAction(button, action) {
-  const id = button.dataset.id;
-  const senderId = button.dataset.sender;
-  try {
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-    if (action === 'accept') {
-      await supabase.from('connections')
-        .update({ status: 'accepted' })
-        .or(`and(sender_id.eq.${senderId},receiver_id.eq.${currentUserId}),and(sender_id.eq.${currentUserId},receiver_id.eq.${senderId})`);
-      await supabase.from('notifications')
-        .update({ message: 'accepted your connection request', read: false, link: `/profile.html?id=${senderId}` })
-        .eq('id', id);
-      button.innerHTML = 'Accepted';
-    } else {
-      await supabase.from('connections')
-        .delete()
-        .or(`and(sender_id.eq.${senderId},receiver_id.eq.${currentUserId}),and(sender_id.eq.${currentUserId},receiver_id.eq.${senderId})`);
-      await supabase.from('notifications').delete().eq('id', id);
-      button.closest('.notification-item').remove();
-    }
-
-    loadNotifications('requests');
-  } catch (err) {
-    console.error(err);
-    alert('Failed. Try again.');
-    button.innerHTML = action === 'accept' ? 'Accept' : 'Decline';
-    button.disabled = false;
-  }
-}
-
-// Badge & Read Status
+// Mark notifications as read
 async function markNotificationsAsRead() {
   try {
     await supabase.from('notifications')
       .update({ read: true })
       .eq('user_id', currentUserId)
       .eq('read', false);
-    updateUnreadCount();
+    await updateUnreadCount();
   } catch (err) {
     console.error('Marking read failed:', err);
   }
 }
 
+// Update unread count
 async function updateUnreadCount() {
   const { count, error } = await supabase
     .from('notifications')
@@ -420,63 +472,71 @@ async function updateUnreadCount() {
   if (error) return console.error('Count failed:', error);
 
   localStorage.setItem('unreadNotifications', count || 0);
-  if (window.opener) {
-    window.opener.postMessage({ type: 'updateNotificationBadge', count: count || 0 }, '*');
-  }
+  window.postMessage({ type: 'updateNotificationBadge', count: count || 0 }, '*');
 }
 
-// Replace the existing setupRealtime() function with:
+// Real-time Updates
 async function setupRealtime() {
-    if (notificationChannel) supabase.removeChannel(notificationChannel);
+  if (notificationChannel) supabase.removeChannel(notificationChannel);
 
-    notificationChannel = supabase
-        .channel('notifications-ui')
-        .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${currentUserId}`
-        }, async (payload) => {
-            const activeTab = document.querySelector('.notifications-tab.active')?.dataset.tab || 'all';
-            
-            switch(payload.eventType) {
-                case 'INSERT':
-                    const n = payload.new;
-                    const config = notificationTypes[n.type] || { tab: 'all' };
-                    
-                    if (activeTab === 'all' || activeTab === config.tab) {
-                        const container = containers[activeTab];
-                        if (container.firstChild?.classList?.contains('loading-spinner')) {
-                            container.innerHTML = '';
-                        }
-                        container.prepend(createNotification(n));
-                        noNotifications.style.display = 'none';
-                    }
-                    break;
-                    
-                case 'UPDATE':
-                    if (payload.new.read) {
-                        document.querySelectorAll(`.notification-item[data-id="${payload.new.id}"]`)
-                            .forEach(el => el.classList.remove('unread'));
-                    }
-                    break;
-                    
-                case 'DELETE':
-                    document.querySelectorAll(`.notification-item[data-id="${payload.old.id}"]`)
-                        .forEach(el => el.remove());
-                    break;
+  notificationChannel = supabase
+    .channel('notifications-ui')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'notifications',
+      filter: `user_id=eq.${currentUserId}`
+    }, async (payload) => {
+      const activeTab = document.querySelector('.notifications-tab.active')?.dataset.tab || 'all';
+      
+      switch(payload.eventType) {
+        case 'INSERT':
+          const n = payload.new;
+          const config = notificationTypes[n.type] || { tab: 'all' };
+          
+          if (activeTab === 'all' || activeTab === config.tab) {
+            const container = containers[activeTab];
+            if (container.firstChild?.classList?.contains('loading-spinner')) {
+              container.innerHTML = '';
             }
-            
-            await updateUnreadCount();
-        })
-        .subscribe();
+            container.prepend(createNotification({
+              ...n,
+              sender_name: 'Loading...', // Will be updated when full data loads
+              sender_username: '',
+              sender_avatar: '',
+              sender_verified: false
+            }));
+            noNotifications.style.display = 'none';
+          }
+          break;
+          
+        case 'UPDATE':
+          if (payload.new.read) {
+            document.querySelectorAll(`.notification-item[data-id="${payload.new.id}"]`)
+              .forEach(el => el.classList.remove('unread'));
+          }
+          break;
+          
+        case 'DELETE':
+          document.querySelectorAll(`.notification-item[data-id="${payload.old.id}"]`)
+            .forEach(el => el.remove());
+          break;
+      }
+      
+      await updateUnreadCount();
+    })
+    .subscribe();
 }
 
-// Init
+// Initialize
 document.addEventListener('DOMContentLoaded', async () => {
   await loadNotifications('all');
   await setupRealtime();
 });
+
+
+
+
     </script>
 <script src="notifications.js"></script>
 </body>
