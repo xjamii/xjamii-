@@ -663,7 +663,21 @@
             cursor: pointer;
         }
 
-      
+.posts-loading {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.posts-loading .loader {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(0, 86, 179, 0.2);
+    border-top-color: #0056b3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+        
     </style>
 </head>
 <body>
@@ -1006,46 +1020,56 @@ function getInitials(name) {
     return name.split(' ').map(part => part.charAt(0).toUpperCase()).join('').substring(0, 2);
 }
 
-// LOAD POSTS
 async function loadPosts() {
     try {
+        // First ensure we have authenticated user
         const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
+        if (authError || !user) {
+            console.error('Not authenticated');
+            return;
+        }
 
-        const { data: posts, error: postsError } = await supabase
+        // Then load posts
+        const { data: posts, error } = await supabase
             .from('posts')
             .select(`
                 *,
-                profile:user_id (username, full_name, avatar_url, is_verified),
-                media:post_media (media_url, media_type)
+                profile:profiles(*),
+                media:post_media(*)
             `)
             .order('created_at', { ascending: false });
 
-        if (postsError) throw postsError;
+        if (error) throw error;
 
+        const postsContainer = document.getElementById('posts-container');
+        postsContainer.innerHTML = '';
+        
+        if (!posts || posts.length === 0) {
+            postsContainer.innerHTML = '<div class="no-posts">No posts yet</div>';
+            return;
+        }
+
+        // Get user's liked posts
         const { data: userLikes, error: likesError } = await supabase
             .from('likes')
             .select('post_id')
             .eq('profile_id', user.id);
 
-        if (likesError) throw likesError;
+        const likedPostIds = new Set((userLikes || []).map(like => like.post_id));
 
-        const likedPostIds = new Set(userLikes.map(like => like.post_id));
-        const postsWithLikes = posts.map(post => ({
-            ...post,
-            is_liked: likedPostIds.has(post.id)
-        }));
-
-        const postsContainer = document.getElementById('posts-container');
-        postsContainer.innerHTML = '';
-        postsWithLikes.forEach(post => {
+        posts.forEach(post => {
             const postElement = document.createElement('post-component');
-            postElement.setAttribute('post-data', JSON.stringify(post));
+            postElement.setAttribute('post-data', JSON.stringify({
+                ...post,
+                is_liked: likedPostIds.has(post.id)
+            }));
             postsContainer.appendChild(postElement);
         });
 
     } catch (error) {
         console.error("Error loading posts:", error);
+        const postsContainer = document.getElementById('posts-container');
+        postsContainer.innerHTML = '<div class="post-error">Error loading posts</div>';
     }
 }
 
