@@ -826,22 +826,17 @@
         </div>
     </div>
 <script>
-        // Notification System
-let notificationAlert = null;
-let notificationChannel = null;
+      
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
     await checkUsername();
-    setupNotificationListener();
-    loadUnreadNotificationsCount();
     showFeed();
-    
-    // Check for unread notifications count in localStorage on page load
-    const unreadCount = localStorage.getItem('unreadNotifications');
-    if (unreadCount) {
-        updateNotificationBadge(parseInt(unreadCount));
-    }
+
+    await loadPosts();
+
+    // Start listening for post view updates
+    subscribeToViewUpdates();
 });
 
 // VIEW TOGGLE FUNCTIONS
@@ -928,116 +923,6 @@ async function loadProfileData() {
         document.getElementById('profile-content').style.display = 'block';
     }
 }
-
-// NOTIFICATION FUNCTIONS
-function updateNotificationBadge(count) {
-    const badge = document.getElementById('notificationBadge');
-    if (!badge) return;
-    
-    if (count > 0) {
-        badge.textContent = count > 9 ? '9+' : count;
-        badge.style.display = 'flex';
-        
-        // Add pulse animation if there are new notifications
-        badge.style.animation = 'pulse 1.5s infinite';
-        
-        // Store the count in localStorage
-        localStorage.setItem('unreadNotifications', count);
-    } else {
-        badge.style.display = 'none';
-        localStorage.removeItem('unreadNotifications');
-    }
-}
-
-async function loadUnreadNotificationsCount() {
-    try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-        
-        const { count, error } = await supabase
-            .from('notifications')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('read', false);
-        
-        if (error) throw error;
-        
-        updateNotificationBadge(count || 0);
-    } catch (error) {
-        console.error('Error loading notifications count:', error);
-    }
-}
-
-async function setupNotificationListener() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) return;
-
-    if (notificationChannel) {
-        supabase.removeChannel(notificationChannel);
-    }
-
-    notificationChannel = supabase
-        .channel('notifications')
-        .on(
-            'postgres_changes',
-            {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'notifications',
-                filter: `user_id=eq.${user.id}`
-            },
-            (payload) => {
-                // Get current count
-                const currentCount = parseInt(localStorage.getItem('unreadNotifications') || '0');
-                
-                // Increment count for new notification
-                const newCount = currentCount + 1;
-                
-                // Update badge
-                updateNotificationBadge(newCount);
-                
-                // Show notification alert
-                showNotificationAlert(payload.new.message || 'You have a new notification');
-            }
-        )
-        .subscribe();
-}
-
-function showNotificationAlert(message) {
-    if (notificationAlert) {
-        notificationAlert.remove();
-    }
-    
-    notificationAlert = document.createElement('div');
-    notificationAlert.className = 'notification-alert';
-    notificationAlert.innerHTML = `
-        <div class="notification-alert-content">
-            <i class="fas fa-bell"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(notificationAlert);
-    
-    setTimeout(() => {
-        notificationAlert.classList.add('show');
-    }, 10);
-    
-    setTimeout(() => {
-        notificationAlert.classList.remove('show');
-        setTimeout(() => {
-            notificationAlert.remove();
-            notificationAlert = null;
-        }, 300);
-    }, 3000);
-}
-
-// Listen for messages from notifications.html
-window.addEventListener('message', (event) => {
-    if (event.data.type === 'updateNotificationBadge') {
-        updateNotificationBadge(event.data.count);
-    }
-});
 
 // EXISTING FUNCTIONALITY
 async function checkUsername() {
@@ -1132,7 +1017,7 @@ async function loadPosts() {
   }
 }
 
-  // After loadPosts(), add this:
+// SUBSCRIBE TO POST VIEW UPDATES
 function subscribeToViewUpdates() {
   const channel = supabase
     .channel('post_views')
@@ -1156,13 +1041,6 @@ function subscribeToViewUpdates() {
 
   return channel;
 }
-
-// Call this after loading posts
-let viewChannel;
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadPosts();
-  viewChannel = subscribeToViewUpdates(); // Start listening
-});
 
 // MENU FUNCTIONS
 function toggleMenu() {
@@ -1203,8 +1081,10 @@ if (!customElements.get('post-component')) {
     // Retry loading posts after component is loaded
     script.onload = loadPosts;
 }
+}
 </script>
 <script src="api.js"></script>
+<script src="notification.js"></script>
     <script src="suggestions.js"></script>
     <!-- Notifications JS (standalone file) -->
     <script src="notifications.js"></script>
