@@ -37,36 +37,56 @@ async function loadUnreadNotificationsCount() {
     }
 }
 
-// Set up Supabase real-time listener
+// Enhanced real-time listener with proper cleanup
 async function setupNotificationListener() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) return;
-
-    // Unsubscribe existing channel (prevent duplicate)
+    // Clean up previous channel if exists
     if (notificationChannel) {
         supabase.removeChannel(notificationChannel);
     }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
     notificationChannel = supabase
         .channel('notifications')
         .on(
             'postgres_changes',
             {
-                event: 'INSERT',
+                event: '*',
                 schema: 'public',
                 table: 'notifications',
                 filter: `user_id=eq.${user.id}`
             },
-            (payload) => {
-                // Get and increment badge count
-                const currentCount = parseInt(localStorage.getItem('unreadNotifications') || '0');
-                const newCount = currentCount + 1;
-
-                updateNotificationBadge(newCount);
-                showNotificationAlert(payload.new.message || 'New notification received');
+            async (payload) => {
+                // Handle different event types
+                switch(payload.eventType) {
+                    case 'INSERT':
+                        const currentCount = parseInt(localStorage.getItem('unreadNotifications') || 0);
+                        updateNotificationBadge(currentCount + 1);
+                        showNotificationAlert(payload.new.message || 'New notification received');
+                        break;
+                        
+                    case 'UPDATE':
+                        if (payload.new.read) {
+                            const currentCount = parseInt(localStorage.getItem('unreadNotifications') || 0);
+                            updateNotificationBadge(Math.max(0, currentCount - 1));
+                        }
+                        break;
+                        
+                    case 'DELETE':
+                        // Optional: Handle notification deletions if needed
+                        break;
+                }
             }
         )
         .subscribe();
+
+    // Add cleanup when page unloads
+    window.addEventListener('beforeunload', () => {
+        if (notificationChannel) {
+            supabase.removeChannel(notificationChannel);
+        }
+    });
 }
 
 // Update the badge UI
@@ -79,6 +99,11 @@ function updateNotificationBadge(count) {
         badge.style.display = 'flex';
         badge.style.animation = 'pulse 1.5s infinite';
         localStorage.setItem('unreadNotifications', count);
+        
+        // Sync across tabs
+        if (window.opener) {
+            window.opener.postMessage({ type: 'updateNotificationBadge', count }, '*');
+        }
     } else {
         badge.style.display = 'none';
         localStorage.removeItem('unreadNotifications');
@@ -113,11 +138,25 @@ function showNotificationAlert(message) {
             notificationAlert = null;
         }, 300);
     }, 3000);
+    
+    // Play notification sound if available
+    try {
+        new Audio('/notification.mp3').play().catch(() => {});
+    } catch (e) {
+        console.log('Notification sound error:', e);
+    }
 }
 
 // Optional: listen to cross-page sync
 window.addEventListener('message', (event) => {
     if (event.data.type === 'updateNotificationBadge') {
         updateNotificationBadge(event.data.count);
+    }
+});
+
+// Visibility change handler for refreshing counts
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        loadUnreadNotificationsCount();
     }
 });
