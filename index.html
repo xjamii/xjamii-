@@ -1025,63 +1025,46 @@ function getInitials(name) {
     return name.split(' ').map(part => part.charAt(0).toUpperCase()).join('').substring(0, 2);
 }
 
-async function loadPosts(currentUser) {
-    const postsContainer = document.getElementById('posts-container');
-    
+// LOAD POSTS
+async function loadPosts() {
     try {
-        // Show loading state
-        postsContainer.innerHTML = '<div class="posts-loading"><div class="loader"></div></div>';
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
 
-        // Load posts and likes in parallel
-        const [postsResponse, likesResponse] = await Promise.all([
-            supabase
-                .from('posts')
-                .select(`
-                    *,
-                    profile:profiles(*),
-                    media:post_media(*)
-                `)
-                .order('created_at', { ascending: false }),
-                
-            supabase
-                .from('likes')
-                .select('post_id')
-                .eq('profile_id', currentUser.id)
-        ]);
+        const { data: posts, error: postsError } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (username, full_name, avatar_url, is_verified),
+                media:post_media (media_url, media_type)
+            `)
+            .order('created_at', { ascending: false });
 
-        if (postsResponse.error) throw postsResponse.error;
-        if (likesResponse.error) console.error('Error loading likes:', likesResponse.error);
+        if (postsError) throw postsError;
 
-        const posts = postsResponse.data || [];
-        const likedPostIds = new Set((likesResponse.data || []).map(like => like.post_id));
+        const { data: userLikes, error: likesError } = await supabase
+            .from('likes')
+            .select('post_id')
+            .eq('profile_id', user.id);
 
-        // Clear container before adding new posts
+        if (likesError) throw likesError;
+
+        const likedPostIds = new Set(userLikes.map(like => like.post_id));
+        const postsWithLikes = posts.map(post => ({
+            ...post,
+            is_liked: likedPostIds.has(post.id)
+        }));
+
+        const postsContainer = document.getElementById('posts-container');
         postsContainer.innerHTML = '';
-
-        if (posts.length === 0) {
-            postsContainer.innerHTML = '<div class="no-posts">No posts yet</div>';
-            return;
-        }
-
-        // Process and display posts
-        posts.forEach(post => {
+        postsWithLikes.forEach(post => {
             const postElement = document.createElement('post-component');
-            postElement.setAttribute('post-data', JSON.stringify({
-                ...post,
-                is_liked: likedPostIds.has(post.id)
-            }));
+            postElement.setAttribute('post-data', JSON.stringify(post));
             postsContainer.appendChild(postElement);
         });
 
     } catch (error) {
         console.error("Error loading posts:", error);
-        postsContainer.innerHTML = `
-            <div class="post-error">
-                ${error.message.includes('JWT') 
-                    ? 'Session expired. Please login again.' 
-                    : 'Failed to load posts. Pull down to refresh.'}
-            </div>
-        `;
     }
 }
 
