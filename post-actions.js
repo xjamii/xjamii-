@@ -1,71 +1,50 @@
 class PostActions {
   static async toggleLike(post) {
     try {
-      // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
-        console.error('Authentication error:', authError);
         return { success: false, error: 'Not authenticated' };
       }
-      
+
       const currentUserId = user.id;
-      const shouldLike = !post.is_liked;
 
-      // Handle like action
-      if (shouldLike) {
-        // First check if like already exists
-        const { data: existingLike } = await supabase
-          .from('likes')
-          .select()
-          .eq('post_id', post.id)
-          .eq('profile_id', currentUserId)
-          .maybeSingle();
-
-        // If like already exists, return current state
-        if (existingLike) {
-          return { success: true, newLikeState: true };
-        }
-
-        // Add new like
+      if (!post.is_liked) {
         const { error } = await supabase
           .from('likes')
-          .insert([{ post_id: post.id, profile_id: currentUserId }]);
-        
-        if (!error) {
-          await supabase.rpc('increment_like_count', { post_id: post.id });
-          return { success: true, newLikeState: true };
+          .insert([{ post_id: post.id, profile_id: currentUserId }])
+          .select();
+
+        if (error) {
+          return { success: false };
         }
-      } 
-      // Handle unlike action
-      else {
+
+        await supabase.rpc('increment_like_count', { post_id: post.id });
+        return { success: true, newLikeState: true };
+      } else {
         const { error } = await supabase
           .from('likes')
           .delete()
           .eq('post_id', post.id)
           .eq('profile_id', currentUserId);
-        
-        if (!error) {
-          await supabase.rpc('decrement_like_count', { post_id: post.id });
-          return { success: true, newLikeState: false };
-        }
-      }
 
-      // Default return (if no error but operation didn't complete)
-      return { success: true, newLikeState: post.is_liked };
-    } catch (err) {
-      console.error('Silent like error:', err);
-      return { success: true, newLikeState: post.is_liked };
+        if (error) {
+          return { success: false };
+        }
+
+        await supabase.rpc('decrement_like_count', { post_id: post.id });
+        return { success: true, newLikeState: false };
+      }
+    } catch {
+      return { success: false };
     }
   }
 
   static showMoreOptions(e, post) {
     const isOwner = true; // Replace with actual owner check
     
-    // Remove any existing popups
     document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
     
-    // Create new popup
     const popup = document.createElement('div');
     popup.className = 'more-options-popup';
     popup.innerHTML = `
@@ -79,13 +58,12 @@ class PostActions {
       </div>
     `;
     
-    // Position and show popup
     document.body.appendChild(popup);
+    
     const rect = e.target.getBoundingClientRect();
     popup.style.left = `${rect.left - 100}px`;
     popup.style.top = `${rect.top - 10}px`;
     
-    // Close popup when clicking outside
     const clickHandler = (event) => {
       if (!popup.contains(event.target)) {
         popup.remove();
@@ -97,7 +75,6 @@ class PostActions {
       document.addEventListener('click', clickHandler);
     }, 0);
     
-    // Setup option click handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
       console.log('Edit post', post.id);
       popup.remove();
