@@ -829,28 +829,40 @@
       
 
 
-        // Initialize app
+        
+        
+let viewChannel = null;
+
+// Initialize app with enhanced notification handling
 document.addEventListener('DOMContentLoaded', async () => {
     await checkUsername();
     showFeed();
-
-    // Load notifications and subscribe (delegated to notifications.js)
-    if (typeof loadUnreadNotificationsCount === 'function') {
-        loadUnreadNotificationsCount();
+    
+    // Initialize notification system
+    if (typeof initializeNotificationSystem === 'function') {
+        await initializeNotificationSystem();
     }
-    if (typeof setupNotificationListener === 'function') {
-        setupNotificationListener();
-    }
-
-    // Show stored unread count on load
-    const unreadCount = localStorage.getItem('unreadNotifications');
-    if (unreadCount) {
-        updateNotificationBadge(parseInt(unreadCount));
-    }
-
+    
     await loadPosts();
     viewChannel = subscribeToViewUpdates();
+    
+    // Add visibility change handler
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            refreshNotificationState();
+        }
+    });
 });
+
+// Consolidated notification refresh function
+async function refreshNotificationState() {
+    if (typeof loadUnreadNotificationsCount === 'function') {
+        await loadUnreadNotificationsCount();
+    }
+    if (typeof setupNotificationListener === 'function') {
+        await setupNotificationListener();
+    }
+}
 
 // VIEW TOGGLE FUNCTIONS
 function showFeed() {
@@ -910,6 +922,7 @@ async function loadProfileData() {
             .select('*')
             .eq('id', user.id)
             .single();
+
         if (profileError) throw profileError;
 
         const displayName = profile.full_name || profile.username || 'User';
@@ -938,13 +951,16 @@ function updateNotificationBadge(count) {
         badge.style.display = 'flex';
         badge.style.animation = 'pulse 1.5s infinite';
         localStorage.setItem('unreadNotifications', count);
+        
+        // Sync across tabs
+        window.postMessage({ type: 'updateNotificationBadge', count }, '*');
     } else {
         badge.style.display = 'none';
         localStorage.removeItem('unreadNotifications');
     }
 }
 
-// LISTEN FOR MESSAGE FROM NOTIFICATIONS IFRAME OR SCRIPT
+// LISTEN FOR MESSAGE FROM NOTIFICATIONS
 window.addEventListener('message', (event) => {
     if (event.data.type === 'updateNotificationBadge') {
         updateNotificationBadge(event.data.count);
