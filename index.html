@@ -1025,43 +1025,45 @@ function getInitials(name) {
     return name.split(' ').map(part => part.charAt(0).toUpperCase()).join('').substring(0, 2);
 }
 
-async function loadPosts() {
+async function loadPosts(currentUser) {
+    const postsContainer = document.getElementById('posts-container');
+    
     try {
-        // First ensure we have authenticated user
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-            console.error('Not authenticated');
-            return;
-        }
+        // Show loading state
+        postsContainer.innerHTML = '<div class="posts-loading"><div class="loader"></div></div>';
 
-        // Then load posts
-        const { data: posts, error } = await supabase
-            .from('posts')
-            .select(`
-                *,
-                profile:profiles(*),
-                media:post_media(*)
-            `)
-            .order('created_at', { ascending: false });
+        // Load posts and likes in parallel
+        const [postsResponse, likesResponse] = await Promise.all([
+            supabase
+                .from('posts')
+                .select(`
+                    *,
+                    profile:profiles(*),
+                    media:post_media(*)
+                `)
+                .order('created_at', { ascending: false }),
+                
+            supabase
+                .from('likes')
+                .select('post_id')
+                .eq('profile_id', currentUser.id)
+        ]);
 
-        if (error) throw error;
+        if (postsResponse.error) throw postsResponse.error;
+        if (likesResponse.error) console.error('Error loading likes:', likesResponse.error);
 
-        const postsContainer = document.getElementById('posts-container');
+        const posts = postsResponse.data || [];
+        const likedPostIds = new Set((likesResponse.data || []).map(like => like.post_id));
+
+        // Clear container before adding new posts
         postsContainer.innerHTML = '';
-        
-        if (!posts || posts.length === 0) {
+
+        if (posts.length === 0) {
             postsContainer.innerHTML = '<div class="no-posts">No posts yet</div>';
             return;
         }
 
-        // Get user's liked posts
-        const { data: userLikes, error: likesError } = await supabase
-            .from('likes')
-            .select('post_id')
-            .eq('profile_id', user.id);
-
-        const likedPostIds = new Set((userLikes || []).map(like => like.post_id));
-
+        // Process and display posts
         posts.forEach(post => {
             const postElement = document.createElement('post-component');
             postElement.setAttribute('post-data', JSON.stringify({
@@ -1073,8 +1075,13 @@ async function loadPosts() {
 
     } catch (error) {
         console.error("Error loading posts:", error);
-        const postsContainer = document.getElementById('posts-container');
-        postsContainer.innerHTML = '<div class="post-error">Error loading posts</div>';
+        postsContainer.innerHTML = `
+            <div class="post-error">
+                ${error.message.includes('JWT') 
+                    ? 'Session expired. Please login again.' 
+                    : 'Failed to load posts. Pull down to refresh.'}
+            </div>
+        `;
     }
 }
 
