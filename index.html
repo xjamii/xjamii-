@@ -677,7 +677,7 @@
         <div class="header-top-row">
             <div class="top-header-left">
                 <div class="three-dots" onclick="toggleMenu()">
-                   <i class="fas fa-bars"></i>
+                   <i class="fas fa-ellipsis-h"></i>
                 </div>
             </div>
             <div class="logo-container" onclick="window.location.href='index.html'">
@@ -939,7 +939,7 @@ function updateNotificationBadge(count) {
         badge.style.display = 'flex';
         
         // Add pulse animation if there are new notifications
-        badge.style.animation = 'pulse 0.5s infinite';
+        badge.style.animation = 'pulse 1.5s infinite';
         
         // Store the count in localStorage
         localStorage.setItem('unreadNotifications', count);
@@ -968,7 +968,6 @@ async function loadUnreadNotificationsCount() {
     }
 }
 
-// Replace your existing setupNotificationListener() function with this:
 async function setupNotificationListener() {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error) return;
@@ -978,7 +977,7 @@ async function setupNotificationListener() {
     }
 
     notificationChannel = supabase
-        .channel('realtime_notifications')
+        .channel('notifications')
         .on(
             'postgres_changes',
             {
@@ -987,22 +986,23 @@ async function setupNotificationListener() {
                 table: 'notifications',
                 filter: `user_id=eq.${user.id}`
             },
-            async (payload) => {
-                // 1. Update badge count
-                const { count } = await supabase
-                    .from('notifications')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', user.id)
-                    .eq('read', false);
+            (payload) => {
+                // Get current count
+                const currentCount = parseInt(localStorage.getItem('unreadNotifications') || '0');
                 
-                updateNotificationBadge(count || 0);
+                // Increment count for new notification
+                const newCount = currentCount + 1;
                 
-                // 2. Show alert (optional)
-                showNotificationAlert(payload.new.message);
+                // Update badge
+                updateNotificationBadge(newCount);
+                
+                // Show notification alert
+                showNotificationAlert(payload.new.message || 'You have a new notification');
             }
         )
         .subscribe();
 }
+
 function showNotificationAlert(message) {
     if (notificationAlert) {
         notificationAlert.remove();
