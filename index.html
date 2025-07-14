@@ -861,25 +861,21 @@
 <script>
       
 
+     let viewChannel = null;
+let likeChannel = null;
 
-        
-        
-let viewChannel = null;
-
-// Initialize app with enhanced notification handling
 document.addEventListener('DOMContentLoaded', async () => {
-    await checkUsername();
     showFeed();
-    
-    // Initialize notification system
+    await loadPosts();
+
+    // Initialize real-time subscriptions
+    viewChannel = subscribeToViewUpdates();
+    likeChannel = subscribeToLikeUpdates();
+
     if (typeof initializeNotificationSystem === 'function') {
         await initializeNotificationSystem();
     }
-    
-    await loadPosts();
-    viewChannel = subscribeToViewUpdates();
-    
-    // Add visibility change handler
+
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             refreshNotificationState();
@@ -887,7 +883,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-// Consolidated notification refresh function
 async function refreshNotificationState() {
     if (typeof loadUnreadNotificationsCount === 'function') {
         await loadUnreadNotificationsCount();
@@ -974,7 +969,7 @@ async function loadProfileData() {
     }
 }
 
-// UPDATE NOTIFICATION BADGE (used by notifications.js)
+// UPDATE NOTIFICATION BADGE
 function updateNotificationBadge(count) {
     const badge = document.getElementById('notificationBadge');
     if (!badge) return;
@@ -984,8 +979,6 @@ function updateNotificationBadge(count) {
         badge.style.display = 'flex';
         badge.style.animation = 'pulse 1.5s infinite';
         localStorage.setItem('unreadNotifications', count);
-        
-        // Sync across tabs
         window.postMessage({ type: 'updateNotificationBadge', count }, '*');
     } else {
         badge.style.display = 'none';
@@ -993,51 +986,11 @@ function updateNotificationBadge(count) {
     }
 }
 
-// LISTEN FOR MESSAGE FROM NOTIFICATIONS
 window.addEventListener('message', (event) => {
     if (event.data.type === 'updateNotificationBadge') {
         updateNotificationBadge(event.data.count);
     }
 });
-
-// CHECK USERNAME
-async function checkUsername() {
-    try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) throw error;
-
-        if (user) {
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('username, full_name, avatar_url')
-                .eq('id', user.id)
-                .single();
-
-            if (profileError || !profile || !profile.username) {
-                window.location.href = 'create-username.html';
-            } else {
-                setProfilePicture(profile);
-            }
-        }
-    } catch (error) {
-        console.error("Error checking username:", error);
-    }
-}
-
-function setProfilePicture(profile) {
-    const profilePic = document.getElementById('profilePic');
-    if (profile.avatar_url) {
-        profilePic.innerHTML = `<img src="${profile.avatar_url}" alt="Profile">`;
-    } else {
-        const initials = getInitials(profile.full_name || 'User');
-        profilePic.textContent = initials;
-        profilePic.classList.add('initials');
-    }
-}
-
-function getInitials(name) {
-    return name.split(' ').map(part => part.charAt(0).toUpperCase()).join('').substring(0, 2);
-}
 
 // LOAD POSTS
 async function loadPosts() {
@@ -1101,6 +1054,64 @@ function subscribeToViewUpdates() {
     return channel;
 }
 
+// ✅ NEW: REAL-TIME LIKE TRACKING
+function subscribeToLikeUpdates() {
+    const channel = supabase
+        .channel('post_likes')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'likes',
+        }, async (payload) => {
+            const postId = payload.new.post_id;
+            await updatePostLikeState(postId);
+        })
+        .subscribe();
+    return channel;
+}
+
+async function updatePostLikeState(postId) {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: post, error } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (username, full_name, avatar_url, is_verified),
+                media:post_media (media_url, media_type)
+            `)
+            .eq('id', postId)
+            .single();
+
+        if (error) throw error;
+
+        const { data: userLike, error: likeError } = await supabase
+            .from('likes')
+            .select('*')
+            .eq('post_id', postId)
+            .eq('profile_id', user.id)
+            .single();
+
+        const isLiked = !!userLike && !likeError;
+        const likeCount = post.like_count;
+
+        const postElement = document.querySelector(`post-component[post-data*='"id":"${postId}"']`);
+        if (postElement) {
+            const likeBtn = postElement.querySelector('.like-action');
+            if (likeBtn) {
+                likeBtn.classList.toggle('liked', isLiked);
+                const icon = likeBtn.querySelector('i');
+                if (icon) icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+
+                const countEl = likeBtn.querySelector('.like-text') || likeBtn.querySelector('span');
+                if (countEl) countEl.textContent = likeCount;
+            }
+        }
+    } catch (error) {
+        console.error('Error updating post like state:', error);
+    }
+}
+
 // MENU
 function toggleMenu() {
     const menuPage = document.getElementById('menuPage');
@@ -1131,14 +1142,21 @@ if (localStorage.getItem('darkMode') === 'true') {
     darkModeToggle.checked = true;
 }
 
-// LAZY LOAD post-component SCRIPT IF NOT REGISTERED
+// LAZY LOAD POST COMPONENT
 if (!customElements.get('post-component')) {
     console.error('Post component not registered! Loading posts.js');
     const script = document.createElement('script');
     script.src = 'posts.js';
     document.body.appendChild(script);
     script.onload = loadPosts;
-}
+}       
+
+
+
+
+
+
+
 </script>
 
    <script src="post-comment.js"></script>
