@@ -374,6 +374,15 @@ let hasMoreProfiles = true;
 let hasMorePosts = true;
 let currentUserId = null;
 
+        
+// Check for dark mode preference
+function checkDarkMode() {
+    const darkModeEnabled = localStorage.getItem('darkMode') === 'true' || 
+                          (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (darkModeEnabled) {
+        elements.body.classList.add('dark-mode');
+    }
+}
 // Event Listeners
 elements.searchInput.addEventListener('input', handleSearchInput);
 
