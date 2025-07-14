@@ -1,7 +1,7 @@
-// Experience Editor - Complete Implementation
 class ExperienceEditor {
     constructor() {
         this.currentExperienceId = null;
+        this.isProfileOwner = false; // Track if current user owns the profile
         this.initElements();
         this.initEventListeners();
         this.populateDateOptions();
@@ -301,18 +301,35 @@ class ExperienceEditor {
             if (experiences && experiences.length > 0) {
                 this.elements.experienceContainer.innerHTML = experiences.map(exp => this.formatExperience(exp)).join('');
                 
-                // Add event listeners to all edit buttons
-                document.querySelectorAll('.edit-experience-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const experienceId = e.currentTarget.closest('.experience-item').dataset.id;
-                        this.open(experienceId);
+                // Add event listeners to all edit buttons (only shown to owner)
+                if (this.isProfileOwner) {
+                    document.querySelectorAll('.edit-experience-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const experienceId = e.currentTarget.closest('.experience-item').dataset.id;
+                            this.open(experienceId);
+                        });
                     });
-                });
+                }
+                
+                // Show section if there are experiences or if user is owner
+                this.elements.experienceSection.style.display = 'block';
             } else {
-                this.elements.experienceContainer.innerHTML = '<div class="no-experiences">No professional experience added yet</div>';
+                // No experiences - only show section to profile owner
+                if (this.isProfileOwner) {
+                    this.elements.experienceContainer.innerHTML = `
+                        <div class="no-experiences">
+                            <p>No professional experience added yet</p>
+                            <button class="btn btn-add" onclick="window.experienceEditor.open()">
+                                <i class="fas fa-plus"></i> Add Experience
+                            </button>
+                        </div>
+                    `;
+                    this.elements.experienceSection.style.display = 'block';
+                } else {
+                    // Hide section completely for non-owners when empty
+                    this.elements.experienceSection.style.display = 'none';
+                }
             }
-            
-            this.elements.experienceSection.style.display = 'block';
         } catch (error) {
             console.error('Error loading experiences:', error);
             this.elements.experienceContainer.innerHTML = `
@@ -320,7 +337,8 @@ class ExperienceEditor {
                     Failed to load experiences. <button onclick="window.experienceEditor.loadExperiences()">Try again</button>
                 </div>
             `;
-            this.elements.experienceSection.style.display = 'block';
+            // Show section even if error for owner, hide for others
+            this.elements.experienceSection.style.display = this.isProfileOwner ? 'block' : 'none';
         }
     }
     
@@ -334,12 +352,17 @@ class ExperienceEditor {
             endStr = `${endDate.toLocaleString('default', { month: 'short' })} ${endDate.getFullYear()}`;
         }
         
+        // Only show edit button if profile owner
+        const editButton = this.isProfileOwner ? `
+            <button class="experience-action-btn edit-experience-btn" title="Edit">
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+        ` : '';
+        
         return `
             <div class="experience-item" data-id="${experience.id}">
                 <div class="experience-actions">
-                    <button class="experience-action-btn edit-experience-btn" title="Edit">
-                        <i class="fas fa-pencil-alt"></i>
-                    </button>
+                    ${editButton}
                 </div>
                 <div class="experience-position">${experience.position}</div>
                 <div class="experience-company">${experience.company}</div>
@@ -351,14 +374,31 @@ class ExperienceEditor {
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Check if we're on a profile page with experience section
     if (document.getElementById('experience-section')) {
-        window.experienceEditor = new ExperienceEditor();
+        const experienceEditor = new ExperienceEditor();
+        window.experienceEditor = experienceEditor;
+        
+        // Check if current user is the profile owner
+        const { data: { user } } = await supabase.auth.getUser();
+        experienceEditor.isProfileOwner = user && user.id === profileId;
+        
+        // Add edit button to section header if owner
+        if (experienceEditor.isProfileOwner) {
+            const sectionTitle = document.querySelector('#experience-section .section-title');
+            if (sectionTitle) {
+                const editButton = document.createElement('button');
+                editButton.className = 'experience-edit-btn';
+                editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
+                editButton.addEventListener('click', () => window.experienceEditor.open());
+                sectionTitle.appendChild(editButton);
+            }
+        }
         
         // Load experiences after a short delay to allow other elements to initialize
         setTimeout(() => {
-            window.experienceEditor.loadExperiences();
+            experienceEditor.loadExperiences();
         }, 100);
     }
 });
