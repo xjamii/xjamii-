@@ -182,30 +182,16 @@ class SkillsEditor {
                 this.elements.skillsContainer.innerHTML = skills
                     .map(skill => `<div class="skill-badge">${skill}</div>`)
                     .join('');
-                
-                // Always show section for owner, show for others only if there are skills
-                this.elements.skillsSection.style.display = 'block';
             } else {
                 this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
-                
-                // Hide section for non-owners if no skills
-                if (!isCurrentUserProfile) {
-                    this.elements.skillsSection.style.display = 'none';
-                } else {
-                    this.elements.skillsSection.style.display = 'block';
-                }
             }
+            
+            this.elements.skillsSection.style.display = 'block';
         } catch (error) {
             console.error('Error loading skills:', error);
             this.elements.skillsContainer.innerHTML = 
                 '<div class="error-message">Failed to load skills</div>';
-            
-            // Show section for owner even if error, hide for others
-            if (isCurrentUserProfile) {
-                this.elements.skillsSection.style.display = 'block';
-            } else {
-                this.elements.skillsSection.style.display = 'none';
-            }
+            this.elements.skillsSection.style.display = 'block';
         }
     }
 }
@@ -216,18 +202,16 @@ function initSkillsEditor() {
     if (document.getElementById('skills-section')) {
         window.skillsEditor = new SkillsEditor();
         
-        // Create and add edit button to skills section (only for profile owner)
-        if (isCurrentUserProfile) {
-            const skillsSection = document.getElementById('skills-section');
-            const sectionTitle = skillsSection.querySelector('.section-title');
-            
-            if (sectionTitle) {
-                const editButton = document.createElement('button');
-                editButton.className = 'skills-edit-btn';
-                editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
-                editButton.addEventListener('click', () => window.skillsEditor.open());
-                sectionTitle.appendChild(editButton);
-            }
+        // Create and add edit button to skills section
+        const skillsSection = document.getElementById('skills-section');
+        const sectionTitle = skillsSection.querySelector('.section-title');
+        
+        if (sectionTitle) {
+            const editButton = document.createElement('button');
+            editButton.className = 'skills-edit-btn';
+            editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
+            editButton.addEventListener('click', () => window.skillsEditor.open());
+            sectionTitle.appendChild(editButton);
         }
         
         // Load skills
@@ -237,11 +221,6 @@ function initSkillsEditor() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // You need to define isCurrentUserProfile somewhere in your code
-    // This should be true if the current user is viewing their own profile
-    // For example:
-    // window.isCurrentUserProfile = (currentUserId === profileId);
-    
     initSkillsEditor();
 });
 
