@@ -578,11 +578,17 @@
             position: relative;
         }
 
-        #notificationBadge {
+        .icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#notificationBadge {
     position: absolute;
     top: -4px;
-    right: -1px; /* 👈 Move slightly left by reducing the offset */
-    
+    right: -2px; /* fine-tune left/right spacing */
     background-color: #ff0000;
     color: white;
     border-radius: 50%;
@@ -740,8 +746,10 @@
             <i class="fas fa-plus"></i>
         </button>
         <div class="footer-icon" onclick="window.location.href='notifications.html'">
-    <i class="fas fa-bell"></i>
-    <span id="notificationBadge"></span>
+    <div class="icon-wrapper">
+        <i class="fas fa-bell"></i>
+        <span id="notificationBadge">3</span>
+    </div>
 </div>
         <div class="footer-icon" onclick="window.location.href='profile.html'">
             <i class="fas fa-user"></i>
