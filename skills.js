@@ -3,7 +3,7 @@ class SkillsEditor {
         this.selectedSkills = [];
         this.allSkills = [
             // Flight Operations
-            'Aviation Professional', 'CRM', 'TEM', 'SOP Development', 'Flight Planning', 'Fuel Management',
+            'Aviation Professional', 'CRM', 'Sales', 'SOP Development', 'Flight Planning', 'Fuel Management',
             'Navigation', 'Instrument Flying', 'MCC', 'LOFT',
             
             // Technical Skills
