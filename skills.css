@@ -182,7 +182,6 @@
     font-size: 14px;
 }
 
-/* Keep existing edit button styles */
 .skills-edit-btn {
     background: none;
     border: none;
@@ -193,4 +192,5 @@
     align-items: center;
     gap: 5px;
     margin-left: auto; /* Keeps button on the right */
+    transform: translateX(-1px); /* Shift 1px to the left */
 }
