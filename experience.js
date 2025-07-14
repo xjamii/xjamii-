@@ -261,29 +261,27 @@ class ExperienceEditor {
     }
     
     async deleteExperience() {
-        if (!confirm('Are you sure you want to delete this experience?')) return;
+    try {
+        this.elements.deleteButton.disabled = true;
+        this.elements.deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
         
-        try {
-            this.elements.deleteButton.disabled = true;
-            this.elements.deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-            
-            const { error } = await supabase
-                .from('experiences')
-                .delete()
-                .eq('id', this.currentExperienceId);
-            
-            if (error) throw error;
-            
-            this.close();
-            await this.loadExperiences(); // Refresh the experience display
-        } catch (error) {
-            console.error('Error deleting experience:', error);
-            showError('Failed to delete experience');
-        } finally {
-            this.elements.deleteButton.disabled = false;
-            this.elements.deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete Experience';
-        }
+        const { error } = await supabase
+            .from('experiences')
+            .delete()
+            .eq('id', this.currentExperienceId);
+
+        if (error) throw error;
+        
+        this.close();
+        await this.loadExperiences();
+    } catch (error) {
+        console.error('Error deleting experience:', error);
+        showError('Failed to delete experience');
+    } finally {
+        this.elements.deleteButton.disabled = false;
+        this.elements.deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete Experience';
     }
+}
     
     async loadExperiences() {
         try {
