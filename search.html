@@ -339,7 +339,7 @@
 
     <script>
         
-      // Initialize Supabase
+               // Initialize Supabase
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -407,7 +407,7 @@ window.addEventListener('scroll', handleScroll);
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    // Show preloader immediately
+    // Show preloader only for initial page load
     elements.fullPageLoader.style.display = 'flex';
     
     try {
@@ -420,18 +420,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         currentUserId = user.id;
-        
-        // Focus search input
         elements.searchInput.focus();
-        
-        // Load suggested profiles
         await loadSuggestedProfiles();
-        
-        // Hide preloader
-        elements.fullPageLoader.style.display = 'none';
     } catch (error) {
         console.error('Initialization error:', error);
         window.location.href = 'login.html';
+    } finally {
+        // Hide full-page preloader when done
+        elements.fullPageLoader.style.display = 'none';
     }
 });
 
@@ -515,19 +511,18 @@ function clearResults() {
 
 async function performSearch(searchTerm) {
     try {
-        elements.fullPageLoader.style.display = 'flex';
+        showLoading();
         
         if (currentTab === 'profiles') {
             await searchProfiles(searchTerm);
         } else {
             await searchPosts(searchTerm);
         }
-        
-        elements.fullPageLoader.style.display = 'none';
     } catch (error) {
         console.error('Search error:', error);
-        elements.fullPageLoader.style.display = 'none';
         showNoResults();
+    } finally {
+        hideLoading();
     }
 }
 
@@ -537,8 +532,6 @@ async function searchProfiles(searchTerm) {
         .select('*')
         .or(`full_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
         .limit(20);
-    
-    hideLoading();
     
     if (error) throw error;
     
@@ -571,8 +564,6 @@ async function searchPosts(searchTerm) {
         .ilike('content', `%${searchTerm}%`)
         .order('created_at', { ascending: false })
         .limit(20);
-    
-    hideLoading();
     
     if (error) throw error;
     
@@ -879,12 +870,9 @@ function showNoResults() {
     } else {
         elements.postsNoResults.style.display = 'block';
     }
-}  
-            
-                             
-                
-            
-                
+}            
+        
+                        
 
         
         
