@@ -162,9 +162,11 @@ class PostComponent extends HTMLElement {
             ${this.renderMedia(post.media || [])}
             <div class="post-actions">
               <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
-              <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
-                <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
-              </div>
+              // In your render method, update the like action HTML to:
+`<div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
+    <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i>
+    <span class="like-text">${post.like_count || 0}</span>
+</div>`
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
               <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
               <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
