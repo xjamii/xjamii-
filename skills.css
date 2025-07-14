@@ -192,5 +192,5 @@
     align-items: center;
     gap: 5px;
     margin-left: auto; /* Keeps button on the right */
-    transform: translateX(-5px); /* Shift 1px to the left */
+    transform: translateX(-10px); /* Shift 1px to the left */
 }
