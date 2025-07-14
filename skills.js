@@ -3,7 +3,7 @@ class SkillsEditor {
         this.selectedSkills = [];
         this.allSkills = [
             // Flight Operations
-            'CRM', 'TEM', 'SOP Development', 'Flight Planning', 'Fuel Management',
+            'Aviation Professional', 'CRM', 'TEM', 'SOP Development', 'Flight Planning', 'Fuel Management',
             'Navigation', 'Instrument Flying', 'MCC', 'LOFT',
             
             // Technical Skills
@@ -123,7 +123,8 @@ class SkillsEditor {
             if (!error && profile && profile.skills) {
                 this.selectedSkills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
             } else {
-                this.selectedSkills = [];
+                // If no skills, set default "Aviation Professional" skill
+                this.selectedSkills = ['Aviation Professional'];
             }
             
             this.elements.page.style.display = 'block';
@@ -183,7 +184,8 @@ class SkillsEditor {
                     .map(skill => `<div class="skill-badge">${skill}</div>`)
                     .join('');
             } else {
-                this.elements.skillsContainer.innerHTML = '<div class="no-skills">No skills added yet</div>';
+                // Show default "Aviation Professional" skill if no skills exist
+                this.elements.skillsContainer.innerHTML = '<div class="skill-badge">Aviation Professional</div>';
             }
             
             this.elements.skillsSection.style.display = 'block';
@@ -211,7 +213,11 @@ function initSkillsEditor() {
             editButton.className = 'skills-edit-btn';
             editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
             editButton.addEventListener('click', () => window.skillsEditor.open());
-            sectionTitle.appendChild(editButton);
+            
+            // Only show edit button to profile owner
+            if (isProfileOwner) {
+                sectionTitle.appendChild(editButton);
+            }
         }
         
         // Load skills
