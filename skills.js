@@ -23,6 +23,7 @@ class SkillsEditor {
             'Technical Writing', 'Data Analysis', 'Flight Simulation'
         ];
         
+        this.isProfileOwner = false; // Track if current user owns the profile
         this.initElements();
         this.initEventListeners();
         this.populateSkillsGrid();
@@ -199,29 +200,33 @@ class SkillsEditor {
 }
 
 // Initialize Skills Editor and add edit button
-function initSkillsEditor() {
+async function initSkillsEditor() {
     // Check if we're on a profile page with skills section
     if (document.getElementById('skills-section')) {
-        window.skillsEditor = new SkillsEditor();
+        const skillsEditor = new SkillsEditor();
+        window.skillsEditor = skillsEditor;
         
         // Create and add edit button to skills section
         const skillsSection = document.getElementById('skills-section');
         const sectionTitle = skillsSection.querySelector('.section-title');
         
         if (sectionTitle) {
-            const editButton = document.createElement('button');
-            editButton.className = 'skills-edit-btn';
-            editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
-            editButton.addEventListener('click', () => window.skillsEditor.open());
+            // Check if current user is the profile owner
+            const { data: { user } } = await supabase.auth.getUser();
+            const isProfileOwner = user && user.id === profileId;
+            skillsEditor.isProfileOwner = isProfileOwner;
             
-            // Only show edit button to profile owner
             if (isProfileOwner) {
+                const editButton = document.createElement('button');
+                editButton.className = 'skills-edit-btn';
+                editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
+                editButton.addEventListener('click', () => window.skillsEditor.open());
                 sectionTitle.appendChild(editButton);
             }
         }
         
         // Load skills
-        window.skillsEditor.loadSkills();
+        await skillsEditor.loadSkills();
     }
 }
 
