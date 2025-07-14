@@ -934,4 +934,21 @@ like-button {
   transition: opacity 0.2s ease;
 }
 
+.like-counter-animation {
+  display: inline-flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 20px;
+  vertical-align: middle;
+  transition: transform 0.3s ease-out;
+}
+
+.like-counter-animation div {
+  transition: opacity 0.2s ease;
+}
+
+.like-action.liked i {
+  color: #ff0000;
+}
+
 /* Add these to your stylesheet */
