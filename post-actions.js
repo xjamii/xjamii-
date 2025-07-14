@@ -5,77 +5,121 @@ class PostActions {
       
       if (authError || !user) {
         console.error('Authentication error:', authError);
-        this.showErrorToast('Please login to like posts');
         return { success: false, error: 'Not authenticated' };
       }
       
       const currentUserId = user.id;
+      const isCurrentlyLiked = post.is_liked;
 
-      if (!post.is_liked) {
+      // Optimistic UI update
+      this.updateLikeUI(post, !isCurrentlyLiked);
+
+      if (!isCurrentlyLiked) {
+        // Add like
         const { data, error } = await supabase
           .from('likes')
           .insert([{ post_id: post.id, profile_id: currentUserId }])
           .select();
         
-        if (error) {
-          if (error.code === '23505') { // Unique violation error code
-            console.log('User already liked this post');
-            this.showErrorToast('You already liked this post');
-            return { success: false, error: 'Already liked' };
-          }
-          console.error('Like insertion error:', error);
-          throw error;
-        }
+        if (error) throw error;
         
-        console.log('Like added successfully:', data);
+        // Update the post's like count in the database
         await supabase.rpc('increment_like_count', { post_id: post.id });
+        
         return { success: true, newLikeState: true };
       } else {
+        // Remove like
         const { error } = await supabase
           .from('likes')
           .delete()
           .eq('post_id', post.id)
           .eq('profile_id', currentUserId);
         
-        if (error) {
-          console.error('Like deletion error:', error);
-          throw error;
-        }
+        if (error) throw error;
         
-        console.log('Like removed successfully');
+        // Update the post's like count in the database
         await supabase.rpc('decrement_like_count', { post_id: post.id });
+        
         return { success: true, newLikeState: false };
       }
-    } catch (err) {
-      console.error('Error in toggleLike:', err);
-      this.showErrorToast('Failed to update like. Please try again.');
-      return { success: false, error: err.message };
+    } catch (error) {
+      // Revert optimistic UI update if API call failed
+      this.updateLikeUI(post, post.is_liked);
+      console.error('Error in toggleLike:', error);
+      return { success: false, error: error.message };
     }
   }
 
-  static showErrorToast(message) {
-    // Remove any existing error toasts
-    document.querySelectorAll('.error-toast').forEach(el => el.remove());
-    
-    const toast = document.createElement('div');
-    toast.className = 'error-toast';
-    toast.textContent = message;
-    
-    document.body.appendChild(toast);
-    
-    // Make toast visible
+  static updateLikeUI(post, isLiked) {
+    const postElement = document.querySelector(`post-component[post-data*='"id":"${post.id}"']`);
+    if (!postElement) return;
+
+    const likeBtn = postElement.querySelector('.like-action');
+    if (!likeBtn) return;
+
+    // Update button state
+    likeBtn.classList.toggle('liked', isLiked);
+    const icon = likeBtn.querySelector('i');
+    icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+
+    // Get current like count
+    const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
+    if (!countEl) return;
+
+    const currentCount = parseInt(countEl.textContent) || 0;
+    const newCount = isLiked ? currentCount + 1 : currentCount - 1;
+
+    // Create animation container
+    const container = document.createElement('div');
+    container.className = 'like-counter-animation';
+    container.style.cssText = `
+      display: inline-flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 20px;
+      vertical-align: middle;
+    `;
+
+    const oldNumber = document.createElement('div');
+    oldNumber.textContent = currentCount;
+
+    const newNumber = document.createElement('div');
+    newNumber.textContent = newCount;
+
+    container.appendChild(oldNumber);
+    container.appendChild(newNumber);
+
+    // Replace existing content with animation container
+    const likeText = likeBtn.querySelector('.like-text') || document.createElement('span');
+    likeText.className = 'like-text';
+    likeBtn.innerHTML = '';
+    likeBtn.appendChild(icon);
+    likeBtn.appendChild(container);
+
+    // Trigger animation
     setTimeout(() => {
-      toast.style.opacity = '1';
-      toast.style.transform = 'translateY(0)';
-    }, 10);
-    
-    // Remove toast after 3 seconds
+      container.style.transform = `translateY(-20px)`;
+      container.style.transition = `transform 0.3s ease-out`;
+    }, 50);
+
+    // Replace with final value after animation
     setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(20px)';
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
+      if (likeBtn.isConnected) {
+        likeBtn.innerHTML = `
+          <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+          <span class="like-text">${newCount}</span>
+        `;
+      }
+    }, 800);
+
+    // Update post object
+    post.is_liked = isLiked;
+    post.like_count = newCount;
   }
+
+  // ... rest of your existing PostActions code ...
+
+
 
   // ... rest of your existing PostActions code ...
 
