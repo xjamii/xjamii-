@@ -1,66 +1,51 @@
 class PostActions {
   static likeLocks = new Set();
-  static clickTimers = {};
 
   static async toggleLike(post, buttonElement, countElement) {
     const postId = post.id;
-    const isFastDoubleClick = this.clickTimers[postId];
 
-    // Clear existing timer if it's a fast double-click
-    if (isFastDoubleClick) {
-      clearTimeout(this.clickTimers[postId]);
-      delete this.clickTimers[postId];
+    if (this.likeLocks.has(postId)) return; // prevent spamming
+    this.likeLocks.add(postId);
 
-      // Revert UI and do nothing — simulate "cancelled like"
-      post.is_liked = false;
-      post.like_count = Math.max(0, post.like_count - 1);
-      buttonElement.classList.remove('liked');
-      countElement.textContent = post.like_count;
-      return;
-    }
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error('Not authenticated');
 
-    // Optimistically update UI
-    post.is_liked = !post.is_liked;
-    post.like_count += post.is_liked ? 1 : -1;
-    buttonElement.classList.toggle('liked', post.is_liked);
-    countElement.textContent = post.like_count;
+      const userId = user.id;
+      const isLiking = !post.is_liked;
 
-    // Start fast double-click window (e.g., 400ms)
-    this.clickTimers[postId] = setTimeout(async () => {
-      delete this.clickTimers[postId];
+      if (isLiking) {
+        await supabase
+          .from('likes')
+          .insert([{ post_id: postId, profile_id: userId }])
+          .select();
 
-      if (this.likeLocks.has(postId)) return;
-      this.likeLocks.add(postId);
+        await supabase.rpc('increment_like_count', { post_id: postId });
+      } else {
+        await supabase
+          .from('likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('profile_id', userId);
 
-      try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) throw new Error('Not authenticated');
-
-        const userId = user.id;
-
-        if (post.is_liked) {
-          await supabase
-            .from('likes')
-            .insert([{ post_id: postId, profile_id: userId }])
-            .select();
-
-          await supabase.rpc('increment_like_count', { post_id: postId });
-        } else {
-          await supabase
-            .from('likes')
-            .delete()
-            .eq('post_id', postId)
-            .eq('profile_id', userId);
-
-          await supabase.rpc('decrement_like_count', { post_id: postId });
-        }
-      } catch (err) {
-        console.warn('Like error:', err.message || err);
-        // Optionally revert if needed
+        await supabase.rpc('decrement_like_count', { post_id: postId });
       }
 
+      // Delay UI update to prevent fast double click
+      setTimeout(() => {
+        post.is_liked = isLiking;
+        post.like_count += isLiking ? 1 : -1;
+
+        buttonElement.classList.toggle('liked', post.is_liked);
+        countElement.textContent = post.like_count;
+
+        this.likeLocks.delete(postId);
+      }, 1000); // 1 second delay
+
+    } catch (err) {
+      console.warn('Like/unlike error:', err.message || err);
       this.likeLocks.delete(postId);
-    }, 400); // Time window for detecting fast double-click
+    }
   }
 
   static showMoreOptions(e, post) {
