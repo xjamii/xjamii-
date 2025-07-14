@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookies Policy | Aviationin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a4b8c;
+            --secondary: #e8a317;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --dark-blue: #0d2d59;
+            --text-light: #6c757d;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--dark);
+            line-height: 1.7;
+            background-color: #f9fbfd;
+        }
+        
+        /* Logo Header */
+        .logo-header {
+            text-align: center;
+            padding: 2rem 0;
+            background: white;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .logo-header img {
+            height: 50px;
+            filter: brightness(0) saturate(100%) invert(22%) sepia(55%) saturate(1553%) hue-rotate(194deg) brightness(93%) contrast(91%);
+        }
+        
+        /* Cookies Header */
+        .cookies-header {
+            background: linear-gradient(135deg, var(--primary), var(--dark-blue));
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cookies-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(45deg, 
+                    transparent 65%, 
+                    rgba(232, 163, 23, 0.1) 65%, 
+                    rgba(232, 163, 23, 0.1) 70%, 
+                    transparent 70%),
+                linear-gradient(-45deg, 
+                    transparent 65%, 
+                    rgba(232, 163, 23, 0.1) 65%, 
+                    rgba(232, 163, 23, 0.1) 70%, 
+                    transparent 70%);
+            background-size: 40px 40px;
+            opacity: 0.3;
+        }
+        
+        .cookies-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .cookies-header p {
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        
+        /* Cookies Content */
+        .cookies-container {
+            max-width: 900px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+        
+        .cookies-section {
+            margin-bottom: 3rem;
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .cookies-section h2 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .cookies-section h2 i {
+            margin-right: 12px;
+            color: var(--secondary);
+        }
+        
+        .cookies-section p {
+            margin-bottom: 1.2rem;
+            color: var(--text-light);
+        }
+        
+        .cookies-section ul {
+            margin: 1.2rem 0;
+            padding-left: 2rem;
+        }
+        
+        .cookies-section li {
+            margin-bottom: 0.8rem;
+            color: var(--text-light);
+        }
+        
+        .cookies-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        
+        .cookies-table th {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .cookies-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .cookies-table tr:nth-child(even) {
+            background-color: rgba(26, 75, 140, 0.05);
+        }
+        
+        .highlight-box {
+            background-color: rgba(232, 163, 23, 0.1);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin: 1.5rem 0;
+            border-left: 3px solid var(--secondary);
+        }
+        
+        .highlight-box p {
+            margin-bottom: 0;
+            font-style: italic;
+        }
+        
+        /* Cookie Controls */
+        .cookie-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .cookie-btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .cookie-btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .cookie-btn-primary:hover {
+            background: var(--dark-blue);
+        }
+        
+        .cookie-btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        
+        .cookie-btn-outline:hover {
+            background: rgba(26, 75, 140, 0.1);
+        }
+        
+        /* Last Updated */
+        .last-updated {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .cookies-header h1 {
+                font-size: 2rem;
+            }
+            
+            .cookies-header p {
+                font-size: 1rem;
+            }
+            
+            .cookies-container {
+                padding: 0 1.5rem;
+            }
+            
+            .cookies-section {
+                padding: 1.5rem;
+            }
+            
+            .cookies-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Logo Header -->
+    <div class="logo-header">
+        <img src="https://i.postimg.cc/gkL0Qdsw/file-00000000000061f8b89b5a1f67f8b937.png" alt="Aviationin Logo">
+    </div>
+
+    <!-- Cookies Header -->
+    <header class="cookies-header">
+        <h1>Cookies Policy</h1>
+        <p>How Aviationin uses cookies and similar technologies in our aviation professional network</p>
+    </header>
+
+    <!-- Cookies Content -->
+    <div class="cookies-container">
+        <section class="cookies-section">
+            <h2><i class="fas fa-info-circle"></i> About Cookies</h2>
+            <p>Cookies are small text files placed on your device when you visit our aviation professional network. Like most aviation service platforms, we use cookies and similar technologies to:</p>
+            <ul>
+                <li>Ensure secure access for aviation professionals</li>
+                <li>Remember your preferences and settings</li>
+                <li>Improve platform performance and safety</li>
+                <li>Analyze how aviation professionals use our services</li>
+                <li>Deliver relevant aviation industry content</li>
+            </ul>
+        </section>
+        
+        <section class="cookies-section">
+            <h2><i class="fas fa-cookie"></i> Types of Cookies We Use</h2>
+            <table class="cookies-table">
+                <thead>
+                    <tr>
+                        <th>Cookie Type</th>
+                        <th>Purpose</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Essential Cookies</strong></td>
+                        <td>Required for secure authentication and core platform functionality</td>
+                        <td>Session or up to 24 hours</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Preference Cookies</strong></td>
+                        <td>Remember your professional settings and display preferences</td>
+                        <td>Up to 1 year</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Analytics Cookies</strong></td>
+                        <td>Help us understand how aviation professionals use our platform</td>
+                        <td>Up to 2 years</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security Cookies</strong></td>
+                        <td>Protect against unauthorized access and maintain aviation data security</td>
+                        <td>Up to 6 months</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <section class="cookies-section">
+            <h2><i class="fas fa-shield-alt"></i> Third-Party Cookies</h2>
+            <p>We work with carefully selected aviation industry partners who may set cookies when you use our platform:</p>
+            <ul>
+                <li><strong>Analytics Providers:</strong> To help us improve our services for aviation professionals</li>
+                <li><strong>Security Services:</strong> To protect against threats to aviation data</li>
+                <li><strong>Embedded Content:</strong> From trusted aviation industry resources</li>
+            </ul>
+            <div class="highlight-box">
+                <p>We do not allow third-party advertising cookies on our aviation professional network.</p>
+            </div>
+        </section>
+        
+        <section class="cookies-section">
+            <h2><i class="fas fa-sliders-h"></i> Cookie Controls</h2>
+            <p>As an aviation professional using our platform, you can control cookies through:</p>
+            <div class="cookie-controls">
+                <button class="cookie-btn cookie-btn-primary" onclick="alert('Cookie preferences saved. Essential cookies cannot be disabled for security reasons.')">
+                    <i class="fas fa-check-circle"></i> Accept Recommended
+                </button>
+                <button class="cookie-btn cookie-btn-outline" onclick="alert('Non-essential cookies disabled. Some features may not work optimally.')">
+                    <i class="fas fa-ban"></i> Reject Non-Essential
+                </button>
+            </div>
+            <p>You can also manage cookies through your browser settings. Please note that disabling essential cookies may affect your ability to use our aviation professional network securely.</p>
+        </section>
+        
+        <section class="cookies-section">
+            <h2><i class="fas fa-exclamation-triangle"></i> Essential Cookies Notice</h2>
+            <p>For security reasons specific to aviation professionals, certain cookies cannot be disabled:</p>
+            <ul>
+                <li>Authentication cookies for secure access</li>
+                <li>Security cookies that protect aviation data</li>
+                <li>Cookies required for core platform functionality</li>
+            </ul>
+            <p>These are necessary to maintain the safety and integrity of our aviation professional community.</p>
+        </section>
+        
+        <section class="cookies-section">
+            <h2><i class="fas fa-question-circle"></i> More Information</h2>
+            <p>For questions about our use of cookies in the Aviationin platform:</p>
+            <p><strong>Email:</strong> privacy@aviationin.com</p>
+                </section>
+        
+        <div class="last-updated">
+            <p>Last Updated: January 1, 2025</p>
+        </div>
+    </div>
+
+    <script>
+        // Simple cookie preference simulation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for existing preference
+            if(!localStorage.getItem('cookiePrefs')) {
+                // Show a simple notice (in a real implementation, this would be a proper banner)
+                console.log('Display cookie consent banner in production');
+            }
+        });
+    </script>
+</body>
+</html>
