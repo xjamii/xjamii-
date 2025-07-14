@@ -932,7 +932,9 @@ async function checkConnectionStatus(currentUserId, profileId) {
             .single();
 
         if (error && error.code !== 'PGRST116') throw error;
-        
+
+        const messageBtn = document.querySelector('.btn-outline');
+
         if (data) {
             if (data.status === 'pending') {
                 if (data.sender_id === currentUserId) {
@@ -944,18 +946,19 @@ async function checkConnectionStatus(currentUserId, profileId) {
                     elements.connectBtn.textContent = 'Accept';
                     elements.connectBtn.onclick = () => acceptConnection(data.id);
                 }
+                messageBtn.style.display = 'none';
             } else if (data.status === 'accepted') {
                 elements.connectBtn.textContent = 'Connected';
+                elements.connectBtn.disabled = false;
                 elements.connectBtn.onclick = () => removeConnection(data.id);
-                // Show message button since they're connected
-                document.querySelector('.btn-outline').style.display = 'inline-block';
-                document.querySelector('.btn-outline').onclick = () => openMessagePage(profileId);
+                // Always hide message button even when connected
+                messageBtn.style.display = 'none';
             }
         } else {
             elements.connectBtn.textContent = 'Connect';
             elements.connectBtn.onclick = () => sendConnectionRequest(currentUserId, profileId);
             // Hide message button if not connected
-            document.querySelector('.btn-outline').style.display = 'none';
+            messageBtn.style.display = 'none';
         }
     } catch (error) {
         console.error('Error checking connection:', error);
@@ -1034,6 +1037,7 @@ async function acceptConnection(connectionId) {
             .eq('id', connectionId);
 
         if (error) throw error;
+
         
         elements.connectBtn.textContent = 'Connected';
         elements.connectBtn.disabled = false;
