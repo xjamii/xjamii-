@@ -757,6 +757,13 @@ const elements = {
     userPosts: document.getElementById('user-posts')
 };
 
+        // Ensure post component is registered
+if (!customElements.get('post-component')) {
+    const script = document.createElement('script');
+    script.src = 'post-component.js';
+    document.body.appendChild(script);
+}
+
 // Load profile data
 async function loadProfile() {
     try {
@@ -1197,14 +1204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-        <script>
-// Ensure post component is registered
-if (!customElements.get('post-component')) {
-    const script = document.createElement('script');
-    script.src = 'post-component.js';
-    document.body.appendChild(script);
-}
-    </script>
+        
             
         <script src="PostUtils.js"></script>
 <script src="MediaViewer.js"></script>
