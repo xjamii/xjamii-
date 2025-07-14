@@ -1,54 +1,37 @@
 class PostActions {
-  static async toggleLike(post) {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+// Replace your toggleLike function with this:
+async function toggleLike(post) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (post.is_liked) {
+      // Unlike - delete the like record
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .eq('post_id', post.id)
+        .eq('profile_id', user.id);
       
-      if (authError || !user) {
-        console.error('Authentication error:', authError);
-        return { success: false, error: 'Not authenticated' };
-      }
+      if (error) throw error;
+    } else {
+      // Like - insert new like record
+      const { error } = await supabase
+        .from('likes')
+        .insert([{ 
+          post_id: post.id, 
+          profile_id: user.id 
+        }]);
       
-      const currentUserId = user.id;
-      const isCurrentlyLiked = post.is_liked;
-
-      // Optimistic UI update
-      this.updateLikeUI(post, !isCurrentlyLiked);
-
-      if (!isCurrentlyLiked) {
-        // Add like
-        const { data, error } = await supabase
-          .from('likes')
-          .insert([{ post_id: post.id, profile_id: currentUserId }])
-          .select();
-        
-        if (error) throw error;
-        
-        // Update the post's like count in the database
-        await supabase.rpc('increment_like_count', { post_id: post.id });
-        
-        return { success: true, newLikeState: true };
-      } else {
-        // Remove like
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('post_id', post.id)
-          .eq('profile_id', currentUserId);
-        
-        if (error) throw error;
-        
-        // Update the post's like count in the database
-        await supabase.rpc('decrement_like_count', { post_id: post.id });
-        
-        return { success: true, newLikeState: false };
-      }
-    } catch (error) {
-      // Revert optimistic UI update if API call failed
-      this.updateLikeUI(post, post.is_liked);
-      console.error('Error in toggleLike:', error);
-      return { success: false, error: error.message };
+      if (error) throw error;
     }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Like error:', error);
+    return { success: false, error };
   }
+}
 
   static updateLikeUI(post, isLiked) {
     const postElement = document.querySelector(`post-component[post-data*='"id":"${post.id}"']`);
