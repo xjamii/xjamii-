@@ -284,61 +284,63 @@ class ExperienceEditor {
 }
     
     async loadExperiences() {
-        try {
-            this.elements.experienceSection.style.display = 'none';
-            this.elements.experienceContainer.innerHTML = '<div class="loading-experience">Loading experiences...</div>';
+    try {
+        // Hide section initially and show loading state
+        this.elements.experienceSection.style.display = 'none';
+        this.elements.experienceContainer.innerHTML = '<div class="loading-experience">Loading experiences...</div>';
+        
+        const { data: experiences, error } = await supabase
+            .from('experiences')
+            .select('*')
+            .eq('profile_id', profileId)
+            .order('start_date', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (experiences && experiences.length > 0) {
+            this.elements.experienceContainer.innerHTML = experiences.map(exp => this.formatExperience(exp)).join('');
             
-            const { data: experiences, error } = await supabase
-                .from('experiences')
-                .select('*')
-                .eq('profile_id', profileId)
-                .order('start_date', { ascending: false });
-            
-            if (error) throw error;
-            
-            if (experiences && experiences.length > 0) {
-                this.elements.experienceContainer.innerHTML = experiences.map(exp => this.formatExperience(exp)).join('');
-                
-                // Add event listeners to all edit buttons (only shown to owner)
-                if (this.isProfileOwner) {
-                    document.querySelectorAll('.edit-experience-btn').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            const experienceId = e.currentTarget.closest('.experience-item').dataset.id;
-                            this.open(experienceId);
-                        });
+            // Add event listeners to all edit buttons (only shown to owner)
+            if (this.isProfileOwner) {
+                document.querySelectorAll('.edit-experience-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const experienceId = e.currentTarget.closest('.experience-item').dataset.id;
+                        this.open(experienceId);
                     });
-                }
-                
-                // Show section if there are experiences or if user is owner
+                });
+            }
+            
+            // Show section only if there are experiences
+            this.elements.experienceSection.style.display = 'block';
+        } else {
+            // No experiences - only show section to profile owner
+            if (this.isProfileOwner) {
+                this.elements.experienceContainer.innerHTML = `
+                    <div class="no-experiences">
+                        <p>No professional experience added yet</p>
+                        <button class="btn btn-add" onclick="window.experienceEditor.open()">
+                            <i class="fas fa-plus"></i> Add Experience
+                        </button>
+                    </div>
+                `;
                 this.elements.experienceSection.style.display = 'block';
             } else {
-                // No experiences - only show section to profile owner
-                if (this.isProfileOwner) {
-                    this.elements.experienceContainer.innerHTML = `
-                        <div class="no-experiences">
-                            <p>No professional experience added yet</p>
-                            <button class="btn btn-add" onclick="window.experienceEditor.open()">
-                                <i class="fas fa-plus"></i> Add Experience
-                            </button>
-                        </div>
-                    `;
-                    this.elements.experienceSection.style.display = 'block';
-                } else {
-                    // Hide section completely for non-owners when empty
-                    this.elements.experienceSection.style.display = 'none';
-                }
+                // Keep section hidden for non-owners when empty
+                this.elements.experienceSection.style.display = 'none';
             }
-        } catch (error) {
-            console.error('Error loading experiences:', error);
-            this.elements.experienceContainer.innerHTML = `
-                <div class="error-message">
-                    Failed to load experiences. <button onclick="window.experienceEditor.loadExperiences()">Try again</button>
-                </div>
-            `;
-            // Show section even if error for owner, hide for others
-            this.elements.experienceSection.style.display = this.isProfileOwner ? 'block' : 'none';
         }
+    } catch (error) {
+        console.error('Error loading experiences:', error);
+        this.elements.experienceContainer.innerHTML = `
+            <div class="error-message">
+                Failed to load experiences. <button onclick="window.experienceEditor.loadExperiences()">Try again</button>
+            </div>
+        `;
+        // Show section even if error for owner, hide for others
+        this.elements.experienceSection.style.display = this.isProfileOwner ? 'block' : 'none';
     }
+}
+
     
     formatExperience(experience) {
         const startDate = new Date(experience.start_date);
