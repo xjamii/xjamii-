@@ -352,6 +352,37 @@ body {
     width: 100%;
     margin-top: 8px;
 }
+
+        .error-message {
+    color: #ff4444;
+    padding: 15px;
+    text-align: center;
+    background-color: #ffeeee;
+    margin: 10px;
+    border-radius: 5px;
+    display: none;
+}
+
+.post-loading-spinner {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.post-loading-spinner .spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(0, 86, 179, 0.2);
+    border-top-color: #0056b3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.no-posts {
+    text-align: center;
+    padding: 30px;
+    color: #666;
+}
     </style>
 </head>
 <body>
@@ -824,7 +855,17 @@ async function loadProfile() {
 
 async function loadPosts() {
     try {
-        const { data: posts, error } = await supabase
+        // Show loading spinner
+        const loadingSpinner = document.createElement('div');
+        loadingSpinner.className = 'post-loading-spinner';
+        loadingSpinner.innerHTML = '<div class="spinner"></div>';
+        elements.userPosts.innerHTML = '';
+        elements.userPosts.appendChild(loadingSpinner);
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+
+        const { data: posts, error: postsError } = await supabase
             .from('posts')
             .select(`
                 *,
@@ -834,7 +875,20 @@ async function loadPosts() {
             .eq('user_id', profileId)
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (postsError) throw postsError;
+
+        const { data: userLikes, error: likesError } = await supabase
+            .from('likes')
+            .select('post_id')
+            .eq('profile_id', user.id);
+
+        if (likesError) throw likesError;
+
+        const likedPostIds = new Set(userLikes.map(like => like.post_id));
+        const postsWithLikes = posts.map(post => ({
+            ...post,
+            is_liked: likedPostIds.has(post.id)
+        }));
 
         elements.userPosts.innerHTML = '';
 
@@ -843,7 +897,7 @@ async function loadPosts() {
             return;
         }
 
-        posts.forEach(post => {
+        postsWithLikes.forEach(post => {
             const postElement = document.createElement('post-component');
             
             // Process media URLs to ensure they're absolute
@@ -1096,6 +1150,14 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProfile();
 });
 </script>
+        <script src="PostUtils.js"></script>
+<script src="MediaViewer.js"></script>
+<script src="post-utils.js"></script>
+<script src="post-actions.js"></script>
+<script src="post-media-viewer.js"></script>
+<script src="post-comment.js"></script>
+<script src="post-view-tracking.js"></script>
+<script src="post-component.js"></script>
       <script src="posts.js"></script>
       <script src="skills.js"></script>
       <script src="experience.js"></script>
