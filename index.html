@@ -484,55 +484,15 @@
             background-color: #444;
         }
 
-        .menu-option .toggle-switch {
-            position: absolute;
-            bottom: 12px;
-            right: 12px;
-            width: 40px;
-            height: 20px;
-        }
-
-        .menu-option .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 20px;
-        }
-
-        .menu-option .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 2px;
-            bottom: 2px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        .menu-option input:checked + .toggle-slider {
-            background-color: #1DA1F2;
-        }
-
-        .menu-option input:checked + .toggle-slider:before {
-            transform: translateX(20px);
-        }
-
-        .menu-option-text {
-            font-size: 14px;
-            font-weight: 500;
-            margin-top: 8px;
-            position: relative;
-            padding-right: 30px;
-            width: 100%;
-        }
-
+..menu-option-text {
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 8px;
+    margin-left: 17px; /* Move element 17px to the right */
+    position: relative;
+    padding-right: 30px;
+    width: calc(100% - 17px); /* Prevent overflow with new margin */
+}
         .menu-option-icon {
             width: 48px;
             height: 48px;
@@ -618,98 +578,49 @@
 }
 
         
-            
-            .menu-options {
-                grid-template-columns: 1fr;
-            }
-            
-            .menu-option {
-                flex-direction: row;
-                text-align: left;
-                align-items: center;
-                padding: 12px 16px;
-            }
-            
-            .menu-option-icon {
-                margin-bottom: 0;
-                margin-right: 12px;
-                width: 40px;
-                height: 40px;
-                font-size: 18px;
-            }
-            
-            .menu-option .toggle-switch {
-                position: static;
-                margin-left: auto;
-            }
-        }
-
-        .header-top-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
-        }
-
-        .help-icon {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        .help-icon i {
-            font-size: 20px;
-            color: #1DA1F2;
-            transition: color 0.3s ease;
-        }
-
-        .help-icon i:hover {
-            color: #0d8ddb;
-            cursor: pointer;
-        }
-
-
-        .posts-loading {
+            <!-- Add this to your existing <style> section -->
+.full-page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #FFFFFF;
     display: flex;
     justify-content: center;
-    padding: 20px;
+    align-items: center;
+    z-index: 9999;
 }
 
-.posts-loading .loader {
-    width: 30px;
-    height: 30px;
-    border: 3px solid rgba(0, 86, 179, 0.2);
-    border-top-color: #0056b3;
+.spinner-container {
+    text-align: center;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e6f0ff;
+    border-top: 4px solid #0056b3;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    margin: 0 auto;
 }
 
-      .error-toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background-color: rgba(0, 0, 0, 0.85);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  opacity: 0;
-  transition: all 0.3s ease;
-  max-width: 80%;
-  text-align: center;
-  pointer-events: none;
-  font-size: 14px;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
+          
     </style>
 </head>
 <body>
-    <!-- Pull to Refresh Container -->
-    <div id="refresh-container">
-        <div class="refresh-spinner"></div>
+
+   <!-- Add this right after the opening <body> tag -->
+<div class="full-page-loader" id="full-page-loader">
+    <div class="spinner-container">
+        <div class="spinner"></div>
     </div>
+</div>
 
     <!-- Main Header -->
     <div class="top-header">
@@ -780,28 +691,7 @@
                 </div>
                 <div class="menu-option-text">Manage Account</div>
             </div>
-            <div class="menu-option">
-                <div class="menu-option-icon" style="background-color: #1DA1F2;">
-                    <i class="fas fa-moon"></i>
-                </div>
-                <div class="menu-option-text">Dark Mode
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="darkModeToggle">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-            <div class="menu-option">
-                <div class="menu-option-icon" style="background-color: #1DA1F2;">
-                    <i class="fas fa-database"></i>
-                </div>
-                <div class="menu-option-text">Data Saver
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="dataSaverToggle">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
+            
             <div class="menu-option" onclick="window.location.href='help.html'">
                 <div class="menu-option-icon" style="background-color: #4CAF50;">
                     <i class="fas fa-question-circle"></i>
@@ -844,12 +734,7 @@
                 </div>
                 <div class="menu-option-text">Request Verification</div>
             </div>
-            <div class="menu-option" onclick="window.location.href='blocking.html'">
-                <div class="menu-option-icon" style="background-color: #F44336;">
-                    <i class="fas fa-ban"></i>
-                </div>
-                <div class="menu-option-text">Blocking</div>
-            </div>
+          
             <div class="menu-option" onclick="window.location.href='report.html'">
                 <div class="menu-option-icon" style="background-color: #795548;">
                     <i class="fas fa-flag"></i>
@@ -869,36 +754,49 @@
 <script>
       
 
-     let viewChannel = null;
+   let viewChannel = null;
 let likeChannel = null;
 
+// Initialize page with preloader
 document.addEventListener('DOMContentLoaded', async () => {
-    showFeed();
-    await loadPosts();
-
-    // Initialize real-time subscriptions
-    viewChannel = subscribeToViewUpdates();
-    likeChannel = subscribeToLikeUpdates();
-
-    if (typeof initializeNotificationSystem === 'function') {
-        await initializeNotificationSystem();
-    }
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            refreshNotificationState();
+    try {
+        // Show preloader
+        document.getElementById('full-page-loader').style.display = 'flex';
+        
+        // Check authentication
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+            window.location.href = 'login.html';
+            return;
         }
-    });
-});
 
-async function refreshNotificationState() {
-    if (typeof loadUnreadNotificationsCount === 'function') {
-        await loadUnreadNotificationsCount();
+        // Initialize page
+        showFeed();
+        await loadPosts();
+
+        // Real-time subscriptions
+        viewChannel = subscribeToViewUpdates();
+        likeChannel = subscribeToLikeUpdates();
+
+        if (typeof initializeNotificationSystem === 'function') {
+            await initializeNotificationSystem();
+        }
+
+        // Setup back button handler for menu
+        window.onpopstate = function(event) {
+            const menuPage = document.getElementById('menuPage');
+            if (menuPage.style.display === 'block') {
+                menuPage.style.display = 'none';
+            }
+        };
+
+    } catch (error) {
+        console.error('Initialization error:', error);
+    } finally {
+        // Hide preloader
+        document.getElementById('full-page-loader').style.display = 'none';
     }
-    if (typeof setupNotificationListener === 'function') {
-        await setupNotificationListener();
-    }
-}
+});
 
 // VIEW TOGGLE FUNCTIONS
 function showFeed() {
@@ -1000,9 +898,15 @@ window.addEventListener('message', (event) => {
     }
 });
 
-// LOAD POSTS
+// LOAD POSTS with loading spinner
 async function loadPosts() {
     try {
+        // Show loading spinner
+        const loadingSpinner = document.createElement('div');
+        loadingSpinner.className = 'post-loading-spinner';
+        loadingSpinner.innerHTML = '<div class="spinner"></div>';
+        document.getElementById('posts-container').appendChild(loadingSpinner);
+
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError) throw authError;
 
@@ -1062,48 +966,38 @@ function subscribeToViewUpdates() {
     return channel;
 }
 
-// ✅ NEW: REAL-TIME LIKE TRACKING
+// REAL-TIME LIKE TRACKING
 function subscribeToLikeUpdates() {
-    const channel = supabase
+    return supabase
         .channel('post_likes')
         .on('postgres_changes', {
             event: '*',
             schema: 'public',
-            table: 'likes',
-        }, async (payload) => {
-            const postId = payload.new.post_id;
-            await updatePostLikeState(postId);
+            table: 'posts',
+            filter: 'id=eq.56aaaeef-7e05-4fac-ad5f-3e9095329a44'
+        }, (payload) => {
+            const postElement = document.querySelector(`post-component[post-data*='"id":"${payload.new.id}"']`);
+            if (postElement) {
+                const likeBtn = postElement.querySelector('.like-action');
+                if (likeBtn) {
+                    const countEl = likeBtn.querySelector('.like-text');
+                    if (countEl) countEl.textContent = payload.new.like_count;
+                }
+            }
         })
         .subscribe();
-    return channel;
 }
 
-function subscribeToLikeUpdates() {
-  return supabase
-    .channel('post_likes')
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'posts',
-      filter: 'id=eq.56aaaeef-7e05-4fac-ad5f-3e9095329a44'
-    }, (payload) => {
-      // Update UI with new like_count
-      const postElement = document.querySelector(`post-component[post-data*='"id":"${payload.new.id}"']`);
-      if (postElement) {
-        const likeBtn = postElement.querySelector('.like-action');
-        if (likeBtn) {
-          const countEl = likeBtn.querySelector('.like-text');
-          if (countEl) countEl.textContent = payload.new.like_count;
-        }
-      }
-    })
-    .subscribe();
-}
-
-// MENU
+// MENU with back button handling
 function toggleMenu() {
     const menuPage = document.getElementById('menuPage');
-    menuPage.style.display = menuPage.style.display === 'block' ? 'none' : 'block';
+    if (menuPage.style.display === 'block') {
+        menuPage.style.display = 'none';
+    } else {
+        menuPage.style.display = 'block';
+        // Add to history for back button
+        history.pushState({ menuOpen: true }, '');
+    }
 }
 
 // LOGOUT
@@ -1118,18 +1012,6 @@ async function logout() {
     }
 }
 
-// DARK MODE
-const darkModeToggle = document.getElementById('darkModeToggle');
-darkModeToggle.addEventListener('change', function () {
-    document.body.classList.toggle('dark-mode', this.checked);
-    localStorage.setItem('darkMode', this.checked);
-});
-
-if (localStorage.getItem('darkMode') === 'true') {
-    document.body.classList.add('dark-mode');
-    darkModeToggle.checked = true;
-}
-
 // LAZY LOAD POST COMPONENT
 if (!customElements.get('post-component')) {
     console.error('Post component not registered! Loading posts.js');
@@ -1137,13 +1019,7 @@ if (!customElements.get('post-component')) {
     script.src = 'posts.js';
     document.body.appendChild(script);
     script.onload = loadPosts;
-}       
-
-
-
-
-
-
+}
 
 </script>
 
