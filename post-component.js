@@ -188,37 +188,14 @@ class PostComponent extends HTMLElement {
   }
 
   setupEventListeners(post) {
-  // Like action
-  // In your setupEventListeners method:
-this.querySelector('.like-action')?.addEventListener('click', async (e) => {
-  e.stopPropagation();
-  const likeBtn = e.currentTarget;
-  const isLiked = likeBtn.classList.contains('liked');
-  
-  // Optimistic UI update
-  likeBtn.classList.toggle('liked');
-  const icon = likeBtn.querySelector('i');
-  icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
-  
-  // Update count immediately
-  const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
-  if (countEl) {
-    let count = parseInt(countEl.textContent) || 0;
-    countEl.textContent = isLiked ? count - 1 : count + 1;
-  }
-  
-  const { success } = await this.toggleLike(post);
-  
-  if (!success) {
-    // Revert UI if API call failed
-    likeBtn.classList.toggle('liked');
-    icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-    if (countEl) {
-      let count = parseInt(countEl.textContent) || 0;
-      countEl.textContent = isLiked ? count + 1 : count - 1;
-    }
-  }
-});
+    // Like action
+    this.querySelector('.like-action')?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const result = await this.toggleLike(post);
+      if (!result.success) {
+        this.revertLikeUI(e.currentTarget, post.is_liked);
+      }
+    });
 
     // More options
     this.querySelector('.post-more')?.addEventListener('click', (e) => {
@@ -270,15 +247,15 @@ this.querySelector('.like-action')?.addEventListener('click', async (e) => {
     });
   }
 
-  updateLikeUI(likeBtn, isLiked) {
-  likeBtn.classList.toggle('liked', isLiked);
-  const icon = likeBtn.querySelector('i');
-  icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-
-  const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
-  if (countEl) {
-    let count = parseInt(countEl.textContent) || 0;
-    countEl.textContent = isLiked ? count + 1 : count - 1;
+  revertLikeUI(likeBtn, wasLiked) {
+    likeBtn.classList.toggle('liked', wasLiked);
+    const icon = likeBtn.querySelector('i');
+    icon.className = wasLiked ? 'fas fa-heart' : 'far fa-heart';
+    const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
+    if (countEl) {
+      let count = parseInt(countEl.textContent) || 0;
+      countEl.textContent = wasLiked ? count + 1 : count - 1;
+    }
   }
 }
 
