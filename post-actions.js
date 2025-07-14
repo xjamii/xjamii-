@@ -1,56 +1,83 @@
 class PostActions {
-  static likeLocks = new Set();
+  static async toggleLike(post) {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        this.showErrorToast('Please login to like posts');
+        return { success: false, error: 'Not authenticated' };
+      }
+      
+      const currentUserId = user.id;
 
-  
-          static async toggleLike(post) {
-  try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      console.error('Authentication error:', authError);
-      return { success: false, error: 'Not authenticated' };
+      if (!post.is_liked) {
+        const { data, error } = await supabase
+          .from('likes')
+          .insert([{ post_id: post.id, profile_id: currentUserId }])
+          .select();
+        
+        if (error) {
+          if (error.code === '23505') { // Unique violation error code
+            console.log('User already liked this post');
+            this.showErrorToast('You already liked this post');
+            return { success: false, error: 'Already liked' };
+          }
+          console.error('Like insertion error:', error);
+          throw error;
+        }
+        
+        console.log('Like added successfully:', data);
+        await supabase.rpc('increment_like_count', { post_id: post.id });
+        return { success: true, newLikeState: true };
+      } else {
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('post_id', post.id)
+          .eq('profile_id', currentUserId);
+        
+        if (error) {
+          console.error('Like deletion error:', error);
+          throw error;
+        }
+        
+        console.log('Like removed successfully');
+        await supabase.rpc('decrement_like_count', { post_id: post.id });
+        return { success: true, newLikeState: false };
+      }
+    } catch (err) {
+      console.error('Error in toggleLike:', err);
+      this.showErrorToast('Failed to update like. Please try again.');
+      return { success: false, error: err.message };
     }
-    
-    const currentUserId = user.id;
-
-    // First check if like already exists
-    const { data: existingLike, error: checkError } = await supabase
-      .from('likes')
-      .select('*')
-      .eq('post_id', post.id)
-      .eq('profile_id', currentUserId)
-      .maybeSingle();
-
-    if (checkError) throw checkError;
-
-    if (existingLike) {
-      // Like exists - we should remove it
-      const { error } = await supabase
-        .from('likes')
-        .delete()
-        .eq('post_id', post.id)
-        .eq('profile_id', currentUserId);
-      
-      if (error) throw error;
-      
-      await supabase.rpc('decrement_like_count', { post_id: post.id });
-      return { success: true, newLikeState: false };
-    } else {
-      // Like doesn't exist - add it
-      const { error } = await supabase
-        .from('likes')
-        .insert([{ post_id: post.id, profile_id: currentUserId }]);
-      
-      if (error) throw error;
-      
-      await supabase.rpc('increment_like_count', { post_id: post.id });
-      return { success: true, newLikeState: true };
-    }
-  } catch (err) {
-    console.error('Error in toggleLike:', err);
-    return { success: false, error: err.message };
   }
-}
+
+  static showErrorToast(message) {
+    // Remove any existing error toasts
+    document.querySelectorAll('.error-toast').forEach(el => el.remove());
+    
+    const toast = document.createElement('div');
+    toast.className = 'error-toast';
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Make toast visible
+    setTimeout(() => {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateY(0)';
+    }, 10);
+    
+    // Remove toast after 3 seconds
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(20px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // ... rest of your existing PostActions code ...
 
   static showMoreOptions(e, post) {
     const isOwner = true; // Replace with actual owner check
