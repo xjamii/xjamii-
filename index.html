@@ -1074,46 +1074,26 @@ function subscribeToLikeUpdates() {
     return channel;
 }
 
-async function updatePostLikeState(postId) {
-    try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data: post, error } = await supabase
-            .from('posts')
-            .select(`
-                *,
-                profile:user_id (username, full_name, avatar_url, is_verified),
-                media:post_media (media_url, media_type)
-            `)
-            .eq('id', postId)
-            .single();
-
-        if (error) throw error;
-
-        const { data: userLike, error: likeError } = await supabase
-            .from('likes')
-            .select('*')
-            .eq('post_id', postId)
-            .eq('profile_id', user.id)
-            .single();
-
-        const isLiked = !!userLike && !likeError;
-        const likeCount = post.like_count;
-
-        const postElement = document.querySelector(`post-component[post-data*='"id":"${postId}"']`);
-        if (postElement) {
-            const likeBtn = postElement.querySelector('.like-action');
-            if (likeBtn) {
-                likeBtn.classList.toggle('liked', isLiked);
-                const icon = likeBtn.querySelector('i');
-                if (icon) icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-
-                const countEl = likeBtn.querySelector('.like-text') || likeBtn.querySelector('span');
-                if (countEl) countEl.textContent = likeCount;
-            }
+function subscribeToLikeUpdates() {
+  return supabase
+    .channel('post_likes')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'posts',
+      filter: 'id=eq.56aaaeef-7e05-4fac-ad5f-3e9095329a44'
+    }, (payload) => {
+      // Update UI with new like_count
+      const postElement = document.querySelector(`post-component[post-data*='"id":"${payload.new.id}"']`);
+      if (postElement) {
+        const likeBtn = postElement.querySelector('.like-action');
+        if (likeBtn) {
+          const countEl = likeBtn.querySelector('.like-text');
+          if (countEl) countEl.textContent = payload.new.like_count;
         }
-    } catch (error) {
-        console.error('Error updating post like state:', error);
-    }
+      }
+    })
+    .subscribe();
 }
 
 // MENU
