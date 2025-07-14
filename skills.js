@@ -2,8 +2,10 @@ class SkillsEditor {
     constructor() {
         this.selectedSkills = [];
         this.allSkills = [
+            // Default skill first
+            'Aviation Professional',
             // Flight Operations
-            'Aviation Professional', 'CRM', 'TEM', 'SOP Development', 'Flight Planning', 'Fuel Management',
+            'CRM', 'TEM', 'SOP Development', 'Flight Planning', 'Fuel Management',
             'Navigation', 'Instrument Flying', 'MCC', 'LOFT',
             
             // Technical Skills
@@ -123,7 +125,7 @@ class SkillsEditor {
             if (!error && profile && profile.skills) {
                 this.selectedSkills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
             } else {
-                // If no skills, set default "Aviation Professional" skill
+                // Set default "Aviation Professional" skill if no skills exist
                 this.selectedSkills = ['Aviation Professional'];
             }
             
@@ -208,14 +210,15 @@ function initSkillsEditor() {
         const skillsSection = document.getElementById('skills-section');
         const sectionTitle = skillsSection.querySelector('.section-title');
         
-        if (sectionTitle) {
+        if (sectionTitle && !sectionTitle.querySelector('.skills-edit-btn')) {
             const editButton = document.createElement('button');
             editButton.className = 'skills-edit-btn';
             editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
             editButton.addEventListener('click', () => window.skillsEditor.open());
             
-            // Only show edit button to profile owner
-            if (isProfileOwner) {
+            // Only show edit button if viewing own profile
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && user.id === profileId) {
                 sectionTitle.appendChild(editButton);
             }
         }
