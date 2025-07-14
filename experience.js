@@ -384,17 +384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { data: { user } } = await supabase.auth.getUser();
         experienceEditor.isProfileOwner = user && user.id === profileId;
         
-        // Add edit button to section header if owner
-        if (experienceEditor.isProfileOwner) {
-            const sectionTitle = document.querySelector('#experience-section .section-title');
-            if (sectionTitle) {
-                const editButton = document.createElement('button');
-                editButton.className = 'experience-edit-btn';
-                editButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit';
-                editButton.addEventListener('click', () => window.experienceEditor.open());
-                sectionTitle.appendChild(editButton);
-            }
-        }
+        
         
         // Load experiences after a short delay to allow other elements to initialize
         setTimeout(() => {
