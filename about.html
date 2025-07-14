@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Aviationin Community | Global Aviation Network</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a4b8c;
+            --secondary: #e8a317;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --dark-blue: #0d2d59;
+            --text-light: #6c757d;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--dark);
+            line-height: 1.7;
+            background-color: #f9fbfd;
+        }
+        
+        /* Logo Header */
+        .logo-header {
+            text-align: center;
+            padding: 2rem 0;
+            background: white;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .logo-header img {
+            height: 50px;
+            filter: brightness(0) saturate(100%) invert(22%) sepia(55%) saturate(1553%) hue-rotate(194deg) brightness(93%) contrast(91%);
+        }
+        
+        /* Header */
+        .community-header {
+            background: linear-gradient(135deg, var(--primary), var(--dark-blue));
+            color: white;
+            padding: 4rem 2rem 3rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .community-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(45deg, 
+                    transparent 65%, 
+                    rgba(232, 163, 23, 0.1) 65%, 
+                    rgba(232, 163, 23, 0.1) 70%, 
+                    transparent 70%),
+                linear-gradient(-45deg, 
+                    transparent 65%, 
+                    rgba(232, 163, 23, 0.1) 65%, 
+                    rgba(232, 163, 23, 0.1) 70%, 
+                    transparent 70%);
+            background-size: 40px 40px;
+            opacity: 0.3;
+        }
+        
+        .community-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .community-header p {
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        
+        /* Main Content */
+        .community-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        
+        .section-divider {
+            text-align: center;
+            margin: 3rem 0;
+            position: relative;
+        }
+        
+        .section-divider span {
+            background: #f9fbfd;
+            padding: 0 1.5rem;
+            position: relative;
+            z-index: 1;
+            color: var(--primary);
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        .section-divider::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(26, 75, 140, 0.3), transparent);
+        }
+        
+        /* Community Features */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+            border-top: 3px solid var(--secondary);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-card h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .feature-card p {
+            color: var(--text-light);
+        }
+        
+        /* Community Guidelines */
+        .guidelines {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+            margin: 3rem 0;
+        }
+        
+        .guidelines h2 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .guidelines-list {
+            list-style-type: none;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .guidelines-list li {
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .guidelines-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .guideline-icon {
+            color: var(--secondary);
+            margin-right: 1rem;
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+        }
+        
+        .guideline-content h4 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .guideline-content p {
+            color: var(--text-light);
+        }
+        
+        /* Stats */
+        .community-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            text-align: center;
+            margin: 4rem 0;
+        }
+        
+        .stat-item {
+            padding: 1.5rem;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        /* CTA */
+        .community-cta {
+            text-align: center;
+            margin-top: 4rem;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.8rem 2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: 2px solid var(--primary);
+        }
+        
+        .btn-primary:hover {
+            background: transparent;
+            color: var(--primary);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .community-header h1 {
+                font-size: 2rem;
+            }
+            
+            .community-header p {
+                font-size: 1rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Logo Header -->
+    <div class="logo-header">
+        <img src="https://i.postimg.cc/gkL0Qdsw/file-00000000000061f8b89b5a1f67f8b937.png" alt="Aviationin Logo">
+    </div>
+
+    <!-- Header -->
+    <header class="community-header">
+        <h1>Aviationin Community</h1>
+        <p>The global platform connecting aviation professionals across all sectors and specialties</p>
+    </header>
+
+    <!-- Main Content -->
+    <div class="community-container">
+        <section>
+            <h2 style="text-align: center; color: var(--primary); margin-bottom: 1.5rem;">Our Aviation Network</h2>
+            <p style="text-align: center; max-width: 800px; margin: 0 auto 2rem; color: var(--text-light);">
+                Aviationin is the premier professional community for the global aviation industry, 
+                connecting operators, brokers, pilots, engineers, and service providers worldwide. 
+                Our platform facilitates meaningful connections, knowledge sharing, and business opportunities.
+            </p>
+            
+            <div class="section-divider">
+                <span>Community Features</span>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h3>Professional Networking</h3>
+                    <p>Connect with verified aviation professionals across all sectors and specialties in our exclusive network.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <h3>Business Opportunities</h3>
+                    <p>Discover and create new business partnerships with operators, brokers, and service providers.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h3>Specialized Discussions</h3>
+                    <p>Participate in topic-specific forums covering all aspects of aviation operations and services.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h3>Industry Events</h3>
+                    <p>Access exclusive webinars, meetups, and conferences tailored for aviation professionals.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3>Resource Library</h3>
+                    <p>Share and access technical documents, regulatory updates, and operational guides.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h3>Verified Members</h3>
+                    <p>All community members undergo professional verification to maintain quality standards.</p>
+                </div>
+            </div>
+        </section>
+        
+        <section class="guidelines">
+            <h2>Community Standards</h2>
+            <ul class="guidelines-list">
+                <li>
+                    <div class="guideline-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="guideline-content">
+                        <h4>Professional Conduct</h4>
+                        <p>All interactions must maintain the highest professional standards expected in the aviation industry.</p>
+                    </div>
+                </li>
+                <li>
+                    <div class="guideline-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="guideline-content">
+                        <h4>Industry Focus</h4>
+                        <p>Content and discussions must be relevant to professional aviation operations and services.</p>
+                    </div>
+                </li>
+                <li>
+                    <div class="guideline-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="guideline-content">
+                        <h4>Confidentiality</h4>
+                        <p>Respect all proprietary information and non-disclosure agreements between members.</p>
+                    </div>
+                </li>
+                <li>
+                    <div class="guideline-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="guideline-content">
+                        <h4>No Solicitation</h4>
+                        <p>Unsolicited commercial messages are prohibited outside designated marketplace areas.</p>
+                    </div>
+                </li>
+                <li>
+                    <div class="guideline-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="guideline-content">
+                        <h4>Safety First</h4>
+                        <p>All discussions must promote and reflect aviation safety best practices.</p>
+                    </div>
+                </li>
+            </ul>
+        </section>
+        
+        <div class="section-divider">
+            <span>By The Numbers</span>
+        </div>
+        
+        <div class="community-stats">
+            <div class="stat-item">
+                <div class="stat-number">50,000+</div>
+                <div class="stat-label">Aviation Professionals</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">120+</div>
+                <div class="stat-label">Countries</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">15+</div>
+                <div class="stat-label">Aviation Sectors</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Global Access</div>
+            </div>
+        </div>
+        
+        <div class="community-cta">
+            <h3 style="color: var(--primary); margin-bottom: 1rem;">Ready to Join Our Aviation Community?</h3>
+            <p style="color: var(--text-light); max-width: 600px; margin: 0 auto;">Connect with the most comprehensive network of aviation professionals worldwide.</p>
+            <div class="cta-buttons">
+                <a href="signup.html" class="btn btn-primary">Create Account</a>
+                <a href="login.html" class="btn btn-secondary">Member Login</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
