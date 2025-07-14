@@ -1,52 +1,56 @@
 class PostActions {
   static likeLocks = new Set();
 
-  static async toggleLike(post, buttonElement, countElement) {
-    const postId = post.id;
-
-    if (this.likeLocks.has(postId)) return; // prevent spamming
-    this.likeLocks.add(postId);
-
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) throw new Error('Not authenticated');
-
-      const userId = user.id;
-      const isLiking = !post.is_liked;
-
-      if (isLiking) {
-        await supabase
-          .from('likes')
-          .insert([{ post_id: postId, profile_id: userId }])
-          .select();
-
-        await supabase.rpc('increment_like_count', { post_id: postId });
-      } else {
-        await supabase
-          .from('likes')
-          .delete()
-          .eq('post_id', postId)
-          .eq('profile_id', userId);
-
-        await supabase.rpc('decrement_like_count', { post_id: postId });
-      }
-
-      // Delay UI update to prevent fast double click
-      setTimeout(() => {
-        post.is_liked = isLiking;
-        post.like_count += isLiking ? 1 : -1;
-
-        buttonElement.classList.toggle('liked', post.is_liked);
-        countElement.textContent = post.like_count;
-
-        this.likeLocks.delete(postId);
-      }, 1000); // 1 second delay
-
-    } catch (err) {
-      console.warn('Like/unlike error:', err.message || err);
-      this.likeLocks.delete(postId);
+  
+          static async toggleLike(post) {
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.error('Authentication error:', authError);
+      return { success: false, error: 'Not authenticated' };
     }
+    
+    const currentUserId = user.id;
+
+    // First check if like already exists
+    const { data: existingLike, error: checkError } = await supabase
+      .from('likes')
+      .select('*')
+      .eq('post_id', post.id)
+      .eq('profile_id', currentUserId)
+      .maybeSingle();
+
+    if (checkError) throw checkError;
+
+    if (existingLike) {
+      // Like exists - we should remove it
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .eq('post_id', post.id)
+        .eq('profile_id', currentUserId);
+      
+      if (error) throw error;
+      
+      await supabase.rpc('decrement_like_count', { post_id: post.id });
+      return { success: true, newLikeState: false };
+    } else {
+      // Like doesn't exist - add it
+      const { error } = await supabase
+        .from('likes')
+        .insert([{ post_id: post.id, profile_id: currentUserId }]);
+      
+      if (error) throw error;
+      
+      await supabase.rpc('increment_like_count', { post_id: post.id });
+      return { success: true, newLikeState: true };
+    }
+  } catch (err) {
+    console.error('Error in toggleLike:', err);
+    return { success: false, error: err.message };
   }
+}
 
   static showMoreOptions(e, post) {
     const isOwner = true; // Replace with actual owner check
