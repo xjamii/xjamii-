@@ -188,14 +188,29 @@ class PostComponent extends HTMLElement {
   }
 
   setupEventListeners(post) {
-    // Like action
-    this.querySelector('.like-action')?.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const result = await this.toggleLike(post);
-      if (!result.success) {
-        this.revertLikeUI(e.currentTarget, post.is_liked);
+  // Like action
+  this.querySelector('.like-action')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const likeBtn = e.currentTarget;
+
+    // Prevent rapid double-clicks
+    if (likeBtn.disabled) return;
+    likeBtn.disabled = true;
+
+    const result = await this.toggleLike(post);
+
+    // Delay UI update to make user think it's "processing"
+    setTimeout(() => {
+      if (result.success) {
+        post.is_liked = result.newLikeState;
+        this.updateLikeUI(likeBtn, result.newLikeState); // New helper below
+      } else {
+        this.revertLikeUI(likeBtn, post.is_liked);
       }
-    });
+      likeBtn.disabled = false;
+    }, 1000); // 1 second delay
+  });
+}
 
     // More options
     this.querySelector('.post-more')?.addEventListener('click', (e) => {
@@ -247,15 +262,15 @@ class PostComponent extends HTMLElement {
     });
   }
 
-  revertLikeUI(likeBtn, wasLiked) {
-    likeBtn.classList.toggle('liked', wasLiked);
-    const icon = likeBtn.querySelector('i');
-    icon.className = wasLiked ? 'fas fa-heart' : 'far fa-heart';
-    const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
-    if (countEl) {
-      let count = parseInt(countEl.textContent) || 0;
-      countEl.textContent = wasLiked ? count + 1 : count - 1;
-    }
+  updateLikeUI(likeBtn, isLiked) {
+  likeBtn.classList.toggle('liked', isLiked);
+  const icon = likeBtn.querySelector('i');
+  icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+
+  const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
+  if (countEl) {
+    let count = parseInt(countEl.textContent) || 0;
+    countEl.textContent = isLiked ? count + 1 : count - 1;
   }
 }
 
