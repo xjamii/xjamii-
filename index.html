@@ -623,6 +623,16 @@
     animation: spin 1s linear infinite;
     margin: 0 auto 15px;
 }
+      .logo {
+            height: 70px;
+            filter: brightness(0) saturate(100%) invert(22%) sepia(55%) saturate(1553%) hue-rotate(194deg) brightness(93%) contrast(91%);
+            transition: filter 0.3s;
+        }
+
+         /* Add this to your existing styles */
+    .posts-container {
+      padding-bottom: 100px; /* Give space for footer */
+    }
     </style>
 </head>
 <body>
@@ -767,16 +777,17 @@
 
       
 <script>
-// Initialize Supabase
+   // Initialize Supabase
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// Pagination variables
-let postsPage = 0;
+// Pagination variables (updated to match search page)
+let postsPage = 1; // Start from page 1 like search page
 const POSTS_PER_PAGE = 10;
 let hasMorePosts = true;
 let isPostsLoading = false;
+let isInitialLoad = true;
 let viewChannel = null;
 let likeChannel = null;
 
@@ -795,6 +806,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Initialize page
         showFeed();
+        
+        // Add optimized scroll listener
+        let isScrolling;
+        window.addEventListener('scroll', () => {
+            clearTimeout(isScrolling);
+            isScrolling = setTimeout(() => {
+                handlePostsScroll();
+            }, 100);
+        }, { passive: true });
+        
         await loadPosts();
 
         // Real-time subscriptions
@@ -812,9 +833,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 menuPage.style.display = 'none';
             }
         };
-
-        // Add scroll event listener
-        window.addEventListener('scroll', handlePostsScroll);
 
     } catch (error) {
         console.error('Initialization error:', error);
@@ -859,7 +877,7 @@ function updateActiveNavIcon(activeIcon) {
     }
 }
 
-// LOAD POSTS with pagination
+// LOAD POSTS with pagination (updated to match search page exactly)
 async function loadPosts(isLoadMore = false) {
     if (isLoadMore && !hasMorePosts) return;
     if (isPostsLoading) return;
@@ -869,13 +887,17 @@ async function loadPosts(isLoadMore = false) {
     try {
         if (isLoadMore) {
             document.getElementById('posts-scroll-loader').style.display = 'block';
-        } else {
+        } else if (isInitialLoad) {
             // Show initial loading state
             const loadingSpinner = document.createElement('div');
             loadingSpinner.className = 'post-loading-spinner';
             loadingSpinner.innerHTML = '<div class="spinner"></div>';
             document.getElementById('posts-container').appendChild(loadingSpinner);
         }
+
+        // Calculate range exactly like search page
+        const from = (postsPage - 1) * POSTS_PER_PAGE;
+        const to = (postsPage * POSTS_PER_PAGE) - 1;
 
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError) throw authError;
@@ -888,7 +910,7 @@ async function loadPosts(isLoadMore = false) {
                 media:post_media (media_url, media_type)
             `)
             .order('created_at', { ascending: false })
-            .range(postsPage * POSTS_PER_PAGE, (postsPage + 1) * POSTS_PER_PAGE - 1);
+            .range(from, to);
 
         if (postsError) throw postsError;
 
@@ -908,13 +930,13 @@ async function loadPosts(isLoadMore = false) {
         const postsContainer = document.getElementById('posts-container');
         
         // Clear container only for initial load
-        if (!isLoadMore) {
+        if (!isLoadMore && !isInitialLoad) {
             postsContainer.innerHTML = '';
         }
         
         if (posts.length === 0) {
             hasMorePosts = false;
-            if (!isLoadMore) {
+            if (postsPage === 1) {
                 postsContainer.innerHTML = '<div class="no-posts">No posts found</div>';
             }
             return;
@@ -939,41 +961,27 @@ async function loadPosts(isLoadMore = false) {
         }
     } finally {
         isPostsLoading = false;
+        isInitialLoad = false;
         document.getElementById('posts-scroll-loader').style.display = 'none';
         const spinner = document.querySelector('.post-loading-spinner');
         if (spinner) spinner.remove();
     }
 }
 
-// Infinite scroll handler - UPDATED VERSION
+// Infinite scroll handler (matches search page exactly)
 function handlePostsScroll() {
-    // Get the relevant elements
     const postsContainer = document.getElementById('posts-container');
-    const scrollLoader = document.getElementById('posts-scroll-loader');
+    if (!postsContainer) return;
     
-    // Calculate positions
+    const scrollPosition = window.innerHeight + window.scrollY;
     const containerBottom = postsContainer.offsetTop + postsContainer.offsetHeight;
-    const scrollPosition = window.innerHeight + window.pageYOffset;
+    const threshold = 100; // Same as search page
     
-    // Check if we're near the bottom (with 100px buffer)
-    const nearBottom = scrollPosition >= (containerBottom - 100);
-    
-    // Debug logging (you can remove this after testing)
-    console.log('Scroll check:', {
-        containerBottom,
-        scrollPosition,
-        nearBottom,
-        hasMorePosts,
-        isPostsLoading
-    });
-    
-    if (nearBottom && hasMorePosts && !isPostsLoading) {
-        // Add a small delay and throttle
-        setTimeout(() => {
-            if (!isPostsLoading) { // Double check in case another scroll event fired
-                loadPosts(true);
-            }
-        }, 200);
+    if (scrollPosition >= containerBottom - threshold && 
+        hasMorePosts && 
+        !isPostsLoading &&
+        !isInitialLoad) {
+        loadPosts(true);
     }
 }
 
@@ -1084,7 +1092,6 @@ function toggleMenu() {
         menuPage.style.display = 'none';
     } else {
         menuPage.style.display = 'block';
-        // Add to history for back button
         history.pushState({ menuOpen: true }, '');
     }
 }
@@ -1114,7 +1121,7 @@ window.addEventListener('message', (event) => {
     if (event.data.type === 'updateNotificationBadge') {
         updateNotificationBadge(event.data.count);
     }
-});
+});     
 </script>
 
 
