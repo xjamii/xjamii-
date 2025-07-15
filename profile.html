@@ -766,11 +766,8 @@ body {
     try {
       // First ensure post component is available
       if (!customElements.get('post-component')) {
-        await loadScript('Post-Utils.js');
-await loadScript('post-actions.js');
-await loadScript('post-component.js');
-
-      
+        await loadScript('post-component.js');
+      }
       
       // Then load the profile
       await loadProfile();
@@ -1192,7 +1189,7 @@ await loadScript('post-component.js');
 <script src="post-comment.js"></script>
 <script src="post-view-tracking.js"></script>
 <script src="post-component.js"></script>
-        
+        <script src="posts.js"></script>
         
       
       <script src="skills.js"></script>
