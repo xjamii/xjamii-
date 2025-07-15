@@ -269,11 +269,6 @@
 .full-page-loader {
     transition: opacity 0.3s ease;
 }
-
-       /* Add this to your existing styles */
-    .posts-container {
-      padding-bottom: 100px; /* Give space for footer */
-    }   
     </style>
 </head>
 <body>
@@ -343,8 +338,7 @@
     </div>
 
     <script>
-        
-               // Initialize Supabase
+    // Initialize Supabase
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -371,23 +365,17 @@ const elements = {
 let currentTab = 'profiles';
 let searchTimeout;
 let lastSearchTerm = '';
-let profilesPage = 0;
-let postsPage = 0;
-let isProfilesLoading = false;
-let isPostsLoading = false;
-let hasMoreProfiles = true;
-let hasMorePosts = true;
 let currentUserId = null;
 
-        
-// Check for dark mode preference
-function checkDarkMode() {
-    const darkModeEnabled = localStorage.getItem('darkMode') === 'true' || 
-                          (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    if (darkModeEnabled) {
-        elements.body.classList.add('dark-mode');
-    }
-}
+// Pagination variables
+let profilesPage = 0;
+let postsPage = 0;
+const ITEMS_PER_PAGE = 20;
+let hasMoreProfiles = true;
+let hasMorePosts = true;
+let isProfilesLoading = false;
+let isPostsLoading = false;
+
 // Event Listeners
 elements.searchInput.addEventListener('input', handleSearchInput);
 
@@ -400,32 +388,28 @@ elements.tabs.forEach(tab => {
         elements.sections.forEach(section => section.classList.remove('active'));
         document.getElementById(`${currentTab}-section`).classList.add('active');
         
+        // Reset pagination for the new tab
         if (currentTab === 'profiles') {
-            profilesPage = 0;
-            hasMoreProfiles = true;
+            resetProfilesSearch();
+            if (lastSearchTerm.trim()) {
+                performSearch(lastSearchTerm);
+            } else {
+                loadSuggestedProfiles();
+            }
         } else {
-            postsPage = 0;
-            hasMorePosts = true;
-        }
-        
-        if (lastSearchTerm.trim()) {
-            performSearch(lastSearchTerm);
-        } else if (currentTab === 'profiles') {
-            loadSuggestedProfiles();
+            resetPostsSearch();
+            if (lastSearchTerm.trim()) {
+                performSearch(lastSearchTerm);
+            }
         }
     });
 });
 
-// Infinite scroll
-window.addEventListener('scroll', handleScroll);
-
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    // Show preloader only for initial page load
     elements.fullPageLoader.style.display = 'flex';
     
     try {
-        // Check authentication
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         
         if (authError || !user) {
@@ -440,28 +424,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Initialization error:', error);
         window.location.href = 'login.html';
     } finally {
-        // Hide full-page preloader when done
         elements.fullPageLoader.style.display = 'none';
     }
 });
 
-// Functions
-async function handleScroll() {
-    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    const nearBottom = scrollTop + clientHeight >= scrollHeight - 500;
-
-    if (nearBottom && !isProfilesLoading && !isPostsLoading) {
-        if (currentTab === 'profiles' && hasMoreProfiles && lastSearchTerm) {
-            profilesPage++;
-            await loadMoreProfiles();
-        } else if (currentTab === 'posts' && hasMorePosts && lastSearchTerm) {
-            postsPage++;
-            await loadMorePosts();
-        }
-    }
-}
-
-async function handleSearchInput(e) {
+// Search Functions
+function handleSearchInput(e) {
     const searchTerm = e.target.value.trim();
     lastSearchTerm = searchTerm;
     
@@ -479,13 +447,9 @@ async function handleSearchInput(e) {
     elements.suggestionsContainer.style.display = 'none';
     
     if (currentTab === 'profiles') {
-        profilesPage = 0;
-        hasMoreProfiles = true;
-        elements.profilesResults.innerHTML = '';
+        resetProfilesSearch();
     } else {
-        postsPage = 0;
-        hasMorePosts = true;
-        elements.postsResults.innerHTML = '';
+        resetPostsSearch();
     }
     
     showLoading();
@@ -493,6 +457,22 @@ async function handleSearchInput(e) {
     searchTimeout = setTimeout(() => {
         performSearch(searchTerm);
     }, 500);
+}
+
+function resetProfilesSearch() {
+    profilesPage = 0;
+    hasMoreProfiles = true;
+    isProfilesLoading = false;
+    elements.profilesResults.innerHTML = '';
+    elements.profilesScrollLoader.style.display = 'none';
+}
+
+function resetPostsSearch() {
+    postsPage = 0;
+    hasMorePosts = true;
+    isPostsLoading = false;
+    elements.postsResults.innerHTML = '';
+    elements.postsScrollLoader.style.display = 'none';
 }
 
 function showLoading() {
@@ -540,126 +520,182 @@ async function performSearch(searchTerm) {
     }
 }
 
-async function searchProfiles(searchTerm) {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`full_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
-        .limit(20);
-    
-    if (error) throw error;
-    
-    elements.profilesResults.innerHTML = '';
-    
-    if (!data || data.length === 0) {
-        elements.profilesNoResults.innerHTML = `
-            <i class="fas fa-user-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <div>No professionals found for "${searchTerm}"</div>
-        `;
+function showNoResults() {
+    if (currentTab === 'profiles') {
         elements.profilesNoResults.style.display = 'block';
-        return;
-    }
-    
-    appendProfilesResults(data);
-    
-    if (currentUserId) {
-        await updateConnectionStatuses(data);
-    }
-}
-
-async function searchPosts(searchTerm) {
-    const { data, error } = await supabase
-        .from('posts')
-        .select(`
-            *,
-            profile:profiles(*),
-            media:post_media(*)
-        `)
-        .ilike('content', `%${searchTerm}%`)
-        .order('created_at', { ascending: false })
-        .limit(20);
-    
-    if (error) throw error;
-    
-    elements.postsResults.innerHTML = '';
-    
-    if (!data || data.length === 0) {
-        elements.postsNoResults.innerHTML = `
-            <i class="fas fa-comment-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <div>No posts found for "${searchTerm}"</div>
-        `;
+    } else {
         elements.postsNoResults.style.display = 'block';
-        return;
     }
-    
-    appendPostsResults(data);
 }
 
-async function loadMoreProfiles() {
-    if (isProfilesLoading || !hasMoreProfiles) return;
+// Profiles Search
+async function searchProfiles(searchTerm, isLoadMore = false) {
+    if (isLoadMore && !hasMoreProfiles) return;
+    if (isProfilesLoading) return;
     
     isProfilesLoading = true;
-    elements.profilesScrollLoader.style.display = 'block';
     
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`full_name.ilike.%${lastSearchTerm}%,username.ilike.%${lastSearchTerm}%`)
-        .range(profilesPage * 20, (profilesPage + 1) * 20 - 1);
-    
-    isProfilesLoading = false;
-    elements.profilesScrollLoader.style.display = 'none';
-    
-    if (error) {
-        console.error('Error loading more profiles:', error);
-        return;
-    }
-    
-    if (!data || data.length === 0) {
-        hasMoreProfiles = false;
-        return;
-    }
-    
-    appendProfilesResults(data);
-    
-    if (currentUserId) {
-        await updateConnectionStatuses(data);
+    try {
+        if (isLoadMore) {
+            elements.profilesScrollLoader.style.display = 'block';
+            elements.profilesScrollLoader.innerHTML = '<div class="spinner"></div>';
+        }
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .or(`full_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
+            .range(profilesPage * ITEMS_PER_PAGE, (profilesPage + 1) * ITEMS_PER_PAGE - 1);
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            if (!isLoadMore) {
+                elements.profilesNoResults.style.display = 'block';
+            }
+            hasMoreProfiles = false;
+            return;
+        }
+        
+        if (isLoadMore) {
+            appendProfilesResults(data);
+        } else {
+            elements.profilesResults.innerHTML = '';
+            appendProfilesResults(data);
+        }
+        
+        if (data.length < ITEMS_PER_PAGE) {
+            hasMoreProfiles = false;
+        } else {
+            profilesPage++;
+        }
+        
+        if (currentUserId) {
+            await updateConnectionStatuses(data);
+        }
+    } catch (error) {
+        console.error('Error searching profiles:', error);
+        if (!isLoadMore) {
+            elements.profilesNoResults.style.display = 'block';
+        }
+    } finally {
+        isProfilesLoading = false;
+        elements.profilesScrollLoader.style.display = 'none';
     }
 }
 
-async function loadMorePosts() {
-    if (isPostsLoading || !hasMorePosts) return;
+// Posts Search
+async function searchPosts(searchTerm, isLoadMore = false) {
+    if (isLoadMore && !hasMorePosts) return;
+    if (isPostsLoading) return;
     
     isPostsLoading = true;
-    elements.postsScrollLoader.style.display = 'block';
     
-    const { data, error } = await supabase
-        .from('posts')
-        .select(`
-            *,
-            profile:profiles(*),
-            media:post_media(*)
-        `)
-        .ilike('content', `%${lastSearchTerm}%`)
-        .order('created_at', { ascending: false })
-        .range(postsPage * 20, (postsPage + 1) * 20 - 1);
-    
-    isPostsLoading = false;
-    elements.postsScrollLoader.style.display = 'none';
-    
-    if (error) {
-        console.error('Error loading more posts:', error);
-        return;
+    try {
+        if (isLoadMore) {
+            elements.postsScrollLoader.style.display = 'block';
+            elements.postsScrollLoader.innerHTML = '<div class="spinner"></div>';
+        } else {
+            elements.postsResults.innerHTML = '';
+        }
+
+        const { data, error } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (*),
+                media:post_media(*),
+                likes:likes(count),
+                comments:comments(count)
+            `)
+            .ilike('content', `%${searchTerm}%`)
+            .order('created_at', { ascending: false })
+            .range(postsPage * ITEMS_PER_PAGE, (postsPage + 1) * ITEMS_PER_PAGE - 1);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            if (!isLoadMore) {
+                elements.postsNoResults.style.display = 'block';
+            }
+            hasMorePosts = false;
+            return;
+        }
+
+        const processedPosts = await processPostsData(data);
+        
+        if (isLoadMore) {
+            appendPostsResults(processedPosts);
+        } else {
+            appendPostsResults(processedPosts);
+        }
+
+        if (data.length < ITEMS_PER_PAGE) {
+            hasMorePosts = false;
+        } else {
+            postsPage++;
+        }
+    } catch (error) {
+        console.error('Error searching posts:', {
+            message: error.message,
+            details: error.details,
+            code: error.code
+        });
+        if (!isLoadMore) {
+            elements.postsNoResults.style.display = 'block';
+        }
+    } finally {
+        isPostsLoading = false;
+        elements.postsScrollLoader.style.display = 'none';
     }
-    
-    if (!data || data.length === 0) {
-        hasMorePosts = false;
-        return;
-    }
-    
-    appendPostsResults(data);
 }
 
+async function processPostsData(posts) {
+    const processedPosts = posts.map(post => ({
+        ...post,
+        like_count: post.likes[0]?.count || post.like_count || 0,
+        comment_count: post.comments[0]?.count || post.comment_count || 0,
+        views: post.views || 0,
+        media: (post.media || []).map(media => ({
+            ...media,
+            media_url: media.media_url.startsWith('http') 
+                ? media.media_url 
+                : `${supabaseUrl}/storage/v1/object/public/${media.media_url}`
+        }))
+    }));
+
+    if (currentUserId) {
+        const { data: userLikes } = await supabase
+            .from('likes')
+            .select('post_id')
+            .eq('profile_id', currentUserId);
+            
+        const likedPostIds = new Set(userLikes?.map(like => like.post_id) || []);
+        processedPosts.forEach(post => {
+            post.is_liked = likedPostIds.has(post.id);
+        });
+    }
+
+    return processedPosts;
+}
+
+// Infinite Scroll
+window.addEventListener('scroll', handleScroll);
+
+async function handleScroll() {
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+
+    if (nearBottom) {
+        if (currentTab === 'profiles' && hasMoreProfiles && !isProfilesLoading) {
+            await searchProfiles(lastSearchTerm, true);
+        } else if (currentTab === 'posts' && hasMorePosts && !isPostsLoading) {
+            await searchPosts(lastSearchTerm, true);
+        }
+    }
+}
+
+// Results Rendering
 function appendProfilesResults(profiles) {
     profiles.forEach(profile => {
         const profileElement = createProfileElement(profile);
@@ -712,20 +748,11 @@ function createProfileElement(profile) {
 
 function createPostElement(post) {
     const postElement = document.createElement('post-component');
-    const processedPost = {
-        ...post,
-        profile: post.profile,
-        media: (post.media || []).map(mediaItem => ({
-            ...mediaItem,
-            media_url: mediaItem.media_url.startsWith('http') 
-                ? mediaItem.media_url 
-                : `${supabaseUrl}/storage/v1/object/public/${mediaItem.media_url}`
-        }))
-    };
-    postElement.setAttribute('post-data', JSON.stringify(processedPost));
+    postElement.setAttribute('post-data', JSON.stringify(post));
     return postElement;
 }
 
+// Suggested Profiles
 async function loadSuggestedProfiles() {
     try {
         if (!currentUserId) return;
@@ -757,6 +784,7 @@ async function loadSuggestedProfiles() {
     }
 }
 
+// Connection Management
 async function updateConnectionStatuses(profiles) {
     if (!currentUserId) return;
     
@@ -872,21 +900,15 @@ async function handleConnection(userId, button) {
     }
 }
 
+// Helper Functions
 function getInitialsAvatar(name) {
     const initials = name ? 
         name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U';
     return `data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><rect width='50' height='50' fill='%230056b3'/><text x='50%' y='50%' font-size='20' fill='white' text-anchor='middle' dy='.3em'>${initials}</text></svg>`;
-}
-
-function showNoResults() {
-    if (currentTab === 'profiles') {
-        elements.profilesNoResults.style.display = 'block';
-    } else {
-        elements.postsNoResults.style.display = 'block';
-    }
-}            
-        
-                        
+}    
+               
+       
+                     
 
         
         
