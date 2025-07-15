@@ -13,11 +13,7 @@
   
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-  </script>
+  
 
   <!-- Swiper -->
   <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
@@ -611,6 +607,25 @@
     100% { transform: rotate(360deg); }
 }
           
+.post-loading-spinner {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    width: 100%;
+}
+
+.post-loading-spinner .spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(0, 86, 179, 0.2);
+    border-top-color: #0056b3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
     </style>
 </head>
 <body>
@@ -754,6 +769,11 @@
 <script>
       
 
+/// Initialize Supabase
+const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
 // Pagination variables
 let postsPage = 0;
 const POSTS_PER_PAGE = 10;
@@ -764,8 +784,12 @@ let isPostsLoading = false;
 const elements = {
     postsContainer: document.getElementById('posts-container'),
     fullPageLoader: document.getElementById('full-page-loader'),
-    menuPage: document.getElementById('menuPage')
+    postsLoadingSpinner: document.createElement('div')
 };
+
+// Initialize infinite scroll loader
+elements.postsLoadingSpinner.className = 'post-loading-spinner';
+elements.postsLoadingSpinner.innerHTML = '<div class="spinner"></div>';
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
@@ -779,13 +803,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Load initial posts
+        // Initialize page
+        showFeed();
         await loadPosts();
 
-        // Setup real-time subscriptions
-        setupRealtimeUpdates();
-
-        // Setup scroll listener for infinite scroll
+        // Set up infinite scroll
         window.addEventListener('scroll', handleScroll);
 
     } catch (error) {
@@ -803,14 +825,12 @@ async function loadPosts(isLoadMore = false) {
     isPostsLoading = true;
     
     try {
-        // Show loading spinner
-        if (!isLoadMore) {
-            elements.postsContainer.innerHTML = '<div class="post-loading-spinner"><div class="spinner"></div></div>';
+        if (isLoadMore) {
+            elements.postsContainer.appendChild(elements.postsLoadingSpinner);
         }
 
         const { data: { user } } = await supabase.auth.getUser();
         
-        // Fetch posts with pagination
         const { data: posts, error: postsError } = await supabase
             .from('posts')
             .select(`
@@ -823,20 +843,18 @@ async function loadPosts(isLoadMore = false) {
 
         if (postsError) throw postsError;
 
-        // Check if we've reached the end
         if (!posts || posts.length === 0) {
             hasMorePosts = false;
-            if (!isLoadMore) {
-                elements.postsContainer.innerHTML = '<div class="no-posts">No posts found</div>';
-            }
             return;
         }
 
         // Get user's liked posts
-        const { data: userLikes } = await supabase
+        const { data: userLikes, error: likesError } = await supabase
             .from('likes')
             .select('post_id')
             .eq('profile_id', user.id);
+
+        if (likesError) throw likesError;
 
         const likedPostIds = new Set(userLikes?.map(like => like.post_id) || []);
         
@@ -852,37 +870,29 @@ async function loadPosts(isLoadMore = false) {
             }))
         }));
 
-        // Render posts
         if (isLoadMore) {
             appendPosts(processedPosts);
         } else {
-            renderPosts(processedPosts);
+            elements.postsContainer.innerHTML = '';
+            appendPosts(processedPosts);
         }
 
-        // Increment page if we got a full page of results
-        if (posts.length === POSTS_PER_PAGE) {
-            postsPage++;
-        } else {
+        // Check if we've reached the end
+        if (posts.length < POSTS_PER_PAGE) {
             hasMorePosts = false;
+        } else {
+            postsPage++;
         }
 
     } catch (error) {
         console.error('Error loading posts:', error);
-        if (!isLoadMore) {
-            elements.postsContainer.innerHTML = '<div class="error-message">Error loading posts</div>';
-        }
     } finally {
         isPostsLoading = false;
+        elements.postsLoadingSpinner.remove();
     }
 }
 
-// Render initial posts
-function renderPosts(posts) {
-    elements.postsContainer.innerHTML = '';
-    appendPosts(posts);
-}
-
-// Append posts to container
+// Append posts to the container
 function appendPosts(posts) {
     posts.forEach(post => {
         const postElement = document.createElement('post-component');
@@ -901,72 +911,7 @@ async function handleScroll() {
     }
 }
 
-// Setup real-time updates
-function setupRealtimeUpdates() {
-    // View updates
-    viewChannel = supabase
-        .channel('post_views')
-        .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'posts'
-        }, (payload) => {
-            const postElement = document.querySelector(`post-component[data-post-id="${payload.new.id}"]`);
-            if (postElement) {
-                const viewsEl = postElement.querySelector('.views');
-                if (viewsEl) viewsEl.textContent = payload.new.views;
-            }
-        })
-        .subscribe();
-
-    // Like updates
-    likeChannel = supabase
-        .channel('post_likes')
-        .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'posts'
-        }, (payload) => {
-            const postElement = document.querySelector(`post-component[post-data*='"id":"${payload.new.id}"']`);
-            if (postElement) {
-                const likeBtn = postElement.querySelector('.like-action');
-                if (likeBtn) {
-                    const countEl = likeBtn.querySelector('span');
-                    if (countEl) countEl.textContent = payload.new.like_count;
-                }
-            }
-        })
-        .subscribe();
-}
-
-// Menu toggle function
-function toggleMenu() {
-    elements.menuPage.style.display = elements.menuPage.style.display === 'block' ? 'none' : 'block';
-    if (elements.menuPage.style.display === 'block') {
-        history.pushState({ menuOpen: true }, '');
-    }
-}
-
-// Handle back button for menu
-window.onpopstate = function(event) {
-    if (elements.menuPage.style.display === 'block') {
-        elements.menuPage.style.display = 'none';
-    }
-};
-
-// Logout function
-async function logout() {
-    try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        window.location.href = 'welcome.html';
-    } catch (error) {
-        console.error('Error logging out:', error);
-        alert('Failed to log out. Please try again.');
-    }
-}
-
-// View toggle functions
+// VIEW TOGGLE FUNCTIONS
 function showFeed() {
     document.getElementById('profileSection')?.style.display = 'none';
     document.querySelector('.main-content').style.display = 'block';
@@ -1001,14 +946,138 @@ function updateActiveNavIcon(activeIcon) {
     }
 }
 
-// Lazy load post component if not already registered
+// LOAD PROFILE SECTION
+async function loadProfileSection() {
+    const response = await fetch('profile.html');
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const profileSection = document.createElement('div');
+    profileSection.id = 'profileSection';
+    profileSection.innerHTML = doc.querySelector('.profile-container').outerHTML;
+    document.body.appendChild(profileSection);
+}
+
+// LOAD PROFILE DATA
+async function loadProfileData() {
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError) throw profileError;
+
+        // Update profile UI elements...
+        
+    } catch (error) {
+        console.error('Error loading profile:', error);
+    }
+}
+
+// UPDATE NOTIFICATION BADGE
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+
+    if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'flex';
+        badge.style.animation = 'pulse 1.5s infinite';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// REAL-TIME SUBSCRIPTIONS
+let viewChannel = null;
+let likeChannel = null;
+
+function subscribeToViewUpdates() {
+    viewChannel = supabase
+        .channel('post_views')
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'posts',
+        }, (payload) => {
+            const postElement = document.querySelector(`post-component[data-post-id="${payload.new.id}"]`);
+            if (postElement) {
+                const viewsEl = postElement.querySelector('.views');
+                if (viewsEl) viewsEl.textContent = payload.new.views;
+            }
+        })
+        .subscribe();
+    return viewChannel;
+}
+
+function subscribeToLikeUpdates() {
+    likeChannel = supabase
+        .channel('post_likes')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'posts',
+        }, (payload) => {
+            const postElement = document.querySelector(`post-component[post-data*='"id":"${payload.new.id}"']`);
+            if (postElement) {
+                const likeBtn = postElement.querySelector('.like-action');
+                if (likeBtn) {
+                    const countEl = likeBtn.querySelector('span');
+                    if (countEl) countEl.textContent = payload.new.like_count;
+                }
+            }
+        })
+        .subscribe();
+    return likeChannel;
+}
+
+// MENU with back button handling
+function toggleMenu() {
+    const menuPage = document.getElementById('menuPage');
+    if (menuPage.style.display === 'block') {
+        menuPage.style.display = 'none';
+    } else {
+        menuPage.style.display = 'block';
+        history.pushState({ menuOpen: true }, '');
+    }
+}
+
+// LOGOUT
+async function logout() {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        window.location.href = 'welcome.html';
+    } catch (error) {
+        console.error('Error logging out:', error);
+        alert('Failed to log out. Please try again.');
+    }
+}
+
+// Handle back button for menu
+window.onpopstate = function(event) {
+    const menuPage = document.getElementById('menuPage');
+    if (menuPage && menuPage.style.display === 'block') {
+        menuPage.style.display = 'none';
+    }
+};
+
+// LAZY LOAD POST COMPONENT
 if (!customElements.get('post-component')) {
     const script = document.createElement('script');
     script.src = 'posts.js';
     document.body.appendChild(script);
-    script.onload = () => loadPosts();
+    script.onload = () => {
+        loadPosts();
+        subscribeToViewUpdates();
+        subscribeToLikeUpdates();
+    };
 }
-
 </script>
 
     <script src="posts.js"></script>
