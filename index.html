@@ -13,7 +13,11 @@
   
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
+  <script>
+    const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+  </script>
 
   <!-- Swiper -->
   <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
@@ -575,44 +579,38 @@
 
         
       
-/* Full-page preloader spinner (larger, centered) */
-.full-page-spinner {
-    width: 30px;
-    height: 30px;
-    border: 3px solid rgba(0, 176, 255, 0.2);
-    border-top-color: #00B0FF;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto;
+.full-page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #FFFFFF;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
 }
 
-/* Infinite scroll loader */
-.infinite-scroll-loader {
+.spinner-container {
     text-align: center;
-    padding: 15px;
-    color: #666;
-    font-size: 14px;
 }
 
-.post-loading-spinner {
+.spinner {
     width: 30px;
     height: 30px;
     border: 3px solid #e6f0ff;
     border-top: 3px solid #0056b3;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 0 auto 10px;
+    margin: 0 auto;
 }
 
-/* Shared animation */
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
-
-        /* Add this to your existing styles */
-    .posts-container {
-      padding-bottom: 100px; /* Give space for footer */
-    } 
+          
     </style>
 </head>
 <body>
@@ -644,11 +642,13 @@
         </div>
     </div>
     
-    <!-- Add this below your posts container -->
-<div class="infinite-scroll-loader" id="posts-scroll-loader" style="display: none;">
-    <div class="post-loading-spinner"></div>
-    <div>Loading more posts...</div>
-</div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="posts-container" id="posts-container">
+            <!-- Posts will be loaded here -->
+        </div>
+    </div>
+
     <!-- Bottom Navigation -->
     <footer class="footer">
         <div class="footer-icon" onclick="showFeed()">
@@ -754,17 +754,7 @@
 <script>
       
 
-   // Initialize Supabase
-const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-// Pagination variables
-let postsPage = 0;
-const ITEMS_PER_PAGE = 10;
-let hasMorePosts = true;
-let isPostsLoading = false;
-let viewChannel = null;
+   let viewChannel = null;
 let likeChannel = null;
 
 // Initialize page with preloader
@@ -782,7 +772,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Initialize page
         showFeed();
-        await loadPosts(true); // Initial load
+        await loadPosts();
 
         // Real-time subscriptions
         viewChannel = subscribeToViewUpdates();
@@ -802,6 +792,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (error) {
         console.error('Initialization error:', error);
+    } finally {
+        // Hide preloader
+        document.getElementById('full-page-loader').style.display = 'none';
     }
 });
 
@@ -882,17 +875,37 @@ async function loadProfileData() {
     }
 }
 
-// LOAD POSTS with pagination
-async function loadPosts(initialLoad = false) {
-    if (isPostsLoading || !hasMorePosts) return;
-    
-    isPostsLoading = true;
-    
+// UPDATE NOTIFICATION BADGE
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+
+    if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'flex';
+        badge.style.animation = 'pulse 1.5s infinite';
+        localStorage.setItem('unreadNotifications', count);
+        window.postMessage({ type: 'updateNotificationBadge', count }, '*');
+    } else {
+        badge.style.display = 'none';
+        localStorage.removeItem('unreadNotifications');
+    }
+}
+
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'updateNotificationBadge') {
+        updateNotificationBadge(event.data.count);
+    }
+});
+
+// LOAD POSTS with loading spinner
+async function loadPosts() {
     try {
-        // Show loader only for subsequent loads
-        if (!initialLoad) {
-            document.getElementById('posts-scroll-loader').style.display = 'block';
-        }
+        // Show loading spinner
+        const loadingSpinner = document.createElement('div');
+        loadingSpinner.className = 'post-loading-spinner';
+        loadingSpinner.innerHTML = '<div class="spinner"></div>';
+        document.getElementById('posts-container').appendChild(loadingSpinner);
 
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError) throw authError;
@@ -904,8 +917,7 @@ async function loadPosts(initialLoad = false) {
                 profile:user_id (username, full_name, avatar_url, is_verified),
                 media:post_media (media_url, media_type)
             `)
-            .order('created_at', { ascending: false })
-            .range(postsPage * ITEMS_PER_PAGE, (postsPage + 1) * ITEMS_PER_PAGE - 1);
+            .order('created_at', { ascending: false });
 
         if (postsError) throw postsError;
 
@@ -922,47 +934,16 @@ async function loadPosts(initialLoad = false) {
             is_liked: likedPostIds.has(post.id)
         }));
 
-        // For initial load, clear the container
-        if (initialLoad) {
-            document.getElementById('posts-container').innerHTML = '';
-        }
-
-        // Append new posts
+        const postsContainer = document.getElementById('posts-container');
+        postsContainer.innerHTML = '';
         postsWithLikes.forEach(post => {
             const postElement = document.createElement('post-component');
             postElement.setAttribute('post-data', JSON.stringify(post));
-            document.getElementById('posts-container').appendChild(postElement);
+            postsContainer.appendChild(postElement);
         });
-
-        // Check if we have more posts to load
-        if (posts.length < ITEMS_PER_PAGE) {
-            hasMorePosts = false;
-        } else {
-            postsPage++;
-        }
 
     } catch (error) {
         console.error("Error loading posts:", error);
-    } finally {
-        isPostsLoading = false;
-        document.getElementById('posts-scroll-loader').style.display = 'none';
-        
-        // Hide full-page loader after initial load
-        if (initialLoad) {
-            document.getElementById('full-page-loader').style.display = 'none';
-        }
-    }
-}
-
-// Infinite scroll handler
-window.addEventListener('scroll', handleScroll);
-
-function handleScroll() {
-    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    const nearBottom = scrollTop + clientHeight >= scrollHeight - 500; // Load 500px before bottom
-    
-    if (nearBottom && !isPostsLoading && hasMorePosts) {
-        loadPosts(false);
     }
 }
 
@@ -1022,10 +1003,6 @@ function toggleMenu() {
 // LOGOUT
 async function logout() {
     try {
-        // Unsubscribe from real-time channels
-        if (viewChannel) supabase.removeChannel(viewChannel);
-        if (likeChannel) supabase.removeChannel(likeChannel);
-        
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
         window.location.href = 'welcome.html';
@@ -1041,17 +1018,8 @@ if (!customElements.get('post-component')) {
     const script = document.createElement('script');
     script.src = 'posts.js';
     document.body.appendChild(script);
-    script.onload = () => loadPosts(true);
+    script.onload = loadPosts;
 }
-
-
-
-
-        
-
-
-
-
 
 </script>
 
