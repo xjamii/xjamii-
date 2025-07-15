@@ -1,580 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-    
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X-Jamii</title>
+    <title>Search | Aviationin</title>
+    <link rel="stylesheet" href="posts.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-  <!-- Other meta tags -->
-<link rel="stylesheet" href="posts.css">
-
-  
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-
-  <!-- Swiper -->
-  <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-</head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
+        /* Base Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
         }
-
-        body {
-            background-color: #fff;
-            min-height: 100vh;
-            transition: background-color 0.3s;
-            touch-action: pan-y;
-        }
-              * {
+        * {
     -webkit-tap-highlight-color: transparent;
     tap-highlight-color: transparent;
 }
 
-        body.dark-mode {
-            background-color: #000;
-            color: #e4e6eb;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 80px;
+        /* Header Styles */
+        .search-header {
+            display: flex;
+            align-items: center;
+            padding: 15px;
             background-color: white;
-            border-top: 1px solid #e6ecf0;
-            display: flex;
-            justify-content: space-evenly;
-            align-items: center;
-            z-index: 1000;
-            padding: 0 10px;
-            box-shadow: 0 -2px 10px rgba(255, 255, 255, 0.9);
-        }
-
-        .dark-mode .footer {
-            background-color: #000;
-            border-top-color: #333;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.9);
-        }
-
-        .create-post-btn {
-            position: relative;
-            transform: translateY(-20px);
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #0056b3;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
-            border: none;
-            outline: none;
-            transition: all 0.2s;
-            z-index: 1001;
-            margin: 0 5px;
-        }
-
-        .footer-icon {
-            color: #657786;
-            font-size: 22px;
-            cursor: pointer;
-            transition: color 0.2s;
-            flex: 0 1 auto;
-            display: flex;
-            justify-content: center;
-            position: relative;
-            min-width: 0;
-            padding: 0 10px;
-        }
-
-        .create-post-btn:hover {
-            background-color: #0056b3;
-        }
-
-        .dark-mode .create-post-btn {
-            background-color: #0056b3;
-        }
-
-        .spinner-preloader {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             position: fixed;
             top: 0;
             left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .back-button {
+            color: #0056b3;
+            font-size: 18px;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+
+        .search-container {
+            flex: 1;
+        }
+
+        .search-input {
             width: 100%;
-            height: 100%;
-            background-color: #ECEFF1;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            background-color: #f5f7fa;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #0056b3;
+        }
+
+        /* Tabs */
+        .search-tabs {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9998;
+            margin-top: 60px;
+            border-bottom: 1px solid #eee;
+            background-color: white;
+            position: sticky;
+            top: 60px;
+            z-index: 90;
+        }
+
+        .search-tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px 0;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .search-tab.active {
+            color: #0056b3;
+            border-bottom: 2px solid #0056b3;
+        }
+
+        /* Content Sections */
+        .search-content {
+            padding: 15px;
+        }
+
+        .search-section {
             display: none;
         }
-        
-        .spinner-preloader .spinner {
+
+        .search-section.active {
+            display: block;
+        }
+
+        /* Results */
+        .search-results {
+            margin-top: 10px;
+        }
+
+        .profile-result {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            position: relative;
+            padding-right: 80px; /* Space for connect button */
+        }
+
+        .profile-avatar {
             width: 50px;
             height: 50px;
-            border: 4px solid rgba(0, 176, 255, 0.2);
-            border-top-color: #00B0FF;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        .dark-mode .spinner-preloader {
-            background-color: #000;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        #refresh-container {
-            position: fixed;
-            top: 120px;
-            left: 0;
-            width: 100%;
-            height: 50px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .refresh-spinner {
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(0, 176, 255, 0.2);
-            border-top-color: #00B0FF;
-            border-radius: 50%;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .dark-mode .refresh-spinner {
-            border-top-color: #00B0FF;
-        }
-
-        .refreshing .refresh-spinner {
-            animation: spin 0.6s linear infinite;
-            opacity: 1;
-        }
-
-        .top-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 120px;
-            background-color: white;
-            border-bottom: 1px solid #e6ecf0;
-            display: flex;
-            flex-direction: column;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(255, 255, 255, 0.9);
-        }
-
-        .dark-mode .top-header {
-            background-color: #000;
-            border-bottom-color: #333;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
-        }
-
-        .header-top-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            height: 60px;
-        }
-
-        .top-header-left {
-            display: flex;
-            align-items: center;
-        }
-
-        .logo-container {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            cursor: pointer;
-        }
-
-        .logo {
-            height: 70px;
-            filter: brightness(0) saturate(100%) invert(22%) sepia(55%) saturate(1553%) hue-rotate(194deg) brightness(93%) contrast(91%);
-            transition: filter 0.3s;
-        }
-
-        .dark-mode .logo {
-            filter: brightness(0) saturate(100%) invert(22%) sepia(55%) saturate(1553%) hue-rotate(194deg) brightness(93%) contrast(91%) invert(1);
-        }
-
-        .profile-pic {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background-color: #1da1f2;
-            cursor: pointer;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .profile-pic img {
-            width: 100%;
-            height: 100%;
             object-fit: cover;
+            margin-right: 15px;
         }
 
-        .three-dots {
-            color: #0f1419;
-            font-size: 20px;
-            margin-right: 20px;
-            cursor: pointer;
-        }
-
-        .dark-mode .three-dots {
-            color: #e4e6eb;
-        }
-
-        .header-bottom-row {
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            height: 60px;
-        }
-
-        .search-bar {
+        .profile-info {
             flex: 1;
-            max-width: 500px;
-            position: relative;
         }
 
-        .search-bar input {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            border-radius: 20px;
-            border: 1px solid #e6ecf0;
-            background-color: #f5f8fa;
-            font-size: 14px;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .dark-mode .search-bar input {
-            background-color: #333;
-            border-color: #444;
-            color: #e4e6eb;
-        }
-
-        .search-bar input:focus {
-            background-color: white;
-            border-color: #1da1f2;
-        }
-
-        .dark-mode .search-bar input:focus {
-            background-color: #111;
-        }
-
-        .search-bar i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #657786;
-            font-size: 14px;
-        }
-
-        .dark-mode .search-bar i {
-            color: #888;
-        }
-
-        .tabs {
-            display: flex;
-            margin-left: auto;
-            height: 100%;
-        }
-
-        .tab {
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .profile-name {
             font-weight: 600;
-            font-size: 15px;
-            color: #536471;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .dark-mode .tab {
-            color: #888;
-        }
-
-        .tab.active {
-            color: #0f1419;
-        }
-
-        .dark-mode .tab.active {
-            color: #e4e6eb;
-        }
-
-        .tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 20%;
-            right: 20%;
-            height: 4px;
-            background-color: #1d9bf0;
-            border-radius: 2px;
-        }
-
-        .main-content {
-            margin-top: 120px;
-            width: 100%;
-        }
-
-        .footer-icon {
-            color: #657786;
-            font-size: 22px;
-            cursor: pointer;
-            transition: color 0.2s;
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            position: relative;
-        }
-
-        .dark-mode .footer-icon {
-            color: #888;
-        }
-
-        .footer-icon:hover {
-            color: #0056b3;
-        }
-
-        .footer-icon.active {
-            color: #0056b3;
-        }
-
-        .menu-page {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background-color: white;
-            z-index: 2000;
-            overflow-y: auto;
-        }
-
-        .dark-mode .menu-page {
-            background-color: #000;
-        }
-
-        .menu-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid #ddd;
-            position: sticky;
-            top: 0;
-            background-color: white;
-            z-index: 10;
-        }
-
-        .dark-mode .menu-header {
-            border-bottom-color: #333;
-            background-color: #000;
-        }
-
-        .menu-back-btn {
-            font-size: 20px;
-            cursor: pointer;
+            margin-bottom: 3px;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 5px;
         }
 
-        .menu-back-btn .fa-times {
-            font-size: 20px;
-            transition: transform 0.2s;
-        }
-
-        .menu-back-btn .fa-times:hover {
-            transform: scale(1.1);
-        }
-
-        .menu-title {
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .menu-search-btn {
-            font-size: 20px;
-            cursor: pointer;
+        .profile-username {
+            color: #666;
+            font-size: 14px;
         }
 
         .verified-badge {
-            color: #1DA1F2;
+            color: #0056b3;
             font-size: 14px;
-            background-color: white;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 16px;
-            height: 16px;
         }
 
-        .verified-badge i {
-            font-size: 10px;
-        }
-
-        .menu-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            padding: 16px;
-        }
-
-        .menu-option {
-            background-color: #f0f2f5;
-            border-radius: 12px;
-            padding: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            position: relative;
-        }
-
-        .dark-mode .menu-option {
-            background-color: #333;
-        }
-
-        .menu-option:hover {
-            background-color: #e4e6e9;
-            transform: translateY(-2px);
-        }
-
-        .dark-mode .menu-option:hover {
-            background-color: #444;
-        }
-
-..menu-option-text {
-    font-size: 14px;
-    font-weight: 500;
-    margin-top: 8px;
-    margin-left: 17px; /* Move element 17px to the right */
-    position: relative;
-    padding-right: 30px;
-    width: calc(100% - 17px); /* Prevent overflow with new margin */
-}
-        .menu-option-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 8px;
+        .connect-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: #0056b3;
             color: white;
-            font-size: 20px;
-        }
-
-        .logout-section {
-            padding: 16px;
-            margin-top: 16px;
-            border-top: 1px solid #ddd;
-            background-color: white;
-        }
-
-        .dark-mode .logout-section {
-            border-top-color: #333;
-            background-color: #000;
-        }
-
-        .logout-btn {
-            color: #ff0000;
-            font-weight: bold;
-            font-size: 16px;
+            border: none;
+            border-radius: 15px;
+            padding: 5px 15px;
+            font-size: 14px;
             cursor: pointer;
+        }
+
+        .connect-btn.pending {
+            background-color: #e0e0e0;
+            color: #666;
+        }
+
+        .connect-btn.connected {
+            background-color: #e6f0ff;
+            color: #0056b3;
+        }
+
+        /* Loading States */
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #e6f0ff;
+            border-top: 3px solid #0056b3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        /* Post Results */
+        .post-result {
+            background-color: white;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Suggestions */
+        .suggestions-container {
+            margin-top: 10px;
+        }
+
+        .suggestion-title {
+            padding: 15px 15px 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Infinite scroll loader */
+        .infinite-scroll-loader {
+            text-align: center;
+            padding: 15px;
+            display: none;
+        }
+
+        /* Profile link */
+        .profile-link {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
+            flex: 1;
+            text-decoration: none;
+            color: inherit;
         }
 
-        .logout-btn:hover {
-            background-color: rgba(255, 0, 0, 0.1);
-        }
-
-        .dark-mode .logout-btn:hover {
-            background-color: rgba(255, 0, 0, 0.2);
-        }
-
-        .footer-icon {
-            position: relative;
-        }
-
-        .icon-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#notificationBadge {
-    position: absolute;
-    top: -8px;
-    right: -14px; /* fine-tune left/right spacing */
-    background-color: #ff0000;
-    color: white;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: bold;
-    animation: pulse 0.5s infinite;
-    z-index: 10;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-.dark-mode #notificationBadge {
-    background-color: #ff4444;
-}
-
-        
-      
+            /* Full Page Loader */
 .full-page-loader {
     position: fixed;
     top: 0;
@@ -586,6 +244,7 @@
     justify-content: center;
     align-items: center;
     z-index: 9999;
+    backdrop-filter: blur(2px);
 }
 
 .spinner-container {
@@ -599,400 +258,404 @@
     border-top: 3px solid #0056b3;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 0 auto;
+    margin: 0 auto 15px;
 }
 
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-          
-.post-loading-spinner {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-    width: 100%;
-}
 
-.post-loading-spinner .spinner {
-    width: 30px;
-    height: 30px;
-    border: 3px solid rgba(0, 86, 179, 0.2);
-    border-top-color: #0056b3;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+.full-page-loader {
+    transition: opacity 0.3s ease;
 }
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Add this new style for the new posts alert */
-    .new-posts-alert {
-      position: fixed;
-      top: 130px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #0056b3;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-      z-index: 1001;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      animation: slideDown 0.3s ease-out;
-    }
-    
-    @keyframes slideDown {
-      from { top: 100px; opacity: 0; }
-      to { top: 130px; opacity: 1; }
-    }
-    
-    .dark-mode .new-posts-alert {
-      background-color: #1a73e8;
-    }
-    
-    /* Update the spinner styles */
-    .post-loading-spinner {
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-      width: 100%;
-    }
-    
-    .post-loading-spinner .spinner {
-      width: 30px;
-      height: 30px;
-      border: 3px solid rgba(0, 86, 179, 0.2);
-      border-top-color: #0056b3;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-    
-    .dark-mode .post-loading-spinner .spinner {
-      border-top-color: #1da1f2;
-    }
-    
-    /* Add this to your existing styles */
-    .posts-container {
-      padding-bottom: 100px; /* Give space for footer */
-    }
-    
     </style>
 </head>
 <body>
-
-  <!-- Add the new posts alert -->
-  <div class="new-posts-alert" id="newPostsAlert" onclick="loadNewPosts()">
-    <i class="fas fa-sync-alt"></i>
-    <span id="newPostsCount">New posts</span>
-  </div>
-
-   <!-- Add this right after the opening <body> tag -->
-<div class="full-page-loader" id="full-page-loader">
-    <div class="spinner-container">
-        <div class="spinner"></div>
-    </div>
-</div>
-
-    <!-- Main Header -->
-    <div class="top-header">
-        <div class="header-top-row">
-            <div class="top-header-left">
-                <div class="three-dots" onclick="toggleMenu()">
-                   <i class="fas fa-ellipsis-h"></i>
-                </div>
-            </div>
-            <div class="logo-container" onclick="window.location.href='index.html'">
-                <img src="https://i.postimg.cc/gkL0Qdsw/file-00000000000061f8b89b5a1f67f8b937.png" alt="Aviationin Logo" class="logo"/>
-            </div>
-        </div>
-        <div class="header-bottom-row">
-            <div class="search-bar" onclick="window.location.href='search.html'">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search" readonly>
-            </div>
+    <!-- Full Page Loader -->
+    <div class="full-page-loader" id="full-page-loader">
+        <div class="spinner-container">
+            <div class="spinner"></div>
         </div>
     </div>
+
+    <!-- Rest of your existing HTML -->
+
     
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="posts-container" id="posts-container">
-            <!-- Posts will be loaded here -->
+    <!-- Search Header -->
+    <div class="search-header">
+        <a href="index.html" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="search-container">
+            <input type="text" class="search-input" id="search-input" placeholder="Search professionals or posts..." autocomplete="off">
         </div>
     </div>
 
-    <!-- Bottom Navigation -->
-  <footer class="footer">
-    <div class="footer-icon active" onclick="showFeed()">
-      <i class="fas fa-home"></i>
+    <!-- Search Tabs -->
+    <div class="search-tabs">
+        <div class="search-tab active" data-tab="profiles">Professionals</div>
+        <div class="search-tab" data-tab="posts">Posts</div>
     </div>
-    <div class="footer-icon" onclick="window.location.href='search.html'">
-      <i class="fas fa-search"></i>
-    </div>
-    <button class="create-post-btn" onclick="window.location.href='create-post.html'">
-      <i class="fas fa-plus"></i>
-    </button>
-    <div class="footer-icon" onclick="window.location.href='notifications.html'">
-      <div class="icon-wrapper">
-        <i class="fas fa-bell"></i>
-        <span id="notificationBadge">3</span>
-      </div>
-    </div>
-    <div class="footer-icon" onclick="window.location.href='profile.html'">
-      <i class="fas fa-user"></i>
-    </div>
-  </footer>
 
-    <!-- Menu Page -->
-    <div class="menu-page" id="menuPage">
-        <div class="menu-header">
-            <div class="menu-back-btn" onclick="toggleMenu()">
-                <i class="fas fa-times"></i>
-                <span class="menu-title">Menu</span>
+    <!-- Search Content -->
+    <div class="search-content">
+        <!-- Professionals Section -->
+        <div class="search-section active" id="profiles-section">
+            <div class="suggestions-container" id="suggestions-container">
+                <div class="suggestion-title">Suggested Professionals</div>
+                <div class="search-results" id="suggestions-results"></div>
             </div>
-            <div class="menu-search-btn" onclick="window.location.href='search.html'">
-                <i class="fas fa-search"></i>
+            <div class="search-results" id="profiles-results"></div>
+            <div class="infinite-scroll-loader" id="profiles-scroll-loader">
+                <div class="spinner"></div>
+                <div>Loading more professionals...</div>
+            </div>
+            <div class="no-results" id="profiles-no-results">
+                <i class="fas fa-user-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                <div>No professionals found</div>
+            </div>
+            <div class="loading-spinner" id="profiles-loading" style="display: none;">
+                <div class="spinner"></div>
             </div>
         </div>
 
-        <!-- Menu Options -->
-        <div class="menu-options">
-            <div class="menu-option" onclick="window.location.href='manage-account.html'">
-                <div class="menu-option-icon" style="background-color: #1DA1F2;">
-                    <i class="fas fa-user-cog"></i>
-                </div>
-                <div class="menu-option-text">Manage Account</div>
+        <!-- Posts Section -->
+        <div class="search-section" id="posts-section">
+            <div class="search-results" id="posts-results"></div>
+            <div class="infinite-scroll-loader" id="posts-scroll-loader">
+                <div class="spinner"></div>
+                <div>Loading more posts...</div>
             </div>
-            
-            <div class="menu-option" onclick="window.location.href='help.html'">
-                <div class="menu-option-icon" style="background-color: #4CAF50;">
-                    <i class="fas fa-question-circle"></i>
-                </div>
-                <div class="menu-option-text">Help & Support</div>
+            <div class="no-results" id="posts-no-results">
+                <i class="fas fa-comment-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                <div>No posts found</div>
             </div>
-            <div class="menu-option" onclick="window.location.href='privacy.html'">
-                <div class="menu-option-icon" style="background-color: #2196F3;">
-                    <i class="fas fa-lock"></i>
-                </div>
-                <div class="menu-option-text">Privacy</div>
-            </div>
-            <div class="menu-option" onclick="window.location.href='about.html'">
-                <div class="menu-option-icon" style="background-color: #FF9800;">
-                    <i class="fas fa-info-circle"></i>
-                </div>
-                <div class="menu-option-text">About</div>
-            </div>
-            <div class="menu-option" onclick="window.location.href='cookies.html'">
-                <div class="menu-option-icon" style="background-color: #9C27B0;">
-                    <i class="fas fa-cookie"></i>
-                </div>
-                <div class="menu-option-text">Cookies</div>
-            </div>
-            <div class="menu-option" onclick="window.location.href='community.html'">
-                <div class="menu-option-icon" style="background-color: #E91E63;">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="menu-option-text">Community Standards</div>
-            </div>
-            <div class="menu-option" onclick="window.location.href='terms.html'">
-                <div class="menu-option-icon" style="background-color: #607D8B;">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <div class="menu-option-text">Terms</div>
-            </div>
-            <div class="menu-option" onclick="window.location.href='verification.html'">
-                <div class="menu-option-icon" style="background-color: #1DA1F2;">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="menu-option-text">Request Verification</div>
-            </div>
-          
-            <div class="menu-option" onclick="window.location.href='report.html'">
-                <div class="menu-option-icon" style="background-color: #795548;">
-                    <i class="fas fa-flag"></i>
-                </div>
-                <div class="menu-option-text">Report an Issue</div>
-            </div>
-        </div>
-
-        <!-- Logout Section -->
-        <div class="logout-section">
-            <div class="logout-btn" onclick="logout()">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Log Out</span>
+            <div class="loading-spinner" id="posts-loading" style="display: none;">
+                <div class="spinner"></div>
             </div>
         </div>
     </div>
-<script>
-      
-/// Initialize Supabase
+
+    <script>
+    // Initialize Supabase
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// Pagination and state variables
-let postsPage = 0;
-const POSTS_PER_PAGE = 10;
-let hasMorePosts = true;
-let isPostsLoading = false;
-let viewChannel = null;
-let likeChannel = null;
-let postsChannel = null;
-let lastPostTimestamp = null;
-let newPostsCount = 0;
-let isFirstLoad = true;
-let currentUser = null;
-
 // DOM Elements
 const elements = {
-    postsContainer: document.getElementById('posts-container'),
-    newPostsAlert: document.getElementById('newPostsAlert'),
-    newPostsCount: document.getElementById('newPostsCount'),
-    fullPageLoader: document.getElementById('full-page-loader'),
-    menuPage: document.getElementById('menuPage'),
-    notificationBadge: document.getElementById('notificationBadge')
+    searchInput: document.getElementById('search-input'),
+    tabs: document.querySelectorAll('.search-tab'),
+    sections: document.querySelectorAll('.search-section'),
+    profilesResults: document.getElementById('profiles-results'),
+    postsResults: document.getElementById('posts-results'),
+    profilesNoResults: document.getElementById('profiles-no-results'),
+    postsNoResults: document.getElementById('posts-no-results'),
+    profilesLoading: document.getElementById('profiles-loading'),
+    postsLoading: document.getElementById('posts-loading'),
+    suggestionsContainer: document.getElementById('suggestions-container'),
+    suggestionsResults: document.getElementById('suggestions-results'),
+    profilesScrollLoader: document.getElementById('profiles-scroll-loader'),
+    postsScrollLoader: document.getElementById('posts-scroll-loader'),
+    fullPageLoader: document.getElementById('full-page-loader')
 };
 
-// Initialize the application
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // Show preloader
-        elements.fullPageLoader.style.display = 'flex';
+// Variables
+let currentTab = 'profiles';
+let searchTimeout;
+let lastSearchTerm = '';
+let currentUserId = null;
+
+// Pagination variables
+let profilesPage = 0;
+let postsPage = 0;
+const ITEMS_PER_PAGE = 20;
+let hasMoreProfiles = true;
+let hasMorePosts = true;
+let isProfilesLoading = false;
+let isPostsLoading = false;
+
+// Event Listeners
+elements.searchInput.addEventListener('input', handleSearchInput);
+
+elements.tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        elements.tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTab = tab.dataset.tab;
         
-        // Check authentication
+        elements.sections.forEach(section => section.classList.remove('active'));
+        document.getElementById(`${currentTab}-section`).classList.add('active');
+        
+        // Reset pagination for the new tab
+        if (currentTab === 'profiles') {
+            resetProfilesSearch();
+            if (lastSearchTerm.trim()) {
+                performSearch(lastSearchTerm);
+            } else {
+                loadSuggestedProfiles();
+            }
+        } else {
+            resetPostsSearch();
+            if (lastSearchTerm.trim()) {
+                performSearch(lastSearchTerm);
+            }
+        }
+    });
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', async () => {
+    elements.fullPageLoader.style.display = 'flex';
+    
+    try {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
         if (authError || !user) {
             window.location.href = 'login.html';
             return;
         }
-
-        currentUser = user;
-
-        // Initialize page
-        showFeed();
-        await loadPosts();
-
-        // Real-time subscriptions
-        viewChannel = subscribeToViewUpdates();
-        likeChannel = subscribeToLikeUpdates();
-        postsChannel = subscribeToNewPosts();
-        subscribeToCommentUpdates();
-
-        // Initialize notification system
-        await initializeNotificationSystem();
-
-        // Setup scroll listener for infinite scroll
-        window.addEventListener('scroll', handlePostsScroll);
-
-        // Setup back button handler for menu
-        window.onpopstate = handlePopState;
-
+        
+        currentUserId = user.id;
+        elements.searchInput.focus();
+        await loadSuggestedProfiles();
     } catch (error) {
         console.error('Initialization error:', error);
-        showErrorState();
+        window.location.href = 'login.html';
     } finally {
-        // Hide preloader after a minimum delay to prevent flickering
-        setTimeout(() => {
-            elements.fullPageLoader.style.display = 'none';
-            isFirstLoad = false;
-        }, 500);
+        elements.fullPageLoader.style.display = 'none';
     }
 });
 
-// Infinite scroll handler for posts
-async function handlePostsScroll() {
-    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    const nearBottom = scrollTop + clientHeight >= scrollHeight - 500;
+// Search Functions
+function handleSearchInput(e) {
+    const searchTerm = e.target.value.trim();
+    lastSearchTerm = searchTerm;
+    
+    clearTimeout(searchTimeout);
+    
+    if (searchTerm.length === 0) {
+        clearResults();
+        if (currentTab === 'profiles') {
+            elements.suggestionsContainer.style.display = 'block';
+            loadSuggestedProfiles();
+        }
+        return;
+    }
+    
+    elements.suggestionsContainer.style.display = 'none';
+    
+    if (currentTab === 'profiles') {
+        resetProfilesSearch();
+    } else {
+        resetPostsSearch();
+    }
+    
+    showLoading();
+    
+    searchTimeout = setTimeout(() => {
+        performSearch(searchTerm);
+    }, 500);
+}
 
-    if (nearBottom && hasMorePosts && !isPostsLoading) {
-        postsPage++;
-        await loadPosts(true); // Load more posts
+function resetProfilesSearch() {
+    profilesPage = 0;
+    hasMoreProfiles = true;
+    isProfilesLoading = false;
+    elements.profilesResults.innerHTML = '';
+    elements.profilesScrollLoader.style.display = 'none';
+}
+
+function resetPostsSearch() {
+    postsPage = 0;
+    hasMorePosts = true;
+    isPostsLoading = false;
+    elements.postsResults.innerHTML = '';
+    elements.postsScrollLoader.style.display = 'none';
+}
+
+function showLoading() {
+    if (currentTab === 'profiles') {
+        elements.profilesLoading.style.display = 'block';
+        elements.profilesNoResults.style.display = 'none';
+    } else {
+        elements.postsLoading.style.display = 'block';
+        elements.postsNoResults.style.display = 'none';
     }
 }
 
-// Load posts with pagination
-async function loadPosts(isLoadMore = false) {
-    if (isPostsLoading) return;
-    isPostsLoading = true;
+function hideLoading() {
+    if (currentTab === 'profiles') {
+        elements.profilesLoading.style.display = 'none';
+    } else {
+        elements.postsLoading.style.display = 'none';
+    }
+}
 
+function clearResults() {
+    if (currentTab === 'profiles') {
+        elements.profilesResults.innerHTML = '';
+        elements.profilesNoResults.style.display = 'block';
+    } else {
+        elements.postsResults.innerHTML = '';
+        elements.postsNoResults.style.display = 'block';
+    }
+}
+
+async function performSearch(searchTerm) {
     try {
-        if (!isLoadMore) {
-            // Reset for initial load
-            resetPostsLoadingState();
-            showPostsLoadingSpinner();
+        showLoading();
+        
+        if (currentTab === 'profiles') {
+            await searchProfiles(searchTerm);
+        } else {
+            await searchPosts(searchTerm);
         }
-
-        // Fetch posts from Supabase
-        const { data: posts, error: postsError } = await fetchPosts();
-
-        if (postsError) throw postsError;
-
-        // Store timestamp of the newest post on first load
-        if (!isLoadMore && posts.length > 0) {
-            lastPostTimestamp = new Date(posts[0].created_at).getTime();
-        }
-
-        // Check if we've reached the end
-        if (posts.length < POSTS_PER_PAGE) {
-            hasMorePosts = false;
-        }
-
-        // Get user's liked posts
-        const likedPostIds = await fetchUserLikes();
-
-        // Process posts data
-        const processedPosts = processPostsData(posts, likedPostIds);
-
-        // Update UI with posts
-        updatePostsUI(processedPosts, isLoadMore);
-
     } catch (error) {
-        console.error("Error loading posts:", error);
-        hasMorePosts = false;
-        showPostsErrorState();
+        console.error('Search error:', error);
+        showNoResults();
+    } finally {
+        hideLoading();
+    }
+}
+
+function showNoResults() {
+    if (currentTab === 'profiles') {
+        elements.profilesNoResults.style.display = 'block';
+    } else {
+        elements.postsNoResults.style.display = 'block';
+    }
+}
+
+// Profiles Search
+async function searchProfiles(searchTerm, isLoadMore = false) {
+    if (isLoadMore && !hasMoreProfiles) return;
+    if (isProfilesLoading) return;
+    
+    isProfilesLoading = true;
+    
+    try {
+        if (isLoadMore) {
+            elements.profilesScrollLoader.style.display = 'block';
+            elements.profilesScrollLoader.innerHTML = '<div class="spinner"></div>';
+        }
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .or(`full_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
+            .range(profilesPage * ITEMS_PER_PAGE, (profilesPage + 1) * ITEMS_PER_PAGE - 1);
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            if (!isLoadMore) {
+                elements.profilesNoResults.style.display = 'block';
+            }
+            hasMoreProfiles = false;
+            return;
+        }
+        
+        if (isLoadMore) {
+            appendProfilesResults(data);
+        } else {
+            elements.profilesResults.innerHTML = '';
+            appendProfilesResults(data);
+        }
+        
+        if (data.length < ITEMS_PER_PAGE) {
+            hasMoreProfiles = false;
+        } else {
+            profilesPage++;
+        }
+        
+        if (currentUserId) {
+            await updateConnectionStatuses(data);
+        }
+    } catch (error) {
+        console.error('Error searching profiles:', error);
+        if (!isLoadMore) {
+            elements.profilesNoResults.style.display = 'block';
+        }
+    } finally {
+        isProfilesLoading = false;
+        elements.profilesScrollLoader.style.display = 'none';
+    }
+}
+
+// Posts Search
+async function searchPosts(searchTerm, isLoadMore = false) {
+    if (isLoadMore && !hasMorePosts) return;
+    if (isPostsLoading) return;
+    
+    isPostsLoading = true;
+    
+    try {
+        if (isLoadMore) {
+            elements.postsScrollLoader.style.display = 'block';
+            elements.postsScrollLoader.innerHTML = '<div class="spinner"></div>';
+        } else {
+            elements.postsResults.innerHTML = '';
+        }
+
+        const { data, error } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (*),
+                media:post_media(*),
+                likes:likes(count),
+                comments:comments(count)
+            `)
+            .ilike('content', `%${searchTerm}%`)
+            .order('created_at', { ascending: false })
+            .range(postsPage * ITEMS_PER_PAGE, (postsPage + 1) * ITEMS_PER_PAGE - 1);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            if (!isLoadMore) {
+                elements.postsNoResults.style.display = 'block';
+            }
+            hasMorePosts = false;
+            return;
+        }
+
+        const processedPosts = await processPostsData(data);
+        
+        if (isLoadMore) {
+            appendPostsResults(processedPosts);
+        } else {
+            appendPostsResults(processedPosts);
+        }
+
+        if (data.length < ITEMS_PER_PAGE) {
+            hasMorePosts = false;
+        } else {
+            postsPage++;
+        }
+    } catch (error) {
+        console.error('Error searching posts:', {
+            message: error.message,
+            details: error.details,
+            code: error.code
+        });
+        if (!isLoadMore) {
+            elements.postsNoResults.style.display = 'block';
+        }
     } finally {
         isPostsLoading = false;
+        elements.postsScrollLoader.style.display = 'none';
     }
 }
 
-// Fetch posts from Supabase
-async function fetchPosts() {
-    return await supabase
-        .from('posts')
-        .select(`
-            *,
-            profile:user_id (username, full_name, avatar_url, is_verified),
-            media:post_media (media_url, media_type),
-            comments:comments(count),
-            likes:likes(count)
-        `)
-        .order('created_at', { ascending: false })
-        .range(postsPage * POSTS_PER_PAGE, (postsPage + 1) * POSTS_PER_PAGE - 1);
-}
-
-// Fetch user's liked posts
-async function fetchUserLikes() {
-    const { data: userLikes } = await supabase
-        .from('likes')
-        .select('post_id')
-        .eq('profile_id', currentUser.id);
-    return new Set(userLikes?.map(like => like.post_id) || [];
-}
-
-// Process posts data
-function processPostsData(posts, likedPostIds) {
-    return posts.map(post => ({
+async function processPostsData(posts) {
+    const processedPosts = posts.map(post => ({
         ...post,
-        is_liked: likedPostIds.has(post.id),
         like_count: post.likes[0]?.count || post.like_count || 0,
         comment_count: post.comments[0]?.count || post.comment_count || 0,
+        views: post.views || 0,
         media: (post.media || []).map(media => ({
             ...media,
             media_url: media.media_url.startsWith('http') 
@@ -1000,392 +663,256 @@ function processPostsData(posts, likedPostIds) {
                 : `${supabaseUrl}/storage/v1/object/public/${media.media_url}`
         }))
     }));
+
+    if (currentUserId) {
+        const { data: userLikes } = await supabase
+            .from('likes')
+            .select('post_id')
+            .eq('profile_id', currentUserId);
+            
+        const likedPostIds = new Set(userLikes?.map(like => like.post_id) || []);
+        processedPosts.forEach(post => {
+            post.is_liked = likedPostIds.has(post.id);
+        });
+    }
+
+    return processedPosts;
 }
 
-// Update UI with posts
-function updatePostsUI(posts, isLoadMore) {
-    // Remove loading spinner if it exists
-    const spinner = document.querySelector('.post-loading-spinner');
-    if (spinner) spinner.remove();
+// Infinite Scroll
+window.addEventListener('scroll', handleScroll);
 
-    if (isLoadMore) {
-        // For infinite scroll, append to existing posts
-        posts.forEach(appendPostElement);
-    } else {
-        // For initial load, replace all posts
-        elements.postsContainer.innerHTML = '';
-        posts.forEach(appendPostElement);
+async function handleScroll() {
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+
+    if (nearBottom) {
+        if (currentTab === 'profiles' && hasMoreProfiles && !isProfilesLoading) {
+            await searchProfiles(lastSearchTerm, true);
+        } else if (currentTab === 'posts' && hasMorePosts && !isPostsLoading) {
+            await searchPosts(lastSearchTerm, true);
+        }
     }
 }
 
-// Append a single post element to the container
-function appendPostElement(post) {
-    const postElement = document.createElement('post-component');
-    postElement.setAttribute('post-data', JSON.stringify(post));
-    postElement.setAttribute('data-post-id', post.id);
-    elements.postsContainer.appendChild(postElement);
-}
-
-// Load new posts that appeared since last load
-async function loadNewPosts() {
-    try {
-        // Hide the alert
-        hideNewPostsAlert();
-        
-        // Get new posts since last timestamp
-        const { data: newPosts, error } = await supabase
-            .from('posts')
-            .select(`
-                *,
-                profile:user_id (username, full_name, avatar_url, is_verified),
-                media:post_media (media_url, media_type),
-                comments:comments(count),
-                likes:likes(count)
-            `)
-            .gt('created_at', new Date(lastPostTimestamp).toISOString())
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        
-        if (newPosts.length === 0) return;
-        
-        // Update last timestamp
-        lastPostTimestamp = new Date(newPosts[0].created_at).getTime();
-        
-        // Get user's liked posts
-        const likedPostIds = await fetchUserLikes();
-
-        // Process new posts data
-        const processedPosts = processPostsData(newPosts, likedPostIds);
-
-        // Prepend new posts to container
-        prependNewPosts(processedPosts);
-        
-        // Show visual feedback
-        flashNewPostsIndicator();
-
-    } catch (error) {
-        console.error("Error loading new posts:", error);
-    }
-}
-
-// Prepend new posts to the container
-function prependNewPosts(posts) {
-    const firstChild = elements.postsContainer.firstChild;
-    
-    posts.reverse().forEach(post => {
-        const postElement = document.createElement('post-component');
-        postElement.setAttribute('post-data', JSON.stringify(post));
-        postElement.setAttribute('data-post-id', post.id);
-        elements.postsContainer.insertBefore(postElement, firstChild);
+// Results Rendering
+function appendProfilesResults(profiles) {
+    profiles.forEach(profile => {
+        const profileElement = createProfileElement(profile);
+        elements.profilesResults.appendChild(profileElement);
     });
 }
 
-// Show visual feedback for new posts
-function flashNewPostsIndicator() {
-    elements.postsContainer.style.transition = 'background-color 0.5s';
-    elements.postsContainer.style.backgroundColor = 'rgba(0, 86, 179, 0.1)';
-    setTimeout(() => {
-        elements.postsContainer.style.backgroundColor = '';
-    }, 500);
+function appendPostsResults(posts) {
+    posts.forEach(post => {
+        const postElement = createPostElement(post);
+        elements.postsResults.appendChild(postElement);
+    });
 }
 
-// Reset posts loading state
-function resetPostsLoadingState() {
-    postsPage = 0;
-    hasMorePosts = true;
-    elements.postsContainer.innerHTML = '';
-}
-
-// Show loading spinner for posts
-function showPostsLoadingSpinner() {
-    const loadingSpinner = document.createElement('div');
-    loadingSpinner.className = 'post-loading-spinner';
-    loadingSpinner.innerHTML = '<div class="spinner"></div>';
-    elements.postsContainer.appendChild(loadingSpinner);
-}
-
-// Show error state for posts
-function showPostsErrorState() {
-    elements.postsContainer.innerHTML = `
-        <div style="text-align: center; padding: 40px; color: #666;">
-            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <div>Failed to load posts. Please try again.</div>
-            <button onclick="loadPosts()" style="margin-top: 15px; padding: 8px 16px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Retry
-            </button>
-        </div>
+function createProfileElement(profile) {
+    const profileElement = document.createElement('div');
+    profileElement.className = 'profile-result';
+    
+    const avatarUrl = profile.avatar_url || getInitialsAvatar(profile.full_name);
+    const isCurrentUser = currentUserId === profile.id;
+    
+    profileElement.innerHTML = `
+        <a href="/profile.html?id=${profile.id}" class="profile-link">
+            <img src="${avatarUrl}" 
+                 class="profile-avatar" 
+                 onerror="this.src='${getInitialsAvatar(profile.full_name)}'">
+            <div class="profile-info">
+                <div class="profile-name">
+                    ${profile.full_name || 'Aviation Professional'}
+                    ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+                </div>
+                <div class="profile-username">@${profile.username || 'user'}</div>
+            </div>
+        </a>
+        ${isCurrentUser ? '' : '<button class="connect-btn" data-user-id="' + profile.id + '">Connect</button>'}
     `;
-}
-
-// Show error state for initial load
-function showErrorState() {
-    document.body.innerHTML = `
-        <div style="text-align: center; padding: 40px; color: #666; margin-top: 120px;">
-            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <div>Failed to initialize the application. Please try again.</div>
-            <button onclick="window.location.reload()" style="margin-top: 15px; padding: 8px 16px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Reload
-            </button>
-        </div>
-    `;
-}
-
-// Subscribe to new posts in real-time
-function subscribeToNewPosts() {
-    return supabase
-        .channel('new_posts')
-        .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'posts'
-        }, (payload) => {
-            if (isFirstLoad) return; // Don't show alerts during initial load
-            
-            const postTime = new Date(payload.new.created_at).getTime();
-            if (!lastPostTimestamp || postTime > lastPostTimestamp) {
-                newPostsCount++;
-                showNewPostsAlert();
-            }
-        })
-        .subscribe();
-}
-
-// Subscribe to view updates
-function subscribeToViewUpdates() {
-    return supabase
-        .channel('post_views')
-        .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'posts',
-        }, (payload) => {
-            updatePostViewCount(payload.new.id, payload.new.views);
-        })
-        .subscribe();
-}
-
-// Subscribe to like updates
-function subscribeToLikeUpdates() {
-    return supabase
-        .channel('post_likes')
-        .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'posts'
-        }, (payload) => {
-            const postElement = document.querySelector(`post-component[data-post-id="${payload.new.id}"]`);
-            if (postElement) {
-                updatePostLikeCount(postElement, payload.new.like_count);
-                
-                // If this post was just liked, move it to the top
-                if (payload.new.like_count > (payload.old?.like_count || 0)) {
-                    movePostToTop(postElement);
-                }
-            }
-        })
-        .subscribe();
-}
-
-// Subscribe to comment updates
-function subscribeToCommentUpdates() {
-    return supabase
-        .channel('post_comments')
-        .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'comments'
-        }, (payload) => {
-            const postId = payload.new.post_id;
-            const postElement = document.querySelector(`post-component[data-post-id="${postId}"]`);
-            if (postElement) {
-                incrementCommentCount(postElement);
-                movePostToTop(postElement);
-            }
-        })
-        .subscribe();
-}
-
-// Update post view count in UI
-function updatePostViewCount(postId, views) {
-    const postElement = document.querySelector(`post-component[data-post-id="${postId}"]`);
-    if (postElement) {
-        const viewsEl = postElement.querySelector('.views');
-        if (viewsEl) viewsEl.textContent = views;
+    
+    if (!isCurrentUser) {
+        const connectBtn = profileElement.querySelector('.connect-btn');
+        connectBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const userId = e.currentTarget.dataset.userId;
+            await handleConnection(userId, e.currentTarget);
+        });
     }
+    
+    return profileElement;
 }
 
-// Update post like count in UI
-function updatePostLikeCount(postElement, likeCount) {
-    const likeBtn = postElement.querySelector('.like-action');
-    if (likeBtn) {
-        const countEl = likeBtn.querySelector('.like-text');
-        if (countEl) countEl.textContent = likeCount;
-    }
+function createPostElement(post) {
+    const postElement = document.createElement('post-component');
+    postElement.setAttribute('post-data', JSON.stringify(post));
+    return postElement;
 }
 
-// Increment comment count in UI
-function incrementCommentCount(postElement) {
-    const commentBtn = postElement.querySelector('.comment-action');
-    if (commentBtn) {
-        const countEl = commentBtn.querySelector('.comment-text');
-        if (countEl) {
-            const currentCount = parseInt(countEl.textContent) || 0;
-            countEl.textContent = currentCount + 1;
-        }
-    }
-}
-
-// Move post to top of feed
-function movePostToTop(postElement) {
-    const postsContainer = document.getElementById('posts-container');
-    if (postsContainer.firstChild !== postElement) {
-        postsContainer.insertBefore(postElement, postsContainer.firstChild);
+// Suggested Profiles
+async function loadSuggestedProfiles() {
+    try {
+        if (!currentUserId) return;
         
-        // Show brief visual feedback
-        postElement.style.transition = 'background-color 0.5s';
-        postElement.style.backgroundColor = 'rgba(0, 86, 179, 0.1)';
-        setTimeout(() => {
-            postElement.style.backgroundColor = '';
-        }, 500);
-    }
-}
-
-// Show alert for new posts
-function showNewPostsAlert() {
-    elements.newPostsCount.textContent = newPostsCount === 1 ? '1 new post' : `${newPostsCount} new posts`;
-    elements.newPostsAlert.style.display = 'flex';
-    
-    // Auto-hide after 10 seconds
-    setTimeout(() => {
-        if (elements.newPostsAlert.style.display === 'flex') {
-            hideNewPostsAlert();
+        const { data, error } = await supabase.rpc('get_suggested_profiles', {
+            current_user_id: currentUserId,
+            limit_count: 10
+        });
+        
+        if (error) throw error;
+        
+        elements.suggestionsResults.innerHTML = '';
+        
+        if (!data || data.length === 0) {
+            elements.suggestionsContainer.style.display = 'none';
+            return;
         }
-    }, 10000);
-}
-
-// Hide new posts alert
-function hideNewPostsAlert() {
-    elements.newPostsAlert.style.display = 'none';
-    newPostsCount = 0;
-}
-
-// Initialize notification system
-async function initializeNotificationSystem() {
-    try {
-        // Check for unread notifications
-        const { data: unreadNotifications, error } = await supabase
-            .from('notifications')
-            .select('id', { count: 'exact' })
-            .eq('recipient_id', currentUser.id)
-            .eq('is_read', false);
-
-        if (error) throw error;
-
-        // Update badge
-        updateNotificationBadge(unreadNotifications.length || 0);
-
-        // Subscribe to new notifications
-        supabase
-            .channel('user_notifications')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'notifications',
-                filter: `recipient_id=eq.${currentUser.id}`
-            }, (payload) => {
-                const newCount = parseInt(elements.notificationBadge.textContent) || 0;
-                updateNotificationBadge(newCount + 1);
-            })
-            .subscribe();
-
+        
+        data.forEach(profile => {
+            const profileElement = createProfileElement(profile);
+            elements.suggestionsResults.appendChild(profileElement);
+        });
+        
+        await updateConnectionStatuses(data);
+        
     } catch (error) {
-        console.error('Error initializing notifications:', error);
+        console.error('Error loading suggestions:', error);
+        elements.suggestionsContainer.style.display = 'none';
     }
 }
 
-// Update notification badge
-function updateNotificationBadge(count) {
-    if (count > 0) {
-        elements.notificationBadge.textContent = count > 9 ? '9+' : count;
-        elements.notificationBadge.style.display = 'flex';
-        elements.notificationBadge.style.animation = 'pulse 1.5s infinite';
-        localStorage.setItem('unreadNotifications', count);
-    } else {
-        elements.notificationBadge.style.display = 'none';
-        localStorage.removeItem('unreadNotifications');
-    }
-}
-
-// Handle popstate for menu
-function handlePopState(event) {
-    if (elements.menuPage.style.display === 'block') {
-        elements.menuPage.style.display = 'none';
-    }
-}
-
-// VIEW TOGGLE FUNCTIONS
-function showFeed() {
-    document.getElementById('profileSection').style.display = 'none';
-    document.querySelector('.main-content').style.display = 'block';
-    document.querySelector('.top-header').style.display = 'flex';
-    document.title = 'X-Jamii';
-    updateActiveNavIcon('home');
-}
-
-function updateActiveNavIcon(activeIcon) {
-    const icons = document.querySelectorAll('.footer-icon');
-    icons.forEach(icon => icon.classList.remove('active'));
-
-    if (activeIcon === 'home') {
-        icons[0].classList.add('active');
-    } else if (activeIcon === 'profile') {
-        icons[3].classList.add('active');
-    }
-}
-
-// MENU with back button handling
-function toggleMenu() {
-    if (elements.menuPage.style.display === 'block') {
-        elements.menuPage.style.display = 'none';
-    } else {
-        elements.menuPage.style.display = 'block';
-        // Add to history for back button
-        history.pushState({ menuOpen: true }, '');
-    }
-}
-
-// LOGOUT
-async function logout() {
-    try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        window.location.href = 'welcome.html';
-    } catch (error) {
-        console.error('Error logging out:', error);
-        alert('Failed to log out. Please try again.');
-    }
-}
-
-// LAZY LOAD POST COMPONENT
-if (!customElements.get('post-component')) {
-    console.error('Post component not registered! Loading posts.js');
-    const script = document.createElement('script');
-    script.src = 'posts.js';
-    document.body.appendChild(script);
-    script.onload = loadPosts;
-}
-
-// Make functions available globally
-window.loadPosts = loadPosts;
-window.loadNewPosts = loadNewPosts;
-window.toggleMenu = toggleMenu;
-window.logout = logout;
-window.showFeed = showFeed;
-</script>
-
-    <script src="posts.js"></script>
-    <!-- Notifications JS (standalone file) -->
+// Connection Management
+async function updateConnectionStatuses(profiles) {
+    if (!currentUserId) return;
     
+    const { data: connections, error } = await supabase
+        .from('connections')
+        .select('*')
+        .or(`and(sender_id.eq.${currentUserId},receiver_id.in.(${profiles.map(p => `"${p.id}"`).join(',')})),and(sender_id.in.(${profiles.map(p => `"${p.id}"`).join(',')}),receiver_id.eq.${currentUserId})`);
+    
+    if (error) {
+        console.error('Error fetching connections:', error);
+        return;
+    }
+    
+    profiles.forEach(profile => {
+        if (profile.id === currentUserId) return;
+        
+        const connection = connections.find(c => 
+            (c.sender_id === currentUserId && c.receiver_id === profile.id) ||
+            (c.sender_id === profile.id && c.receiver_id === currentUserId)
+        );
+        
+        const connectBtn = document.querySelector(`.connect-btn[data-user-id="${profile.id}"]`);
+        if (!connectBtn) return;
+        
+        if (connection) {
+            if (connection.status === 'pending') {
+                if (connection.sender_id === currentUserId) {
+                    connectBtn.textContent = 'Pending';
+                    connectBtn.classList.add('pending');
+                    connectBtn.classList.remove('connected');
+                } else {
+                    connectBtn.textContent = 'Accept';
+                    connectBtn.classList.remove('pending', 'connected');
+                }
+            } else if (connection.status === 'accepted') {
+                connectBtn.textContent = 'Connected';
+                connectBtn.classList.add('connected');
+                connectBtn.classList.remove('pending');
+            }
+        } else {
+            connectBtn.textContent = 'Connect';
+            connectBtn.classList.remove('pending', 'connected');
+        }
+    });
+}
+
+async function handleConnection(userId, button) {
+    try {
+        if (!currentUserId) {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            
+            if (authError || !user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUserId = user.id;
+        }
+        
+        const { data: connection, error: connectionError } = await supabase
+            .from('connections')
+            .select('id, sender_id, status')
+            .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
+            .single();
+        
+        if (connectionError && connectionError.code !== 'PGRST116') throw connectionError;
+        
+        if (connection) {
+            if (connection.status === 'pending') {
+                if (connection.sender_id === currentUserId) {
+                    await supabase
+                        .from('connections')
+                        .delete()
+                        .eq('id', connection.id);
+                    
+                    button.textContent = 'Connect';
+                    button.classList.remove('pending', 'connected');
+                } else {
+                    await supabase
+                        .from('connections')
+                        .update({ status: 'accepted' })
+                        .eq('id', connection.id);
+                    
+                    button.textContent = 'Connected';
+                    button.classList.add('connected');
+                    button.classList.remove('pending');
+                }
+            } else if (connection.status === 'accepted') {
+                await supabase
+                    .from('connections')
+                    .delete()
+                    .eq('id', connection.id);
+                
+                button.textContent = 'Connect';
+                button.classList.remove('pending', 'connected');
+            }
+        } else {
+            await supabase
+                .from('connections')
+                .insert([{
+                    sender_id: currentUserId,
+                    receiver_id: userId,
+                    status: 'pending'
+                }]);
+            
+            button.textContent = 'Pending';
+            button.classList.add('pending');
+            button.classList.remove('connected');
+        }
+    } catch (error) {
+        console.error('Connection error:', error);
+        alert('Failed to update connection. Please try again.');
+    }
+}
+
+// Helper Functions
+function getInitialsAvatar(name) {
+    const initials = name ? 
+        name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U';
+    return `data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><rect width='50' height='50' fill='%230056b3'/><text x='50%' y='50%' font-size='20' fill='white' text-anchor='middle' dy='.3em'>${initials}</text></svg>`;
+}    
+               
+       
+                     
+
+        
+        
+    </script>
+    <script src="posts.js"></script>
 </body>
 </html>
