@@ -976,14 +976,13 @@ async function fetchPosts() {
         .order('created_at', { ascending: false })
         .range(postsPage * POSTS_PER_PAGE, (postsPage + 1) * POSTS_PER_PAGE - 1);
 }
-
 // Fetch user's liked posts
 async function fetchUserLikes() {
     const { data: userLikes } = await supabase
         .from('likes')
         .select('post_id')
         .eq('profile_id', currentUser.id);
-    return new Set(userLikes?.map(like => like.post_id) || [];
+    return new Set(userLikes?.map(like => like.post_id) || []);
 }
 
 // Process posts data
@@ -1376,7 +1375,12 @@ if (!customElements.get('post-component')) {
     script.onload = loadPosts;
 }
 
-
+// Make functions available globally
+window.loadPosts = loadPosts;
+window.loadNewPosts = loadNewPosts;
+window.toggleMenu = toggleMenu;
+window.logout = logout;
+window.showFeed = showFeed;
 </script>
 
     <script src="posts.js"></script>
