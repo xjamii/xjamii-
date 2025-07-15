@@ -766,7 +766,7 @@ body {
     try {
       // First ensure post component is available
       if (!customElements.get('post-component')) {
-        await loadScript('post-components.js');
+        await loadScript('post-component.js');
       }
       
       // Then load the profile
@@ -1191,7 +1191,7 @@ body {
 <script src="post-media-viewer.js"></script>
         <script src="PostUtils.js"></script>
         
-        <script src="posts.js"></script>
+        
         
       
       <script src="skills.js"></script>
