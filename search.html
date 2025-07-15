@@ -375,14 +375,7 @@ let hasMorePosts = true;
 let currentUserId = null;
 
         
-// Check for dark mode preference
-function checkDarkMode() {
-    const darkModeEnabled = localStorage.getItem('darkMode') === 'true' || 
-                          (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    if (darkModeEnabled) {
-        elements.body.classList.add('dark-mode');
-    }
-}
+
 // Event Listeners
 elements.searchInput.addEventListener('input', handleSearchInput);
 
@@ -563,31 +556,70 @@ async function searchProfiles(searchTerm) {
 }
 
 async function searchPosts(searchTerm) {
-    const { data, error } = await supabase
-        .from('posts')
-        .select(`
-            *,
-            profile:profiles(*),
-            media:post_media(*)
-        `)
-        .ilike('content', `%${searchTerm}%`)
-        .order('created_at', { ascending: false })
-        .limit(20);
-    
-    if (error) throw error;
-    
-    elements.postsResults.innerHTML = '';
-    
-    if (!data || data.length === 0) {
-        elements.postsNoResults.innerHTML = `
-            <i class="fas fa-comment-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <div>No posts found for "${searchTerm}"</div>
-        `;
+    try {
+        const { data, error } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:profiles(*),
+                media:post_media(*),
+                likes(count),
+                comments(count)
+            `)
+            .ilike('content', `%${searchTerm}%`)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+        if (error) throw error;
+
+        elements.postsResults.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            elements.postsNoResults.innerHTML = `
+                <i class="fas fa-comment-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                <div>No posts found for "${searchTerm}"</div>
+            `;
+            elements.postsNoResults.style.display = 'block';
+            return;
+        }
+
+        // Process the data to match what PostComponent expects
+        const processedPosts = await Promise.all(data.map(async post => {
+            const isLiked = await checkPostLikeStatus(post.id);
+            return {
+                ...post,
+                like_count: post.likes[0]?.count || 0,
+                comment_count: post.comments[0]?.count || 0,
+                is_liked: isLiked,
+                views: post.views || 0
+            };
+        }));
+
+        appendPostsResults(processedPosts);
+    } catch (error) {
+        console.error('Error searching posts:', error);
         elements.postsNoResults.style.display = 'block';
-        return;
     }
-    
-    appendPostsResults(data);
+}
+
+async function checkPostLikeStatus(postId) {
+    try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) return false;
+
+        const { data, error } = await supabase
+            .from('likes')
+            .select('*')
+            .eq('post_id', postId)
+            .eq('profile_id', user.id)
+            .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+        return !!data;
+    } catch (err) {
+        console.error('Error checking like status:', err);
+        return false;
+    }
 }
 
 async function loadMoreProfiles() {
