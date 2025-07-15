@@ -174,7 +174,7 @@
             left: 0;
             right: 0;
             height: 120px;
-            background-color: #0056b3;
+            background-color: white;
             border-bottom: 1px solid #e6ecf0;
             display: flex;
             flex-direction: column;
@@ -662,7 +662,7 @@
 </div>
 <div class="infinite-scroll-loader" id="posts-scroll-loader">
     <div class="spinner"></div>
-    <div>Loading more posts...</div>
+    
 </div>
 
     <!-- Bottom Navigation -->
@@ -954,7 +954,10 @@ function handlePostsScroll() {
     const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
 
     if (nearBottom && hasMorePosts && !isPostsLoading) {
-        loadPosts(true);
+        // Add a small delay to prevent multiple rapid triggers
+        setTimeout(() => {
+            loadPosts(true);
+        }, 200);
     }
 }
 
