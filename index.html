@@ -972,13 +972,21 @@ async function loadProfileData() {
 
         if (profileError) throw profileError;
 
-        // Update profile UI elements...
-        
+        const displayName = profile.full_name || profile.username || 'User';
+        document.getElementById('profile-avatar').textContent = displayName.charAt(0).toUpperCase();
+        document.getElementById('profile-username').textContent = `@${profile.username}`;
+        document.getElementById('header-title').textContent = displayName;
+
+        document.getElementById('skeleton-loader').style.display = 'none';
+        document.getElementById('profile-content').style.display = 'block';
+
     } catch (error) {
         console.error('Error loading profile:', error);
+        document.getElementById('skeleton-loader').style.display = 'none';
+        document.getElementById('profile-content').innerHTML = '<div class="error-message">Error loading profile</div>';
+        document.getElementById('profile-content').style.display = 'block';
     }
 }
-
 // UPDATE NOTIFICATION BADGE
 function updateNotificationBadge(count) {
     const badge = document.getElementById('notificationBadge');
