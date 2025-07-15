@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-     <meta name="theme-color" content="#00008B">
+     <meta name="theme-color" content="#000080">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>X-Jamii</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -74,7 +74,7 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background-color: #00008B;
+            background-color: #0056b3;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -103,7 +103,7 @@
         }
 
         .create-post-btn:hover {
-            background-color: #00008B;
+            background-color: #0056b3;
         }
 
         .dark-mode .create-post-btn {
@@ -178,7 +178,7 @@
             left: 0;
             right: 0;
             height: 120px;
-            background-color: #00008B;
+            background-color: #0056b3;
             border-bottom: 1px solid #e6ecf0;
             display: flex;
             flex-direction: column;
@@ -270,8 +270,8 @@
             width: 100%;
             padding: 10px 15px 10px 40px;
             border-radius: 20px;
-            border: 1px solid #00008B;
-            background-color: #00008B;
+            border: 1px solid #e6ecf0;
+            background-color: #0056b3;
             font-size: 14px;
             outline: none;
             transition: all 0.2s;
@@ -297,7 +297,7 @@
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: white;
+            color: #657786;
             font-size: 14px;
         }
 
@@ -398,7 +398,7 @@
             border-bottom: 1px solid #ddd;
             position: sticky;
             top: 0;
-            background-color: #00008B;
+            background-color: white;
             z-index: 10;
         }
 
@@ -413,7 +413,6 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            color: white;
         }
 
         .menu-back-btn .fa-times {
@@ -428,13 +427,11 @@
         .menu-title {
             font-weight: bold;
             font-size: 18px;
-            color: white;
         }
 
         .menu-search-btn {
             font-size: 20px;
             cursor: pointer;
-            color: white;
         }
 
         .verified-badge {
@@ -486,12 +483,11 @@
             background-color: #444;
         }
 
-.menu-option-text {
+..menu-option-text {
     font-size: 14px;
     font-weight: 500;
-    color: #00008B;
     margin-top: 8px;
-    margin-left: 20px; /* Move element 17px to the right */
+    margin-left: 17px; /* Move element 17px to the right */
     position: relative;
     padding-right: 30px;
     width: calc(100% - 17px); /* Prevent overflow with new margin */
@@ -618,7 +614,22 @@
     .posts-container {
       padding-bottom: 100px; /* Give space for footer */
     }
-          
+
+      .infinite-scroll-loader {
+    text-align: center;
+    padding: 15px;
+    display: none;
+}
+
+.infinite-scroll-loader .spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #e6f0ff;
+    border-top: 3px solid #0056b3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
     </style>
 </head>
 <body>
@@ -650,12 +661,13 @@
         </div>
     </div>
     
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="posts-container" id="posts-container">
-            <!-- Posts will be loaded here -->
-        </div>
-    </div>
+  <div class="posts-container" id="posts-container">
+    <!-- Posts will be loaded here -->
+</div>
+<div class="infinite-scroll-loader" id="posts-scroll-loader">
+    <div class="spinner"></div>
+    <div>Loading more posts...</div>
+</div>
 
     <!-- Bottom Navigation -->
     <footer class="footer">
@@ -759,10 +771,20 @@
             </div>
         </div>
     </div>
-<script>
-      
 
-   let viewChannel = null;
+      
+<script>
+// Initialize Supabase
+const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+// Pagination variables
+let postsPage = 0;
+const POSTS_PER_PAGE = 10;
+let hasMorePosts = true;
+let isPostsLoading = false;
+let viewChannel = null;
 let likeChannel = null;
 
 // Initialize page with preloader
@@ -797,6 +819,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 menuPage.style.display = 'none';
             }
         };
+
+        // Add scroll event listener
+        window.addEventListener('scroll', handlePostsScroll);
 
     } catch (error) {
         console.error('Initialization error:', error);
@@ -838,6 +863,102 @@ function updateActiveNavIcon(activeIcon) {
         icons[0].classList.add('active');
     } else if (activeIcon === 'profile') {
         icons[3].classList.add('active');
+    }
+}
+
+// LOAD POSTS with pagination
+async function loadPosts(isLoadMore = false) {
+    if (isLoadMore && !hasMorePosts) return;
+    if (isPostsLoading) return;
+    
+    isPostsLoading = true;
+    
+    try {
+        if (isLoadMore) {
+            document.getElementById('posts-scroll-loader').style.display = 'block';
+        } else {
+            // Show initial loading state
+            const loadingSpinner = document.createElement('div');
+            loadingSpinner.className = 'post-loading-spinner';
+            loadingSpinner.innerHTML = '<div class="spinner"></div>';
+            document.getElementById('posts-container').appendChild(loadingSpinner);
+        }
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+
+        const { data: posts, error: postsError } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (username, full_name, avatar_url, is_verified),
+                media:post_media (media_url, media_type)
+            `)
+            .order('created_at', { ascending: false })
+            .range(postsPage * POSTS_PER_PAGE, (postsPage + 1) * POSTS_PER_PAGE - 1);
+
+        if (postsError) throw postsError;
+
+        const { data: userLikes, error: likesError } = await supabase
+            .from('likes')
+            .select('post_id')
+            .eq('profile_id', user.id);
+
+        if (likesError) throw likesError;
+
+        const likedPostIds = new Set(userLikes.map(like => like.post_id));
+        const postsWithLikes = posts.map(post => ({
+            ...post,
+            is_liked: likedPostIds.has(post.id)
+        }));
+
+        const postsContainer = document.getElementById('posts-container');
+        
+        // Clear container only for initial load
+        if (!isLoadMore) {
+            postsContainer.innerHTML = '';
+        }
+        
+        if (posts.length === 0) {
+            hasMorePosts = false;
+            if (!isLoadMore) {
+                postsContainer.innerHTML = '<div class="no-posts">No posts found</div>';
+            }
+            return;
+        }
+
+        postsWithLikes.forEach(post => {
+            const postElement = document.createElement('post-component');
+            postElement.setAttribute('post-data', JSON.stringify(post));
+            postsContainer.appendChild(postElement);
+        });
+
+        if (posts.length < POSTS_PER_PAGE) {
+            hasMorePosts = false;
+        } else {
+            postsPage++;
+        }
+
+    } catch (error) {
+        console.error("Error loading posts:", error);
+        if (!isLoadMore) {
+            document.getElementById('posts-container').innerHTML = '<div class="error-message">Error loading posts</div>';
+        }
+    } finally {
+        isPostsLoading = false;
+        document.getElementById('posts-scroll-loader').style.display = 'none';
+        const spinner = document.querySelector('.post-loading-spinner');
+        if (spinner) spinner.remove();
+    }
+}
+
+// Infinite scroll handler
+function handlePostsScroll() {
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+
+    if (nearBottom && hasMorePosts && !isPostsLoading) {
+        loadPosts(true);
     }
 }
 
@@ -897,61 +1018,6 @@ function updateNotificationBadge(count) {
     } else {
         badge.style.display = 'none';
         localStorage.removeItem('unreadNotifications');
-    }
-}
-
-window.addEventListener('message', (event) => {
-    if (event.data.type === 'updateNotificationBadge') {
-        updateNotificationBadge(event.data.count);
-    }
-});
-
-// LOAD POSTS with loading spinner
-async function loadPosts() {
-    try {
-        // Show loading spinner
-        const loadingSpinner = document.createElement('div');
-        loadingSpinner.className = 'post-loading-spinner';
-        loadingSpinner.innerHTML = '<div class="spinner"></div>';
-        document.getElementById('posts-container').appendChild(loadingSpinner);
-
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-
-        const { data: posts, error: postsError } = await supabase
-            .from('posts')
-            .select(`
-                *,
-                profile:user_id (username, full_name, avatar_url, is_verified),
-                media:post_media (media_url, media_type)
-            `)
-            .order('created_at', { ascending: false });
-
-        if (postsError) throw postsError;
-
-        const { data: userLikes, error: likesError } = await supabase
-            .from('likes')
-            .select('post_id')
-            .eq('profile_id', user.id);
-
-        if (likesError) throw likesError;
-
-        const likedPostIds = new Set(userLikes.map(like => like.post_id));
-        const postsWithLikes = posts.map(post => ({
-            ...post,
-            is_liked: likedPostIds.has(post.id)
-        }));
-
-        const postsContainer = document.getElementById('posts-container');
-        postsContainer.innerHTML = '';
-        postsWithLikes.forEach(post => {
-            const postElement = document.createElement('post-component');
-            postElement.setAttribute('post-data', JSON.stringify(post));
-            postsContainer.appendChild(postElement);
-        });
-
-    } catch (error) {
-        console.error("Error loading posts:", error);
     }
 }
 
@@ -1029,10 +1095,16 @@ if (!customElements.get('post-component')) {
     script.onload = loadPosts;
 }
 
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'updateNotificationBadge') {
+        updateNotificationBadge(event.data.count);
+    }
+});
 </script>
+
 
     <script src="posts.js"></script>
     <!-- Notifications JS (standalone file) -->
     
 </body>
-</html>
+</html>  
