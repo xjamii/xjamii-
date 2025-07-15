@@ -530,6 +530,143 @@
     100% { transform: rotate(360deg); }
 }
 
+        /* Mention styling in the post input */
+.post-input .mention {
+    color: #1DA1F2;
+    font-weight: 500;
+    background-color: rgba(29, 161, 242, 0.1);
+    padding: 2px 4px;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+/* Mention dropdown styles */
+.mention-dropdown {
+    position: absolute;
+    background: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    width: 250px;
+}
+
+.dark-mode .mention-dropdown {
+    background: #242526;
+    border-color: #3e4042;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.mention-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.mention-item:hover {
+    background-color: #f5f8fa;
+}
+
+.dark-mode .mention-item:hover {
+    background-color: #3a3b3c;
+}
+
+.mention-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 10px;
+    background-color: #e1e8ed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.mention-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mention-details {
+    flex: 1;
+    overflow: hidden;
+}
+
+.mention-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #14171a;
+}
+
+.dark-mode .mention-name {
+    color: #e4e6eb;
+}
+
+.mention-username {
+    font-size: 13px;
+    color: #657786;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dark-mode .mention-username {
+    color: #b0b3b8;
+}
+
+.mention-item.active {
+    background-color: #e8f5fd;
+}
+
+.dark-mode .mention-item.active {
+    background-color: #2d88ff22;
+}
+
+/* Mention highlight in preview */
+.notification-content .mention {
+    color: #1DA1F2;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Styles for the mention wrapper */
+.mention-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+/* Loading state for mention dropdown */
+.mention-loading {
+    padding: 12px;
+    text-align: center;
+    color: #657786;
+    font-size: 14px;
+}
+
+.dark-mode .mention-loading {
+    color: #b0b3b8;
+}
+
+/* No results state */
+.mention-no-results {
+    padding: 12px;
+    text-align: center;
+    color: #657786;
+    font-size: 14px;
+}
+
+.dark-mode .mention-no-results {
+    color: #b0b3b8;
+}
     </style>
 </head>
 <body>
