@@ -190,6 +190,8 @@
   font-size: 0.9em;
   margin-left: 3px;
 }
+
+        
     </style>
 </head>
 <body>
@@ -256,7 +258,8 @@ const notificationTypes = {
   connection_accepted: { icon: 'fas fa-user-check', color: '#4CAF50', tab: 'requests' },
   new_post: { icon: 'fas fa-paper-plane', color: '#FF9800', tab: 'posts' },
   comment: { icon: 'far fa-comment', color: '#4CAF50', tab: 'posts' },
-  comment_like: { icon: 'fas fa-heart', color: '#E91E63', tab: 'posts' }
+  comment_like: { icon: 'fas fa-heart', color: '#E91E63', tab: 'posts' },
+  post_like: { icon: 'fas fa-heart', color: '#E91E63', tab: 'posts' } // Add this line
 };
 
 let currentUserId = null;
@@ -297,7 +300,7 @@ async function loadNotifications(type = 'all') {
     .order('created_at', { ascending: false });
 
   if (type === 'requests') query = query.or('type.eq.connection_request,type.eq.connection_accepted');
-  if (type === 'posts') query = query.or('type.eq.new_post,type.eq.comment,type.eq.comment_like');
+  if (type === 'posts') query = query.or('type.eq.new_post,type.eq.comment,type.eq.comment_like,type.eq.post_like');
 
   const { data, error: fetchError } = await query;
   if (fetchError) return renderError(container, type);
@@ -324,7 +327,13 @@ function createNotification(n) {
   const config = notificationTypes[n.type] || { icon: 'fas fa-bell', color: '#0056b3', tab: 'all' };
   const initials = n.sender_name ? n.sender_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U';
   const avatar = n.sender_avatar || `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><rect width='50' height='50' fill='%230056b3'/><text x='50%' y='50%' font-size='20' fill='white' text-anchor='middle' dy='.3em'>${initials}</text></svg>`;
-  
+
+    
+  // Add post preview for post-related notifications
+  const postPreview = (n.type === 'post_like' || n.type === 'comment' || n.type === 'comment_like') && n.post 
+    ? `<div class="notification-post-preview">${n.post.content ? n.post.content.substring(0, 50) + (n.post.content.length > 50 ? '...' : '') : 'Post'}</div>`
+    : '';  
+    
   const element = document.createElement('div');
   element.className = `notification-item ${n.read ? '' : 'unread'}`;
   element.dataset.id = n.id;
