@@ -754,14 +754,23 @@
 <script>
       
 
-   let viewChannel = null;
-let likeChannel = null;
+// Pagination variables
+let postsPage = 0;
+const POSTS_PER_PAGE = 10;
+let hasMorePosts = true;
+let isPostsLoading = false;
 
-// Initialize page with preloader
+// DOM Elements
+const elements = {
+    postsContainer: document.getElementById('posts-container'),
+    fullPageLoader: document.getElementById('full-page-loader'),
+    menuPage: document.getElementById('menuPage')
+};
+
+// Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Show preloader
-        document.getElementById('full-page-loader').style.display = 'flex';
+        elements.fullPageLoader.style.display = 'flex';
         
         // Check authentication
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -770,37 +779,196 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Initialize page
-        showFeed();
+        // Load initial posts
         await loadPosts();
 
-        // Real-time subscriptions
-        viewChannel = subscribeToViewUpdates();
-        likeChannel = subscribeToLikeUpdates();
+        // Setup real-time subscriptions
+        setupRealtimeUpdates();
 
-        if (typeof initializeNotificationSystem === 'function') {
-            await initializeNotificationSystem();
-        }
-
-        // Setup back button handler for menu
-        window.onpopstate = function(event) {
-            const menuPage = document.getElementById('menuPage');
-            if (menuPage.style.display === 'block') {
-                menuPage.style.display = 'none';
-            }
-        };
+        // Setup scroll listener for infinite scroll
+        window.addEventListener('scroll', handleScroll);
 
     } catch (error) {
         console.error('Initialization error:', error);
     } finally {
-        // Hide preloader
-        document.getElementById('full-page-loader').style.display = 'none';
+        elements.fullPageLoader.style.display = 'none';
     }
 });
 
-// VIEW TOGGLE FUNCTIONS
+// Load posts with pagination
+async function loadPosts(isLoadMore = false) {
+    if (isLoadMore && !hasMorePosts) return;
+    if (isPostsLoading) return;
+    
+    isPostsLoading = true;
+    
+    try {
+        // Show loading spinner
+        if (!isLoadMore) {
+            elements.postsContainer.innerHTML = '<div class="post-loading-spinner"><div class="spinner"></div></div>';
+        }
+
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // Fetch posts with pagination
+        const { data: posts, error: postsError } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (username, full_name, avatar_url, is_verified),
+                media:post_media (media_url, media_type)
+            `)
+            .order('created_at', { ascending: false })
+            .range(postsPage * POSTS_PER_PAGE, (postsPage + 1) * POSTS_PER_PAGE - 1);
+
+        if (postsError) throw postsError;
+
+        // Check if we've reached the end
+        if (!posts || posts.length === 0) {
+            hasMorePosts = false;
+            if (!isLoadMore) {
+                elements.postsContainer.innerHTML = '<div class="no-posts">No posts found</div>';
+            }
+            return;
+        }
+
+        // Get user's liked posts
+        const { data: userLikes } = await supabase
+            .from('likes')
+            .select('post_id')
+            .eq('profile_id', user.id);
+
+        const likedPostIds = new Set(userLikes?.map(like => like.post_id) || []);
+        
+        // Process posts data
+        const processedPosts = posts.map(post => ({
+            ...post,
+            is_liked: likedPostIds.has(post.id),
+            media: (post.media || []).map(media => ({
+                ...media,
+                media_url: media.media_url.startsWith('http') 
+                    ? media.media_url 
+                    : `${supabaseUrl}/storage/v1/object/public/${media.media_url}`
+            }))
+        }));
+
+        // Render posts
+        if (isLoadMore) {
+            appendPosts(processedPosts);
+        } else {
+            renderPosts(processedPosts);
+        }
+
+        // Increment page if we got a full page of results
+        if (posts.length === POSTS_PER_PAGE) {
+            postsPage++;
+        } else {
+            hasMorePosts = false;
+        }
+
+    } catch (error) {
+        console.error('Error loading posts:', error);
+        if (!isLoadMore) {
+            elements.postsContainer.innerHTML = '<div class="error-message">Error loading posts</div>';
+        }
+    } finally {
+        isPostsLoading = false;
+    }
+}
+
+// Render initial posts
+function renderPosts(posts) {
+    elements.postsContainer.innerHTML = '';
+    appendPosts(posts);
+}
+
+// Append posts to container
+function appendPosts(posts) {
+    posts.forEach(post => {
+        const postElement = document.createElement('post-component');
+        postElement.setAttribute('post-data', JSON.stringify(post));
+        elements.postsContainer.appendChild(postElement);
+    });
+}
+
+// Handle infinite scroll
+async function handleScroll() {
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+
+    if (nearBottom && hasMorePosts && !isPostsLoading) {
+        await loadPosts(true);
+    }
+}
+
+// Setup real-time updates
+function setupRealtimeUpdates() {
+    // View updates
+    viewChannel = supabase
+        .channel('post_views')
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'posts'
+        }, (payload) => {
+            const postElement = document.querySelector(`post-component[data-post-id="${payload.new.id}"]`);
+            if (postElement) {
+                const viewsEl = postElement.querySelector('.views');
+                if (viewsEl) viewsEl.textContent = payload.new.views;
+            }
+        })
+        .subscribe();
+
+    // Like updates
+    likeChannel = supabase
+        .channel('post_likes')
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'posts'
+        }, (payload) => {
+            const postElement = document.querySelector(`post-component[post-data*='"id":"${payload.new.id}"']`);
+            if (postElement) {
+                const likeBtn = postElement.querySelector('.like-action');
+                if (likeBtn) {
+                    const countEl = likeBtn.querySelector('span');
+                    if (countEl) countEl.textContent = payload.new.like_count;
+                }
+            }
+        })
+        .subscribe();
+}
+
+// Menu toggle function
+function toggleMenu() {
+    elements.menuPage.style.display = elements.menuPage.style.display === 'block' ? 'none' : 'block';
+    if (elements.menuPage.style.display === 'block') {
+        history.pushState({ menuOpen: true }, '');
+    }
+}
+
+// Handle back button for menu
+window.onpopstate = function(event) {
+    if (elements.menuPage.style.display === 'block') {
+        elements.menuPage.style.display = 'none';
+    }
+};
+
+// Logout function
+async function logout() {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        window.location.href = 'welcome.html';
+    } catch (error) {
+        console.error('Error logging out:', error);
+        alert('Failed to log out. Please try again.');
+    }
+}
+
+// View toggle functions
 function showFeed() {
-    document.getElementById('profileSection').style.display = 'none';
+    document.getElementById('profileSection')?.style.display = 'none';
     document.querySelector('.main-content').style.display = 'block';
     document.querySelector('.top-header').style.display = 'flex';
     document.title = 'X-Jamii';
@@ -811,7 +979,7 @@ async function showProfile() {
     document.querySelector('.main-content').style.display = 'none';
     document.querySelector('.top-header').style.display = 'none';
 
-    if (!document.getElementById('profileSection').innerHTML) {
+    if (!document.getElementById('profileSection')) {
         await loadProfileSection();
     }
 
@@ -833,192 +1001,12 @@ function updateActiveNavIcon(activeIcon) {
     }
 }
 
-// LOAD PROFILE SECTION
-async function loadProfileSection() {
-    const response = await fetch('profile.html');
-    const html = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    document.getElementById('profileSection').innerHTML = doc.querySelector('.profile-container').outerHTML;
-}
-
-// LOAD PROFILE DATA
-async function loadProfileData() {
-    try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) throw error;
-
-        document.getElementById('skeleton-loader').style.display = 'flex';
-        document.getElementById('profile-content').style.display = 'none';
-
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-        if (profileError) throw profileError;
-
-        const displayName = profile.full_name || profile.username || 'User';
-        document.getElementById('profile-avatar').textContent = displayName.charAt(0).toUpperCase();
-        document.getElementById('profile-username').textContent = `@${profile.username}`;
-        document.getElementById('header-title').textContent = displayName;
-
-        document.getElementById('skeleton-loader').style.display = 'none';
-        document.getElementById('profile-content').style.display = 'block';
-
-    } catch (error) {
-        console.error('Error loading profile:', error);
-        document.getElementById('skeleton-loader').style.display = 'none';
-        document.getElementById('profile-content').innerHTML = '<div class="error-message">Error loading profile</div>';
-        document.getElementById('profile-content').style.display = 'block';
-    }
-}
-
-// UPDATE NOTIFICATION BADGE
-function updateNotificationBadge(count) {
-    const badge = document.getElementById('notificationBadge');
-    if (!badge) return;
-
-    if (count > 0) {
-        badge.textContent = count > 9 ? '9+' : count;
-        badge.style.display = 'flex';
-        badge.style.animation = 'pulse 1.5s infinite';
-        localStorage.setItem('unreadNotifications', count);
-        window.postMessage({ type: 'updateNotificationBadge', count }, '*');
-    } else {
-        badge.style.display = 'none';
-        localStorage.removeItem('unreadNotifications');
-    }
-}
-
-window.addEventListener('message', (event) => {
-    if (event.data.type === 'updateNotificationBadge') {
-        updateNotificationBadge(event.data.count);
-    }
-});
-
-// LOAD POSTS with loading spinner
-async function loadPosts() {
-    try {
-        // Show loading spinner
-        const loadingSpinner = document.createElement('div');
-        loadingSpinner.className = 'post-loading-spinner';
-        loadingSpinner.innerHTML = '<div class="spinner"></div>';
-        document.getElementById('posts-container').appendChild(loadingSpinner);
-
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-
-        const { data: posts, error: postsError } = await supabase
-            .from('posts')
-            .select(`
-                *,
-                profile:user_id (username, full_name, avatar_url, is_verified),
-                media:post_media (media_url, media_type)
-            `)
-            .order('created_at', { ascending: false });
-
-        if (postsError) throw postsError;
-
-        const { data: userLikes, error: likesError } = await supabase
-            .from('likes')
-            .select('post_id')
-            .eq('profile_id', user.id);
-
-        if (likesError) throw likesError;
-
-        const likedPostIds = new Set(userLikes.map(like => like.post_id));
-        const postsWithLikes = posts.map(post => ({
-            ...post,
-            is_liked: likedPostIds.has(post.id)
-        }));
-
-        const postsContainer = document.getElementById('posts-container');
-        postsContainer.innerHTML = '';
-        postsWithLikes.forEach(post => {
-            const postElement = document.createElement('post-component');
-            postElement.setAttribute('post-data', JSON.stringify(post));
-            postsContainer.appendChild(postElement);
-        });
-
-    } catch (error) {
-        console.error("Error loading posts:", error);
-    }
-}
-
-// REAL-TIME VIEW TRACKING
-function subscribeToViewUpdates() {
-    const channel = supabase
-        .channel('post_views')
-        .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'posts',
-        }, (payload) => {
-            const postElement = document.querySelector(`post-component[data-post-id="${payload.new.id}"]`);
-            if (postElement) {
-                const viewsEl = postElement.querySelector('.views');
-                if (viewsEl) viewsEl.textContent = payload.new.views;
-            }
-        })
-        .subscribe();
-    return channel;
-}
-
-// REAL-TIME LIKE TRACKING
-function subscribeToLikeUpdates() {
-    return supabase
-        .channel('post_likes')
-        .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'posts',
-            filter: 'id=eq.56aaaeef-7e05-4fac-ad5f-3e9095329a44'
-        }, (payload) => {
-            const postElement = document.querySelector(`post-component[post-data*='"id":"${payload.new.id}"']`);
-            if (postElement) {
-                const likeBtn = postElement.querySelector('.like-action');
-                if (likeBtn) {
-                    const countEl = likeBtn.querySelector('.like-text');
-                    if (countEl) countEl.textContent = payload.new.like_count;
-                }
-            }
-        })
-        .subscribe();
-}
-
-// MENU with back button handling
-function toggleMenu() {
-    const menuPage = document.getElementById('menuPage');
-    if (menuPage.style.display === 'block') {
-        menuPage.style.display = 'none';
-    } else {
-        menuPage.style.display = 'block';
-        // Add to history for back button
-        history.pushState({ menuOpen: true }, '');
-    }
-}
-
-// LOGOUT
-async function logout() {
-    try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        window.location.href = 'welcome.html';
-    } catch (error) {
-        console.error('Error logging out:', error);
-        alert('Failed to log out. Please try again.');
-    }
-}
-
-// LAZY LOAD POST COMPONENT
+// Lazy load post component if not already registered
 if (!customElements.get('post-component')) {
-    console.error('Post component not registered! Loading posts.js');
     const script = document.createElement('script');
     script.src = 'posts.js';
     document.body.appendChild(script);
-    script.onload = loadPosts;
+    script.onload = () => loadPosts();
 }
 
 </script>
