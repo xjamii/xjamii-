@@ -616,7 +616,7 @@
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     
      <script>
-// DOM Elements
+/// DOM Elements
 const userInfoContainer = document.getElementById('user-info-container');
 const postInput = document.getElementById('post-content');
 const postButton = document.getElementById('submit-post');
@@ -635,14 +635,13 @@ let videoCount = 0;
 let currentUser = null;
 let currentProfile = null;
 let isInitialized = false;
+let mentionTimeout = null;
+let mentionStartPos = -1;
 
-// Replace your init() function with this:
 async function init() {
     try {
-        // Show preloader immediately
         document.getElementById('full-page-loader').style.display = 'flex';
         
-        // 1. Check authentication
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         
         if (authError || !user) {
@@ -651,13 +650,8 @@ async function init() {
         }
         
         currentUser = user;
-        
-        // 2. Load user profile
         await loadUserProfile();
-        
-        // 3. Setup event listeners
         setupEventListeners();
-        
         isInitialized = true;
         
     } catch (error) {
@@ -667,12 +661,10 @@ async function init() {
             window.location.href = 'login.html';
         }
     } finally {
-        // Hide preloader when everything is loaded
         document.getElementById('full-page-loader').style.display = 'none';
     }
 }
 
-// Load user profile data from Supabase
 async function loadUserProfile() {
     try {
         console.log("[Profile] Loading profile...");
@@ -688,7 +680,6 @@ async function loadUserProfile() {
         
         currentProfile = profile;
         console.log("[Profile] Loaded:", profile.username);
-        
         displayUserProfile(profile);
         
     } catch (error) {
@@ -699,7 +690,6 @@ async function loadUserProfile() {
     }
 }
 
-// Show skeleton loader
 function showSkeletonLoader() {
     userInfoContainer.innerHTML = `
         <div class="skeleton-loader">
@@ -712,7 +702,6 @@ function showSkeletonLoader() {
     `;
 }
 
-// Display user profile with actual data
 function displayUserProfile(profile) {
     const avatarContent = profile.avatar_url 
         ? `<img src="${profile.avatar_url}" alt="${profile.full_name || profile.username}" 
@@ -739,7 +728,6 @@ function displayUserProfile(profile) {
     `;
 }
 
-// Create initial avatar with colored background
 function createInitialAvatar(name) {
     if (!name) name = 'User';
     const initials = name.split(' ').map(n => n[0] || '').join('').toUpperCase().substring(0, 2);
@@ -754,7 +742,6 @@ function createInitialAvatar(name) {
     `;
 }
 
-// Set up event listeners
 function setupEventListeners() {
     console.log("[Events] Setting up listeners...");
     
@@ -774,14 +761,60 @@ function setupEventListeners() {
     postButton.addEventListener('click', handlePostCreation);
     bottomPostButton.addEventListener('click', handlePostCreation);
     
+    // Mention detection in post input
+    postInput.addEventListener('input', handleInputChanges);
+    postInput.addEventListener('keydown', (e) => {
+        if (e.key === '@') {
+            mentionStartPos = postInput.selectionStart;
+        }
+    });
+    
     console.log("[Events] Listeners ready");
 }
 
-// Handle media upload with all requirements
+function handleInputChanges(e) {
+    const text = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    
+    // Check for @ mentions
+    if (text[cursorPos - 1] === '@' || 
+        (mentionStartPos !== -1 && cursorPos > mentionStartPos)) {
+        detectMention(text, cursorPos);
+    } else {
+        mentionStartPos = -1;
+    }
+}
+
+async function detectMention(text, cursorPos) {
+    if (mentionTimeout) clearTimeout(mentionTimeout);
+    
+    mentionTimeout = setTimeout(async () => {
+        const textBeforeCursor = text.substring(0, cursorPos);
+        const lastAtPos = textBeforeCursor.lastIndexOf('@');
+        
+        if (lastAtPos === -1) return;
+        
+        const searchTerm = textBeforeCursor.substring(lastAtPos + 1).trim();
+        if (searchTerm.length < 1) return;
+        
+        const { data: users, error } = await supabase
+            .from('profiles')
+            .select('username, full_name')
+            .ilike('username', `${searchTerm}%`)
+            .limit(5);
+        
+        if (error || !users.length) return;
+        
+        // Here you would typically show a dropdown with suggested users
+        console.log("Potential mentions:", users);
+        // You would implement UI to select a mention from the list
+        
+    }, 300);
+}
+
 async function handleMediaUpload(e, type) {
     const newFiles = Array.from(e.target.files);
     
-    // Validate file count
     if (type === 'image') {
         if (uploadedFiles.length + newFiles.length > 4) {
             showToastMessage("Maximum 4 photos allowed per post");
@@ -789,16 +822,14 @@ async function handleMediaUpload(e, type) {
             return;
         }
         
-        // Check each image size
         for (const file of newFiles) {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+            if (file.size > 10 * 1024 * 1024) {
                 showToastMessage("Photos must be less than 10MB");
                 e.target.value = '';
                 return;
             }
         }
         
-        // If all checks passed, add images
         uploadedFiles = [...uploadedFiles, ...newFiles];
     } 
     else if (type === 'video') {
@@ -809,15 +840,12 @@ async function handleMediaUpload(e, type) {
         }
         
         const videoFile = newFiles[0];
-        
-        // Check video size
-        if (videoFile.size > 50 * 1024 * 1024) { // 50MB limit
+        if (videoFile.size > 50 * 1024 * 1024) {
             showToastMessage("Videos must be less than 50MB");
             e.target.value = '';
             return;
         }
         
-        // If all checks passed, add video
         uploadedFiles.push(videoFile);
         videoCount++;
     }
@@ -826,7 +854,6 @@ async function handleMediaUpload(e, type) {
     e.target.value = '';
 }
 
-// Display media preview with working delete functionality
 function displayMediaPreview() {
     mediaGrid.innerHTML = '';
     
@@ -850,7 +877,6 @@ function displayMediaPreview() {
             
             mediaGrid.appendChild(mediaItem);
             
-            // Add click event to delete button
             mediaItem.querySelector('.remove-media').addEventListener('click', (e) => {
                 e.stopPropagation();
                 removeMediaItem(index);
@@ -863,7 +889,6 @@ function displayMediaPreview() {
     mediaPreview.style.display = uploadedFiles.length ? 'block' : 'none';
 }
 
-// Remove media item
 function removeMediaItem(index) {
     if (index >= 0 && index < uploadedFiles.length) {
         if (uploadedFiles[index].type.startsWith('video/')) {
@@ -874,7 +899,6 @@ function removeMediaItem(index) {
     }
 }
 
-// Show professional toast message
 function showToastMessage(message) {
     const toast = document.createElement('div');
     toast.className = 'toast-message';
@@ -886,7 +910,6 @@ function showToastMessage(message) {
     }, 3000);
 }
 
-// Show error message
 function showError(message) {
     console.error("[UI Error]", message);
     errorMessage.textContent = message;
@@ -896,16 +919,17 @@ function showError(message) {
     }, 5000);
 }
 
-// Handle post creation
 async function handlePostCreation() {
     if (!isInitialized) {
         showError("System still loading. Please wait...");
         return;
     }
     
-    const content = postInput.value.trim();
+    let content = postInput.value.trim();
     
-    // Check if post has content or media
+    // Process mentions before posting
+    content = await processMentions(content);
+    
     if (!content && uploadedFiles.length === 0) {
         showError("Please add text or media to your post");
         return;
@@ -916,7 +940,6 @@ async function handlePostCreation() {
         showLoadingOverlay();
         console.log("[Post] Creating post...");
         
-        // Create post record
         const { data: post, error: postError } = await supabase
             .from('posts')
             .insert({
@@ -930,12 +953,10 @@ async function handlePostCreation() {
         
         console.log("[Post] Created:", post.id);
         
-        // Handle media if exists
         if (uploadedFiles.length > 0) {
             await handleMediaUploadForPost(post.id);
         }
         
-        // Redirect on success
         window.location.href = 'index.html?post_success=true';
         
     } catch (error) {
@@ -947,7 +968,37 @@ async function handlePostCreation() {
     }
 }
 
-// Handle media upload for a post
+async function processMentions(content) {
+    if (!content) return content;
+    
+    // Find all @mentions in the content
+    const mentionRegex = /@(\w+)/g;
+    const mentions = [...content.matchAll(mentionRegex)];
+    
+    if (mentions.length === 0) return content;
+    
+    // For each mention, verify the user exists
+    for (const mention of mentions) {
+        const username = mention[1];
+        
+        const { data: user, error } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('username', username)
+            .single();
+        
+        if (!error && user) {
+            // Replace @username with a link or formatted mention
+            content = content.replace(
+                `@${username}`, 
+                `<span class="mention" data-user-id="${user.id}">@${username}</span>`
+            );
+        }
+    }
+    
+    return content;
+}
+
 async function handleMediaUploadForPost(postId) {
     try {
         if (!postId) throw new Error("Missing post ID");
@@ -1033,7 +1084,6 @@ async function handleMediaUploadForPost(postId) {
     }
 }
 
-// Show loading overlay
 function showLoadingOverlay() {
     const overlay = document.createElement('div');
     overlay.className = 'loading-overlay';
@@ -1044,13 +1094,11 @@ function showLoadingOverlay() {
     document.body.appendChild(overlay);
 }
 
-// Hide loading overlay
 function hideLoadingOverlay() {
     const overlay = document.querySelector('.loading-overlay');
     if (overlay) overlay.remove();
 }
 
-// Set loading state
 function setLoadingState(isLoading) {
     if (isLoading) {
         postButton.innerHTML = '<div class="spinner"></div>';
@@ -1065,7 +1113,6 @@ function setLoadingState(isLoading) {
     }
 }
 
-// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     init().catch(e => console.error("Initialization failed:", e));
 });
