@@ -944,59 +944,72 @@ body {
 
   async function loadUserPosts(userId) {
     try {
-      elements.postsLoadingSpinner.style.display = 'flex';
-      elements.userPostsContainer.innerHTML = '';
-      elements.noPostsMessage.style.display = 'none';
+        elements.postsLoadingSpinner.style.display = 'flex';
+        elements.userPostsContainer.innerHTML = '';
+        elements.noPostsMessage.style.display = 'none';
 
-      const { data: posts, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profile:user_id (username, full_name, avatar_url, is_verified),
-          media:post_media (media_url, media_type)
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (!posts || posts.length === 0) {
-        elements.noPostsMessage.style.display = 'block';
-        return;
-      }
-
-      // Check liked posts if user is logged in
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userLikes } = await supabase
-          .from('likes')
-          .select('post_id')
-          .eq('profile_id', user.id);
-
-        if (userLikes) {
-          const likedPostIds = new Set(userLikes.map(like => like.post_id));
-          posts.forEach(post => {
-            post.is_liked = likedPostIds.has(post.id);
-          });
+        // 1. First check if post-component is defined
+        if (!customElements.get('post-component')) {
+            await new Promise(resolve => {
+                const checkExist = setInterval(() => {
+                    if (customElements.get('post-component')) {
+                        clearInterval(checkExist);
+                        resolve();
+                    }
+                }, 100);
+            });
         }
-      }
 
-      // Render posts
-      posts.forEach(post => {
-        const postElement = document.createElement('post-component');
-        postElement.setAttribute('post-data', JSON.stringify(post));
-        elements.userPostsContainer.appendChild(postElement);
-      });
+        // 2. Fetch posts
+        const { data: posts, error } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (username, full_name, avatar_url, is_verified),
+                media:post_media (media_url, media_type)
+            `)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
 
-      elements.userPostsSection.style.display = 'block';
+        if (error) throw error;
+
+        if (!posts || posts.length === 0) {
+            elements.noPostsMessage.style.display = 'block';
+            return;
+        }
+
+        // 3. Check liked posts if user is logged in
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data: userLikes } = await supabase
+                .from('likes')
+                .select('post_id')
+                .eq('profile_id', user.id);
+
+            if (userLikes) {
+                const likedPostIds = new Set(userLikes.map(like => like.post_id));
+                posts.forEach(post => {
+                    post.is_liked = likedPostIds.has(post.id);
+                });
+            }
+        }
+
+        // 4. Render posts using post-component
+        posts.forEach(post => {
+            const postElement = document.createElement('post-component');
+            postElement.setAttribute('post-data', JSON.stringify(post));
+            elements.userPostsContainer.appendChild(postElement);
+        });
+
+        elements.userPostsSection.style.display = 'block';
     } catch (error) {
-      console.error('Error loading posts:', error);
-      elements.noPostsMessage.textContent = 'Error loading posts';
-      elements.noPostsMessage.style.display = 'block';
+        console.error('Error loading posts:', error);
+        elements.noPostsMessage.textContent = 'Error loading posts';
+        elements.noPostsMessage.style.display = 'block';
     } finally {
-      elements.postsLoadingSpinner.style.display = 'none';
+        elements.postsLoadingSpinner.style.display = 'none';
     }
-  }
+}
 
   // Connection management functions
   async function checkConnectionStatus(currentUserId, profileId) {
