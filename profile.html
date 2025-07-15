@@ -767,7 +767,7 @@ async function initializeApp() {
     try {
         // First ensure post component is available
         if (!customElements.get('post-component')) {
-            await loadScript('post-component.js');
+            await loadScript('posts.js');
         }
         
         // Then load the profile
