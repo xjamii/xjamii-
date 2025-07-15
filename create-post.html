@@ -1106,34 +1106,33 @@ async function handlePostCreation() {
 }
 
 async function processMentions(content) {
-    if (!content) return content;
+    if (!content || typeof content !== 'string') return content;
     
-    // Find all @mentions in the content
+    // Use string methods instead of array notation
     const mentionRegex = /@(\w+)/g;
-    const mentions = [...content.matchAll(mentionRegex)];
+    let processedContent = content;
     
-    if (mentions.length === 0) return content;
+    // Find all unique mentions to avoid duplicate DB queries
+    const mentions = [...new Set(content.match(mentionRegex))];
     
-    // For each mention, verify the user exists
     for (const mention of mentions) {
-        const username = mention[1];
+        const username = mention.substring(1); // Remove @
         
         const { data: user, error } = await supabase
             .from('profiles')
-            .select('id')
+            .select('id, username')
             .eq('username', username)
             .single();
         
         if (!error && user) {
-            // Replace @username with a link or formatted mention
-            content = content.replace(
-                `@${username}`, 
+            processedContent = processedContent.replace(
+                new RegExp(`@${username}\\b`, 'g'),
                 `<span class="mention" data-user-id="${user.id}">@${username}</span>`
             );
         }
     }
     
-    return content;
+    return processedContent;
 }
 
 async function handleMediaUploadForPost(postId) {
