@@ -557,14 +557,15 @@ async function searchProfiles(searchTerm) {
 
 async function searchPosts(searchTerm) {
     try {
+        // Corrected query matching your schema
         const { data, error } = await supabase
             .from('posts')
             .select(`
                 *,
-                profile:profiles(*),
+                profile:user_id (*),
                 media:post_media(*),
-                likes(count),
-                comments(count)
+                likes:likes(count),
+                comments:comments(count)
             `)
             .ilike('content', `%${searchTerm}%`)
             .order('created_at', { ascending: false })
@@ -575,29 +576,47 @@ async function searchPosts(searchTerm) {
         elements.postsResults.innerHTML = '';
 
         if (!data || data.length === 0) {
-            elements.postsNoResults.innerHTML = `
-                <i class="fas fa-comment-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
-                <div>No posts found for "${searchTerm}"</div>
-            `;
             elements.postsNoResults.style.display = 'block';
             return;
         }
 
-        // Process the data to match what PostComponent expects
-        const processedPosts = await Promise.all(data.map(async post => {
-            const isLiked = await checkPostLikeStatus(post.id);
-            return {
-                ...post,
-                like_count: post.likes[0]?.count || 0,
-                comment_count: post.comments[0]?.count || 0,
-                is_liked: isLiked,
-                views: post.views || 0
-            };
+        // Process the data to match PostComponent expectations
+        const processedPosts = data.map(post => ({
+            ...post,
+            like_count: post.likes[0]?.count || post.like_count || 0,
+            comment_count: post.comments[0]?.count || post.comment_count || 0,
+            views: post.views || 0,
+            // Process media URLs
+            media: (post.media || []).map(media => ({
+                ...media,
+                media_url: media.media_url.startsWith('http') 
+                    ? media.media_url 
+                    : `${supabaseUrl}/storage/v1/object/public/${media.media_url}`
+            }))
         }));
 
+        // Check if user is logged in to get like status
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data: userLikes } = await supabase
+                .from('likes')
+                .select('post_id')
+                .eq('profile_id', user.id);
+                
+            const likedPostIds = new Set(userLikes?.map(like => like.post_id) || []);
+            processedPosts.forEach(post => {
+                post.is_liked = likedPostIds.has(post.id);
+            });
+        }
+
         appendPostsResults(processedPosts);
+        
     } catch (error) {
-        console.error('Error searching posts:', error);
+        console.error('Error searching posts:', {
+            message: error.message,
+            details: error.details,
+            code: error.code
+        });
         elements.postsNoResults.style.display = 'block';
     }
 }
