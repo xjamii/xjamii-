@@ -267,7 +267,7 @@
             padding: 10px 15px 10px 40px;
             border-radius: 20px;
             border: 1px solid #e6ecf0;
-            background-color: #0056b3;
+            background-color: #white;
             font-size: 14px;
             outline: none;
             transition: all 0.2s;
@@ -606,10 +606,7 @@
     100% { transform: rotate(360deg); }
 }
 
-      /* Add this to your existing styles */
-    .posts-container {
-      padding-bottom: 100px; /* Give space for footer */
-    }
+      
 
       .infinite-scroll-loader {
     text-align: center;
@@ -948,15 +945,34 @@ async function loadPosts(isLoadMore = false) {
     }
 }
 
-// Infinite scroll handler
+// Infinite scroll handler - UPDATED VERSION
 function handlePostsScroll() {
-    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
-
+    // Get the relevant elements
+    const postsContainer = document.getElementById('posts-container');
+    const scrollLoader = document.getElementById('posts-scroll-loader');
+    
+    // Calculate positions
+    const containerBottom = postsContainer.offsetTop + postsContainer.offsetHeight;
+    const scrollPosition = window.innerHeight + window.pageYOffset;
+    
+    // Check if we're near the bottom (with 100px buffer)
+    const nearBottom = scrollPosition >= (containerBottom - 100);
+    
+    // Debug logging (you can remove this after testing)
+    console.log('Scroll check:', {
+        containerBottom,
+        scrollPosition,
+        nearBottom,
+        hasMorePosts,
+        isPostsLoading
+    });
+    
     if (nearBottom && hasMorePosts && !isPostsLoading) {
-        // Add a small delay to prevent multiple rapid triggers
+        // Add a small delay and throttle
         setTimeout(() => {
-            loadPosts(true);
+            if (!isPostsLoading) { // Double check in case another scroll event fired
+                loadPosts(true);
+            }
         }, 200);
     }
 }
