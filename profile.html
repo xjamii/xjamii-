@@ -766,8 +766,11 @@ body {
     try {
       // First ensure post component is available
       if (!customElements.get('post-component')) {
-        await loadScript('post-component.js');
-      }
+        await loadScript('Post-Utils.js');
+await loadScript('post-actions.js');
+await loadScript('post-component.js');
+
+      
       
       // Then load the profile
       await loadProfile();
