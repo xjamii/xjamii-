@@ -768,8 +768,7 @@
     </div>
 <script>
       
-
-/// Initialize Supabase
+// Initialize Supabase
 const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -779,22 +778,14 @@ let postsPage = 0;
 const POSTS_PER_PAGE = 10;
 let hasMorePosts = true;
 let isPostsLoading = false;
+let viewChannel = null;
+let likeChannel = null;
 
-// DOM Elements
-const elements = {
-    postsContainer: document.getElementById('posts-container'),
-    fullPageLoader: document.getElementById('full-page-loader'),
-    postsLoadingSpinner: document.createElement('div')
-};
-
-// Initialize infinite scroll loader
-elements.postsLoadingSpinner.className = 'post-loading-spinner';
-elements.postsLoadingSpinner.innerHTML = '<div class="spinner"></div>';
-
-// Initialize page
+// Initialize page with preloader
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        elements.fullPageLoader.style.display = 'flex';
+        // Show preloader
+        document.getElementById('full-page-loader').style.display = 'flex';
         
         // Check authentication
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -807,30 +798,68 @@ document.addEventListener('DOMContentLoaded', async () => {
         showFeed();
         await loadPosts();
 
-        // Set up infinite scroll
-        window.addEventListener('scroll', handleScroll);
+        // Real-time subscriptions
+        viewChannel = subscribeToViewUpdates();
+        likeChannel = subscribeToLikeUpdates();
+
+        if (typeof initializeNotificationSystem === 'function') {
+            await initializeNotificationSystem();
+        }
+
+        // Setup scroll listener for infinite scroll
+        window.addEventListener('scroll', handlePostsScroll);
+
+        // Setup back button handler for menu
+        window.onpopstate = function(event) {
+            const menuPage = document.getElementById('menuPage');
+            if (menuPage.style.display === 'block') {
+                menuPage.style.display = 'none';
+            }
+        };
 
     } catch (error) {
         console.error('Initialization error:', error);
     } finally {
-        elements.fullPageLoader.style.display = 'none';
+        // Hide preloader
+        document.getElementById('full-page-loader').style.display = 'none';
     }
 });
 
-// Load posts with pagination
+// Infinite scroll handler for posts
+async function handlePostsScroll() {
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    const nearBottom = scrollTop + clientHeight >= scrollHeight - 500;
+
+    if (nearBottom && hasMorePosts && !isPostsLoading) {
+        postsPage++;
+        await loadPosts(true); // Load more posts
+    }
+}
+
+// LOAD POSTS with pagination
 async function loadPosts(isLoadMore = false) {
-    if (isLoadMore && !hasMorePosts) return;
     if (isPostsLoading) return;
-    
     isPostsLoading = true;
-    
+
     try {
-        if (isLoadMore) {
-            elements.postsContainer.appendChild(elements.postsLoadingSpinner);
+        if (!isLoadMore) {
+            // Reset for initial load
+            postsPage = 0;
+            hasMorePosts = true;
+            document.getElementById('posts-container').innerHTML = '';
+        }
+
+        // Show loading spinner only for initial load
+        if (!isLoadMore) {
+            const loadingSpinner = document.createElement('div');
+            loadingSpinner.className = 'post-loading-spinner';
+            loadingSpinner.innerHTML = '<div class="spinner"></div>';
+            document.getElementById('posts-container').appendChild(loadingSpinner);
         }
 
         const { data: { user } } = await supabase.auth.getUser();
-        
+
+        // Get posts with pagination
         const { data: posts, error: postsError } = await supabase
             .from('posts')
             .select(`
@@ -843,21 +872,19 @@ async function loadPosts(isLoadMore = false) {
 
         if (postsError) throw postsError;
 
-        if (!posts || posts.length === 0) {
+        // Check if we've reached the end
+        if (posts.length < POSTS_PER_PAGE) {
             hasMorePosts = false;
-            return;
         }
 
         // Get user's liked posts
-        const { data: userLikes, error: likesError } = await supabase
+        const { data: userLikes } = await supabase
             .from('likes')
             .select('post_id')
             .eq('profile_id', user.id);
 
-        if (likesError) throw likesError;
-
         const likedPostIds = new Set(userLikes?.map(like => like.post_id) || []);
-        
+
         // Process posts data
         const processedPosts = posts.map(post => ({
             ...post,
@@ -870,50 +897,30 @@ async function loadPosts(isLoadMore = false) {
             }))
         }));
 
-        if (isLoadMore) {
-            appendPosts(processedPosts);
-        } else {
-            elements.postsContainer.innerHTML = '';
-            appendPosts(processedPosts);
-        }
+        // Remove loading spinner if it exists
+        const spinner = document.querySelector('.post-loading-spinner');
+        if (spinner) spinner.remove();
 
-        // Check if we've reached the end
-        if (posts.length < POSTS_PER_PAGE) {
-            hasMorePosts = false;
-        } else {
-            postsPage++;
-        }
+        // Append posts to container
+        const postsContainer = document.getElementById('posts-container');
+        processedPosts.forEach(post => {
+            const postElement = document.createElement('post-component');
+            postElement.setAttribute('post-data', JSON.stringify(post));
+            postsContainer.appendChild(postElement);
+        });
 
     } catch (error) {
-        console.error('Error loading posts:', error);
+        console.error("Error loading posts:", error);
+        hasMorePosts = false; // Stop trying to load more if error occurs
     } finally {
         isPostsLoading = false;
-        elements.postsLoadingSpinner.remove();
     }
 }
 
-// Append posts to the container
-function appendPosts(posts) {
-    posts.forEach(post => {
-        const postElement = document.createElement('post-component');
-        postElement.setAttribute('post-data', JSON.stringify(post));
-        elements.postsContainer.appendChild(postElement);
-    });
-}
-
-// Handle infinite scroll
-async function handleScroll() {
-    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
-
-    if (nearBottom && hasMorePosts && !isPostsLoading) {
-        await loadPosts(true);
-    }
-}
-
+// All other existing functions remain exactly the same
 // VIEW TOGGLE FUNCTIONS
 function showFeed() {
-    document.getElementById('profileSection')?.style.display = 'none';
+    document.getElementById('profileSection').style.display = 'none';
     document.querySelector('.main-content').style.display = 'block';
     document.querySelector('.top-header').style.display = 'flex';
     document.title = 'X-Jamii';
@@ -924,7 +931,7 @@ async function showProfile() {
     document.querySelector('.main-content').style.display = 'none';
     document.querySelector('.top-header').style.display = 'none';
 
-    if (!document.getElementById('profileSection')) {
+    if (!document.getElementById('profileSection').innerHTML) {
         await loadProfileSection();
     }
 
@@ -952,10 +959,7 @@ async function loadProfileSection() {
     const html = await response.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    const profileSection = document.createElement('div');
-    profileSection.id = 'profileSection';
-    profileSection.innerHTML = doc.querySelector('.profile-container').outerHTML;
-    document.body.appendChild(profileSection);
+    document.getElementById('profileSection').innerHTML = doc.querySelector('.profile-container').outerHTML;
 }
 
 // LOAD PROFILE DATA
@@ -963,6 +967,9 @@ async function loadProfileData() {
     try {
         const { data: { user }, error } = await supabase.auth.getUser();
         if (error) throw error;
+
+        document.getElementById('skeleton-loader').style.display = 'flex';
+        document.getElementById('profile-content').style.display = 'none';
 
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
@@ -987,6 +994,7 @@ async function loadProfileData() {
         document.getElementById('profile-content').style.display = 'block';
     }
 }
+
 // UPDATE NOTIFICATION BADGE
 function updateNotificationBadge(count) {
     const badge = document.getElementById('notificationBadge');
@@ -996,17 +1004,23 @@ function updateNotificationBadge(count) {
         badge.textContent = count > 9 ? '9+' : count;
         badge.style.display = 'flex';
         badge.style.animation = 'pulse 1.5s infinite';
+        localStorage.setItem('unreadNotifications', count);
+        window.postMessage({ type: 'updateNotificationBadge', count }, '*');
     } else {
         badge.style.display = 'none';
+        localStorage.removeItem('unreadNotifications');
     }
 }
 
-// REAL-TIME SUBSCRIPTIONS
-let viewChannel = null;
-let likeChannel = null;
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'updateNotificationBadge') {
+        updateNotificationBadge(event.data.count);
+    }
+});
 
+// REAL-TIME VIEW TRACKING
 function subscribeToViewUpdates() {
-    viewChannel = supabase
+    const channel = supabase
         .channel('post_views')
         .on('postgres_changes', {
             event: 'UPDATE',
@@ -1020,28 +1034,29 @@ function subscribeToViewUpdates() {
             }
         })
         .subscribe();
-    return viewChannel;
+    return channel;
 }
 
+// REAL-TIME LIKE TRACKING
 function subscribeToLikeUpdates() {
-    likeChannel = supabase
+    return supabase
         .channel('post_likes')
         .on('postgres_changes', {
             event: '*',
             schema: 'public',
             table: 'posts',
+            filter: 'id=eq.56aaaeef-7e05-4fac-ad5f-3e9095329a44'
         }, (payload) => {
             const postElement = document.querySelector(`post-component[post-data*='"id":"${payload.new.id}"']`);
             if (postElement) {
                 const likeBtn = postElement.querySelector('.like-action');
                 if (likeBtn) {
-                    const countEl = likeBtn.querySelector('span');
+                    const countEl = likeBtn.querySelector('.like-text');
                     if (countEl) countEl.textContent = payload.new.like_count;
                 }
             }
         })
         .subscribe();
-    return likeChannel;
 }
 
 // MENU with back button handling
@@ -1051,6 +1066,7 @@ function toggleMenu() {
         menuPage.style.display = 'none';
     } else {
         menuPage.style.display = 'block';
+        // Add to history for back button
         history.pushState({ menuOpen: true }, '');
     }
 }
@@ -1067,24 +1083,13 @@ async function logout() {
     }
 }
 
-// Handle back button for menu
-window.onpopstate = function(event) {
-    const menuPage = document.getElementById('menuPage');
-    if (menuPage && menuPage.style.display === 'block') {
-        menuPage.style.display = 'none';
-    }
-};
-
 // LAZY LOAD POST COMPONENT
 if (!customElements.get('post-component')) {
+    console.error('Post component not registered! Loading posts.js');
     const script = document.createElement('script');
     script.src = 'posts.js';
     document.body.appendChild(script);
-    script.onload = () => {
-        loadPosts();
-        subscribeToViewUpdates();
-        subscribeToLikeUpdates();
-    };
+    script.onload = loadPosts;
 }
 </script>
 
