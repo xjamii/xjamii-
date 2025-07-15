@@ -13,7 +13,11 @@
   
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
+  <script>
+    const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+  </script>
 
   <!-- Swiper -->
   <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
@@ -607,92 +611,9 @@
     100% { transform: rotate(360deg); }
 }
           
-.post-loading-spinner {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-    width: 100%;
-}
-
-.post-loading-spinner .spinner {
-    width: 30px;
-    height: 30px;
-    border: 3px solid rgba(0, 86, 179, 0.2);
-    border-top-color: #0056b3;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Add this new style for the new posts alert */
-    .new-posts-alert {
-      position: fixed;
-      top: 130px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #0056b3;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-      z-index: 1001;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      animation: slideDown 0.3s ease-out;
-    }
-    
-    @keyframes slideDown {
-      from { top: 100px; opacity: 0; }
-      to { top: 130px; opacity: 1; }
-    }
-    
-    .dark-mode .new-posts-alert {
-      background-color: #1a73e8;
-    }
-    
-    /* Update the spinner styles */
-    .post-loading-spinner {
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-      width: 100%;
-    }
-    
-    .post-loading-spinner .spinner {
-      width: 30px;
-      height: 30px;
-      border: 3px solid rgba(0, 86, 179, 0.2);
-      border-top-color: #0056b3;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-    
-    .dark-mode .post-loading-spinner .spinner {
-      border-top-color: #1da1f2;
-    }
-    
-    /* Add this to your existing styles */
-    .posts-container {
-      padding-bottom: 100px; /* Give space for footer */
-    }
-    
     </style>
 </head>
 <body>
-
-  <!-- Add the new posts alert -->
-  <div class="new-posts-alert" id="newPostsAlert" onclick="loadNewPosts()">
-    <i class="fas fa-sync-alt"></i>
-    <span id="newPostsCount">New posts</span>
-  </div>
 
    <!-- Add this right after the opening <body> tag -->
 <div class="full-page-loader" id="full-page-loader">
@@ -729,26 +650,26 @@
     </div>
 
     <!-- Bottom Navigation -->
-  <footer class="footer">
-    <div class="footer-icon active" onclick="showFeed()">
-      <i class="fas fa-home"></i>
-    </div>
-    <div class="footer-icon" onclick="window.location.href='search.html'">
-      <i class="fas fa-search"></i>
-    </div>
-    <button class="create-post-btn" onclick="window.location.href='create-post.html'">
-      <i class="fas fa-plus"></i>
-    </button>
-    <div class="footer-icon" onclick="window.location.href='notifications.html'">
-      <div class="icon-wrapper">
+    <footer class="footer">
+        <div class="footer-icon" onclick="showFeed()">
+            <i class="fas fa-home"></i>
+        </div>
+        <div class="footer-icon" onclick="window.location.href='search.html'">
+            <i class="fas fa-search"></i>
+        </div>
+        <button class="create-post-btn" onclick="window.location.href='create-post.html'">
+            <i class="fas fa-plus"></i>
+        </button>
+        <div class="footer-icon" onclick="window.location.href='notifications.html'">
+    <div class="icon-wrapper">
         <i class="fas fa-bell"></i>
         <span id="notificationBadge">3</span>
-      </div>
     </div>
-    <div class="footer-icon" onclick="window.location.href='profile.html'">
-      <i class="fas fa-user"></i>
-    </div>
-  </footer>
+</div>
+        <div class="footer-icon" onclick="window.location.href='profile.html'">
+            <i class="fas fa-user"></i>
+        </div>
+    </footer>
 
     <!-- Menu Page -->
     <div class="menu-page" id="menuPage">
@@ -832,39 +753,15 @@
     </div>
 <script>
       
-/// Initialize Supabase
-const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// Pagination and state variables
-let postsPage = 0;
-const POSTS_PER_PAGE = 10;
-let hasMorePosts = true;
-let isPostsLoading = false;
-let viewChannel = null;
+   let viewChannel = null;
 let likeChannel = null;
-let postsChannel = null;
-let lastPostTimestamp = null;
-let newPostsCount = 0;
-let isFirstLoad = true;
-let currentUser = null;
 
-// DOM Elements
-const elements = {
-    postsContainer: document.getElementById('posts-container'),
-    newPostsAlert: document.getElementById('newPostsAlert'),
-    newPostsCount: document.getElementById('newPostsCount'),
-    fullPageLoader: document.getElementById('full-page-loader'),
-    menuPage: document.getElementById('menuPage'),
-    notificationBadge: document.getElementById('notificationBadge')
-};
-
-// Initialize the application
+// Initialize page with preloader
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Show preloader
-        elements.fullPageLoader.style.display = 'flex';
+        document.getElementById('full-page-loader').style.display = 'flex';
         
         // Check authentication
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -873,8 +770,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        currentUser = user;
-
         // Initialize page
         showFeed();
         await loadPosts();
@@ -882,446 +777,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Real-time subscriptions
         viewChannel = subscribeToViewUpdates();
         likeChannel = subscribeToLikeUpdates();
-        postsChannel = subscribeToNewPosts();
-        subscribeToCommentUpdates();
 
-        // Initialize notification system
-        await initializeNotificationSystem();
-
-        // Setup scroll listener for infinite scroll
-        window.addEventListener('scroll', handlePostsScroll);
+        if (typeof initializeNotificationSystem === 'function') {
+            await initializeNotificationSystem();
+        }
 
         // Setup back button handler for menu
-        window.onpopstate = handlePopState;
+        window.onpopstate = function(event) {
+            const menuPage = document.getElementById('menuPage');
+            if (menuPage.style.display === 'block') {
+                menuPage.style.display = 'none';
+            }
+        };
 
     } catch (error) {
         console.error('Initialization error:', error);
-        showErrorState();
     } finally {
-        // Hide preloader after a minimum delay to prevent flickering
-        setTimeout(() => {
-            elements.fullPageLoader.style.display = 'none';
-            isFirstLoad = false;
-        }, 500);
+        // Hide preloader
+        document.getElementById('full-page-loader').style.display = 'none';
     }
 });
-
-// Infinite scroll handler for posts
-async function handlePostsScroll() {
-    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    const nearBottom = scrollTop + clientHeight >= scrollHeight - 500;
-
-    if (nearBottom && hasMorePosts && !isPostsLoading) {
-        postsPage++;
-        await loadPosts(true); // Load more posts
-    }
-}
-
-// Load posts with pagination
-async function loadPosts(isLoadMore = false) {
-    if (isPostsLoading) return;
-    isPostsLoading = true;
-
-    try {
-        if (!isLoadMore) {
-            // Reset for initial load
-            resetPostsLoadingState();
-            showPostsLoadingSpinner();
-        }
-
-        // Fetch posts from Supabase
-        const { data: posts, error: postsError } = await fetchPosts();
-
-        if (postsError) throw postsError;
-
-        // Store timestamp of the newest post on first load
-        if (!isLoadMore && posts.length > 0) {
-            lastPostTimestamp = new Date(posts[0].created_at).getTime();
-        }
-
-        // Check if we've reached the end
-        if (posts.length < POSTS_PER_PAGE) {
-            hasMorePosts = false;
-        }
-
-        // Get user's liked posts
-        const likedPostIds = await fetchUserLikes();
-
-        // Process posts data
-        const processedPosts = processPostsData(posts, likedPostIds);
-
-        // Update UI with posts
-        updatePostsUI(processedPosts, isLoadMore);
-
-    } catch (error) {
-        console.error("Error loading posts:", error);
-        hasMorePosts = false;
-        showPostsErrorState();
-    } finally {
-        isPostsLoading = false;
-    }
-}
-
-// Fetch posts from Supabase
-async function fetchPosts() {
-    return await supabase
-        .from('posts')
-        .select(`
-            *,
-            profile:user_id (username, full_name, avatar_url, is_verified),
-            media:post_media (media_url, media_type),
-            comments:comments(count),
-            likes:likes(count)
-        `)
-        .order('created_at', { ascending: false })
-        .range(postsPage * POSTS_PER_PAGE, (postsPage + 1) * POSTS_PER_PAGE - 1);
-}
-// Fetch user's liked posts
-async function fetchUserLikes() {
-    const { data: userLikes } = await supabase
-        .from('likes')
-        .select('post_id')
-        .eq('profile_id', currentUser.id);
-    return new Set(userLikes?.map(like => like.post_id) || []);
-}
-
-// Process posts data
-function processPostsData(posts, likedPostIds) {
-    return posts.map(post => ({
-        ...post,
-        is_liked: likedPostIds.has(post.id),
-        like_count: post.likes[0]?.count || post.like_count || 0,
-        comment_count: post.comments[0]?.count || post.comment_count || 0,
-        media: (post.media || []).map(media => ({
-            ...media,
-            media_url: media.media_url.startsWith('http') 
-                ? media.media_url 
-                : `${supabaseUrl}/storage/v1/object/public/${media.media_url}`
-        }))
-    }));
-}
-
-// Update UI with posts
-function updatePostsUI(posts, isLoadMore) {
-    // Remove loading spinner if it exists
-    const spinner = document.querySelector('.post-loading-spinner');
-    if (spinner) spinner.remove();
-
-    if (isLoadMore) {
-        // For infinite scroll, append to existing posts
-        posts.forEach(appendPostElement);
-    } else {
-        // For initial load, replace all posts
-        elements.postsContainer.innerHTML = '';
-        posts.forEach(appendPostElement);
-    }
-}
-
-// Append a single post element to the container
-function appendPostElement(post) {
-    const postElement = document.createElement('post-component');
-    postElement.setAttribute('post-data', JSON.stringify(post));
-    postElement.setAttribute('data-post-id', post.id);
-    elements.postsContainer.appendChild(postElement);
-}
-
-// Load new posts that appeared since last load
-async function loadNewPosts() {
-    try {
-        // Hide the alert
-        hideNewPostsAlert();
-        
-        // Get new posts since last timestamp
-        const { data: newPosts, error } = await supabase
-            .from('posts')
-            .select(`
-                *,
-                profile:user_id (username, full_name, avatar_url, is_verified),
-                media:post_media (media_url, media_type),
-                comments:comments(count),
-                likes:likes(count)
-            `)
-            .gt('created_at', new Date(lastPostTimestamp).toISOString())
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        
-        if (newPosts.length === 0) return;
-        
-        // Update last timestamp
-        lastPostTimestamp = new Date(newPosts[0].created_at).getTime();
-        
-        // Get user's liked posts
-        const likedPostIds = await fetchUserLikes();
-
-        // Process new posts data
-        const processedPosts = processPostsData(newPosts, likedPostIds);
-
-        // Prepend new posts to container
-        prependNewPosts(processedPosts);
-        
-        // Show visual feedback
-        flashNewPostsIndicator();
-
-    } catch (error) {
-        console.error("Error loading new posts:", error);
-    }
-}
-
-// Prepend new posts to the container
-function prependNewPosts(posts) {
-    const firstChild = elements.postsContainer.firstChild;
-    
-    posts.reverse().forEach(post => {
-        const postElement = document.createElement('post-component');
-        postElement.setAttribute('post-data', JSON.stringify(post));
-        postElement.setAttribute('data-post-id', post.id);
-        elements.postsContainer.insertBefore(postElement, firstChild);
-    });
-}
-
-// Show visual feedback for new posts
-function flashNewPostsIndicator() {
-    elements.postsContainer.style.transition = 'background-color 0.5s';
-    elements.postsContainer.style.backgroundColor = 'rgba(0, 86, 179, 0.1)';
-    setTimeout(() => {
-        elements.postsContainer.style.backgroundColor = '';
-    }, 500);
-}
-
-// Reset posts loading state
-function resetPostsLoadingState() {
-    postsPage = 0;
-    hasMorePosts = true;
-    elements.postsContainer.innerHTML = '';
-}
-
-// Show loading spinner for posts
-function showPostsLoadingSpinner() {
-    const loadingSpinner = document.createElement('div');
-    loadingSpinner.className = 'post-loading-spinner';
-    loadingSpinner.innerHTML = '<div class="spinner"></div>';
-    elements.postsContainer.appendChild(loadingSpinner);
-}
-
-// Show error state for posts
-function showPostsErrorState() {
-    elements.postsContainer.innerHTML = `
-        <div style="text-align: center; padding: 40px; color: #666;">
-            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <div>Failed to load posts. Please try again.</div>
-            <button onclick="loadPosts()" style="margin-top: 15px; padding: 8px 16px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Retry
-            </button>
-        </div>
-    `;
-}
-
-// Show error state for initial load
-function showErrorState() {
-    document.body.innerHTML = `
-        <div style="text-align: center; padding: 40px; color: #666; margin-top: 120px;">
-            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <div>Failed to initialize the application. Please try again.</div>
-            <button onclick="window.location.reload()" style="margin-top: 15px; padding: 8px 16px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Reload
-            </button>
-        </div>
-    `;
-}
-
-// Subscribe to new posts in real-time
-function subscribeToNewPosts() {
-    return supabase
-        .channel('new_posts')
-        .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'posts'
-        }, (payload) => {
-            if (isFirstLoad) return; // Don't show alerts during initial load
-            
-            const postTime = new Date(payload.new.created_at).getTime();
-            if (!lastPostTimestamp || postTime > lastPostTimestamp) {
-                newPostsCount++;
-                showNewPostsAlert();
-            }
-        })
-        .subscribe();
-}
-
-// Subscribe to view updates
-function subscribeToViewUpdates() {
-    return supabase
-        .channel('post_views')
-        .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'posts',
-        }, (payload) => {
-            updatePostViewCount(payload.new.id, payload.new.views);
-        })
-        .subscribe();
-}
-
-// Subscribe to like updates
-function subscribeToLikeUpdates() {
-    return supabase
-        .channel('post_likes')
-        .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'posts'
-        }, (payload) => {
-            const postElement = document.querySelector(`post-component[data-post-id="${payload.new.id}"]`);
-            if (postElement) {
-                updatePostLikeCount(postElement, payload.new.like_count);
-                
-                // If this post was just liked, move it to the top
-                if (payload.new.like_count > (payload.old?.like_count || 0)) {
-                    movePostToTop(postElement);
-                }
-            }
-        })
-        .subscribe();
-}
-
-// Subscribe to comment updates
-function subscribeToCommentUpdates() {
-    return supabase
-        .channel('post_comments')
-        .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'comments'
-        }, (payload) => {
-            const postId = payload.new.post_id;
-            const postElement = document.querySelector(`post-component[data-post-id="${postId}"]`);
-            if (postElement) {
-                incrementCommentCount(postElement);
-                movePostToTop(postElement);
-            }
-        })
-        .subscribe();
-}
-
-// Update post view count in UI
-function updatePostViewCount(postId, views) {
-    const postElement = document.querySelector(`post-component[data-post-id="${postId}"]`);
-    if (postElement) {
-        const viewsEl = postElement.querySelector('.views');
-        if (viewsEl) viewsEl.textContent = views;
-    }
-}
-
-// Update post like count in UI
-function updatePostLikeCount(postElement, likeCount) {
-    const likeBtn = postElement.querySelector('.like-action');
-    if (likeBtn) {
-        const countEl = likeBtn.querySelector('.like-text');
-        if (countEl) countEl.textContent = likeCount;
-    }
-}
-
-// Increment comment count in UI
-function incrementCommentCount(postElement) {
-    const commentBtn = postElement.querySelector('.comment-action');
-    if (commentBtn) {
-        const countEl = commentBtn.querySelector('.comment-text');
-        if (countEl) {
-            const currentCount = parseInt(countEl.textContent) || 0;
-            countEl.textContent = currentCount + 1;
-        }
-    }
-}
-
-// Move post to top of feed
-function movePostToTop(postElement) {
-    const postsContainer = document.getElementById('posts-container');
-    if (postsContainer.firstChild !== postElement) {
-        postsContainer.insertBefore(postElement, postsContainer.firstChild);
-        
-        // Show brief visual feedback
-        postElement.style.transition = 'background-color 0.5s';
-        postElement.style.backgroundColor = 'rgba(0, 86, 179, 0.1)';
-        setTimeout(() => {
-            postElement.style.backgroundColor = '';
-        }, 500);
-    }
-}
-
-// Show alert for new posts
-function showNewPostsAlert() {
-    elements.newPostsCount.textContent = newPostsCount === 1 ? '1 new post' : `${newPostsCount} new posts`;
-    elements.newPostsAlert.style.display = 'flex';
-    
-    // Auto-hide after 10 seconds
-    setTimeout(() => {
-        if (elements.newPostsAlert.style.display === 'flex') {
-            hideNewPostsAlert();
-        }
-    }, 10000);
-}
-
-// Hide new posts alert
-function hideNewPostsAlert() {
-    elements.newPostsAlert.style.display = 'none';
-    newPostsCount = 0;
-}
-
-// Initialize notification system
-async function initializeNotificationSystem() {
-    try {
-        // Check for unread notifications
-        const { data: unreadNotifications, error } = await supabase
-            .from('notifications')
-            .select('id', { count: 'exact' })
-            .eq('recipient_id', currentUser.id)
-            .eq('is_read', false);
-
-        if (error) throw error;
-
-        // Update badge
-        updateNotificationBadge(unreadNotifications.length || 0);
-
-        // Subscribe to new notifications
-        supabase
-            .channel('user_notifications')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'notifications',
-                filter: `recipient_id=eq.${currentUser.id}`
-            }, (payload) => {
-                const newCount = parseInt(elements.notificationBadge.textContent) || 0;
-                updateNotificationBadge(newCount + 1);
-            })
-            .subscribe();
-
-    } catch (error) {
-        console.error('Error initializing notifications:', error);
-    }
-}
-
-// Update notification badge
-function updateNotificationBadge(count) {
-    if (count > 0) {
-        elements.notificationBadge.textContent = count > 9 ? '9+' : count;
-        elements.notificationBadge.style.display = 'flex';
-        elements.notificationBadge.style.animation = 'pulse 1.5s infinite';
-        localStorage.setItem('unreadNotifications', count);
-    } else {
-        elements.notificationBadge.style.display = 'none';
-        localStorage.removeItem('unreadNotifications');
-    }
-}
-
-// Handle popstate for menu
-function handlePopState(event) {
-    if (elements.menuPage.style.display === 'block') {
-        elements.menuPage.style.display = 'none';
-    }
-}
 
 // VIEW TOGGLE FUNCTIONS
 function showFeed() {
@@ -1330,6 +805,21 @@ function showFeed() {
     document.querySelector('.top-header').style.display = 'flex';
     document.title = 'X-Jamii';
     updateActiveNavIcon('home');
+}
+
+async function showProfile() {
+    document.querySelector('.main-content').style.display = 'none';
+    document.querySelector('.top-header').style.display = 'none';
+
+    if (!document.getElementById('profileSection').innerHTML) {
+        await loadProfileSection();
+    }
+
+    document.getElementById('profileSection').style.display = 'block';
+    document.title = 'Profile | X-Jamii';
+    updateActiveNavIcon('profile');
+
+    await loadProfileData();
 }
 
 function updateActiveNavIcon(activeIcon) {
@@ -1343,12 +833,168 @@ function updateActiveNavIcon(activeIcon) {
     }
 }
 
+// LOAD PROFILE SECTION
+async function loadProfileSection() {
+    const response = await fetch('profile.html');
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    document.getElementById('profileSection').innerHTML = doc.querySelector('.profile-container').outerHTML;
+}
+
+// LOAD PROFILE DATA
+async function loadProfileData() {
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+
+        document.getElementById('skeleton-loader').style.display = 'flex';
+        document.getElementById('profile-content').style.display = 'none';
+
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError) throw profileError;
+
+        const displayName = profile.full_name || profile.username || 'User';
+        document.getElementById('profile-avatar').textContent = displayName.charAt(0).toUpperCase();
+        document.getElementById('profile-username').textContent = `@${profile.username}`;
+        document.getElementById('header-title').textContent = displayName;
+
+        document.getElementById('skeleton-loader').style.display = 'none';
+        document.getElementById('profile-content').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        document.getElementById('skeleton-loader').style.display = 'none';
+        document.getElementById('profile-content').innerHTML = '<div class="error-message">Error loading profile</div>';
+        document.getElementById('profile-content').style.display = 'block';
+    }
+}
+
+// UPDATE NOTIFICATION BADGE
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+
+    if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'flex';
+        badge.style.animation = 'pulse 1.5s infinite';
+        localStorage.setItem('unreadNotifications', count);
+        window.postMessage({ type: 'updateNotificationBadge', count }, '*');
+    } else {
+        badge.style.display = 'none';
+        localStorage.removeItem('unreadNotifications');
+    }
+}
+
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'updateNotificationBadge') {
+        updateNotificationBadge(event.data.count);
+    }
+});
+
+// LOAD POSTS with loading spinner
+async function loadPosts() {
+    try {
+        // Show loading spinner
+        const loadingSpinner = document.createElement('div');
+        loadingSpinner.className = 'post-loading-spinner';
+        loadingSpinner.innerHTML = '<div class="spinner"></div>';
+        document.getElementById('posts-container').appendChild(loadingSpinner);
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+
+        const { data: posts, error: postsError } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (username, full_name, avatar_url, is_verified),
+                media:post_media (media_url, media_type)
+            `)
+            .order('created_at', { ascending: false });
+
+        if (postsError) throw postsError;
+
+        const { data: userLikes, error: likesError } = await supabase
+            .from('likes')
+            .select('post_id')
+            .eq('profile_id', user.id);
+
+        if (likesError) throw likesError;
+
+        const likedPostIds = new Set(userLikes.map(like => like.post_id));
+        const postsWithLikes = posts.map(post => ({
+            ...post,
+            is_liked: likedPostIds.has(post.id)
+        }));
+
+        const postsContainer = document.getElementById('posts-container');
+        postsContainer.innerHTML = '';
+        postsWithLikes.forEach(post => {
+            const postElement = document.createElement('post-component');
+            postElement.setAttribute('post-data', JSON.stringify(post));
+            postsContainer.appendChild(postElement);
+        });
+
+    } catch (error) {
+        console.error("Error loading posts:", error);
+    }
+}
+
+// REAL-TIME VIEW TRACKING
+function subscribeToViewUpdates() {
+    const channel = supabase
+        .channel('post_views')
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'posts',
+        }, (payload) => {
+            const postElement = document.querySelector(`post-component[data-post-id="${payload.new.id}"]`);
+            if (postElement) {
+                const viewsEl = postElement.querySelector('.views');
+                if (viewsEl) viewsEl.textContent = payload.new.views;
+            }
+        })
+        .subscribe();
+    return channel;
+}
+
+// REAL-TIME LIKE TRACKING
+function subscribeToLikeUpdates() {
+    return supabase
+        .channel('post_likes')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'posts',
+            filter: 'id=eq.56aaaeef-7e05-4fac-ad5f-3e9095329a44'
+        }, (payload) => {
+            const postElement = document.querySelector(`post-component[post-data*='"id":"${payload.new.id}"']`);
+            if (postElement) {
+                const likeBtn = postElement.querySelector('.like-action');
+                if (likeBtn) {
+                    const countEl = likeBtn.querySelector('.like-text');
+                    if (countEl) countEl.textContent = payload.new.like_count;
+                }
+            }
+        })
+        .subscribe();
+}
+
 // MENU with back button handling
 function toggleMenu() {
-    if (elements.menuPage.style.display === 'block') {
-        elements.menuPage.style.display = 'none';
+    const menuPage = document.getElementById('menuPage');
+    if (menuPage.style.display === 'block') {
+        menuPage.style.display = 'none';
     } else {
-        elements.menuPage.style.display = 'block';
+        menuPage.style.display = 'block';
         // Add to history for back button
         history.pushState({ menuOpen: true }, '');
     }
@@ -1374,7 +1020,6 @@ if (!customElements.get('post-component')) {
     document.body.appendChild(script);
     script.onload = loadPosts;
 }
-
 
 </script>
 
