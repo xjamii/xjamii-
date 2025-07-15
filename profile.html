@@ -942,44 +942,69 @@ body {
     }
   }
 
-  async function loadUserPosts(userId) {
-    try {
-      elements.postsLoadingSpinner.style.display = 'flex';
-      elements.userPostsContainer.innerHTML = '';
-      elements.noPostsMessage.style.display = 'none';
+async function loadUserPosts(userId) {
+  try {
+    // Wait for <post-component> to be registered
+    if (!customElements.get('post-component')) {
+      console.log('Post component not registered yet, waiting...');
+      await new Promise(resolve => {
+        const check = setInterval(() => {
+          if (customElements.get('post-component')) {
+            clearInterval(check);
+            resolve();
+          }
+        }, 100);
+      });
+    }
 
-      const { data: posts, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profile:user_id (username, full_name, avatar_url, is_verified),
-          media:post_media (media_url, media_type)
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+    elements.postsLoadingSpinner.style.display = 'flex';
+    elements.userPostsContainer.innerHTML = '';
+    elements.noPostsMessage.style.display = 'none';
 
-      if (error) throw error;
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profile:user_id (username, full_name, avatar_url, is_verified),
+        media:post_media (media_url, media_type)
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
-      if (!posts || posts.length === 0) {
-        elements.noPostsMessage.style.display = 'block';
-        return;
+    if (error) throw error;
+
+    if (!posts || posts.length === 0) {
+      elements.noPostsMessage.style.display = 'block';
+      return;
+    }
+
+    // Check liked posts if user is logged in
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: userLikes } = await supabase
+        .from('likes')
+        .select('post_id')
+        .eq('profile_id', user.id);
+
+      if (userLikes) {
+        const likedPostIds = new Set(userLikes.map(like => like.post_id));
+        posts.forEach(post => {
+          post.is_liked = likedPostIds.has(post.id);
+        });
       }
+    }
 
-      // Check liked posts if user is logged in
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userLikes } = await supabase
-          .from('likes')
-          .select('post_id')
-          .eq('profile_id', user.id);
+    // Insert each post using <post-component>
+    posts.forEach(post => {
+      const postElement = document.createElement('post-component');
+      postElement.post = post;
+      elements.userPostsContainer.appendChild(postElement);
+    });
 
-        if (userLikes) {
-          const likedPostIds = new Set(userLikes.map(like => like.post_id));
-          posts.forEach(post => {
-            post.is_liked = likedPostIds.has(post.id);
-          });
-        }
-      }
+  } catch (error) {
+    console.error('Error loading posts:', error);
+  }
+}
 
       // Render posts
       posts.forEach(post => {
