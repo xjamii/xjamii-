@@ -66,49 +66,52 @@ class CommentComponent extends HTMLElement {
     return content;
   }
 
-  async toggleLike() {
-    if (!this.commentData || this.isLikeInProgress) return;
-    this.isLikeInProgress = true;
-    
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        alert('Please sign in to like comments');
-        return;
-      }
+async toggleLike() {
+  if (!this.commentData || this.isLikeInProgress) return;
+  this.isLikeInProgress = true;
+  
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      alert('Please sign in to like comments');
+      return;
+    }
 
-      const commentId = this.commentData.id;
-      const isLiked = this.commentData.is_liked;
-      const currentCount = this.commentData.like_count || 0;
+    const commentId = this.commentData.id;
+    const isLiked = this.commentData.is_liked;
+    const currentCount = this.commentData.like_count || 0;
 
-      // Optimistic update
-      this.commentData.is_liked = !isLiked;
-      this.commentData.like_count = isLiked ? currentCount - 1 : currentCount + 1;
-      this.render();
+    // Optimistic update
+    this.commentData.is_liked = !isLiked;
+    this.commentData.like_count = isLiked ? currentCount - 1 : currentCount + 1;
+    this.render();
 
-      // Database operation
-      const { error } = isLiked
-        ? await supabase.from('comment_likes')
-            .delete()
-            .match({ comment_id: commentId, user_id: user.id })
-        : await supabase.from('comment_likes')
-            .insert({ comment_id: commentId, user_id: user.id });
+    // Database operation - use upsert to handle conflicts
+    const { error } = await supabase
+      .from('comment_likes')
+      .upsert(
+        { 
+          comment_id: commentId, 
+          user_id: user.id 
+        },
+        { 
+          onConflict: 'comment_id,user_id',
+          ignoreDuplicates: false
+        }
+      );
 
-      if (error) throw error;
+    if (error) throw error;
 
-      // Verify sync
-      const { data } = await supabase
-        .from('comments')
-        .select('like_count')
-        .eq('id', commentId)
-        .single();
+    // Verify the actual like count from the database
+    const { data: comment } = await supabase
+      .from('comments')
+      .select('like_count')
+      .eq('id', commentId)
+      .single();
 
-      if (data && data.like_count !== this.commentData.like_count) {
-        this.commentData.like_count = data.like_count;
-        this.render();
-      }
-
-      // Verify like status
+    if (comment) {
+      this.commentData.like_count = comment.like_count;
+      // Verify if the current user's like was recorded
       const { data: likeStatus } = await supabase
         .from('comment_likes')
         .select()
@@ -118,24 +121,25 @@ class CommentComponent extends HTMLElement {
 
       this.commentData.is_liked = !!likeStatus;
       this.render();
-
-    } catch (error) {
-      console.error('Like operation failed:', error);
-      
-      // Revert on error
-      if (this.commentData) {
-        this.commentData.is_liked = !this.commentData.is_liked;
-        this.commentData.like_count = this.commentData.is_liked 
-          ? this.commentData.like_count + 1 
-          : this.commentData.like_count - 1;
-        this.render();
-      }
-      
-      alert('Failed to update like. Please try again.');
-    } finally {
-      this.isLikeInProgress = false;
     }
+
+  } catch (error) {
+    console.error('Like operation failed:', error);
+    
+    // Revert on error
+    if (this.commentData) {
+      this.commentData.is_liked = !this.commentData.is_liked;
+      this.commentData.like_count = this.commentData.is_liked 
+        ? this.commentData.like_count + 1 
+        : this.commentData.like_count - 1;
+      this.render();
+    }
+    
+    alert('Failed to update like. Please try again.');
+  } finally {
+    this.isLikeInProgress = false;
   }
+}
 
   async deleteComment() {
     try {
