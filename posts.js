@@ -183,70 +183,71 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  async toggleLike(postId, isCurrentlyLiked) {
-    try {
-      // 1. Check authentication
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error('Authentication error:', authError);
-        return { success: false, error: 'Not authenticated' };
-      }
-      
-      const currentUserId = user.id;
-      console.log(`Toggling like for post ${postId} by user ${currentUserId}`);
-
-      if (!isCurrentlyLiked) {
-        // Add like
-        const { data, error } = await supabase
-          .from('likes')
-          .insert([{ 
-            post_id: postId, 
-            profile_id: currentUserId 
-          }])
-          .select();
-        
-        if (error) {
-          console.error('Like insertion error:', error);
-          throw error;
-        }
-        console.log('Like added successfully:', data);
-        
-        // Update the post's like count in the database
-        await supabase.rpc('increment_like_count', { post_id: postId });
-        
-        return { success: true, newLikeState: true };
-      } else {
-        // Remove like
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('post_id', postId)
-          .eq('profile_id', currentUserId);
-        
-        if (error) {
-          console.error('Like deletion error:', error);
-          throw error;
-        }
-        console.log('Like removed successfully');
-        
-        // Update the post's like count in the database
-        await supabase.rpc('decrement_like_count', { post_id: postId });
-        
-        return { success: true, newLikeState: false };
-      }
-    } catch (err) {
-      console.error('Error in toggleLike:', {
-        message: err.message,
-        code: err.code,
-        details: err.details
-      });
-      return { 
-        success: false, 
-        error: err.message 
-      };
+  
+      async toggleLike() {
+  try {
+    // 1. Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      alert('Please sign in to like comments');
+      return;
     }
+
+    // 2. Prepare variables
+    const commentId = this.commentData.id;
+    const isLiked = this.commentData.is_liked;
+
+    // 3. Optimistic UI update (immediate visual feedback)
+    this.commentData.is_liked = !isLiked;
+    this.commentData.like_count = isLiked 
+      ? Math.max(0, this.commentData.like_count - 1)
+      : this.commentData.like_count + 1;
+    this.render();
+
+    // 4. Database operation
+    const { error } = isLiked
+      ? await supabase.from('comment_likes')
+          .delete()
+          .match({ 
+            comment_id: commentId, 
+            user_id: user.id 
+          })
+      : await supabase.from('comment_likes')
+          .insert({ 
+            comment_id: commentId, 
+            user_id: user.id 
+          });
+
+    if (error) throw error;
+
+    // 5. Verify sync after 1 second
+    setTimeout(async () => {
+      const { data } = await supabase
+        .from('comments')
+        .select('like_count')
+        .eq('id', commentId)
+        .single();
+      
+      if (data && data.like_count !== this.commentData.like_count) {
+        console.log('Resyncing count from backend');
+        this.commentData.like_count = data.like_count;
+        this.commentData.is_liked = data.like_count > this.commentData.like_count;
+        this.render();
+      }
+    }, 1000);
+
+  } catch (error) {
+    console.error('Like error:', error);
+    // Revert UI on error
+    this.commentData.is_liked = !this.commentData.is_liked;
+    this.commentData.like_count = this.commentData.is_liked 
+      ? this.commentData.like_count + 1 
+      : Math.max(0, this.commentData.like_count - 1);
+    this.render();
+    
+    alert('Failed to update like. Please try again.');
   }
+}
 
   async render() {
     try {
