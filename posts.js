@@ -1,139 +1,50 @@
-class PostComponent extends HTMLElement {
+// post-comment.js
+class CommentComponent extends HTMLElement {
   constructor() {
     super();
-    // Keep your existing properties
-    this.mediaViewer = null;
-    this.currentMediaIndex = 0;
-    this.startY = 0;
-    this.startX = 0;
-    this.isRefreshing = false;
-    this.isLoadingMore = false;
-    
-    // Add view tracking properties
-    this.viewCounted = false;
-    this.observer = new IntersectionObserver(this.handleIntersect.bind(this), {
-      threshold: 0.5,
-      rootMargin: '0px 0px -100px 0px'
-    });
+    this.commentData = null;
+    this.isOwner = false;
+    this.isExpanded = false;
+    this.currentUserId = null;
   }
 
-  // Add these new methods for view tracking
-  handleIntersect(entries) {
-    entries.forEach(entry => {
-      if (entry.isIntersecting && !this.viewCounted) {
-        this.recordView();
-      }
-    });
-  }
-
-  async recordView() {
-    const postData = this.getAttribute('post-data');
-    if (!postData) return;
-    
+  async connectedCallback() {
+    // Get current user ID
     try {
-      const post = JSON.parse(postData);
-      
-      // Wait 10 seconds before counting the view
-      await new Promise(resolve => setTimeout(resolve, 10000));
-      
-      // Only proceed if still visible after 10 seconds
-      if (!this.isConnected || !this.viewCounted) {
-        const { error } = await supabase
-          .rpc('increment_views', { post_id: post.id });
-        
-        if (!error) {
-          this.viewCounted = true;
-          console.log("✅ View counted for post:", post.id);
-          
-          const viewsEl = this.querySelector('.views');
-          if (viewsEl) {
-            // 1. Get current elements
-            const icon = viewsEl.querySelector('i');
-            const countSpan = viewsEl.querySelector('span') || document.createElement('span');
-            const currentViews = parseInt(countSpan.textContent || viewsEl.textContent) || 0;
-            
-            // 2. Create animation elements
-            const container = document.createElement('div');
-            container.className = 'view-counter-animation';
-            container.style.cssText = `
-              display: inline-flex;
-              flex-direction: column;
-              overflow: hidden;
-              height: 20px;
-              vertical-align: middle;
-            `;
-            
-            const oldNumber = document.createElement('div');
-            oldNumber.textContent = currentViews;
-            
-            const newNumber = document.createElement('div');
-            newNumber.textContent = currentViews + 1;
-            
-            // 3. Set up animation
-            container.appendChild(oldNumber);
-            container.appendChild(newNumber);
-            
-            // 4. Replace existing content
-            viewsEl.innerHTML = '';
-            viewsEl.appendChild(icon);
-            viewsEl.appendChild(container);
-            
-            // 5. Trigger animation after 10s + small delay
-            setTimeout(() => {
-              container.style.transform = `translateY(-20px)`;
-              container.style.transition = `transform 0.3s ease-out`;
-            }, 50);
-            
-            // 6. Clean up after animation
-            setTimeout(() => {
-              if (viewsEl.isConnected) { // Check if still in DOM
-                viewsEl.innerHTML = `
-                  <i class="fas fa-chart-bar"></i>
-                  <span>${currentViews + 1}</span>
-                `;
-              }
-            }, 800);
-          }
-        }
-      }
-    } catch (err) {
-      console.error("View recording failed:", err);
+      const { data: { user } } = await supabase.auth.getUser();
+      this.currentUserId = user?.id || null;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      this.currentUserId = null;
     }
-  }   
-
-  // Modify connectedCallback to include view tracking
-  connectedCallback() {
+    
     this.render();
-    this.observer.observe(this); // Start intersection observer
-  }
-
-  // Add cleanup for observer
-  disconnectedCallback() {
-    if (this.observer) {
-      this.observer.unobserve(this);
-    }
   }
 
   static get observedAttributes() {
-    return ['post-data'];
+    return ['comment-data', 'is-owner'];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (name === 'post-data' && oldValue !== newValue) {
+    if (name === 'comment-data' && newValue) {
+      this.commentData = JSON.parse(newValue);
+      this.render();
+    } else if (name === 'is-owner') {
+      this.isOwner = newValue === 'true';
       this.render();
     }
   }
 
   formatTime(dateString) {
     const now = new Date();
-    const postDate = new Date(dateString);
-    const diffInSeconds = Math.floor((now - postDate) / 1000);
+    const commentDate = new Date(dateString);
+    const diffInSeconds = Math.floor((now - commentDate) / 1000);
     
     if (diffInSeconds < 60) return `${diffInSeconds}s`;
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
-    return postDate.toLocaleDateString();
+    return commentDate.toLocaleDateString();
   }
 
   getInitials(name) {
@@ -156,621 +67,107 @@ class PostComponent extends HTMLElement {
     return content;
   }
 
-  async checkLikeStatus(postId) {
+  async toggleLike() {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        return false; // User not authenticated
-      }
-      
-      const { data, error } = await supabase
-        .from('likes')
-        .select('*')
-        .eq('post_id', postId)
-        .eq('profile_id', user.id)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') { // Ignore "no rows found" error
-        console.error('Error checking like status:', error);
-        return false;
-      }
-      
-      return !!data; // Returns true if like exists, false otherwise
-    } catch (err) {
-      console.error('Error in checkLikeStatus:', err);
-      return false;
-    }
-  }
+      if (authError || !user) throw new Error('Not authenticated');
 
-  async toggleLike(postId, isCurrentlyLiked) {
-    try {
-      // 1. Check authentication
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error('Authentication error:', authError);
-        return { success: false, error: 'Not authenticated' };
-      }
-      
-      const currentUserId = user.id;
-      console.log(`Toggling like for post ${postId} by user ${currentUserId}`);
+      const isLiked = this.commentData.is_liked;
+      const commentId = this.commentData.id;
 
-      if (!isCurrentlyLiked) {
+      // Optimistic UI update
+      this.commentData.is_liked = !isLiked;
+      this.commentData.like_count = isLiked 
+        ? this.commentData.like_count - 1 
+        : this.commentData.like_count + 1;
+      this.render();
+
+      if (!isLiked) {
         // Add like
-        const { data, error } = await supabase
-          .from('likes')
-          .insert([{ 
-            post_id: postId, 
-            profile_id: currentUserId 
-          }])
-          .select();
-        
-        if (error) {
-          console.error('Like insertion error:', error);
-          throw error;
-        }
-        console.log('Like added successfully:', data);
-        
-        // Update the post's like count in the database
-        await supabase.rpc('increment_like_count', { post_id: postId });
-        
-        return { success: true, newLikeState: true };
+        const { error } = await supabase
+          .from('comment_likes')
+          .insert({ comment_id: commentId, user_id: user.id });
+
+        if (error) throw error;
+
+        // Update like count
+        await supabase.rpc('increment_comment_like_count', { comment_id: commentId });
       } else {
         // Remove like
         const { error } = await supabase
-          .from('likes')
+          .from('comment_likes')
           .delete()
-          .eq('post_id', postId)
-          .eq('profile_id', currentUserId);
-        
-        if (error) {
-          console.error('Like deletion error:', error);
-          throw error;
-        }
-        console.log('Like removed successfully');
-        
-        // Update the post's like count in the database
-        await supabase.rpc('decrement_like_count', { post_id: postId });
-        
-        return { success: true, newLikeState: false };
+          .eq('comment_id', commentId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        // Update like count
+        await supabase.rpc('decrement_comment_like_count', { comment_id: commentId });
       }
-    } catch (err) {
-      console.error('Error in toggleLike:', {
-        message: err.message,
-        code: err.code,
-        details: err.details
-      });
-      return { 
-        success: false, 
-        error: err.message 
-      };
-    }
-  }
-
-  async render() {
-    try {
-      const postData = this.getAttribute('post-data');
-      if (!postData) {
-        this.innerHTML = `
-          <div class="post-loading">
-            <div class="loader"></div>
-          </div>
-        `;
-        return;
-      }
-
-      const post = JSON.parse(postData);
-      const profile = post.profile || {
-        username: 'unknown',
-        full_name: 'Unknown User',
-        avatar_url: '',
-        is_verified: false,
-        user_id: ''
-      };
-
-      
-      // Create avatar HTML
-      const avatarHtml = profile.avatar_url 
-        ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
-        : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
-
-      // Check if content needs "See more"
-      const content = post.content || '';
-      const showSeeMore = content.length > 200;
-      const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
-
-      this.innerHTML = `
-        <div class="post-container">
-          <div class="post">
-            <div class="post-header">
-              <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none">
-                ${avatarHtml}
-              </a>
-              <div class="post-user-info">
-                <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" style="text-decoration: none">
-                  <div class="post-user">
-                    ${profile.full_name || profile.username}
-                    ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-                  </div>
-                  <div class="post-username" style="text-decoration: none">@${profile.username}</div>
-                </a>
-              </div>
-              <span class="post-time">${this.formatTime(post.created_at)}</span>
-            </div>
-            ${content ? `
-              <p class="post-content" data-full-content="${content.replace(/"/g, '&quot;')}">
-                ${this.processContent(displayedContent)}
-                ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
-              </p>
-            ` : ''}
-            ${this.renderMedia(post.media || [])}
-            <div class="post-actions">
-              <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
-              <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
-                <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
-              </div>
-              <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-              <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
-              <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      this.setupEventListeners(post);
 
     } catch (error) {
-      console.error("Error rendering post:", error);
-      this.innerHTML = `<div class="post-error">Error loading post</div>`;
+      console.error('Error toggling comment like:', error);
+      // Revert optimistic update
+      this.commentData.is_liked = !this.commentData.is_liked;
+      this.commentData.like_count = this.commentData.is_liked 
+        ? this.commentData.like_count + 1 
+        : this.commentData.like_count - 1;
+      this.render();
     }
   }
 
-  renderMedia(mediaItems) {
-    if (!mediaItems || !mediaItems.length) return '';
-    
-    if (mediaItems.length === 1) {
-      const media = mediaItems[0];
-      if (media.media_type === 'video') {
-        return `
-          <div class="media-container video-container">
-            <div class="video-preview" data-media-index="0">
-              <video class="post-media" preload="metadata">
-                <source src="${media.media_url}" type="video/mp4">
-              </video>
-              <div class="video-play-button"><i class="fas fa-play"></i></div>
-            </div>
-          </div>
-        `;
-      } else {
-        return `
-          <div class="media-container">
-            <img src="${media.media_url}" class="post-media" data-media-index="0">
-          </div>
-        `;
-      }
-    }
-    
-    return `
-      <div class="media-grid">
-        ${mediaItems.slice(0, 4).map((media, index) => `
-          <div class="grid-media-container">
-            ${media.media_type === 'video' 
-              ? `<div class="video-preview" data-media-index="${index}">
-                  <video class="grid-media" preload="metadata">
-                    <source src="${media.media_url}" type="video/mp4">
-                  </video>
-                  <div class="video-play-button"><i class="fas fa-play"></i></div>
-                </div>`
-              : `<img src="${media.media_url}" class="grid-media" data-media-index="${index}">`}
-          </div>
-        `).join('')}
-        ${mediaItems.length > 4 ? `
-          <div class="media-count-overlay">
-            +${mediaItems.length - 4}
-          </div>` : ''}
-      </div>
-    `;
-  }
+  async deleteComment() {
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', this.commentData.id);
 
-  setupEventListeners(post) {
-    // Like action
-    this.querySelector('.like-action')?.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const likeBtn = e.currentTarget;
-      const isLiked = likeBtn.classList.contains('liked');
-      
-      // Optimistic UI update
-      likeBtn.classList.toggle('liked');
-      const icon = likeBtn.querySelector('i');
-      icon.className = isLiked ? 'far fa-heart' : 'fas fa-heart';
-      
-      // Update count immediately
-      const countEl = likeBtn.querySelector('span') || likeBtn.childNodes[2];
-      if (countEl) {
-        let count = parseInt(countEl.textContent) || 0;
-        countEl.textContent = isLiked ? count - 1 : count + 1;
-      }
-      
-      try {
-        const { success, error } = await this.toggleLike(post.id, isLiked);
-        
-        if (!success) {
-          throw new Error(error || 'Failed to update like');
-        }
-        
-        // Update the post object with the new state
-        post.is_liked = !isLiked;
-        post.like_count = parseInt(countEl.textContent);
-      } catch (error) {
-        // Revert UI if API call failed
-        likeBtn.classList.toggle('liked');
-        icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-        if (countEl) {
-          let count = parseInt(countEl.textContent) || 0;
-          countEl.textContent = isLiked ? count + 1 : count - 1;
-        }
-        
-        console.error('Like update failed:', error);
-        alert(`Error: ${error.message}. Please try again.`);
-      }
-    });
+      if (error) throw error;
 
-    // More options
-    this.querySelector('.post-more')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.showMoreOptions(e, post);
-    });
+      // Remove comment from DOM
+      this.remove();
 
-    // Share action
-    this.querySelector('.share-action')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.sharePost(post.id);
-    });
+      // Update comment count on the post
+      await supabase.rpc('decrement_comment_count', { post_id: this.commentData.post_id });
 
-    // Comment action - open comment page
-    this.querySelector('.comment-action')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.openCommentPage(post);
-    });
-
-    // Mentions
-    this.querySelectorAll('.mention').forEach(mention => {
-      mention.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const username = e.target.textContent.substring(1);
-        window.location.href = `/profile.html?username=${username}`;
-      });
-    });
-
-    // URLs - already handled by anchor tags in processContent
-
-    // Media click handlers
-    this.querySelectorAll('.post-media, .grid-media, .video-preview').forEach(media => {
-      media.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const mediaIndex = parseInt(media.getAttribute('data-media-index') || media.parentElement.getAttribute('data-media-index') || 0);
-        this.showMediaViewer(post.media, mediaIndex);
-      });
-    });
-
-    // See more click handler
-    this.querySelector('.see-more')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.openCommentPage(post);
-    });
-
-    // Post content click handler (opens comment page)
-    this.querySelector('.post-content')?.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
-        this.openCommentPage(post);
-      }
-    });
-
-    // Setup pull-to-refresh if this is the first post
-    if (this.previousElementSibling === null) {
-      this.setupPullToRefresh();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      alert('Failed to delete comment. Please try again.');
     }
   }
 
-  showMediaViewer(mediaItems, startIndex = 0) {
-    if (!mediaItems || !mediaItems.length) return;
-    
-    // Create media viewer overlay
-    this.mediaViewer = document.createElement('div');
-    this.mediaViewer.className = 'media-viewer-overlay';
-    this.currentMediaIndex = startIndex;
-    
-    // Create close button
-    const closeBtn = document.createElement('div');
-    closeBtn.className = 'media-viewer-close';
-    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-    closeBtn.addEventListener('click', () => this.closeMediaViewer());
-    
-    // Create media container
-    const mediaContainer = document.createElement('div');
-    mediaContainer.className = 'media-viewer-container';
-    
-    // Add touch and mouse events for dragging
-    mediaContainer.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true });
-    mediaContainer.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
-    mediaContainer.addEventListener('touchend', this.handleTouchEnd.bind(this));
-    
-    mediaContainer.addEventListener('mousedown', this.handleMouseDown.bind(this));
-    
-    // Create media content
-    const mediaContent = document.createElement('div');
-    mediaContent.className = 'media-viewer-content';
-    
-    // Add media items
-    mediaItems.forEach((media, index) => {
-      const mediaItem = document.createElement('div');
-      mediaItem.className = `media-viewer-item ${index === startIndex ? 'active' : ''}`;
-      
-      if (media.media_type === 'video') {
-        const video = document.createElement('video');
-        video.className = 'media-viewer-video';
-        video.setAttribute('controls', '');
-        video.innerHTML = `<source src="${media.media_url}" type="video/mp4">`;
-        mediaItem.appendChild(video);
-      } else {
-        const img = document.createElement('img');
-        img.className = 'media-viewer-image';
-        img.src = media.media_url;
-        mediaItem.appendChild(img);
-      }
-      
-      mediaContent.appendChild(mediaItem);
-    });
-    
-    // Add navigation arrows if multiple items
-    let prevBtn, nextBtn;
-    if (mediaItems.length > 1) {
-      prevBtn = document.createElement('div');
-      prevBtn.className = 'media-viewer-nav media-viewer-prev';
-      prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
-      prevBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.navigateMedia(-1);
-      });
-      
-      nextBtn = document.createElement('div');
-      nextBtn.className = 'media-viewer-nav media-viewer-next';
-      nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
-      nextBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.navigateMedia(1);
-      });
-    }
-    
-    // Add dots indicator if multiple items
-    let dotsContainer;
-    if (mediaItems.length > 1) {
-      dotsContainer = document.createElement('div');
-      dotsContainer.className = 'media-viewer-dots';
-      
-      mediaItems.forEach((_, index) => {
-        const dot = document.createElement('div');
-        dot.className = `media-viewer-dot ${index === startIndex ? 'active' : ''}`;
-        dot.addEventListener('click', () => this.goToMedia(index));
-        dotsContainer.appendChild(dot);
-      });
-    }
-    
-    // Assemble the viewer
-    mediaContainer.appendChild(mediaContent);
-    if (prevBtn) mediaContainer.appendChild(prevBtn);
-    if (nextBtn) mediaContainer.appendChild(nextBtn);
-    if (dotsContainer) mediaContainer.appendChild(dotsContainer);
-    
-    this.mediaViewer.appendChild(closeBtn);
-    this.mediaViewer.appendChild(mediaContainer);
-    
-    document.body.appendChild(this.mediaViewer);
-    document.body.style.overflow = 'hidden';
-    
-    // Start playing video if the first item is a video
-    if (mediaItems[startIndex]?.media_type === 'video') {
-      setTimeout(() => {
-        const video = this.mediaViewer.querySelector('.media-viewer-item.active video');
-        if (video) {
-          video.play().catch(e => console.log('Video play error:', e));
-        }
-      }, 300);
-    }
-  }
-
-  closeMediaViewer() {
-    if (!this.mediaViewer) return;
-    
-    // Pause any playing videos
-    const videos = this.mediaViewer.querySelectorAll('video');
-    videos.forEach(video => video.pause());
-    
-    this.mediaViewer.classList.add('closing');
-    setTimeout(() => {
-      this.mediaViewer.remove();
-      this.mediaViewer = null;
-      document.body.style.overflow = '';
-    }, 300);
-  }
-
-  navigateMedia(direction) {
-    const mediaItems = this.mediaViewer.querySelectorAll('.media-viewer-item');
-    if (!mediaItems.length) return;
-    
-    const newIndex = (this.currentMediaIndex + direction + mediaItems.length) % mediaItems.length;
-    this.goToMedia(newIndex);
-  }
-
-  goToMedia(index) {
-    const mediaItems = this.mediaViewer?.querySelectorAll('.media-viewer-item');
-    if (!mediaItems || index < 0 || index >= mediaItems.length) return;
-    
-    // Pause current video if it's a video
-    const currentVideo = mediaItems[this.currentMediaIndex]?.querySelector('video');
-    if (currentVideo) currentVideo.pause();
-    
-    // Update active item
-    mediaItems[this.currentMediaIndex]?.classList.remove('active');
-    mediaItems[index].classList.add('active');
-    this.currentMediaIndex = index;
-    
-    // Update dots
-    const dots = this.mediaViewer?.querySelectorAll('.media-viewer-dot');
-    if (dots) {
-      dots.forEach((dot, i) => {
-        dot.classList.toggle('active', i === index);
-      });
-    }
-    
-    // Play new video if it's a video
-    const newVideo = mediaItems[index]?.querySelector('video');
-    if (newVideo) {
-      newVideo.currentTime = 0;
-      newVideo.play().catch(e => console.log('Video play error:', e));
-    }
-  }
-
-  // Touch event handlers for swipe and drag to close
-  handleTouchStart(e) {
-    if (!this.mediaViewer) return;
-    this.startY = e.touches[0].clientY;
-    this.startX = e.touches[0].clientX;
-    this.isDragging = false;
-  }
-
-  handleTouchMove(e) {
-    if (!this.mediaViewer || !this.startY) return;
-    
-    const y = e.touches[0].clientY;
-    const x = e.touches[0].clientX;
-    const dy = y - this.startY;
-    const dx = x - this.startX;
-    
-    // Check if it's a horizontal swipe (for changing media)
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
-      e.preventDefault();
-      this.isDragging = true;
-      if (dx > 0) {
-        this.navigateMedia(-1); // Swipe right
-      } else {
-        this.navigateMedia(1); // Swipe left
-      }
-      this.startX = x;
-      return;
-    }
-    
-    // Vertical drag to close
-    if (Math.abs(dy) > 30) {
-      e.preventDefault();
-      this.isDragging = true;
-      const opacity = 1 - Math.min(Math.abs(dy) / 200, 0.8);
-      const scale = 1 - Math.min(Math.abs(dy) / 1000, 0.1);
-      
-      const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
-      mediaContainer.style.transform = `translateY(${dy}px) scale(${scale})`;
-      mediaContainer.style.opacity = opacity;
-    }
-  }
-
-  handleTouchEnd(e) {
-    if (!this.mediaViewer || !this.isDragging) return;
-    
-    const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
-    const y = e.changedTouches[0].clientY;
-    const dy = y - this.startY;
-    
-    if (Math.abs(dy) > 100) {
-      this.closeMediaViewer();
-    } else {
-      mediaContainer.style.transform = '';
-      mediaContainer.style.opacity = '';
-    }
-    
-    this.startY = 0;
-    this.startX = 0;
-    this.isDragging = false;
-  }
-
-  // Mouse event handlers for drag to close
-  handleMouseDown(e) {
-    if (!this.mediaViewer) return;
-    this.startY = e.clientY;
-    this.startX = e.clientX;
-    this.isDragging = false;
-    
-    const handleMouseMove = (e) => {
-      const y = e.clientY;
-      const dy = y - this.startY;
-      
-      if (Math.abs(dy) > 30) {
-        this.isDragging = true;
-        const opacity = 1 - Math.min(Math.abs(dy) / 200, 0.8);
-        const scale = 1 - Math.min(Math.abs(dy) / 1000, 0.1);
-        
-        const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
-        mediaContainer.style.transform = `translateY(${dy}px) scale(${scale})`;
-        mediaContainer.style.opacity = opacity;
-      }
-    };
-    
-    const handleMouseUp = (e) => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      
-      if (!this.isDragging) return;
-      
-      const y = e.clientY;
-      const dy = y - this.startY;
-      
-      if (Math.abs(dy) > 100) {
-        this.closeMediaViewer();
-      } else {
-        const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
-        mediaContainer.style.transform = '';
-        mediaContainer.style.opacity = '';
-      }
-      
-      this.startY = 0;
-      this.startX = 0;
-      this.isDragging = false;
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }
-
-  openCommentPage(post) {
-    // This will now be handled by the standalone CommentPage class
-    window.openCommentPage(post.id);
-  }
-
-  showMoreOptions(e, post) {
-    const isOwner = true; // Replace with actual owner check
+  showMoreOptions(e) {
+    e.stopPropagation();
     
     // Remove any existing popups
     document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
     
     const popup = document.createElement('div');
     popup.className = 'more-options-popup';
-    popup.innerHTML = `
-      <div class="more-options-content">
-        ${isOwner ? `
+    
+    if (this.isOwner) {
+      popup.innerHTML = `
+        <div class="more-options-content">
           <div class="more-option edit-option"><i class="fas fa-edit"></i> Edit</div>
           <div class="more-option delete-option"><i class="fas fa-trash-alt"></i> Delete</div>
-        ` : `
+        </div>
+      `;
+    } else {
+      popup.innerHTML = `
+        <div class="more-options-content">
           <div class="more-option report-option"><i class="fas fa-flag"></i> Report</div>
-        `}
-      </div>
-    `;
+        </div>
+      `;
+    }
     
     document.body.appendChild(popup);
     
-    // Position the popup
+    // Position the popup near the three dots button
     const rect = e.target.getBoundingClientRect();
     popup.style.left = `${rect.left - 100}px`;
-    popup.style.top = `${rect.top - 10}px`;
+    popup.style.top = `${rect.top + window.scrollY}px`;
     
     // Close when clicking outside
     const clickHandler = (event) => {
@@ -786,101 +183,699 @@ class PostComponent extends HTMLElement {
     
     // Add option handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      console.log('Edit post', post.id);
+      this.editComment();
       popup.remove();
     });
     
     popup.querySelector('.delete-option')?.addEventListener('click', () => {
-      console.log('Delete post', post.id);
+      this.deleteComment();
       popup.remove();
     });
     
     popup.querySelector('.report-option')?.addEventListener('click', () => {
-      console.log('Report post', post.id);
+      this.reportComment();
       popup.remove();
     });
   }
 
-  sharePost(postId) {
-    const postUrl = `${window.location.origin}/post.html?id=${postId}`;
-    
-    if (navigator.share) {
-      navigator.share({
-        title: 'Check out this post',
-        url: postUrl
-      }).catch(err => {
-        console.log('Error sharing:', err);
-        this.copyToClipboard(postUrl);
+  editComment() {
+    const commentPage = document.querySelector('.comment-page-overlay');
+    if (!commentPage) return;
+
+    const input = commentPage.querySelector('.comment-page-input');
+    if (!input) return;
+
+    input.value = this.commentData.content;
+    input.focus();
+    input.dataset.editingCommentId = this.commentData.id;
+  }
+
+  reportComment() {
+    alert('Report functionality will be implemented soon');
+  }
+
+  toggleExpand() {
+    this.isExpanded = !this.isExpanded;
+    this.render();
+  }
+
+  render() {
+    if (!this.commentData) return;
+
+    const profile = this.commentData.profile || {
+      username: 'unknown',
+      full_name: 'Unknown User',
+      avatar_url: '',
+      is_verified: false,
+      user_id: ''
+    };
+
+    const showSeeMore = this.commentData.content.length > 200 && !this.isExpanded;
+    const displayedContent = showSeeMore 
+      ? this.commentData.content.substring(0, 200) + '...' 
+      : this.commentData.content;
+
+    // Create avatar HTML
+    const avatarHtml = profile.avatar_url 
+      ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
+      : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
+
+    // Only show like action if current user is authenticated
+    const showLikeAction = this.currentUserId !== null;
+    const likeActionHtml = showLikeAction 
+      ? `<div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
+          <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> ${this.commentData.like_count || 0}
+         </div>`
+      : `<div class="comment-action">
+          <i class="far fa-heart"></i> ${this.commentData.like_count || 0}
+         </div>`;
+
+    this.innerHTML = `
+      <div class="comment-container">
+        <div class="comment-header">
+          <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none">
+            ${avatarHtml}
+          </a>
+          <div class="comment-user-info">
+            <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" style="text-decoration: none">
+              <div class="post-user">
+                ${profile.full_name || profile.username}
+                ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+              </div>
+              <div class="post-username" style="text-decoration: none">@${profile.username}</div>
+            </a>
+          </div>
+          <span class="post-time">${this.formatTime(this.commentData.created_at)}</span>
+        </div>
+        <div class="comment-content">
+          ${this.processContent(displayedContent)}
+          ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
+        </div>
+        <div class="comment-actions">
+          ${likeActionHtml}
+          <div class="comment-action reply-action">
+            <i class="far fa-comment-dots"></i> Reply
+          </div>
+          ${this.isOwner ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
+        </div>
+      </div>
+    `;
+
+    // Add event listeners
+    if (showLikeAction) {
+      this.querySelector('.like-action')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleLike();
       });
-    } else {
-      this.copyToClipboard(postUrl);
     }
-  }
 
-  copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-      alert('Link copied to clipboard!');
+    this.querySelector('.reply-action')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.replyToComment();
+    });
+
+    this.querySelector('.comment-more')?.addEventListener('click', (e) => {
+      this.showMoreOptions(e);
+    });
+
+    this.querySelector('.comment-content')?.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url') && !e.target.classList.contains('see-more')) {
+        this.toggleExpand();
+      }
+    });
+
+    this.querySelector('.see-more')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleExpand();
+    });
+
+    // Make mentions clickable
+    this.querySelectorAll('.mention').forEach(mention => {
+      mention.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const username = e.target.textContent.substring(1);
+        window.location.href = `/profile.html?username=${username}`;
+      });
     });
   }
 
-  setupPullToRefresh() {
-    let startY = 0;
-    let touchStart = false;
-    const refreshContainer = document.createElement('div');
-    refreshContainer.className = 'refresh-container';
-    refreshContainer.innerHTML = '<div class="refresh-loader"><i class="fas fa-sync-alt"></i></div>';
-    this.parentNode.insertBefore(refreshContainer, this);
+  replyToComment() {
+    const commentPage = document.querySelector('.comment-page-overlay');
+    if (!commentPage) return;
 
-    this.addEventListener('touchstart', (e) => {
-      if (window.scrollY === 0 && !this.isRefreshing) {
-        startY = e.touches[0].pageY;
-        touchStart = true;
-      }
-    }, { passive: true });
+    const input = commentPage.querySelector('.comment-page-input');
+    if (!input) return;
 
-    this.addEventListener('touchmove', (e) => {
-      if (!touchStart || this.isRefreshing) return;
-      
-      const y = e.touches[0].pageY;
-      const dy = y - startY;
-      
-      if (dy > 0) {
-        e.preventDefault();
-        const pullDistance = Math.min(dy, 150);
-        const progress = Math.min(pullDistance / 150, 1);
-        refreshContainer.style.opacity = progress;
-        refreshContainer.style.transform = `translateY(${pullDistance}px)`;
-        refreshContainer.querySelector('.refresh-loader').style.transform = `rotate(${progress * 360}deg)`;
-      }
-    }, { passive: false });
-
-    this.addEventListener('touchend', (e) => {
-      if (!touchStart || this.isRefreshing) return;
-      
-      const y = e.changedTouches[0].pageY;
-      const dy = y - startY;
-      
-      if (dy > 100) {
-        this.isRefreshing = true;
-        refreshContainer.classList.add('refreshing');
-        
-        // Simulate refresh
-        setTimeout(() => {
-          refreshContainer.style.transform = 'translateY(0)';
-          refreshContainer.classList.remove('refreshing');
-          this.isRefreshing = false;
-          
-          // TODO: Actually refresh content
-          console.log('Refreshing content...');
-        }, 1000);
-      } else {
-        refreshContainer.style.transform = 'translateY(0)';
-        refreshContainer.style.opacity = '0';
-      }
-      
-      touchStart = false;
-    });
+    input.value = '';
+    input.focus();
   }
 }
 
-customElements.define('post-component', PostComponent);
+customElements.define('comment-component', CommentComponent);
+
+class CommentPage {
+  constructor(postId) {
+    this.postId = postId;
+    this.comments = [];
+    this.isLoading = false;
+    this.hasMore = true;
+    this.offset = 0;
+    this.limit = 10;
+    this.currentUser = null;
+    this.commentsChannel = null;
+  }
+
+  async init() {
+    try {
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error('Not authenticated');
+      this.currentUser = user;
+
+      // Create the comment page overlay
+      this.createCommentPage();
+
+      // Load initial comments
+      await this.loadComments();
+
+      // Setup real-time updates
+      this.setupRealtimeUpdates();
+
+    } catch (error) {
+      console.error('Error initializing comment page:', error);
+    }
+  }
+
+  createCommentPage() {
+    // Remove any existing comment page
+    document.querySelector('.comment-page-overlay')?.remove();
+
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'comment-page-overlay';
+    overlay.innerHTML = `
+      <div class="comment-page-header">
+        <div class="comment-page-close"><i class="fas fa-times"></i></div>
+        <div class="comment-page-title" style="margin-left: 15px;">Comments</div>
+      </div>
+      <div class="comment-page-comments"></div>
+      <div class="comment-page-input-container">
+        <input type="text" class="comment-page-input" placeholder="Write a comment...">
+        <button class="comment-page-send"><i class="fas fa-paper-plane"></i></button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    // Add event listeners
+    overlay.querySelector('.comment-page-close').addEventListener('click', () => {
+      this.close();
+    });
+
+    overlay.querySelector('.comment-page-send').addEventListener('click', () => {
+      this.sendComment();
+    });
+
+    overlay.querySelector('.comment-page-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.sendComment();
+      }
+    });
+
+    // Setup infinite scroll
+    const commentsContainer = overlay.querySelector('.comment-page-comments');
+    commentsContainer.addEventListener('scroll', () => {
+      if (this.isLoading || !this.hasMore) return;
+      
+      const { scrollTop, scrollHeight, clientHeight } = commentsContainer;
+      if (scrollTop + clientHeight >= scrollHeight - 100) {
+        this.loadMoreComments();
+      }
+    });
+  }
+
+  async loadComments() {
+    if (this.isLoading) return;
+    this.isLoading = true;
+
+    try {
+      const { data: comments, error } = await supabase
+        .from('comments')
+        .select(`
+          *,
+          profile:user_id (id, username, full_name, avatar_url, is_verified)
+        `)
+        .eq('post_id', this.postId)
+        .order('created_at', { ascending: false })
+        .range(this.offset, this.offset + this.limit - 1);
+
+      if (error) throw error;
+
+      if (comments.length < this.limit) {
+        this.hasMore = false;
+      }
+
+      // Check which comments are liked by current user
+      const commentIds = comments.map(c => c.id);
+      const { data: userLikes, error: likesError } = await supabase
+        .from('comment_likes')
+        .select('comment_id')
+        .eq('user_id', this.currentUser.id)
+        .in('comment_id', commentIds);
+
+      if (!likesError) {
+        const likedCommentIds = new Set(userLikes.map(like => like.comment_id));
+        comments.forEach(comment => {
+          comment.is_liked = likedCommentIds.has(comment.id);
+        });
+      }
+
+      this.comments = [...this.comments, ...comments];
+      this.offset += this.limit;
+      this.renderComments();
+
+    } catch (error) {
+      console.error('Error loading comments:', error);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async loadMoreComments() {
+    await this.loadComments();
+  }
+
+  renderComments() {
+    const commentsContainer = document.querySelector('.comment-page-comments');
+    if (!commentsContainer) return;
+
+    // Clear existing comments if it's the first load
+    if (this.offset === this.limit) {
+      commentsContainer.innerHTML = '';
+    }
+
+    if (this.comments.length === 0 && this.offset === this.limit) {
+      commentsContainer.innerHTML = `
+        <div class="no-comments">
+          <i class="far fa-comment-dots"></i>
+          <div>No comments yet</div>
+        </div>
+      `;
+      return;
+    }
+
+    this.comments.forEach(comment => {
+      const isOwner = comment.user_id === this.currentUser.id;
+      const commentElement = document.createElement('comment-component');
+      commentElement.setAttribute('comment-data', JSON.stringify(comment));
+      commentElement.setAttribute('is-owner', isOwner);
+      commentsContainer.appendChild(commentElement);
+    });
+  }
+
+  async sendComment() {
+    const input = document.querySelector('.comment-page-input');
+    if (!input) return;
+
+    const content = input.value.trim();
+    if (!content) return;
+
+    const editingCommentId = input.dataset.editingCommentId;
+    input.value = '';
+    delete input.dataset.editingCommentId;
+
+    try {
+      if (editingCommentId) {
+        // Update existing comment
+        const { error } = await supabase
+          .from('comments')
+          .update({ content, updated_at: new Date().toISOString() })
+          .eq('id', editingCommentId);
+
+        if (error) throw error;
+
+        // Find and update the comment in the list
+        const commentIndex = this.comments.findIndex(c => c.id === editingCommentId);
+        if (commentIndex !== -1) {
+          this.comments[commentIndex].content = content;
+          this.comments[commentIndex].updated_at = new Date().toISOString();
+          this.renderComments();
+        }
+
+      } else {
+        // Create new comment
+        const { data: newComment, error } = await supabase
+          .from('comments')
+          .insert({
+            post_id: this.postId,
+            user_id: this.currentUser.id,
+            content
+          })
+          .select('*')
+          .single();
+
+        if (error) throw error;
+
+        // Add profile info to the new comment
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url, is_verified')
+          .eq('id', this.currentUser.id)
+          .single();
+
+        newComment.profile = profile;
+        newComment.is_liked = false;
+        newComment.like_count = 0;
+
+        // Add to beginning of comments array
+        this.comments.unshift(newComment);
+        this.renderComments();
+
+        // Increment comment count on the post
+        await supabase.rpc('increment_comment_count', { post_id: this.postId });
+
+        // Scroll to top to see the new comment
+        const commentsContainer = document.querySelector('.comment-page-comments');
+        if (commentsContainer) {
+          commentsContainer.scrollTop = 0;
+        }
+      }
+
+    } catch (error) {
+      console.error('Error sending comment:', error);
+      alert('Failed to post comment. Please try again.');
+    }
+  }
+
+  setupRealtimeUpdates() {
+    // Unsubscribe from any existing channel
+    if (this.commentsChannel) {
+      supabase.removeChannel(this.commentsChannel);
+    }
+
+    // Subscribe to new comments
+    this.commentsChannel = supabase
+      .channel(`comments:post_id=eq.${this.postId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${this.postId}`
+      }, async (payload) => {
+        // Skip if it's our own comment (already handled)
+        if (payload.new.user_id === this.currentUser.id) return;
+
+        // Get profile info for the new comment
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url, is_verified')
+          .eq('id', payload.new.user_id)
+          .single();
+
+        const newComment = {
+          ...payload.new,
+          profile,
+          is_liked: false,
+          like_count: 0
+        };
+
+        // Add to beginning of comments array
+        this.comments.unshift(newComment);
+        this.renderComments();
+
+        // Scroll to top to see the new comment
+        const commentsContainer = document.querySelector('.comment-page-comments');
+        if (commentsContainer) {
+          commentsContainer.scrollTop = 0;
+        }
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${this.postId}`
+      }, (payload) => {
+        // Remove deleted comment
+        this.comments = this.comments.filter(c => c.id !== payload.old.id);
+        this.renderComments();
+      })
+      .subscribe();
+  }
+
+  close() {
+    // Unsubscribe from real-time updates
+    if (this.commentsChannel) {
+      supabase.removeChannel(this.commentsChannel);
+    }
+
+    const overlay = document.querySelector('.comment-page-overlay');
+    if (overlay) {
+      overlay.classList.add('closing');
+      setTimeout(() => {
+        overlay.remove();
+        document.body.style.overflow = '';
+      }, 300);
+    }
+  }
+}
+
+// Add this CSS for comments
+const commentStyles = document.createElement('style');
+commentStyles.textContent = `
+.comment-page-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow: hidden;
+}
+
+.comment-page-overlay.closing {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.comment-page-header {
+  padding: 15px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.comment-page-close {
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--dark);
+}
+
+.comment-page-title {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.comment-page-comments {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 15px;
+}
+
+.comment-page-input-container {
+  padding: 15px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  background-color: white;
+}
+
+.comment-page-input {
+  flex: 1;
+  padding: 12px 15px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  outline: none;
+  font-size: 15px;
+}
+
+.comment-page-send {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.comment-page-send:disabled {
+  background-color: var(--gray);
+  cursor: not-allowed;
+}
+
+.comment-page-send:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
+.no-comments {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--gray);
+  text-align: center;
+}
+
+.no-comments i {
+  font-size: 40px;
+  margin-bottom: 10px;
+  color: var(--light-gray);
+}
+
+.comment-container {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.comment-header {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 5px;
+}
+
+.comment-user-info {
+  flex: 1;
+  margin-bottom: 5px;
+}
+
+.comment-more {
+  color: var(--gray);
+  cursor: pointer;
+  padding: 5px;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.comment-more:hover {
+  color: var(--dark);
+}
+
+.comment-content {
+  margin-left: 65px;
+  margin-top: -10px;
+  margin-bottom: 8px;
+  word-break: break-word;
+  line-height: 1.4;
+  padding-right: 20px;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 15px;
+  margin-left: 65px;
+  position: relative;
+  padding-right: 30px;
+}
+
+.comment-action {
+  display: flex;
+  align-items: center;
+  color: var(--gray);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.comment-action i {
+  margin-right: 5px;
+}
+
+.comment-action.like-action.liked {
+  color: var(--like-color);
+}
+
+.comment-action.like-action:hover {
+  color: var(--like-color);
+}
+
+.comment-action.reply-action:hover {
+  color: var(--primary);
+}
+
+.see-more {
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.post-time {
+  color: var(--gray);
+  font-size: 13px;
+}
+
+.more-options-popup {
+  position: absolute;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  padding: 5px 0;
+}
+
+.more-options-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.more-option {
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.more-option:hover {
+  background-color: #f5f5f5;
+}
+
+.more-option i {
+  width: 20px;
+  text-align: center;
+}
+
+.delete-option {
+  color: #ff4444;
+}
+`;
+document.head.appendChild(commentStyles);
+
+// Modify the PostComponent's openCommentPage method to use the new CommentPage class
+PostComponent.prototype.openCommentPage = function(post) {
+  const commentPage = new CommentPage(post.id);
+  commentPage.init();
+};
+
+// Helper function to open comment page from anywhere
+window.openCommentPage = function(postId) {
+  const commentPage = new CommentPage(postId);
+  commentPage.init();
+};
