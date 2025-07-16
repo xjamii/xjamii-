@@ -5,9 +5,19 @@ class CommentComponent extends HTMLElement {
     this.commentData = null;
     this.isOwner = false;
     this.isExpanded = false;
+    this.currentUserId = null;
   }
 
-  connectedCallback() {
+  async connectedCallback() {
+    // Get current user ID
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      this.currentUserId = user?.id || null;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      this.currentUserId = null;
+    }
+    
     this.render();
   }
 
@@ -230,6 +240,16 @@ class CommentComponent extends HTMLElement {
       ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
       : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
 
+    // Only show like action if current user is authenticated
+    const showLikeAction = this.currentUserId !== null;
+    const likeActionHtml = showLikeAction 
+      ? `<div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
+          <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> ${this.commentData.like_count || 0}
+         </div>`
+      : `<div class="comment-action">
+          <i class="far fa-heart"></i> ${this.commentData.like_count || 0}
+         </div>`;
+
     this.innerHTML = `
       <div class="comment-container">
         <div class="comment-header">
@@ -252,9 +272,7 @@ class CommentComponent extends HTMLElement {
           ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
         </div>
         <div class="comment-actions">
-          <div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
-            <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> ${this.commentData.like_count || 0}
-          </div>
+          ${likeActionHtml}
           <div class="comment-action reply-action">
             <i class="far fa-comment-dots"></i> Reply
           </div>
@@ -264,10 +282,12 @@ class CommentComponent extends HTMLElement {
     `;
 
     // Add event listeners
-    this.querySelector('.like-action')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleLike();
-    });
+    if (showLikeAction) {
+      this.querySelector('.like-action')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleLike();
+      });
+    }
 
     this.querySelector('.reply-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
