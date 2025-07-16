@@ -6,10 +6,10 @@ class CommentComponent extends HTMLElement {
     this.isOwner = false;
     this.isExpanded = false;
     this.currentUserId = null;
+    this.isLikeInProgress = false;
   }
 
   async connectedCallback() {
-    // Get current user ID
     try {
       const { data: { user } } = await supabase.auth.getUser();
       this.currentUserId = user?.id || null;
@@ -35,6 +35,12 @@ class CommentComponent extends HTMLElement {
     }
   }
 
+  disconnectedCallback() {
+    if (this.likeVerificationTimeout) {
+      clearTimeout(this.likeVerificationTimeout);
+    }
+  }
+
   formatTime(dateString) {
     const now = new Date();
     const commentDate = new Date(dateString);
@@ -54,54 +60,43 @@ class CommentComponent extends HTMLElement {
 
   processContent(content) {
     if (!content) return '';
-    
-    // Process mentions (@username)
     content = content.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
-    
-    // Process hashtags (#tag)
     content = content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
-    
-    // Process URLs
     content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" class="url" target="_blank">$1</a>');
-    
     return content;
   }
 
   async toggleLike() {
-  try {
-    // 1. Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      alert('Please sign in to like comments');
-      return;
-    }
+    if (!this.commentData || this.isLikeInProgress) return;
+    this.isLikeInProgress = true;
+    
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        alert('Please sign in to like comments');
+        return;
+      }
 
-    // 2. Get current state
-    const commentId = this.commentData.id;
-    const isLiked = this.commentData.is_liked;
-    const currentCount = this.commentData.like_count || 0;
+      const commentId = this.commentData.id;
+      const isLiked = this.commentData.is_liked;
+      const currentCount = this.commentData.like_count || 0;
 
-    // 3. Optimistic UI update
-    this.commentData.is_liked = !isLiked;
-    this.commentData.like_count = isLiked ? currentCount - 1 : currentCount + 1;
-    this.render();
+      // Optimistic update
+      this.commentData.is_liked = !isLiked;
+      this.commentData.like_count = isLiked ? currentCount - 1 : currentCount + 1;
+      this.render();
 
-    // 4. Database operation
-    const { error } = isLiked
-      ? await supabase.from('comment_likes')
-          .delete()
-          .eq('comment_id', commentId)
-          .eq('user_id', user.id)
-      : await supabase.from('comment_likes')
-          .insert({ 
-            comment_id: commentId, 
-            user_id: user.id 
-          });
+      // Database operation
+      const { error } = isLiked
+        ? await supabase.from('comment_likes')
+            .delete()
+            .match({ comment_id: commentId, user_id: user.id })
+        : await supabase.from('comment_likes')
+            .insert({ comment_id: commentId, user_id: user.id });
 
-    if (error) throw error;
+      if (error) throw error;
 
-    // 5. Verify sync after 1s
-    setTimeout(async () => {
+      // Verify sync
       const { data } = await supabase
         .from('comments')
         .select('like_count')
@@ -112,21 +107,35 @@ class CommentComponent extends HTMLElement {
         this.commentData.like_count = data.like_count;
         this.render();
       }
-    }, 1000);
 
-  } catch (error) {
-    console.error('Like operation failed:', error);
-    
-    // Revert UI on error
-    this.commentData.is_liked = !this.commentData.is_liked;
-    this.commentData.like_count = this.commentData.is_liked 
-      ? this.commentData.like_count + 1 
-      : this.commentData.like_count - 1;
-    this.render();
+      // Verify like status
+      const { data: likeStatus } = await supabase
+        .from('comment_likes')
+        .select()
+        .eq('comment_id', commentId)
+        .eq('user_id', user.id)
+        .single();
 
-    alert('Failed to update like. Please try again.');
+      this.commentData.is_liked = !!likeStatus;
+      this.render();
+
+    } catch (error) {
+      console.error('Like operation failed:', error);
+      
+      // Revert on error
+      if (this.commentData) {
+        this.commentData.is_liked = !this.commentData.is_liked;
+        this.commentData.like_count = this.commentData.is_liked 
+          ? this.commentData.like_count + 1 
+          : this.commentData.like_count - 1;
+        this.render();
+      }
+      
+      alert('Failed to update like. Please try again.');
+    } finally {
+      this.isLikeInProgress = false;
+    }
   }
-}
 
   async deleteComment() {
     try {
@@ -137,10 +146,7 @@ class CommentComponent extends HTMLElement {
 
       if (error) throw error;
 
-      // Remove comment from DOM
       this.remove();
-
-      // Update comment count on the post
       await supabase.rpc('decrement_comment_count', { post_id: this.commentData.post_id });
 
     } catch (error) {
@@ -151,8 +157,6 @@ class CommentComponent extends HTMLElement {
 
   showMoreOptions(e) {
     e.stopPropagation();
-    
-    // Remove any existing popups
     document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
     
     const popup = document.createElement('div');
@@ -174,13 +178,10 @@ class CommentComponent extends HTMLElement {
     }
     
     document.body.appendChild(popup);
-    
-    // Position the popup near the three dots button
     const rect = e.target.getBoundingClientRect();
     popup.style.left = `${rect.left - 100}px`;
     popup.style.top = `${rect.top + window.scrollY}px`;
     
-    // Close when clicking outside
     const clickHandler = (event) => {
       if (!popup.contains(event.target)) {
         popup.remove();
@@ -192,7 +193,6 @@ class CommentComponent extends HTMLElement {
       document.addEventListener('click', clickHandler);
     }, 0);
     
-    // Add option handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
       this.editComment();
       popup.remove();
@@ -246,16 +246,14 @@ class CommentComponent extends HTMLElement {
       ? this.commentData.content.substring(0, 200) + '...' 
       : this.commentData.content;
 
-    // Create avatar HTML
     const avatarHtml = profile.avatar_url 
       ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
       : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
 
-    // Only show like action if current user is authenticated
     const showLikeAction = this.currentUserId !== null;
     const likeActionHtml = showLikeAction 
-      ? `<div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
-          <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> ${this.commentData.like_count || 0}
+      ? `<div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''} ${this.isLikeInProgress ? 'loading' : ''}">
+          <i class="${this.isLikeInProgress ? 'fas fa-spinner fa-pulse' : (this.commentData.is_liked ? 'fas' : 'far')} fa-heart"></i> ${this.commentData.like_count || 0}
          </div>`
       : `<div class="comment-action">
           <i class="far fa-heart"></i> ${this.commentData.like_count || 0}
@@ -292,12 +290,14 @@ class CommentComponent extends HTMLElement {
       </div>
     `;
 
-    // Add event listeners
     if (showLikeAction) {
-      this.querySelector('.like-action')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleLike();
-      });
+      const likeAction = this.querySelector('.like-action');
+      if (likeAction) {
+        likeAction.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleLike();
+        });
+      }
     }
 
     this.querySelector('.reply-action')?.addEventListener('click', (e) => {
@@ -320,7 +320,6 @@ class CommentComponent extends HTMLElement {
       this.toggleExpand();
     });
 
-    // Make mentions clickable
     this.querySelectorAll('.mention').forEach(mention => {
       mention.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -358,18 +357,12 @@ class CommentPage {
 
   async init() {
     try {
-      // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error('Not authenticated');
       this.currentUser = user;
 
-      // Create the comment page overlay
       this.createCommentPage();
-
-      // Load initial comments
       await this.loadComments();
-
-      // Setup real-time updates
       this.setupRealtimeUpdates();
 
     } catch (error) {
@@ -378,10 +371,8 @@ class CommentPage {
   }
 
   createCommentPage() {
-    // Remove any existing comment page
     document.querySelector('.comment-page-overlay')?.remove();
 
-    // Create overlay
     const overlay = document.createElement('div');
     overlay.className = 'comment-page-overlay';
     overlay.innerHTML = `
@@ -399,7 +390,6 @@ class CommentPage {
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
 
-    // Add event listeners
     overlay.querySelector('.comment-page-close').addEventListener('click', () => {
       this.close();
     });
@@ -414,7 +404,6 @@ class CommentPage {
       }
     });
 
-    // Setup infinite scroll
     const commentsContainer = overlay.querySelector('.comment-page-comments');
     commentsContainer.addEventListener('scroll', () => {
       if (this.isLoading || !this.hasMore) return;
@@ -447,7 +436,6 @@ class CommentPage {
         this.hasMore = false;
       }
 
-      // Check which comments are liked by current user
       const commentIds = comments.map(c => c.id);
       const { data: userLikes, error: likesError } = await supabase
         .from('comment_likes')
@@ -481,7 +469,6 @@ class CommentPage {
     const commentsContainer = document.querySelector('.comment-page-comments');
     if (!commentsContainer) return;
 
-    // Clear existing comments if it's the first load
     if (this.offset === this.limit) {
       commentsContainer.innerHTML = '';
     }
@@ -518,7 +505,6 @@ class CommentPage {
 
     try {
       if (editingCommentId) {
-        // Update existing comment
         const { error } = await supabase
           .from('comments')
           .update({ content, updated_at: new Date().toISOString() })
@@ -526,7 +512,6 @@ class CommentPage {
 
         if (error) throw error;
 
-        // Find and update the comment in the list
         const commentIndex = this.comments.findIndex(c => c.id === editingCommentId);
         if (commentIndex !== -1) {
           this.comments[commentIndex].content = content;
@@ -535,7 +520,6 @@ class CommentPage {
         }
 
       } else {
-        // Create new comment
         const { data: newComment, error } = await supabase
           .from('comments')
           .insert({
@@ -548,7 +532,6 @@ class CommentPage {
 
         if (error) throw error;
 
-        // Add profile info to the new comment
         const { data: profile } = await supabase
           .from('profiles')
           .select('id, username, full_name, avatar_url, is_verified')
@@ -559,14 +542,10 @@ class CommentPage {
         newComment.is_liked = false;
         newComment.like_count = 0;
 
-        // Add to beginning of comments array
         this.comments.unshift(newComment);
         this.renderComments();
-
-        // Increment comment count on the post
         await supabase.rpc('increment_comment_count', { post_id: this.postId });
 
-        // Scroll to top to see the new comment
         const commentsContainer = document.querySelector('.comment-page-comments');
         if (commentsContainer) {
           commentsContainer.scrollTop = 0;
@@ -580,12 +559,10 @@ class CommentPage {
   }
 
   setupRealtimeUpdates() {
-    // Unsubscribe from any existing channel
     if (this.commentsChannel) {
       supabase.removeChannel(this.commentsChannel);
     }
 
-    // Subscribe to new comments
     this.commentsChannel = supabase
       .channel(`comments:post_id=eq.${this.postId}`)
       .on('postgres_changes', {
@@ -594,10 +571,8 @@ class CommentPage {
         table: 'comments',
         filter: `post_id=eq.${this.postId}`
       }, async (payload) => {
-        // Skip if it's our own comment (already handled)
         if (payload.new.user_id === this.currentUser.id) return;
 
-        // Get profile info for the new comment
         const { data: profile } = await supabase
           .from('profiles')
           .select('id, username, full_name, avatar_url, is_verified')
@@ -611,11 +586,9 @@ class CommentPage {
           like_count: 0
         };
 
-        // Add to beginning of comments array
         this.comments.unshift(newComment);
         this.renderComments();
 
-        // Scroll to top to see the new comment
         const commentsContainer = document.querySelector('.comment-page-comments');
         if (commentsContainer) {
           commentsContainer.scrollTop = 0;
@@ -627,15 +600,35 @@ class CommentPage {
         table: 'comments',
         filter: `post_id=eq.${this.postId}`
       }, (payload) => {
-        // Remove deleted comment
         this.comments = this.comments.filter(c => c.id !== payload.old.id);
         this.renderComments();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'comment_likes',
+        filter: `comment_id=in.(${this.comments.map(c => c.id).join(',')})`
+      }, async (payload) => {
+        const comment = this.comments.find(c => c.id === payload.new.comment_id);
+        if (comment) {
+          if (payload.eventType === 'INSERT') {
+            comment.like_count = (comment.like_count || 0) + 1;
+            if (payload.new.user_id === this.currentUser.id) {
+              comment.is_liked = true;
+            }
+          } else if (payload.eventType === 'DELETE') {
+            comment.like_count = Math.max(0, (comment.like_count || 0) - 1);
+            if (payload.old.user_id === this.currentUser.id) {
+              comment.is_liked = false;
+            }
+          }
+          this.renderComments();
+        }
       })
       .subscribe();
   }
 
   close() {
-    // Unsubscribe from real-time updates
     if (this.commentsChannel) {
       supabase.removeChannel(this.commentsChannel);
     }
@@ -651,7 +644,6 @@ class CommentPage {
   }
 }
 
-// Add this CSS for comments
 const commentStyles = document.createElement('style');
 commentStyles.textContent = `
 .comment-page-overlay {
@@ -831,6 +823,20 @@ commentStyles.textContent = `
   color: var(--primary);
 }
 
+.comment-action.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .see-more {
   color: var(--primary);
   cursor: pointer;
@@ -879,13 +885,11 @@ commentStyles.textContent = `
 `;
 document.head.appendChild(commentStyles);
 
-// Modify the PostComponent's openCommentPage method to use the new CommentPage class
 PostComponent.prototype.openCommentPage = function(post) {
   const commentPage = new CommentPage(post.id);
   commentPage.init();
 };
 
-// Helper function to open comment page from anywhere
 window.openCommentPage = function(postId) {
   const commentPage = new CommentPage(postId);
   commentPage.init();
