@@ -220,10 +220,10 @@ class CommentComponent extends HTMLElement {
       user_id: ''
     };
 
-    // Check if content needs "See more"
-    const content = this.commentData.content || '';
-    const showSeeMore = content.length > 200 && !this.isExpanded;
-    const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
+    const showSeeMore = this.commentData.content.length > 200 && !this.isExpanded;
+    const displayedContent = showSeeMore 
+      ? this.commentData.content.substring(0, 200) + '...' 
+      : this.commentData.content;
 
     // Create avatar HTML
     const avatarHtml = profile.avatar_url 
@@ -246,19 +246,19 @@ class CommentComponent extends HTMLElement {
             </a>
           </div>
           <span class="post-time">${this.formatTime(this.commentData.created_at)}</span>
-          ${this.isOwner ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
         </div>
-        <div class="comment-content" data-full-content="${content.replace(/"/g, '&quot;')}">
+        <div class="comment-content" style="margin-left: 65px; margin-top: -15px; margin-bottom: 10px;">
           ${this.processContent(displayedContent)}
           ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
         </div>
-        <div class="comment-actions">
+        <div class="comment-actions" style="margin-left: 65px;">
           <div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
             <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> ${this.commentData.like_count || 0}
           </div>
           <div class="comment-action reply-action">
             <i class="far fa-comment-dots"></i> Reply
           </div>
+          ${this.isOwner ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
         </div>
       </div>
     `;
@@ -278,6 +278,17 @@ class CommentComponent extends HTMLElement {
       this.showMoreOptions(e);
     });
 
+    this.querySelector('.comment-content')?.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url') && !e.target.classList.contains('see-more')) {
+        this.toggleExpand();
+      }
+    });
+
+    this.querySelector('.see-more')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleExpand();
+    });
+
     // Make mentions clickable
     this.querySelectorAll('.mention').forEach(mention => {
       mention.addEventListener('click', (e) => {
@@ -285,22 +296,6 @@ class CommentComponent extends HTMLElement {
         const username = e.target.textContent.substring(1);
         window.location.href = `/profile.html?username=${username}`;
       });
-    });
-
-    // Toggle expand/collapse
-    this.querySelector('.comment-content')?.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('mention') && 
-          !e.target.classList.contains('hashtag') && 
-          !e.target.classList.contains('url') &&
-          !e.target.classList.contains('see-more')) {
-        this.toggleExpand();
-      }
-    });
-
-    // See more click handler
-    this.querySelector('.see-more')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleExpand();
     });
   }
 
@@ -362,7 +357,7 @@ class CommentPage {
     overlay.innerHTML = `
       <div class="comment-page-header">
         <div class="comment-page-close"><i class="fas fa-times"></i></div>
-        <div class="comment-page-title">Comments</div>
+        <div class="comment-page-title" style="margin-left: 15px;">Comments</div>
       </div>
       <div class="comment-page-comments"></div>
       <div class="comment-page-input-container">
@@ -666,7 +661,6 @@ commentStyles.textContent = `
 .comment-page-title {
   font-weight: bold;
   font-size: 18px;
-  margin-left: 15px;
 }
 
 .comment-page-comments {
@@ -748,7 +742,6 @@ commentStyles.textContent = `
 
 .comment-user-info {
   flex: 1;
-  margin-left: 15px;
 }
 
 .comment-more {
@@ -757,7 +750,7 @@ commentStyles.textContent = `
   padding: 5px;
   position: absolute;
   right: 0;
-  bottom: 0;
+  top: 0;
 }
 
 .comment-more:hover {
@@ -769,7 +762,6 @@ commentStyles.textContent = `
   margin-top: -15px;
   margin-bottom: 10px;
   word-break: break-word;
-  cursor: pointer;
 }
 
 .comment-actions {
