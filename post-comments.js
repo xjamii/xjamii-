@@ -4,7 +4,6 @@ class CommentComponent extends HTMLElement {
     super();
     this.commentData = null;
     this.isOwner = false;
-    this.isExpanded = false;
   }
 
   connectedCallback() {
@@ -109,6 +108,9 @@ class CommentComponent extends HTMLElement {
 
   async deleteComment() {
     try {
+      const confirmDelete = confirm('Are you sure you want to delete this comment?');
+      if (!confirmDelete) return;
+
       const { error } = await supabase
         .from('comments')
         .delete()
@@ -204,11 +206,6 @@ class CommentComponent extends HTMLElement {
     alert('Report functionality will be implemented soon');
   }
 
-  toggleExpand() {
-    this.isExpanded = !this.isExpanded;
-    this.render();
-  }
-
   render() {
     if (!this.commentData) return;
 
@@ -219,11 +216,6 @@ class CommentComponent extends HTMLElement {
       is_verified: false,
       user_id: ''
     };
-
-    // Check if content needs "See more"
-    const content = this.commentData.content || '';
-    const showSeeMore = content.length > 200 && !this.isExpanded;
-    const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
 
     // Create avatar HTML
     const avatarHtml = profile.avatar_url 
@@ -248,9 +240,8 @@ class CommentComponent extends HTMLElement {
           <span class="post-time">${this.formatTime(this.commentData.created_at)}</span>
           ${this.isOwner ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
         </div>
-        <div class="comment-content" data-full-content="${content.replace(/"/g, '&quot;')}">
-          ${this.processContent(displayedContent)}
-          ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
+        <div class="comment-content">
+          ${this.processContent(this.commentData.content)}
         </div>
         <div class="comment-actions">
           <div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
@@ -285,22 +276,6 @@ class CommentComponent extends HTMLElement {
         const username = e.target.textContent.substring(1);
         window.location.href = `/profile.html?username=${username}`;
       });
-    });
-
-    // Toggle expand/collapse
-    this.querySelector('.comment-content')?.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('mention') && 
-          !e.target.classList.contains('hashtag') && 
-          !e.target.classList.contains('url') &&
-          !e.target.classList.contains('see-more')) {
-        this.toggleExpand();
-      }
-    });
-
-    // See more click handler
-    this.querySelector('.see-more')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleExpand();
     });
   }
 
@@ -361,7 +336,7 @@ class CommentPage {
     overlay.className = 'comment-page-overlay';
     overlay.innerHTML = `
       <div class="comment-page-header">
-        <div class="comment-page-close"><i class="fas fa-times"></i></div>
+        <div class="comment-page-close"><i class="fas fa-arrow-left"></i></div>
         <div class="comment-page-title">Comments</div>
       </div>
       <div class="comment-page-comments"></div>
@@ -659,6 +634,7 @@ commentStyles.textContent = `
 
 .comment-page-close {
   font-size: 20px;
+  margin-right: 15px;
   cursor: pointer;
   color: var(--dark);
 }
@@ -666,7 +642,8 @@ commentStyles.textContent = `
 .comment-page-title {
   font-weight: bold;
   font-size: 18px;
-  margin-left: 15px;
+  flex: 1;
+  text-align: center;
 }
 
 .comment-page-comments {
@@ -748,16 +725,12 @@ commentStyles.textContent = `
 
 .comment-user-info {
   flex: 1;
-  margin-left: 15px;
 }
 
 .comment-more {
   color: var(--gray);
   cursor: pointer;
   padding: 5px;
-  position: absolute;
-  right: 0;
-  bottom: 0;
 }
 
 .comment-more:hover {
@@ -765,17 +738,16 @@ commentStyles.textContent = `
 }
 
 .comment-content {
-  margin-left: 65px;
+  margin-left: 50px;
   margin-top: -15px;
   margin-bottom: 10px;
   word-break: break-word;
-  cursor: pointer;
 }
 
 .comment-actions {
   display: flex;
   gap: 15px;
-  margin-left: 65px;
+  margin-left: 50px;
 }
 
 .comment-action {
@@ -801,12 +773,6 @@ commentStyles.textContent = `
 
 .comment-action.reply-action:hover {
   color: var(--primary);
-}
-
-.see-more {
-  color: var(--primary);
-  cursor: pointer;
-  font-weight: bold;
 }
 `;
 document.head.appendChild(commentStyles);
