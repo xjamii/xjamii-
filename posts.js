@@ -184,68 +184,81 @@ class PostComponent extends HTMLElement {
   }
 
   
-      async toggleLike() {
+      
+async toggleLike() {
   try {
-    // 1. Get current user
+    // 1. Authentication check
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       alert('Please sign in to like comments');
       return;
     }
 
-    // 2. Prepare variables
+    // 2. Store current state
     const commentId = this.commentData.id;
-    const isLiked = this.commentData.is_liked;
+    const wasLiked = this.commentData.is_liked;
+    const originalCount = this.commentData.like_count;
 
-    // 3. Optimistic UI update (immediate visual feedback)
-    this.commentData.is_liked = !isLiked;
-    this.commentData.like_count = isLiked 
-      ? Math.max(0, this.commentData.like_count - 1)
-      : this.commentData.like_count + 1;
+    // 3. Immediate UI update (optimistic)
+    this.commentData.is_liked = !wasLiked;
+    this.commentData.like_count = wasLiked 
+      ? Math.max(0, originalCount - 1) 
+      : originalCount + 1;
     this.render();
 
     // 4. Database operation
-    const { error } = isLiked
+    const { error } = wasLiked
       ? await supabase.from('comment_likes')
           .delete()
-          .match({ 
-            comment_id: commentId, 
-            user_id: user.id 
-          })
+          .match({ comment_id: commentId, user_id: user.id })
       : await supabase.from('comment_likes')
-          .insert({ 
-            comment_id: commentId, 
-            user_id: user.id 
-          });
+          .insert({ comment_id: commentId, user_id: user.id });
 
     if (error) throw error;
 
-    // 5. Verify sync after 1 second
-    setTimeout(async () => {
-      const { data } = await supabase
+    // 5. Robust synchronization
+    let retries = 0;
+    const maxRetries = 3;
+    const verifySync = async () => {
+      const { data, error: fetchError } = await supabase
         .from('comments')
-        .select('like_count')
+        .select('like_count, is_liked')
         .eq('id', commentId)
         .single();
-      
-      if (data && data.like_count !== this.commentData.like_count) {
-        console.log('Resyncing count from backend');
-        this.commentData.like_count = data.like_count;
-        this.commentData.is_liked = data.like_count > this.commentData.like_count;
-        this.render();
+
+      if (fetchError) {
+        console.error('Sync verification failed:', fetchError);
+        return;
       }
-    }, 1000);
+
+      // Check if counts match
+      if (data.like_count !== this.commentData.like_count) {
+        if (retries < maxRetries) {
+          retries++;
+          setTimeout(verifySync, 1000 * retries); // Exponential backoff
+        } else {
+          console.warn('Final sync adjustment needed');
+          this.commentData.like_count = data.like_count;
+          this.commentData.is_liked = data.like_count > originalCount;
+          this.render();
+        }
+      }
+    };
+
+    // Initial verification after 1s
+    setTimeout(verifySync, 1000);
 
   } catch (error) {
-    console.error('Like error:', error);
-    // Revert UI on error
+    console.error('Like operation failed:', error);
+    
+    // Revert UI to previous state
     this.commentData.is_liked = !this.commentData.is_liked;
     this.commentData.like_count = this.commentData.is_liked 
       ? this.commentData.like_count + 1 
       : Math.max(0, this.commentData.like_count - 1);
     this.render();
-    
-    alert('Failed to update like. Please try again.');
+
+    alert(error.message || 'Failed to update like. Please try again.');
   }
 }
 
