@@ -989,4 +989,34 @@ class PostComponent extends HTMLElement {
         const progress = Math.min(pullDistance / 150, 1);
         refreshContainer.style.opacity = progress;
         refreshContainer.style.transform = `translateY(${pullDistance}px)`;
-        refreshContainer.querySelector('.refresh-loader').style.transform = `rotate(${progress * 360}
+        refreshContainer.querySelector('.refresh-loader').style.transform = `rotate(${progress * 360}deg)`;
+      }
+    }, { passive: false });
+
+    this.addEventListener('touchend', (e) => {
+      if (!touchStart || this.isRefreshing) return;
+      
+      const y = e.changedTouches[0].pageY;
+      const dy = y - startY;
+      
+      if (dy > 100) {
+        this.isRefreshing = true;
+        refreshContainer.classList.add('refreshing');
+        
+        setTimeout(() => {
+          refreshContainer.style.transform = 'translateY(0)';
+          refreshContainer.classList.remove('refreshing');
+          this.isRefreshing = false;
+          console.log('Refreshing content...');
+        }, 1000);
+      } else {
+        refreshContainer.style.transform = 'translateY(0)';
+        refreshContainer.style.opacity = '0';
+      }
+      
+      touchStart = false;
+    });
+  }
+}
+
+customElements.define('post-component', PostComponent);
