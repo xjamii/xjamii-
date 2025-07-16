@@ -247,11 +247,11 @@ class CommentComponent extends HTMLElement {
           </div>
           <span class="post-time">${this.formatTime(this.commentData.created_at)}</span>
         </div>
-        <div class="comment-content" style="margin-left: 65px; margin-top: -15px; margin-bottom: 10px;">
+        <div class="comment-content">
           ${this.processContent(displayedContent)}
           ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
         </div>
-        <div class="comment-actions" style="margin-left: 65px;">
+        <div class="comment-actions">
           <div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
             <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> ${this.commentData.like_count || 0}
           </div>
@@ -306,8 +306,7 @@ class CommentComponent extends HTMLElement {
     const input = commentPage.querySelector('.comment-page-input');
     if (!input) return;
 
-    const username = this.commentData.profile?.username || 'unknown';
-    input.value = `@${username} `;
+    input.value = '';
     input.focus();
   }
 }
@@ -731,17 +730,18 @@ commentStyles.textContent = `
 .comment-container {
   padding: 15px 0;
   border-bottom: 1px solid var(--border-color);
+  position: relative;
 }
 
 .comment-header {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 8px;
-  position: relative;
+  margin-bottom: 5px;
 }
 
 .comment-user-info {
   flex: 1;
+  margin-bottom: 5px;
 }
 
 .comment-more {
@@ -750,7 +750,8 @@ commentStyles.textContent = `
   padding: 5px;
   position: absolute;
   right: 0;
-  top: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .comment-more:hover {
@@ -759,15 +760,19 @@ commentStyles.textContent = `
 
 .comment-content {
   margin-left: 65px;
-  margin-top: -15px;
-  margin-bottom: 10px;
+  margin-top: -10px;
+  margin-bottom: 8px;
   word-break: break-word;
+  line-height: 1.4;
+  padding-right: 20px;
 }
 
 .comment-actions {
   display: flex;
   gap: 15px;
   margin-left: 65px;
+  position: relative;
+  padding-right: 30px;
 }
 
 .comment-action {
@@ -799,6 +804,46 @@ commentStyles.textContent = `
   color: var(--primary);
   cursor: pointer;
   font-weight: bold;
+}
+
+.post-time {
+  color: var(--gray);
+  font-size: 13px;
+}
+
+.more-options-popup {
+  position: absolute;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  padding: 5px 0;
+}
+
+.more-options-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.more-option {
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.more-option:hover {
+  background-color: #f5f5f5;
+}
+
+.more-option i {
+  width: 20px;
+  text-align: center;
+}
+
+.delete-option {
+  color: #ff4444;
 }
 `;
 document.head.appendChild(commentStyles);
