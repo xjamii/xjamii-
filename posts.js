@@ -206,44 +206,70 @@ async toggleLike() {
       : originalCount + 1;
     this.render();
 
-    // 4. Database operation
+    // 4. Database operation - FIXED UNLIKE QUERY
     const { error } = wasLiked
       ? await supabase.from('comment_likes')
           .delete()
-          .match({ comment_id: commentId, user_id: user.id })
+          .eq('comment_id', commentId)  // Changed from .match() to .eq()
+          .eq('user_id', user.id)
       : await supabase.from('comment_likes')
-          .insert({ comment_id: commentId, user_id: user.id });
+          .insert({ 
+            comment_id: commentId, 
+            user_id: user.id 
+          }, {
+            onConflict: 'comment_id,user_id' // Prevent duplicates
+          });
 
     if (error) throw error;
 
-    // 5. Robust synchronization
-    let retries = 0;
-    const maxRetries = 3;
+    // 5. Enhanced verification
     const verifySync = async () => {
-      const { data, error: fetchError } = await supabase
+      const { data: commentData } = await supabase
         .from('comments')
-        .select('like_count, is_liked')
+        .select('like_count')
         .eq('id', commentId)
         .single();
+        
+      const { data: likeData } = await supabase
+        .from('comment_likes')
+        .select()
+        .eq('comment_id', commentId)
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (fetchError) {
-        console.error('Sync verification failed:', fetchError);
-        return;
-      }
-
-      // Check if counts match
-      if (data.like_count !== this.commentData.like_count) {
-        if (retries < maxRetries) {
-          retries++;
-          setTimeout(verifySync, 1000 * retries); // Exponential backoff
-        } else {
-          console.warn('Final sync adjustment needed');
-          this.commentData.like_count = data.like_count;
-          this.commentData.is_liked = data.like_count > originalCount;
+      // Check consistency
+      if (commentData) {
+        const isActuallyLiked = !!likeData;
+        const needsUpdate = (
+          this.commentData.is_liked !== isActuallyLiked ||
+          this.commentData.like_count !== commentData.like_count
+        );
+        
+        if (needsUpdate) {
+          this.commentData.is_liked = isActuallyLiked;
+          this.commentData.like_count = commentData.like_count;
           this.render();
         }
       }
     };
+
+    // Verify immediately and again after 1s
+    verifySync();
+    setTimeout(verifySync, 1000);
+
+  } catch (error) {
+    console.error('Like operation failed:', error);
+    
+    // Revert UI
+    this.commentData.is_liked = !this.commentData.is_liked;
+    this.commentData.like_count = this.commentData.is_liked 
+      ? this.commentData.like_count + 1 
+      : Math.max(0, this.commentData.like_count - 1);
+    this.render();
+
+    alert(error.message || 'Failed to update like. Please try again.');
+  }
+}
 
     // Initial verification after 1s
     setTimeout(verifySync, 1000);
