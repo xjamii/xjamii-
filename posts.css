@@ -549,32 +549,14 @@ a, .mention, .hashtag, .url {
   font-size: 24px;
 }
 
-/* Comment page styles */
-.comment-page-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: white;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
+
 
 .comment-page-overlay.closing {
   opacity: 0;
   transform: translateY(20px);
 }
 
-.comment-page-header {
-  padding: 15px;
-  border-bottom: 1px solid #eee;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
+
 
 .comment-page-close {
   font-size: 20px;
@@ -597,12 +579,55 @@ a, .mention, .hashtag, .url {
   overflow-y: auto;
 }
 
+/* Update the comment page styles */
+.comment-page-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow: hidden; /* Add this to contain all scrolling */
+}
+
+.comment-page-header {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.comment-page-comments-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* Make this container scrollable */
+}
+
+.comment-page-post-preview {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0; /* Prevent post from shrinking */
+}
+
+.comment-page-comments {
+  flex: 1;
+  overflow-y: visible; /* Remove individual scrolling */
+}
+
 .comment-page-input-container {
   padding: 15px;
   border-top: 1px solid #eee;
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0; /* Prevent input from shrinking */
 }
 
 .comment-page-input {
