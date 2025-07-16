@@ -774,3 +774,37 @@ like-button {
 .like-action.liked i {
   color: #ff0000;
 }
+
+.edit-post-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.edit-post-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.edit-post-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.edit-post-save {
+  background-color: #1DA1F2;
+  color: white;
+}
+
+.edit-post-cancel {
+  background-color: #f0f0f0;
+}
