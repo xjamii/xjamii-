@@ -108,9 +108,6 @@ class CommentComponent extends HTMLElement {
 
   async deleteComment() {
     try {
-      const confirmDelete = confirm('Are you sure you want to delete this comment?');
-      if (!confirmDelete) return;
-
       const { error } = await supabase
         .from('comments')
         .delete()
@@ -234,22 +231,23 @@ class CommentComponent extends HTMLElement {
                 ${profile.full_name || profile.username}
                 ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
               </div>
-              <div class="post-username" style="text-decoration: none">@${profile.username}</div>
+              <div class="post-username">@${profile.username}</div>
             </a>
           </div>
           <span class="post-time">${this.formatTime(this.commentData.created_at)}</span>
-          ${this.isOwner ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
         </div>
         <div class="comment-content">
           ${this.processContent(this.commentData.content)}
         </div>
         <div class="comment-actions">
           <div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
-            <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> ${this.commentData.like_count || 0}
+            <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> 
+            <span class="like-count">${this.commentData.like_count || 0}</span>
           </div>
           <div class="comment-action reply-action">
             <i class="far fa-comment-dots"></i> Reply
           </div>
+          ${this.isOwner ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
         </div>
       </div>
     `;
@@ -308,6 +306,16 @@ class CommentPage {
 
   async init() {
     try {
+      // Show loading spinner
+      const spinner = document.createElement('div');
+      spinner.className = 'full-page-loader';
+      spinner.innerHTML = `
+        <div class="spinner-container">
+          <div class="spinner"></div>
+        </div>
+      `;
+      document.body.appendChild(spinner);
+
       // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error('Not authenticated');
@@ -324,6 +332,9 @@ class CommentPage {
 
     } catch (error) {
       console.error('Error initializing comment page:', error);
+    } finally {
+      // Remove loading spinner
+      document.querySelector('.full-page-loader')?.remove();
     }
   }
 
@@ -336,7 +347,7 @@ class CommentPage {
     overlay.className = 'comment-page-overlay';
     overlay.innerHTML = `
       <div class="comment-page-header">
-        <div class="comment-page-close"><i class="fas fa-arrow-left"></i></div>
+        <div class="comment-page-close"><i class="fas fa-times"></i></div>
         <div class="comment-page-title">Comments</div>
       </div>
       <div class="comment-page-comments"></div>
@@ -634,16 +645,17 @@ commentStyles.textContent = `
 
 .comment-page-close {
   font-size: 20px;
-  margin-right: 15px;
   cursor: pointer;
   color: var(--dark);
+  margin-right: 15px;
 }
 
 .comment-page-title {
   font-weight: bold;
   font-size: 18px;
   flex: 1;
-  text-align: center;
+  text-align: left;
+  margin-left: 10px;
 }
 
 .comment-page-comments {
@@ -725,29 +737,43 @@ commentStyles.textContent = `
 
 .comment-user-info {
   flex: 1;
+  margin-left: 15px;
 }
 
-.comment-more {
-  color: var(--gray);
-  cursor: pointer;
-  padding: 5px;
-}
-
-.comment-more:hover {
+.post-user {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
   color: var(--dark);
 }
 
+.post-username {
+  color: var(--gray);
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.post-time {
+  font-size: 13px;
+  color: var(--gray);
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
 .comment-content {
-  margin-left: 50px;
-  margin-top: -15px;
+  margin-left: 65px;
+  margin-top: -5px;
   margin-bottom: 10px;
   word-break: break-word;
+  font-size: 16px;
 }
 
 .comment-actions {
   display: flex;
   gap: 15px;
-  margin-left: 50px;
+  margin-left: 65px;
+  position: relative;
 }
 
 .comment-action {
@@ -773,6 +799,50 @@ commentStyles.textContent = `
 
 .comment-action.reply-action:hover {
   color: var(--primary);
+}
+
+.comment-more {
+  color: var(--gray);
+  cursor: pointer;
+  padding: 5px;
+  position: absolute;
+  right: 0;
+}
+
+.comment-more:hover {
+  color: var(--dark);
+}
+
+.full-page-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.spinner-container {
+  text-align: center;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #e6f0ff;
+  border-top: 3px solid #0056b3;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 `;
 document.head.appendChild(commentStyles);
