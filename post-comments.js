@@ -5,9 +5,19 @@ class CommentComponent extends HTMLElement {
     this.commentData = null;
     this.isOwner = false;
     this.isExpanded = false;
+    this.currentUserId = null;
   }
 
-  connectedCallback() {
+  async connectedCallback() {
+    // Get current user ID
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      this.currentUserId = user?.id || null;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      this.currentUserId = null;
+    }
+    
     this.render();
   }
 
@@ -58,54 +68,65 @@ class CommentComponent extends HTMLElement {
   }
 
   async toggleLike() {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) throw new Error('Not authenticated');
+  try {
+    // 1. Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      alert('Please sign in to like comments');
+      return;
+    }
 
-      const isLiked = this.commentData.is_liked;
-      const commentId = this.commentData.id;
+    // 2. Get current state
+    const commentId = this.commentData.id;
+    const isLiked = this.commentData.is_liked;
+    const currentCount = this.commentData.like_count || 0;
 
-      // Optimistic UI update
-      this.commentData.is_liked = !isLiked;
-      this.commentData.like_count = isLiked 
-        ? this.commentData.like_count - 1 
-        : this.commentData.like_count + 1;
-      this.render();
+    // 3. Optimistic UI update
+    this.commentData.is_liked = !isLiked;
+    this.commentData.like_count = isLiked ? currentCount - 1 : currentCount + 1;
+    this.render();
 
-      if (!isLiked) {
-        // Add like
-        const { error } = await supabase
-          .from('comment_likes')
-          .insert({ comment_id: commentId, user_id: user.id });
-
-        if (error) throw error;
-
-        // Update like count
-        await supabase.rpc('increment_comment_like_count', { comment_id: commentId });
-      } else {
-        // Remove like
-        const { error } = await supabase
-          .from('comment_likes')
+    // 4. Database operation
+    const { error } = isLiked
+      ? await supabase.from('comment_likes')
           .delete()
           .eq('comment_id', commentId)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+      : await supabase.from('comment_likes')
+          .insert({ 
+            comment_id: commentId, 
+            user_id: user.id 
+          });
 
-        if (error) throw error;
+    if (error) throw error;
 
-        // Update like count
-        await supabase.rpc('decrement_comment_like_count', { comment_id: commentId });
+    // 5. Verify sync after 1s
+    setTimeout(async () => {
+      const { data } = await supabase
+        .from('comments')
+        .select('like_count')
+        .eq('id', commentId)
+        .single();
+
+      if (data && data.like_count !== this.commentData.like_count) {
+        this.commentData.like_count = data.like_count;
+        this.render();
       }
+    }, 1000);
 
-    } catch (error) {
-      console.error('Error toggling comment like:', error);
-      // Revert optimistic update
-      this.commentData.is_liked = !this.commentData.is_liked;
-      this.commentData.like_count = this.commentData.is_liked 
-        ? this.commentData.like_count + 1 
-        : this.commentData.like_count - 1;
-      this.render();
-    }
+  } catch (error) {
+    console.error('Like operation failed:', error);
+    
+    // Revert UI on error
+    this.commentData.is_liked = !this.commentData.is_liked;
+    this.commentData.like_count = this.commentData.is_liked 
+      ? this.commentData.like_count + 1 
+      : this.commentData.like_count - 1;
+    this.render();
+
+    alert('Failed to update like. Please try again.');
   }
+}
 
   async deleteComment() {
     try {
@@ -230,6 +251,16 @@ class CommentComponent extends HTMLElement {
       ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
       : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
 
+    // Only show like action if current user is authenticated
+    const showLikeAction = this.currentUserId !== null;
+    const likeActionHtml = showLikeAction 
+      ? `<div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
+          <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> ${this.commentData.like_count || 0}
+         </div>`
+      : `<div class="comment-action">
+          <i class="far fa-heart"></i> ${this.commentData.like_count || 0}
+         </div>`;
+
     this.innerHTML = `
       <div class="comment-container">
         <div class="comment-header">
@@ -247,14 +278,12 @@ class CommentComponent extends HTMLElement {
           </div>
           <span class="post-time">${this.formatTime(this.commentData.created_at)}</span>
         </div>
-        <div class="comment-content" style="margin-left: 65px; margin-top: -15px; margin-bottom: 10px;">
+        <div class="comment-content">
           ${this.processContent(displayedContent)}
           ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
         </div>
-        <div class="comment-actions" style="margin-left: 65px;">
-          <div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
-            <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> ${this.commentData.like_count || 0}
-          </div>
+        <div class="comment-actions">
+          ${likeActionHtml}
           <div class="comment-action reply-action">
             <i class="far fa-comment-dots"></i> Reply
           </div>
@@ -264,10 +293,12 @@ class CommentComponent extends HTMLElement {
     `;
 
     // Add event listeners
-    this.querySelector('.like-action')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleLike();
-    });
+    if (showLikeAction) {
+      this.querySelector('.like-action')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleLike();
+      });
+    }
 
     this.querySelector('.reply-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -306,8 +337,7 @@ class CommentComponent extends HTMLElement {
     const input = commentPage.querySelector('.comment-page-input');
     if (!input) return;
 
-    const username = this.commentData.profile?.username || 'unknown';
-    input.value = `@${username} `;
+    input.value = '';
     input.focus();
   }
 }
@@ -731,17 +761,18 @@ commentStyles.textContent = `
 .comment-container {
   padding: 15px 0;
   border-bottom: 1px solid var(--border-color);
+  position: relative;
 }
 
 .comment-header {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 8px;
-  position: relative;
+  margin-bottom: 5px;
 }
 
 .comment-user-info {
   flex: 1;
+  margin-bottom: 5px;
 }
 
 .comment-more {
@@ -750,7 +781,8 @@ commentStyles.textContent = `
   padding: 5px;
   position: absolute;
   right: 0;
-  top: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .comment-more:hover {
@@ -759,15 +791,19 @@ commentStyles.textContent = `
 
 .comment-content {
   margin-left: 65px;
-  margin-top: -15px;
-  margin-bottom: 10px;
+  margin-top: -10px;
+  margin-bottom: 8px;
   word-break: break-word;
+  line-height: 1.4;
+  padding-right: 20px;
 }
 
 .comment-actions {
   display: flex;
   gap: 15px;
   margin-left: 65px;
+  position: relative;
+  padding-right: 30px;
 }
 
 .comment-action {
@@ -799,6 +835,46 @@ commentStyles.textContent = `
   color: var(--primary);
   cursor: pointer;
   font-weight: bold;
+}
+
+.post-time {
+  color: var(--gray);
+  font-size: 13px;
+}
+
+.more-options-popup {
+  position: absolute;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  padding: 5px 0;
+}
+
+.more-options-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.more-option {
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.more-option:hover {
+  background-color: #f5f5f5;
+}
+
+.more-option i {
+  width: 20px;
+  text-align: center;
+}
+
+.delete-option {
+  color: #ff4444;
 }
 `;
 document.head.appendChild(commentStyles);
