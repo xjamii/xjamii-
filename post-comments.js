@@ -67,67 +67,6 @@ class CommentComponent extends HTMLElement {
     return content;
   }
 
-  async toggleLike() {
-  try {
-    // 1. Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      alert('Please sign in to like comments');
-      return;
-    }
-
-    // 2. Get current state
-    const commentId = this.commentData.id;
-    const isLiked = this.commentData.is_liked;
-    const currentCount = this.commentData.like_count || 0;
-
-    // 3. Optimistic UI update
-    this.commentData.is_liked = !isLiked;
-    this.commentData.like_count = isLiked ? currentCount - 1 : currentCount + 1;
-    this.render();
-
-    // 4. Database operation
-    const { error } = isLiked
-      ? await supabase.from('comment_likes')
-          .delete()
-          .eq('comment_id', commentId)
-          .eq('user_id', user.id)
-      : await supabase.from('comment_likes')
-          .insert({ 
-            comment_id: commentId, 
-            user_id: user.id 
-          });
-
-    if (error) throw error;
-
-    // 5. Verify sync after 1s
-    setTimeout(async () => {
-      const { data } = await supabase
-        .from('comments')
-        .select('like_count')
-        .eq('id', commentId)
-        .single();
-
-      if (data && data.like_count !== this.commentData.like_count) {
-        this.commentData.like_count = data.like_count;
-        this.render();
-      }
-    }, 1000);
-
-  } catch (error) {
-    console.error('Like operation failed:', error);
-    
-    // Revert UI on error
-    this.commentData.is_liked = !this.commentData.is_liked;
-    this.commentData.like_count = this.commentData.is_liked 
-      ? this.commentData.like_count + 1 
-      : this.commentData.like_count - 1;
-    this.render();
-
-    alert('Failed to update like. Please try again.');
-  }
-}
-
   async deleteComment() {
     try {
       const { error } = await supabase
@@ -251,16 +190,6 @@ class CommentComponent extends HTMLElement {
       ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
       : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
 
-    // Only show like action if current user is authenticated
-    const showLikeAction = this.currentUserId !== null;
-    const likeActionHtml = showLikeAction 
-      ? `<div class="comment-action like-action ${this.commentData.is_liked ? 'liked' : ''}">
-          <i class="${this.commentData.is_liked ? 'fas' : 'far'} fa-heart"></i> ${this.commentData.like_count || 0}
-         </div>`
-      : `<div class="comment-action">
-          <i class="far fa-heart"></i> ${this.commentData.like_count || 0}
-         </div>`;
-
     this.innerHTML = `
       <div class="comment-container">
         <div class="comment-header">
@@ -283,7 +212,6 @@ class CommentComponent extends HTMLElement {
           ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
         </div>
         <div class="comment-actions">
-          ${likeActionHtml}
           <div class="comment-action reply-action">
             <i class="far fa-comment-dots"></i> Reply
           </div>
@@ -291,14 +219,6 @@ class CommentComponent extends HTMLElement {
         </div>
       </div>
     `;
-
-    // Add event listeners
-    if (showLikeAction) {
-      this.querySelector('.like-action')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleLike();
-      });
-    }
 
     this.querySelector('.reply-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -447,21 +367,6 @@ class CommentPage {
         this.hasMore = false;
       }
 
-      // Check which comments are liked by current user
-      const commentIds = comments.map(c => c.id);
-      const { data: userLikes, error: likesError } = await supabase
-        .from('comment_likes')
-        .select('comment_id')
-        .eq('user_id', this.currentUser.id)
-        .in('comment_id', commentIds);
-
-      if (!likesError) {
-        const likedCommentIds = new Set(userLikes.map(like => like.comment_id));
-        comments.forEach(comment => {
-          comment.is_liked = likedCommentIds.has(comment.id);
-        });
-      }
-
       this.comments = [...this.comments, ...comments];
       this.offset += this.limit;
       this.renderComments();
@@ -556,8 +461,6 @@ class CommentPage {
           .single();
 
         newComment.profile = profile;
-        newComment.is_liked = false;
-        newComment.like_count = 0;
 
         // Add to beginning of comments array
         this.comments.unshift(newComment);
@@ -606,9 +509,7 @@ class CommentPage {
 
         const newComment = {
           ...payload.new,
-          profile,
-          is_liked: false,
-          like_count: 0
+          profile
         };
 
         // Add to beginning of comments array
@@ -651,7 +552,7 @@ class CommentPage {
   }
 }
 
-// Add this CSS for comments
+// Add this CSS for comments (removed like-related styles)
 const commentStyles = document.createElement('style');
 commentStyles.textContent = `
 .comment-page-overlay {
@@ -819,14 +720,6 @@ commentStyles.textContent = `
   margin-right: 5px;
 }
 
-.comment-action.like-action.liked {
-  color: var(--like-color);
-}
-
-.comment-action.like-action:hover {
-  color: var(--like-color);
-}
-
 .comment-action.reply-action:hover {
   color: var(--primary);
 }
@@ -879,13 +772,13 @@ commentStyles.textContent = `
 `;
 document.head.appendChild(commentStyles);
 
-// Modify the PostComponent's openCommentPage method to use the new CommentPage class
+// Keep the PostComponent's openCommentPage method the same
 PostComponent.prototype.openCommentPage = function(post) {
   const commentPage = new CommentPage(post.id);
   commentPage.init();
 };
 
-// Helper function to open comment page from anywhere
+// Keep the helper function to open comment page from anywhere
 window.openCommentPage = function(postId) {
   const commentPage = new CommentPage(postId);
   commentPage.init();
