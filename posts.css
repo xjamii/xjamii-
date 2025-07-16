@@ -1,179 +1,186 @@
 :root {
-            --primary: #0056b3;
-            --primary-dark: #003d7a;
-            --secondary: #ffc107;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
-            --light-gray: #e9ecef;
-            --twitter-blue: #1D9BF0;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-            padding: 0;
-        }
-        
-        .post-container {
-            width: 100%;
-            background: white;
-            padding: 20px;
-            border-bottom: 1px solid var(--light-gray);
-        }
-        
-        .post {
-            margin-bottom: 0;
-        }
-        
-        .post-header {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            position: relative;
-        }
-        
-        .post-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 15px;
-        }
-        
-        .post-user-info {
-            flex: 1;
-        }
-        
-        .post-user {
-            display: flex;
-            align-items: center;
-            font-weight: 600;
-            color: var(--dark);
-        }
-        
-        .verified-badge {
-            color: var(--primary);
-            font-size: 16px;
-            margin-left: 5px;
-        }
-        
-        .post-username {
-            color: var(--gray);
-            font-size: 14px;
-            margin-top: 2px;
-        }
-        
-        .post-time {
-            font-size: 13px;
-            color: var(--gray);
-            position: absolute;
-            right: 0;
-            top: 0;
-        }
-        
-        .connect-btn {
-            position: absolute;
-            right: 0;
-            top: 25px;
-            background-color: white;
-            color: var(--primary);
-            border: 1px solid var(--primary);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .connect-btn:hover {
-            background-color: rgba(0, 86, 179, 0.1);
-        }
-        
-        .post-content {
-            margin-bottom: 15px;
-            font-size: 16px;
-            margin-left: 65px; /* Align with username */
-            margin-top: -5px; /* Reduce gap between username and content */
-        }
-        
-        .post-content a,
-        .post-content .hashtag,
-        .post-content .mention {
-            color: var(--primary);
-            text-decoration: none;
-        }
-        
-        .post-content a:hover,
-        .post-content .hashtag:hover,
-        .post-content .mention:hover {
-            text-decoration: underline;
-        }
-        
-        .post-image {
-            width: calc(100% - 65px);
-            margin-left: 65px; /* Align with username */
-            border-radius: 8px;
-            margin-bottom: 8px;
-            max-height: 500px;
-            object-fit: cover;
-        }
-        
-        .post-actions {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            margin-left: 65px; /* Align with username */
-        }
-        
-        .post-action {
-            display: flex;
-            align-items: center;
-            color: var(--gray);
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-        
-        .post-action i {
-            margin-right: 5px;
-        }
-        
-        .post-action:hover {
-            color: var(--primary);
-        }
-        
-        /* Twitter-like share button */
-        .post-action.share:hover {
-            color: var(--twitter-blue);
-        }
-        
-        .post-action.views {
-            margin-left: auto;
-            color: var(--gray);
-        }
-        
-        .post-more {
-            color: var(--gray);
-            cursor: pointer;
-            padding: 5px;
-            margin-left: 5px;
-        }
-        
-        .post-more:hover {
-            color: var(--dark);
-        }
+  --primary: #0056b3;
+  --primary-dark: #003d7a;
+  --secondary: #ffc107;
+  --light: #f8f9fa;
+  --dark: #212529;
+  --gray: #6c757d;
+  --light-gray: #e9ecef;
+  --twitter-blue: #1D9BF0;
+  --like-color: #f91880;
+  --comment-color: #00ba7c;
+  --share-color: #0095f6;
+  --hover-bg: rgba(0, 0, 0, 0.05);
+  --text-secondary: #65676B;
+  --text-tertiary: #8E8E8E;
+  --border-color: #dbdbdb;
+}
 
-        /* Avatar initials fallback */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
+  padding: 0;
+}
+
+.post-container {
+  width: 100%;
+  background: white;
+  padding: 20px;
+  border-bottom: 1px solid var(--light-gray);
+}
+
+.post {
+  margin-bottom: 0;
+}
+
+.post-header {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.post-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 15px;
+}
+
+.post-user-info {
+  flex: 1;
+}
+
+.post-user {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.verified-badge {
+  color: var(--primary);
+  font-size: 16px;
+  margin-left: 5px;
+}
+
+.post-username {
+  color: var(--gray);
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.post-time {
+  font-size: 13px;
+  color: var(--gray);
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.connect-btn {
+  position: absolute;
+  right: 0;
+  top: 25px;
+  background-color: white;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.connect-btn:hover {
+  background-color: rgba(0, 86, 179, 0.1);
+}
+
+.post-content {
+  margin-bottom: 15px;
+  font-size: 16px;
+  margin-left: 65px;
+  margin-top: -5px;
+  word-break: break-word;
+}
+
+.post-content a,
+.post-content .hashtag,
+.post-content .mention {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.post-content a:hover,
+.post-content .hashtag:hover,
+.post-content .mention:hover {
+  text-decoration: underline;
+}
+
+.post-image {
+  width: calc(100% - 65px);
+  margin-left: 65px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  max-height: 500px;
+  object-fit: cover;
+}
+
+.post-actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-left: 65px;
+  position: relative;
+}
+
+.post-action {
+  display: flex;
+  align-items: center;
+  color: var(--gray);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.post-action i {
+  margin-right: 5px;
+}
+
+.post-action:hover {
+  color: var(--primary);
+}
+
+.post-action.share:hover {
+  color: var(--twitter-blue);
+}
+
+.post-action.views {
+  margin-left: auto;
+  color: var(--gray);
+}
+
+.post-more {
+  color: var(--gray);
+  cursor: pointer;
+  padding: 5px;
+  margin-left: 5px;
+}
+
+.post-more:hover {
+  color: var(--dark);
+}
+
 .post-avatar.initials {
   width: 50px;
   height: 50px;
@@ -187,7 +194,6 @@
   font-size: 18px;
 }
 
-/* Media containers */
 .media-container {
   width: calc(100% - 65px);
   margin-left: 65px;
@@ -203,7 +209,6 @@
   border-radius: 12px;
 }
 
-/* Media grid */
 .media-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -227,31 +232,11 @@
   object-fit: cover;
 }
 
-/* Action bar adjustments */
-.post-actions {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  margin-left: 65px;
-  position: relative;
-}
-
-.post-action.views {
-  margin-left: auto;
-  color: #6c757d;
-}
-
-.post-more {
-  margin-left: 0;
-}
-
-/* Mentions, Hashtags and URLs */
 .mention, .hashtag, .url {
   color: #1d9bf0;
   cursor: pointer;
 }
 
-/* More Options Popup */
 .more-options-popup {
   position: fixed;
   background: white;
@@ -284,7 +269,6 @@
   text-align: center;
 }
 
-/* Media Viewer */
 .media-viewer {
   position: fixed;
   top: 0;
@@ -327,7 +311,6 @@
   z-index: 10;
 }
 
-/* Media Controls */
 .media-controls {
   position: absolute;
   top: 0;
@@ -353,7 +336,6 @@
   cursor: pointer;
 }
 
-/* Feedback Message */
 .feedback-message {
   position: fixed;
   bottom: 20px;
@@ -373,23 +355,19 @@
   opacity: 1;
 }
 
-/* Share icon styling */
 .post-action.share-action i {
-  transform: rotate(90deg); /* Makes the arrow point upward */
+  transform: rotate(90deg);
 }
 
-/* Remove all underlines */
 a, .mention, .hashtag, .url {
   text-decoration: none !important;
 }
 
-/* Blue colored mentions/links */
 .mention, .hashtag, .url {
   color: #1d9bf0;
   cursor: pointer;
 }
 
-/* Media viewer styles */
 .media-viewer-overlay {
   position: fixed;
   top: 0;
@@ -519,7 +497,6 @@ a, .mention, .hashtag, .url {
   background-color: white;
 }
 
-/* Video preview styles */
 .video-preview {
   position: relative;
   width: 100%;
@@ -549,14 +526,34 @@ a, .mention, .hashtag, .url {
   font-size: 24px;
 }
 
-
+/* Comment page styles - UPDATED FIX */
+.comment-page-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow: hidden;
+}
 
 .comment-page-overlay.closing {
   opacity: 0;
   transform: translateY(20px);
 }
 
-
+.comment-page-header {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
 
 .comment-page-close {
   font-size: 20px;
@@ -572,53 +569,13 @@ a, .mention, .hashtag, .url {
 .comment-page-post-preview {
   padding: 15px;
   border-bottom: 1px solid #eee;
+  flex-shrink: 0;
 }
 
 .comment-page-comments {
   flex: 1;
   overflow-y: auto;
-}
-
-/* Update the comment page styles */
-.comment-page-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: white;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  overflow: hidden; /* Add this to contain all scrolling */
-}
-
-.comment-page-header {
-  padding: 15px;
-  border-bottom: 1px solid #eee;
-  display: flex;
-  align-items: center;
-  position: relative;
-  flex-shrink: 0; /* Prevent header from shrinking */
-}
-
-.comment-page-comments-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto; /* Make this container scrollable */
-}
-
-.comment-page-post-preview {
-  padding: 15px;
-  border-bottom: 1px solid #eee;
-  flex-shrink: 0; /* Prevent post from shrinking */
-}
-
-.comment-page-comments {
-  flex: 1;
-  overflow-y: visible; /* Remove individual scrolling */
+  -webkit-overflow-scrolling: touch;
 }
 
 .comment-page-input-container {
@@ -627,7 +584,7 @@ a, .mention, .hashtag, .url {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-shrink: 0; /* Prevent input from shrinking */
+  flex-shrink: 0;
 }
 
 .comment-page-input {
@@ -651,7 +608,6 @@ a, .mention, .hashtag, .url {
   cursor: pointer;
 }
 
-/* Loading styles */
 .post-loading {
   padding: 20px;
   display: flex;
@@ -674,7 +630,6 @@ a, .mention, .hashtag, .url {
   100% { transform: rotate(360deg); }
 }
 
-/* Pull to refresh */
 .refresh-container {
   position: fixed;
   top: -60px;
@@ -703,14 +658,12 @@ a, .mention, .hashtag, .url {
   animation: spin 1s linear infinite;
 }
 
-/* See more text */
 .see-more {
   color: #0056b3;
   cursor: pointer;
   font-weight: bold;
 }
 
-/* URL links */
 .url {
   color: #0056b3;
   text-decoration: none;
@@ -720,7 +673,6 @@ a, .mention, .hashtag, .url {
   text-decoration: underline;
 }
 
-/* No comments style */
 .no-comments {
   display: flex;
   flex-direction: column;
@@ -737,17 +689,25 @@ a, .mention, .hashtag, .url {
   color: #ccc;
 }
 
-/* Comment page post preview */
+/* Comment page post preview - UPDATED FIX */
 .comment-page-post {
   padding: 15px;
   border-bottom: 1px solid #eee;
+  max-height: 60vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .comment-page-post .post-actions {
   margin-top: 10px;
 }
 
-/* Media viewer close button */
+.comment-page-post .media-container,
+.comment-page-post .media-grid {
+  max-height: 300px;
+  overflow: hidden;
+}
+
 .media-viewer-close {
   background: rgba(0, 0, 0, 0.5);
   width: 40px;
@@ -760,7 +720,6 @@ a, .mention, .hashtag, .url {
   font-size: 20px;
 }
 
-/* Media viewer navigation */
 .media-viewer-nav {
   background: rgba(0, 0, 0, 0.5);
   width: 40px;
@@ -773,7 +732,6 @@ a, .mention, .hashtag, .url {
   font-size: 20px;
 }
 
-/* Media viewer dots */
 .media-viewer-dots {
   position: absolute;
   bottom: 20px;
@@ -796,9 +754,6 @@ a, .mention, .hashtag, .url {
   background-color: white;
 }
 
-
-
-/* Twitter-like red heart */
 .post-action.like-action.liked {
   color: #f91880;
 }
@@ -815,7 +770,6 @@ a, .mention, .hashtag, .url {
   color: #f91880;
 }
 
-/* Like Button Styles */
 like-button {
   display: inline-block;
 }
@@ -862,7 +816,6 @@ like-button {
   100% { transform: scale(1); }
 }
 
-/* Updates to existing post actions to accommodate like button */
 .post-actions {
   display: flex;
   justify-content: space-between;
@@ -914,7 +867,6 @@ like-button {
   background-color: var(--hover-bg);
 }
 
-/* Comment page specific like button styles */
 .comment-page-post .post-actions {
   padding: 12px 0;
   margin: 12px 0;
@@ -928,7 +880,6 @@ like-button {
   font-size: 17px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 480px) {
   .post-action {
     padding: 6px;
@@ -954,7 +905,6 @@ like-button {
   transition: transform 0.3s ease-out;
 }
 
-/* Optional: Add this if you want the numbers to fade */
 .view-counter-animation div {
   transition: opacity 0.2s ease;
 }
@@ -975,5 +925,3 @@ like-button {
 .like-action.liked i {
   color: #ff0000;
 }
-
-/* Add these to your stylesheet */
