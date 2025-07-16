@@ -271,22 +271,7 @@ async toggleLike() {
   }
 }
 
-    // Initial verification after 1s
-    setTimeout(verifySync, 1000);
-
-  } catch (error) {
-    console.error('Like operation failed:', error);
-    
-    // Revert UI to previous state
-    this.commentData.is_liked = !this.commentData.is_liked;
-    this.commentData.like_count = this.commentData.is_liked 
-      ? this.commentData.like_count + 1 
-      : Math.max(0, this.commentData.like_count - 1);
-    this.render();
-
-    alert(error.message || 'Failed to update like. Please try again.');
-  }
-}
+ 
 
   async render() {
     try {
