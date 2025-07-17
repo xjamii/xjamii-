@@ -1012,30 +1012,39 @@ function subscribeToNewPosts() {
 
 // Show alert for new post
 function showNewPostAlert(post) {
+  // Remove any existing alerts first
+  document.querySelectorAll('.new-post-alert').forEach(el => el.remove());
+  
   const alert = document.createElement('div');
   alert.className = 'new-post-alert';
   alert.innerHTML = `
     <div class="alert-content">
-      <span>New post from @${post.username || 'user'}</span>
-      <button class="dismiss-alert">×</button>
+      <span>New Post</span>
     </div>
   `;
   
   document.body.appendChild(alert);
   
-  // Auto-dismiss after 5 seconds
-  setTimeout(() => {
-    alert.classList.add('fade-out');
-    setTimeout(() => alert.remove(), 300);
-  }, 5000);
+  // Check if user is at the top of the page
+  const isAtTop = window.scrollY < 100; // 100px threshold
   
-  // Manual dismiss
-  alert.querySelector('.dismiss-alert').addEventListener('click', () => {
-    alert.remove();
-  });
+  if (!isAtTop) {
+    // Only make it clickable if not at top
+    alert.style.cursor = 'pointer';
+    alert.addEventListener('click', () => {
+      // Scroll to top when clicked
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+      // Remove the alert after scroll starts
+      setTimeout(() => alert.remove(), 300);
+    });
+  }
+  // If at top, the alert will stay until manually scrolled down
 }
 
-// Add this CSS
+// Updated CSS with pulse animation
 const newPostAlertCSS = `
 .new-post-alert {
   position: fixed;
@@ -1048,11 +1057,19 @@ const newPostAlertCSS = `
   border-radius: 20px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   z-index: 1000;
-  animation: slideDown 0.3s ease-out;
+  animation: slideDown 0.3s ease-out, pulse 0.5s infinite;
+  transition: all 0.3s ease;
 }
 
-.new-post-alert.fade-out {
-  animation: fadeOut 0.3s ease-out forwards;
+.new-post-alert:hover {
+  background: #004494;
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 @keyframes slideDown {
@@ -1060,19 +1077,36 @@ const newPostAlertCSS = `
   to { top: 130px; opacity: 1; }
 }
 
-@keyframes fadeOut {
-  to { opacity: 0; transform: translateX(-50%) scale(0.9); }
+@keyframes pulse {
+  0% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.05); }
+  100% { transform: translateX(-50%) scale(1); }
 }
 `;
 
-const style = document.createElement('style');
-style.innerHTML = newPostAlertCSS;
-document.head.appendChild(style);
+// Update or add the style element
+let styleElement = document.querySelector('style[data-new-post-alert]');
+if (!styleElement) {
+  styleElement = document.createElement('style');
+  styleElement.setAttribute('data-new-post-alert', 'true');
+  document.head.appendChild(styleElement);
+}
+styleElement.textContent = newPostAlertCSS;
 
-// Initialize in your DOMContentLoaded:
-document.addEventListener('DOMContentLoaded', () => {
-  subscribeToNewPosts();
+// Update the scroll handler to remove alert when scrolling down
+let lastScrollPosition = window.scrollY;
+window.addEventListener('scroll', () => {
+  const currentScroll = window.scrollY;
+  const alert = document.querySelector('.new-post-alert');
+  
+  if (alert && currentScroll > lastScrollPosition && currentScroll > 100) {
+    // Scrolling down and past threshold - remove alert
+    alert.remove();
+  }
+  lastScrollPosition = currentScroll;
 });
+
+
 
 // REAL-TIME LIKE TRACKING
 function subscribeToLikeUpdates() {
