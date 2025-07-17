@@ -16,20 +16,12 @@ class PostComponent extends HTMLElement {
       rootMargin: '0px 0px -100px 0px'
     });
     
-    // Add user tracking
+     // Add user tracking properties
     this.currentUserId = null;
-    this.userCheckPromise = this.getCurrentUser();
+    this.isOwner = false;
   }
 
-  async getCurrentUser() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      this.currentUserId = user?.id || null;
-    } catch (error) {
-      console.error('Error getting user:', error);
-      this.currentUserId = null;
-    }
-  }
+  
   
   // ... rest of the class remains the same until render()
   // Add these new methods for view tracking
@@ -130,8 +122,9 @@ class PostComponent extends HTMLElement {
   connectedCallback() {
     this.render();
     this.observer.observe(this); // Start intersection observer
+     // Then check ownership in background (non-blocking)
+    this.checkOwnership().catch(console.error);
   }
-
   // Add cleanup for observer
   disconnectedCallback() {
     if (this.observer) {
@@ -208,7 +201,48 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  
+  async checkOwnership() {
+    try {
+      const postData = this.getAttribute('post-data');
+      if (!postData) return;
+      
+      const post = JSON.parse(postData);
+      
+      // Get current user if not already available
+      if (this.currentUserId === null) {
+        const { data: { user } } = await supabase.auth.getUser();
+        this.currentUserId = user?.id || null;
+      }
+      
+      // Update ownership status
+      this.isOwner = this.currentUserId === post.user_id;
+      
+      // Update the three-dot button visibility
+      this.updateMoreButtonVisibility();
+    } catch (error) {
+      console.error('Error checking ownership:', error);
+    }
+  }
+
+  updateMoreButtonVisibility() {
+    const moreBtn = this.querySelector('.post-more');
+    if (!moreBtn) return;
+    
+    // Smoothly show/hide the button
+    if (this.isOwner) {
+      moreBtn.style.display = 'flex';
+      moreBtn.style.opacity = '1';
+    } else {
+      moreBtn.style.opacity = '0';
+      // Wait for transition before hiding completely
+      setTimeout(() => {
+        if (moreBtn.isConnected) { // Check if element is still in DOM
+          moreBtn.style.display = 'none';
+        }
+      }, 300); // Match this with your CSS transition duration
+    }
+  }
+
       
 async toggleLike() {
   try {
@@ -322,8 +356,6 @@ async toggleLike() {
       user_id: ''
     };
 
-    // Use stored user ID instead of checking again
-    const isOwner = this.currentUserId === post.user_id;
     
 
       const avatarHtml = profile.avatar_url 
@@ -366,8 +398,9 @@ async toggleLike() {
                 <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-              ${isOwner ? '<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>' : ''}
-              <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
+               <div class="post-more" style="display: none; opacity: 0; transition: opacity 0.3s ease">
+                <i class="fas fa-ellipsis-h"></i>
+                <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
             </div>
           </div>
         </div>
