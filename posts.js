@@ -304,7 +304,9 @@ async toggleLike() {
         user_id: ''
       };
 
-      
+      / Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      const isOwner = user?.id === post.user_id;
       // Create avatar HTML
       const avatarHtml = profile.avatar_url 
         ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
@@ -346,7 +348,7 @@ async toggleLike() {
                 <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-              <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
+              ${isOwner ? '<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>' : ''}
               <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
             </div>
           </div>
@@ -804,13 +806,15 @@ async toggleLike() {
   }
 
   showMoreOptions(e, post) {
-    const isOwner = true; // Replace with actual owner check
-    
     // Remove any existing popups
     document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
     
     const popup = document.createElement('div');
     popup.className = 'more-options-popup';
+    
+    // Get current user ID to determine ownership
+    const isOwner = true; // Replace with actual check - you might want to pass this from render()
+    
     popup.innerHTML = `
       <div class="more-options-content">
         ${isOwner ? `
