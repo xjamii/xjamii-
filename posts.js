@@ -803,8 +803,12 @@ async toggleLike() {
     window.openCommentPage(post.id);
   }
 
-  showMoreOptions(e, post) {
-    const isOwner = true; // Replace with actual owner check
+  async showMoreOptions(e, post) {
+    // Check if current user is post owner
+    const { data: { user } } = await supabase.auth.getUser();
+    const isOwner = user && user.id === post.user_id;
+    
+    if (!isOwner) return;
     
     // Remove any existing popups
     document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
@@ -813,58 +817,108 @@ async toggleLike() {
     popup.className = 'more-options-popup';
     popup.innerHTML = `
       <div class="more-options-content">
-        ${isOwner ? `
-          <div class="more-option edit-option"><i class="fas fa-edit"></i> Edit</div>
-          <div class="more-option delete-option"><i class="fas fa-trash-alt"></i> Delete</div>
-        ` : `
-          <div class="more-option report-option"><i class="fas fa-flag"></i> Report</div>
-        `}
+        <div class="more-option edit-option"><i class="fas fa-edit"></i> Edit</div>
+        <div class="more-option delete-option"><i class="fas fa-trash-alt"></i> Delete</div>
       </div>
     `;
     
     document.body.appendChild(popup);
-      
+    
+    // Position the popup
     const rect = e.target.getBoundingClientRect();
     popup.style.left = `${rect.left - 100}px`;
     popup.style.top = `${rect.top - 10}px`;
-      
+    
+    // Close when clicking outside
     const clickHandler = (event) => {
       if (!popup.contains(event.target)) {
         popup.remove();
         document.removeEventListener('click', clickHandler);
       }
     };
-      
+    
     setTimeout(() => {
       document.addEventListener('click', clickHandler);
     }, 0);
-      
+    
+    // Add option handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      window.location.href = `/edit-post.html?id=${post.id}`;
+      this.editPost(post);
       popup.remove();
     });
-      
-    popup.querySelector('.delete-option')?.addEventListener('click', async () => {
-      try {
-        const { error } = await supabase
-          .from('posts')
-          .delete()
-          .eq('id', post.id);
-          
-        if (error) throw error;
-        this.remove();
-      } catch (err) {
-        console.error('Error deleting post:', err);
-        alert('Failed to delete post');
+    
+    popup.querySelector('.delete-option')?.addEventListener('click', () => {
+      if (confirm('Are you sure you want to delete this post?')) {
+        this.deletePost(post.id);
       }
       popup.remove();
     });
-      
-    popup.querySelector('.report-option')?.addEventListener('click', () => {
-      console.log('Report post', post.id);
-      popup.remove();
+  }
+
+async editPost(post) {
+    // Create edit UI
+    const contentEl = this.querySelector('.post-content');
+    const originalContent = contentEl.getAttribute('data-full-content') || post.content;
+    
+    contentEl.innerHTML = `
+      <textarea class="edit-post-textarea">${originalContent}</textarea>
+      <div class="edit-post-actions">
+        <button class="edit-post-cancel">Cancel</button>
+        <button class="edit-post-save">Save</button>
+      </div>
+    `;
+    
+    // Focus the textarea
+    const textarea = contentEl.querySelector('textarea');
+    textarea.focus();
+    textarea.selectionStart = textarea.value.length;
+    
+    // Event listeners
+    contentEl.querySelector('.edit-post-cancel').addEventListener('click', () => {
+      this.render(); // Re-render original content
     });
-}
+    
+    contentEl.querySelector('.edit-post-save').addEventListener('click', async () => {
+      const newContent = textarea.value.trim();
+      if (!newContent) return;
+      
+      try {
+        const { error } = await supabase
+          .from('posts')
+          .update({ content: newContent })
+          .eq('id', post.id);
+        
+        if (error) throw error;
+        
+        // Update post data and re-render
+        post.content = newContent;
+        this.setAttribute('post-data', JSON.stringify(post));
+        this.render();
+      } catch (error) {
+        console.error('Error updating post:', error);
+        alert('Failed to update post');
+      }
+    });
+  }
+
+async deletePost(postId) {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId);
+      
+      if (error) throw error;
+      
+      // Remove the post from DOM
+      this.remove();
+      // Or refresh the feed if this is part of a list
+      window.dispatchEvent(new CustomEvent('post-deleted', { detail: { postId } }));
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post');
+    }
+  }
   sharePost(postId) {
     const postUrl = `${window.location.origin}/post.html?id=${postId}`;
     
