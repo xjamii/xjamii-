@@ -184,14 +184,8 @@ class PostComponent extends HTMLElement {
   }
 
   
-      
-
-
-
-    
-        async toggleLike(postId, isCurrentlyLiked) {
+  async toggleLike(postId, isCurrentlyLiked) {
   try {
-    // 1. Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -221,6 +215,9 @@ class PostComponent extends HTMLElement {
       // Update the post's like count in the database
       await supabase.rpc('increment_like_count', { post_id: postId });
       
+      // Bump the post timestamp ONLY when adding a new like
+      await supabase.rpc('bump_post_timestamp', { post_id: postId });
+      
       return { success: true, newLikeState: true };
     } else {
       // Remove like
@@ -239,6 +236,7 @@ class PostComponent extends HTMLElement {
       // Update the post's like count in the database
       await supabase.rpc('decrement_like_count', { post_id: postId });
       
+      // Don't bump timestamp when unliking
       return { success: true, newLikeState: false };
     }
   } catch (err) {
@@ -252,7 +250,12 @@ class PostComponent extends HTMLElement {
       error: err.message 
     };
   }
-}
+}    
+
+
+
+    
+        
  
 
   async render() {
