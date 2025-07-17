@@ -209,93 +209,37 @@ class PostComponent extends HTMLElement {
   }
 
   
-      
-async toggleLike() {
+  async toggleLike(postId, isCurrentlyLiked) {
   try {
     // 1. Authentication check
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      alert('Please sign in to like comments');
-      return;
+      alert('Please sign in to like posts');
+      return { success: false, error: 'Not authenticated' };
     }
 
-    // 2. Store current state
-    const commentId = this.commentData.id;
-    const wasLiked = this.commentData.is_liked;
-    const originalCount = this.commentData.like_count;
-
-    // 3. Immediate UI update (optimistic)
-    this.commentData.is_liked = !wasLiked;
-    this.commentData.like_count = wasLiked 
-      ? Math.max(0, originalCount - 1) 
-      : originalCount + 1;
-    this.render();
-
-    // 4. Database operation - FIXED UNLIKE QUERY
-    const { error } = wasLiked
-      ? await supabase.from('comment_likes')
-          .delete()
-          .eq('comment_id', commentId)  // Changed from .match() to .eq()
-          .eq('user_id', user.id)
-      : await supabase.from('comment_likes')
-          .insert({ 
-            comment_id: commentId, 
-            user_id: user.id 
-          }, {
-            onConflict: 'comment_id,user_id' // Prevent duplicates
-          });
+    // 2. Call the toggle_like function
+    const { data, error } = await supabase.rpc('toggle_like', {
+      post_id: postId,
+      profile_id: user.id
+    });
 
     if (error) throw error;
 
-    // 5. Enhanced verification
-    const verifySync = async () => {
-      const { data: commentData } = await supabase
-        .from('comments')
-        .select('like_count')
-        .eq('id', commentId)
-        .single();
-        
-      const { data: likeData } = await supabase
-        .from('comment_likes')
-        .select()
-        .eq('comment_id', commentId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      // Check consistency
-      if (commentData) {
-        const isActuallyLiked = !!likeData;
-        const needsUpdate = (
-          this.commentData.is_liked !== isActuallyLiked ||
-          this.commentData.like_count !== commentData.like_count
-        );
-        
-        if (needsUpdate) {
-          this.commentData.is_liked = isActuallyLiked;
-          this.commentData.like_count = commentData.like_count;
-          this.render();
-        }
-      }
+    // 3. Return the new state
+    return { 
+      success: true, 
+      isLiked: data.action === 'liked',
+      newCount: data.new_count
     };
-
-    // Verify immediately and again after 1s
-    verifySync();
-    setTimeout(verifySync, 1000);
-
   } catch (error) {
     console.error('Like operation failed:', error);
-    
-    // Revert UI
-    this.commentData.is_liked = !this.commentData.is_liked;
-    this.commentData.like_count = this.commentData.is_liked 
-      ? this.commentData.like_count + 1 
-      : Math.max(0, this.commentData.like_count - 1);
-    this.render();
-
-    alert(error.message || 'Failed to update like. Please try again.');
+    return { success: false, error: error.message };
   }
-}
+}    
 
+
+    
  
 
   async render() {
