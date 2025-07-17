@@ -1010,6 +1010,8 @@ function subscribeToNewPosts() {
     .subscribe();
 }
 
+
+
 // Show alert for new post
 function showNewPostAlert(post) {
   // Remove any existing alerts first
@@ -1044,7 +1046,7 @@ function showNewPostAlert(post) {
   // If at top, the alert will stay until manually scrolled down
 }
 
-// Updated CSS with pulse animation
+// Add this CSS (modified from your existing)
 const newPostAlertCSS = `
 .new-post-alert {
   position: fixed;
@@ -1057,7 +1059,7 @@ const newPostAlertCSS = `
   border-radius: 20px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   z-index: 1000;
-  animation: slideDown 0.3s ease-out, pulse 0.5s infinite;
+  animation: slideDown 0.3s ease-out;
   transition: all 0.3s ease;
 }
 
@@ -1076,22 +1078,7 @@ const newPostAlertCSS = `
   from { top: -50px; opacity: 0; }
   to { top: 130px; opacity: 1; }
 }
-
-@keyframes pulse {
-  0% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(1.05); }
-  100% { transform: translateX(-50%) scale(1); }
-}
 `;
-
-// Update or add the style element
-let styleElement = document.querySelector('style[data-new-post-alert]');
-if (!styleElement) {
-  styleElement = document.createElement('style');
-  styleElement.setAttribute('data-new-post-alert', 'true');
-  document.head.appendChild(styleElement);
-}
-styleElement.textContent = newPostAlertCSS;
 
 // Update the scroll handler to remove alert when scrolling down
 let lastScrollPosition = window.scrollY;
