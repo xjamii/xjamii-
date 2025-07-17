@@ -183,91 +183,95 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  async toggleLike() {
-    try {
-      // 1. Authentication check
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        alert('Please sign in to like comments');
-        return;
-      }
-
-      // 2. Store current state
-      const commentId = this.commentData.id;
-      const wasLiked = this.commentData.is_liked;
-      const originalCount = this.commentData.like_count;
-
-      // 3. Immediate UI update (optimistic)
-      this.commentData.is_liked = !wasLiked;
-      this.commentData.like_count = wasLiked 
-        ? Math.max(0, originalCount - 1) 
-        : originalCount + 1;
-      this.render();
-
-      // 4. Database operation - FIXED UNLIKE QUERY
-      const { error } = wasLiked
-        ? await supabase.from('comment_likes')
-            .delete()
-            .eq('comment_id', commentId)  // Changed from .match() to .eq()
-            .eq('user_id', user.id)
-        : await supabase.from('comment_likes')
-            .insert({ 
-              comment_id: commentId, 
-              user_id: user.id 
-            }, {
-              onConflict: 'comment_id,user_id' // Prevent duplicates
-            });
-
-      if (error) throw error;
-
-      // 5. Enhanced verification
-      const verifySync = async () => {
-        const { data: commentData } = await supabase
-          .from('comments')
-          .select('like_count')
-          .eq('id', commentId)
-          .single();
-          
-        const { data: likeData } = await supabase
-          .from('comment_likes')
-          .select()
-          .eq('comment_id', commentId)
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        // Check consistency
-        if (commentData) {
-          const isActuallyLiked = !!likeData;
-          const needsUpdate = (
-            this.commentData.is_liked !== isActuallyLiked ||
-            this.commentData.like_count !== commentData.like_count
-          );
-          
-          if (needsUpdate) {
-            this.commentData.is_liked = isActuallyLiked;
-            this.commentData.like_count = commentData.like_count;
-            this.render();
-          }
-        }
-      };
-
-      // Verify immediately and again after 1s
-      verifySync();
-      setTimeout(verifySync, 1000);
-
-    } catch (error) {
-      console.error('Like operation failed:', error);
+  
       
-      // Revert UI
-      this.commentData.is_liked = !this.commentData.is_liked;
-      this.commentData.like_count = this.commentData.is_liked 
-        ? this.commentData.like_count + 1 
-        : Math.max(0, this.commentData.like_count - 1);
-      this.render();
-
-      alert(error.message || 'Failed to update like. Please try again.');
+async toggleLike() {
+  try {
+    // 1. Authentication check
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      alert('Please sign in to like comments');
+      return;
     }
+
+    // 2. Store current state
+    const commentId = this.commentData.id;
+    const wasLiked = this.commentData.is_liked;
+    const originalCount = this.commentData.like_count;
+
+    // 3. Immediate UI update (optimistic)
+    this.commentData.is_liked = !wasLiked;
+    this.commentData.like_count = wasLiked 
+      ? Math.max(0, originalCount - 1) 
+      : originalCount + 1;
+    this.render();
+
+    // 4. Database operation - FIXED UNLIKE QUERY
+    const { error } = wasLiked
+      ? await supabase.from('comment_likes')
+          .delete()
+          .eq('comment_id', commentId)  // Changed from .match() to .eq()
+          .eq('user_id', user.id)
+      : await supabase.from('comment_likes')
+          .insert({ 
+            comment_id: commentId, 
+            user_id: user.id 
+          }, {
+            onConflict: 'comment_id,user_id' // Prevent duplicates
+          });
+
+    if (error) throw error;
+
+    // 5. Enhanced verification
+    const verifySync = async () => {
+      const { data: commentData } = await supabase
+        .from('comments')
+        .select('like_count')
+        .eq('id', commentId)
+        .single();
+        
+      const { data: likeData } = await supabase
+        .from('comment_likes')
+        .select()
+        .eq('comment_id', commentId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Check consistency
+      if (commentData) {
+        const isActuallyLiked = !!likeData;
+        const needsUpdate = (
+          this.commentData.is_liked !== isActuallyLiked ||
+          this.commentData.like_count !== commentData.like_count
+        );
+        
+        if (needsUpdate) {
+          this.commentData.is_liked = isActuallyLiked;
+          this.commentData.like_count = commentData.like_count;
+          this.render();
+        }
+      }
+    };
+
+    // Verify immediately and again after 1s
+    verifySync();
+    setTimeout(verifySync, 1000);
+
+  } catch (error) {
+    console.error('Like operation failed:', error);
+    
+    // Revert UI
+    this.commentData.is_liked = !this.commentData.is_liked;
+    this.commentData.like_count = this.commentData.is_liked 
+      ? this.commentData.like_count + 1 
+      : Math.max(0, this.commentData.like_count - 1);
+    this.render();
+
+    alert(error.message || 'Failed to update like. Please try again.');
   }
+}
+
+ 
 
   async render() {
     try {
@@ -290,6 +294,7 @@ class PostComponent extends HTMLElement {
         user_id: ''
       };
 
+      
       // Create avatar HTML
       const avatarHtml = profile.avatar_url 
         ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
@@ -332,7 +337,7 @@ class PostComponent extends HTMLElement {
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
               <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
-              <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
+              <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
             </div>
           </div>
         </div>
@@ -391,16 +396,6 @@ class PostComponent extends HTMLElement {
           </div>` : ''}
       </div>
     `;
-  }
-
-  formatViewCount(count) {
-    if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
-    }
-    if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'k';
-    }
-    return count;
   }
 
   setupEventListeners(post) {
@@ -484,34 +479,18 @@ class PostComponent extends HTMLElement {
       });
     });
 
-    // See more/less click handler
-    const contentEl = this.querySelector('.post-content');
-    if (contentEl) {
-      const fullContent = contentEl.getAttribute('data-full-content');
-      const seeMoreEl = contentEl.querySelector('.see-more');
-      
-      if (seeMoreEl) {
-        contentEl.addEventListener('click', (e) => {
-          if (e.target.classList.contains('mention') || 
-              e.target.classList.contains('hashtag') || 
-              e.target.classList.contains('url')) {
-            return;
-          }
-          
-          if (contentEl.classList.contains('expanded')) {
-            // Show less
-            contentEl.innerHTML = this.processContent(fullContent.substring(0, 200) + '...';
-            contentEl.appendChild(document.createElement('span')).className = 'see-more';
-            contentEl.classList.remove('expanded');
-          } else {
-            // Show more
-            contentEl.innerHTML = this.processContent(fullContent);
-            contentEl.appendChild(document.createElement('span')).className = 'see-less';
-            contentEl.classList.add('expanded');
-          }
-        });
+    // See more click handler
+    this.querySelector('.see-more')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openCommentPage(post);
+    });
+
+    // Post content click handler (opens comment page)
+    this.querySelector('.post-content')?.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
+        this.openCommentPage(post);
       }
-    }
+    });
 
     // Setup pull-to-refresh if this is the first post
     if (this.previousElementSibling === null) {
@@ -788,13 +767,12 @@ class PostComponent extends HTMLElement {
   }
 
   openCommentPage(post) {
-    window.location.href = `/post.html?id=${post.id}`;
+    // This will now be handled by the standalone CommentPage class
+    window.openCommentPage(post.id);
   }
 
-  async showMoreOptions(e, post) {
-    // Check if current user is the owner of the post
-    const { data: { user } } = await supabase.auth.getUser();
-    const isOwner = user && user.id === post.user_id; // Assuming post has user_id
+  showMoreOptions(e, post) {
+    const isOwner = true; // Replace with actual owner check
     
     // Remove any existing popups
     document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
@@ -833,25 +811,12 @@ class PostComponent extends HTMLElement {
     
     // Add option handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      window.location.href = `/edit-post.html?id=${post.id}`;
+      console.log('Edit post', post.id);
       popup.remove();
     });
     
-    popup.querySelector('.delete-option')?.addEventListener('click', async () => {
-      try {
-        const { error } = await supabase
-          .from('posts')
-          .delete()
-          .eq('id', post.id);
-        
-        if (error) throw error;
-        
-        // Remove the post component immediately
-        this.remove();
-      } catch (err) {
-        console.error('Error deleting post:', err);
-        alert('Failed to delete post');
-      }
+    popup.querySelector('.delete-option')?.addEventListener('click', () => {
+      console.log('Delete post', post.id);
       popup.remove();
     });
     
