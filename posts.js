@@ -526,53 +526,7 @@ async toggleLike() {
     }
   }
 
-document.body.appendChild(popup);
-      
-      const rect = e.target.getBoundingClientRect();
-      popup.style.left = `${rect.left - 100}px`;
-      popup.style.top = `${rect.top - 10}px`;
-      
-      const clickHandler = (event) => {
-        if (!popup.contains(event.target)) {
-          popup.remove();
-          document.removeEventListener('click', clickHandler);
-        }
-      };
-      
-      setTimeout(() => {
-        document.addEventListener('click', clickHandler);
-      }, 0);
-      
-      popup.querySelector('.edit-option')?.addEventListener('click', () => {
-        window.location.href = `/edit-post.html?id=${post.id}`;
-        popup.remove();
-      });
-      
-      popup.querySelector('.delete-option')?.addEventListener('click', async () => {
-        try {
-          const { error } = await supabase
-            .from('posts')
-            .delete()
-            .eq('id', post.id);
-          
-          if (error) throw error;
-          this.remove();
-        } catch (err) {
-          console.error('Error deleting post:', err);
-          alert('Failed to delete post');
-        }
-        popup.remove();
-      });
-      
-      popup.querySelector('.report-option')?.addEventListener('click', () => {
-        console.log('Report post', post.id);
-        popup.remove();
-      });
-      
-    } catch (error) {
-      console.error('Error showing options:', error);
-    }
-  }
+
   
   showMediaViewer(mediaItems, startIndex = 0) {
     if (!mediaItems || !mediaItems.length) return;
@@ -869,41 +823,52 @@ document.body.appendChild(popup);
     `;
     
     document.body.appendChild(popup);
-    
-    // Position the popup
-    const rect = e.target.getBoundingClientRect();
-    popup.style.left = `${rect.left - 100}px`;
-    popup.style.top = `${rect.top - 10}px`;
-    
-    // Close when clicking outside
-    const clickHandler = (event) => {
-      if (!popup.contains(event.target)) {
+      
+      const rect = e.target.getBoundingClientRect();
+      popup.style.left = `${rect.left - 100}px`;
+      popup.style.top = `${rect.top - 10}px`;
+      
+      const clickHandler = (event) => {
+        if (!popup.contains(event.target)) {
+          popup.remove();
+          document.removeEventListener('click', clickHandler);
+        }
+      };
+      
+      setTimeout(() => {
+        document.addEventListener('click', clickHandler);
+      }, 0);
+      
+      popup.querySelector('.edit-option')?.addEventListener('click', () => {
+        window.location.href = `/edit-post.html?id=${post.id}`;
         popup.remove();
-        document.removeEventListener('click', clickHandler);
-      }
-    };
-    
-    setTimeout(() => {
-      document.addEventListener('click', clickHandler);
-    }, 0);
-    
-    // Add option handlers
-    popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      console.log('Edit post', post.id);
-      popup.remove();
-    });
-    
-    popup.querySelector('.delete-option')?.addEventListener('click', () => {
-      console.log('Delete post', post.id);
-      popup.remove();
-    });
-    
-    popup.querySelector('.report-option')?.addEventListener('click', () => {
-      console.log('Report post', post.id);
-      popup.remove();
-    });
+      });
+      
+      popup.querySelector('.delete-option')?.addEventListener('click', async () => {
+        try {
+          const { error } = await supabase
+            .from('posts')
+            .delete()
+            .eq('id', post.id);
+          
+          if (error) throw error;
+          this.remove();
+        } catch (err) {
+          console.error('Error deleting post:', err);
+          alert('Failed to delete post');
+        }
+        popup.remove();
+      });
+      
+      popup.querySelector('.report-option')?.addEventListener('click', () => {
+        console.log('Report post', post.id);
+        popup.remove();
+      });
+      
+    } catch (error) {
+      console.error('Error showing options:', error);
+    }
   }
-
   sharePost(postId) {
     const postUrl = `${window.location.origin}/post.html?id=${postId}`;
     
