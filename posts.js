@@ -1,7 +1,7 @@
 class PostComponent extends HTMLElement {
   constructor() {
     super();
-    // Keep existing properties
+    // Keep your existing properties
     this.mediaViewer = null;
     this.currentMediaIndex = 0;
     this.startY = 0;
@@ -15,23 +15,8 @@ class PostComponent extends HTMLElement {
       threshold: 0.5,
       rootMargin: '0px 0px -100px 0px'
     });
-    
-    // Add user tracking
-    this.currentUserId = null;
-    this.userCheckPromise = this.getCurrentUser();
   }
 
-  async getCurrentUser() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      this.currentUserId = user?.id || null;
-    } catch (error) {
-      console.error('Error getting user:', error);
-      this.currentUserId = null;
-    }
-  }
-  
-  // ... rest of the class remains the same until render()
   // Add these new methods for view tracking
   handleIntersect(entries) {
     entries.forEach(entry => {
@@ -299,33 +284,28 @@ async toggleLike() {
  
 
   async render() {
-  try {
-    const postData = this.getAttribute('post-data');
-    if (!postData) {
-      this.innerHTML = `
-        <div class="post-loading">
-          <div class="loader"></div>
-        </div>
-      `;
-      return;
-    }
+    try {
+      const postData = this.getAttribute('post-data');
+      if (!postData) {
+        this.innerHTML = `
+          <div class="post-loading">
+            <div class="loader"></div>
+          </div>
+        `;
+        return;
+      }
 
-    // Wait for user check to complete (but don't block rendering)
-    await this.userCheckPromise;
-    
-    const post = JSON.parse(postData);
-    const profile = post.profile || {
-      username: 'unknown',
-      full_name: 'Unknown User',
-      avatar_url: '',
-      is_verified: false,
-      user_id: ''
-    };
+      const post = JSON.parse(postData);
+      const profile = post.profile || {
+        username: 'unknown',
+        full_name: 'Unknown User',
+        avatar_url: '',
+        is_verified: false,
+        user_id: ''
+      };
 
-    // Use stored user ID instead of checking again
-    const isOwner = this.currentUserId === post.user_id;
-    
-
+      
+      // Create avatar HTML
       const avatarHtml = profile.avatar_url 
         ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
         : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
