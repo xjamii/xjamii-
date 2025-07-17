@@ -1073,6 +1073,139 @@ document.addEventListener('DOMContentLoaded', () => {
   subscribeToNewPosts();
 });
 
+  // Add this to your main index.js or posts.js
+class NewPostsCounter {
+  constructor() {
+    this.newPostsCount = 0;
+    this.bumpedPosts = new Set();
+    this.setupCounter();
+    this.subscribeToUpdates();
+  }
+
+  setupCounter() {
+    // Create counter element
+    this.counterElement = document.createElement('div');
+    this.counterElement.className = 'home-icon-counter';
+    this.counterElement.style.display = 'none';
+    
+    // Find home icon in footer
+    const homeIcon = document.querySelector('.footer-icon:first-child');
+    if (homeIcon) {
+      homeIcon.appendChild(this.counterElement);
+      homeIcon.addEventListener('click', () => this.handleHomeClick());
+    }
+  }
+
+  subscribeToUpdates() {
+    // Subscribe to new posts
+    supabase
+      .channel('new_posts_counter')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'posts'
+      }, () => {
+        this.incrementCounter();
+      })
+      .subscribe();
+
+    // Subscribe to bumped posts (likes/comments)
+    supabase
+      .channel('bumped_posts_counter')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'posts',
+        filter: 'bumped_at=neq.null'
+      }, (payload) => {
+        if (!this.bumpedPosts.has(payload.new.id)) {
+          this.bumpedPosts.add(payload.new.id);
+          this.incrementCounter();
+        }
+      })
+      .subscribe();
+  }
+
+  incrementCounter() {
+    this.newPostsCount++;
+    this.updateCounterDisplay();
+  }
+
+  updateCounterDisplay() {
+    if (this.newPostsCount > 0) {
+      this.counterElement.textContent = this.newPostsCount > 9 ? '9+' : this.newPostsCount.toString();
+      this.counterElement.style.display = 'flex';
+    } else {
+      this.counterElement.style.display = 'none';
+    }
+  }
+
+  handleHomeClick() {
+    if (this.newPostsCount > 0) {
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Reset counter
+      this.newPostsCount = 0;
+      this.bumpedPosts.clear();
+      this.updateCounterDisplay();
+      
+      // Optional: Highlight new/bumped posts
+      document.querySelectorAll('post-component').forEach((post, index) => {
+        if (index < 5) { // Highlight first 5 posts
+          post.classList.add('new-highlight');
+          setTimeout(() => post.classList.remove('new-highlight'), 3000);
+        }
+      });
+    }
+  }
+}
+
+// Add this CSS
+const counterCSS = `
+.home-icon-counter {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #ff4444;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  animation: pulse 1.5s infinite;
+}
+
+.post-component.new-highlight {
+  animation: highlightPost 2s ease;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes highlightPost {
+  0% { background-color: rgba(0, 176, 255, 0.1); }
+  50% { background-color: rgba(0, 176, 255, 0.3); }
+  100% { background-color: transparent; }
+}
+`;
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  const style = document.createElement('style');
+  style.innerHTML = counterCSS;
+  document.head.appendChild(style);
+  
+  // Start the counter system
+  new NewPostsCounter();
+});
 // REAL-TIME LIKE TRACKING
 function subscribeToLikeUpdates() {
     return supabase
