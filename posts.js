@@ -278,7 +278,7 @@ async render() {
         // Get user ID with proper fallbacks
         const userId = post.user_id || profile.user_id || 'unknown';
         // In your PostComponent render()
-        const profileLink = `/profile.html?id=${post.user_id}`;
+        const profileLink = `/profile.html?id=${user_id}`;
         
         // Avatar with better error handling
         const avatarHtml = profile.avatar_url 
