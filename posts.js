@@ -185,92 +185,74 @@ class PostComponent extends HTMLElement {
 
   
       
-async toggleLike() {
-  try {
-    // 1. Authentication check
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      alert('Please sign in to like comments');
-      return;
-    }
 
-    // 2. Store current state
-    const commentId = this.commentData.id;
-    const wasLiked = this.commentData.is_liked;
-    const originalCount = this.commentData.like_count;
 
-    // 3. Immediate UI update (optimistic)
-    this.commentData.is_liked = !wasLiked;
-    this.commentData.like_count = wasLiked 
-      ? Math.max(0, originalCount - 1) 
-      : originalCount + 1;
-    this.render();
 
-    // 4. Database operation - FIXED UNLIKE QUERY
-    const { error } = wasLiked
-      ? await supabase.from('comment_likes')
-          .delete()
-          .eq('comment_id', commentId)  // Changed from .match() to .eq()
-          .eq('user_id', user.id)
-      : await supabase.from('comment_likes')
-          .insert({ 
-            comment_id: commentId, 
-            user_id: user.id 
-          }, {
-            onConflict: 'comment_id,user_id' // Prevent duplicates
-          });
-
-    if (error) throw error;
-
-    // 5. Enhanced verification
-    const verifySync = async () => {
-      const { data: commentData } = await supabase
-        .from('comments')
-        .select('like_count')
-        .eq('id', commentId)
-        .single();
-        
-      const { data: likeData } = await supabase
-        .from('comment_likes')
-        .select()
-        .eq('comment_id', commentId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      // Check consistency
-      if (commentData) {
-        const isActuallyLiked = !!likeData;
-        const needsUpdate = (
-          this.commentData.is_liked !== isActuallyLiked ||
-          this.commentData.like_count !== commentData.like_count
-        );
-        
-        if (needsUpdate) {
-          this.commentData.is_liked = isActuallyLiked;
-          this.commentData.like_count = commentData.like_count;
-          this.render();
-        }
-      }
-    };
-
-    // Verify immediately and again after 1s
-    verifySync();
-    setTimeout(verifySync, 1000);
-
-  } catch (error) {
-    console.error('Like operation failed:', error);
     
-    // Revert UI
-    this.commentData.is_liked = !this.commentData.is_liked;
-    this.commentData.like_count = this.commentData.is_liked 
-      ? this.commentData.like_count + 1 
-      : Math.max(0, this.commentData.like_count - 1);
-    this.render();
+        async toggleLike(postId, isCurrentlyLiked) {
+  try {
+    // 1. Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.error('Authentication error:', authError);
+      return { success: false, error: 'Not authenticated' };
+    }
+    
+    const currentUserId = user.id;
+    console.log(`Toggling like for post ${postId} by user ${currentUserId}`);
 
-    alert(error.message || 'Failed to update like. Please try again.');
+    if (!isCurrentlyLiked) {
+      // Add like
+      const { data, error } = await supabase
+        .from('likes')
+        .insert([{ 
+          post_id: postId, 
+          profile_id: currentUserId 
+        }])
+        .select();
+      
+      if (error) {
+        console.error('Like insertion error:', error);
+        throw error;
+      }
+      console.log('Like added successfully:', data);
+      
+      // Update the post's like count in the database
+      await supabase.rpc('increment_like_count', { post_id: postId });
+      
+      return { success: true, newLikeState: true };
+    } else {
+      // Remove like
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .eq('post_id', postId)
+        .eq('profile_id', currentUserId);
+      
+      if (error) {
+        console.error('Like deletion error:', error);
+        throw error;
+      }
+      console.log('Like removed successfully');
+      
+      // Update the post's like count in the database
+      await supabase.rpc('decrement_like_count', { post_id: postId });
+      
+      return { success: true, newLikeState: false };
+    }
+  } catch (err) {
+    console.error('Error in toggleLike:', {
+      message: err.message,
+      code: err.code,
+      details: err.details
+    });
+    return { 
+      success: false, 
+      error: err.message 
+    };
   }
 }
-
  
 
   async render() {
