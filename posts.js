@@ -280,11 +280,15 @@ class PostComponent extends HTMLElement {
       };
 
       
-      // Create avatar HTML
-      const avatarHtml = profile.avatar_url 
-        ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
-        : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
-
+      // Standardized profile link using post.user_id
+    const profileLink = `/profile.html?id=${post.user_id}`;
+    
+    // Avatar HTML (with fallback)
+    const avatarHtml = profile.avatar_url 
+      ? `<img src="${profile.avatar_url}" alt="${profile.full_name}" class="post-avatar" 
+         onerror="this.onerror=null; this.src='${this.getInitialsAvatar(profile.full_name)}'">`
+      : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
+    
       // Check if content needs "See more"
       const content = post.content || '';
       const showSeeMore = content.length > 200;
@@ -334,7 +338,7 @@ class PostComponent extends HTMLElement {
         </div>
       </div>
     `;
-  }
+  
 
       this.setupEventListeners(post);
 
