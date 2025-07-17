@@ -839,8 +839,9 @@ async toggleLike() {
       document.addEventListener('click', clickHandler);
     }, 0);
       
+    // Add option handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      window.location.href = `/edit-post.html?id=${post.id}`;
+      this.editPost(post);
       popup.remove();
     });
       
@@ -865,6 +866,54 @@ async toggleLike() {
       popup.remove();
     });
 }
+
+  async editPost(post) {
+    // Create edit UI
+    const contentEl = this.querySelector('.post-content');
+    const originalContent = contentEl.getAttribute('data-full-content') || post.content;
+    
+    contentEl.innerHTML = `
+      <textarea class="edit-post-textarea">${originalContent}</textarea>
+      <div class="edit-post-actions">
+        <button class="edit-post-cancel">Cancel</button>
+        <button class="edit-post-save">Save</button>
+      </div>
+    `;
+    
+    // Focus the textarea
+    const textarea = contentEl.querySelector('textarea');
+    textarea.focus();
+    textarea.selectionStart = textarea.value.length;
+    
+    // Event listeners
+    contentEl.querySelector('.edit-post-cancel').addEventListener('click', () => {
+      this.render(); // Re-render original content
+    });
+    
+    contentEl.querySelector('.edit-post-save').addEventListener('click', async () => {
+      const newContent = textarea.value.trim();
+      if (!newContent) return;
+      
+      try {
+        const { error } = await supabase
+          .from('posts')
+          .update({ content: newContent })
+          .eq('id', post.id);
+        
+        if (error) throw error;
+        
+        // Update post data and re-render
+        post.content = newContent;
+        this.setAttribute('post-data', JSON.stringify(post));
+        this.render();
+      } catch (error) {
+        console.error('Error updating post:', error);
+        alert('Failed to update post');
+      }
+    });
+  }
+
+  
   sharePost(postId) {
     const postUrl = `${window.location.origin}/post.html?id=${postId}`;
     
