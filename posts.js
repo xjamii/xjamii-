@@ -347,9 +347,9 @@ async toggleLike() {
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
               // In the render() method, replace the post-more div with this:
-${profile.user_id === (window.currentUser?.id || null) ? 
-  `<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>` : 
-  ''}
+              ${profile.user_id === (window.currentUser?.id || null) ? 
+             `<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>` : 
+              ''}
               <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
             </div>
           </div>
