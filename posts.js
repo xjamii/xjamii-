@@ -26,16 +26,6 @@ class PostComponent extends HTMLElement {
     });
   }
 
-  formatViewCount(count) {
-    if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
-    }
-    if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'k';
-    }
-    return count;
-  }
-
   async recordView() {
     const postData = this.getAttribute('post-data');
     if (!postData) return;
@@ -74,10 +64,10 @@ class PostComponent extends HTMLElement {
             `;
             
             const oldNumber = document.createElement('div');
-            oldNumber.textContent = this.formatViewCount(currentViews);
+            oldNumber.textContent = currentViews;
             
             const newNumber = document.createElement('div');
-            newNumber.textContent = this.formatViewCount(currentViews + 1);
+            newNumber.textContent = currentViews + 1;
             
             // 3. Set up animation
             container.appendChild(oldNumber);
@@ -98,8 +88,8 @@ class PostComponent extends HTMLElement {
             setTimeout(() => {
               if (viewsEl.isConnected) { // Check if still in DOM
                 viewsEl.innerHTML = `
-                  <i class="fas fa-eye"></i>
-                  <span>${this.formatViewCount(currentViews + 1)}</span>
+                  <i class="fas fa-chart-bar"></i>
+                  <span>${currentViews + 1}</span>
                 `;
               }
             }, 800);
@@ -193,23 +183,89 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  async toggleLike(postId, isLiked) {
+  async toggleLike() {
     try {
+      // 1. Authentication check
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
-        alert('Please sign in to like posts');
-        return { success: false, error: 'Not authenticated' };
+        alert('Please sign in to like comments');
+        return;
       }
 
-      const { error } = isLiked
-        ? await supabase.from('likes').delete().match({ post_id: postId, profile_id: user.id })
-        : await supabase.from('likes').insert({ post_id: postId, profile_id: user.id });
+      // 2. Store current state
+      const commentId = this.commentData.id;
+      const wasLiked = this.commentData.is_liked;
+      const originalCount = this.commentData.like_count;
+
+      // 3. Immediate UI update (optimistic)
+      this.commentData.is_liked = !wasLiked;
+      this.commentData.like_count = wasLiked 
+        ? Math.max(0, originalCount - 1) 
+        : originalCount + 1;
+      this.render();
+
+      // 4. Database operation - FIXED UNLIKE QUERY
+      const { error } = wasLiked
+        ? await supabase.from('comment_likes')
+            .delete()
+            .eq('comment_id', commentId)  // Changed from .match() to .eq()
+            .eq('user_id', user.id)
+        : await supabase.from('comment_likes')
+            .insert({ 
+              comment_id: commentId, 
+              user_id: user.id 
+            }, {
+              onConflict: 'comment_id,user_id' // Prevent duplicates
+            });
 
       if (error) throw error;
-      return { success: true };
+
+      // 5. Enhanced verification
+      const verifySync = async () => {
+        const { data: commentData } = await supabase
+          .from('comments')
+          .select('like_count')
+          .eq('id', commentId)
+          .single();
+          
+        const { data: likeData } = await supabase
+          .from('comment_likes')
+          .select()
+          .eq('comment_id', commentId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        // Check consistency
+        if (commentData) {
+          const isActuallyLiked = !!likeData;
+          const needsUpdate = (
+            this.commentData.is_liked !== isActuallyLiked ||
+            this.commentData.like_count !== commentData.like_count
+          );
+          
+          if (needsUpdate) {
+            this.commentData.is_liked = isActuallyLiked;
+            this.commentData.like_count = commentData.like_count;
+            this.render();
+          }
+        }
+      };
+
+      // Verify immediately and again after 1s
+      verifySync();
+      setTimeout(verifySync, 1000);
+
     } catch (error) {
-      console.error('Error toggling like:', error);
-      return { success: false, error: error.message };
+      console.error('Like operation failed:', error);
+      
+      // Revert UI
+      this.commentData.is_liked = !this.commentData.is_liked;
+      this.commentData.like_count = this.commentData.is_liked 
+        ? this.commentData.like_count + 1 
+        : Math.max(0, this.commentData.like_count - 1);
+      this.render();
+
+      alert(error.message || 'Failed to update like. Please try again.');
     }
   }
 
@@ -244,10 +300,6 @@ class PostComponent extends HTMLElement {
       const showSeeMore = content.length > 200;
       const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
 
-      // Check if current user is owner
-      const { data: { user } } = await supabase.auth.getUser();
-      const isOwner = user && user.id === post.user_id;
-
       this.innerHTML = `
         <div class="post-container">
           <div class="post">
@@ -265,7 +317,6 @@ class PostComponent extends HTMLElement {
                 </a>
               </div>
               <span class="post-time">${this.formatTime(post.created_at)}</span>
-              ${isOwner ? '<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>' : ''}
             </div>
             ${content ? `
               <p class="post-content" data-full-content="${content.replace(/"/g, '&quot;')}">
@@ -280,6 +331,7 @@ class PostComponent extends HTMLElement {
                 <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
+              <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
               <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
             </div>
           </div>
@@ -341,6 +393,16 @@ class PostComponent extends HTMLElement {
     `;
   }
 
+  formatViewCount(count) {
+    if (count >= 1000000) {
+      return (count / 1000000).toFixed(1) + 'M';
+    }
+    if (count >= 1000) {
+      return (count / 1000).toFixed(1) + 'k';
+    }
+    return count;
+  }
+
   setupEventListeners(post) {
     // Like action
     this.querySelector('.like-action')?.addEventListener('click', async (e) => {
@@ -399,7 +461,7 @@ class PostComponent extends HTMLElement {
     // Comment action - open comment page
     this.querySelector('.comment-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      window.location.href = `/post.html?id=${post.id}`;
+      this.openCommentPage(post);
     });
 
     // Mentions
@@ -438,7 +500,7 @@ class PostComponent extends HTMLElement {
           
           if (contentEl.classList.contains('expanded')) {
             // Show less
-            contentEl.innerHTML = this.processContent(fullContent.substring(0, 200) + '...');
+            contentEl.innerHTML = this.processContent(fullContent.substring(0, 200) + '...';
             contentEl.appendChild(document.createElement('span')).className = 'see-more';
             contentEl.classList.remove('expanded');
           } else {
@@ -457,74 +519,8 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  async showMoreOptions(e, post) {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const isOwner = user && user.id === post.user_id;
-      
-      document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
-      
-      const popup = document.createElement('div');
-      popup.className = 'more-options-popup';
-      popup.innerHTML = `
-        <div class="more-options-content">
-          ${isOwner ? `
-            <div class="more-option edit-option"><i class="fas fa-edit"></i> Edit</div>
-            <div class="more-option delete-option"><i class="fas fa-trash-alt"></i> Delete</div>
-          ` : `
-            <div class="more-option report-option"><i class="fas fa-flag"></i> Report</div>
-          `}
-        </div>
-      `;
-      
-      document.body.appendChild(popup);
-      
-      const rect = e.target.getBoundingClientRect();
-      popup.style.left = `${rect.left - 100}px`;
-      popup.style.top = `${rect.top - 10}px`;
-      
-      const clickHandler = (event) => {
-        if (!popup.contains(event.target)) {
-          popup.remove();
-          document.removeEventListener('click', clickHandler);
-        }
-      };
-      
-      setTimeout(() => {
-        document.addEventListener('click', clickHandler);
-      }, 0);
-      
-      popup.querySelector('.edit-option')?.addEventListener('click', () => {
-        window.location.href = `/edit-post.html?id=${post.id}`;
-        popup.remove();
-      });
-      
-      popup.querySelector('.delete-option')?.addEventListener('click', async () => {
-        try {
-          const { error } = await supabase
-            .from('posts')
-            .delete()
-            .eq('id', post.id);
-          
-          if (error) throw error;
-          this.remove();
-        } catch (err) {
-          console.error('Error deleting post:', err);
-          alert('Failed to delete post');
-        }
-        popup.remove();
-      });
-      
-      popup.querySelector('.report-option')?.addEventListener('click', () => {
-        console.log('Report post', post.id);
-        popup.remove();
-      });
-      
-    } catch (error) {
-      console.error('Error showing options:', error);
-    }
-  }
-
+  showMediaViewer(mediaItems, startIndex = 0) {
+    if (!mediaItems || !mediaItems.length) return;
     
     // Create media viewer overlay
     this.mediaViewer = document.createElement('div');
@@ -792,12 +788,13 @@ class PostComponent extends HTMLElement {
   }
 
   openCommentPage(post) {
-    // This will now be handled by the standalone CommentPage class
-    window.openCommentPage(post.id);
+    window.location.href = `/post.html?id=${post.id}`;
   }
 
-  showMoreOptions(e, post) {
-    const isOwner = true; // Replace with actual owner check
+  async showMoreOptions(e, post) {
+    // Check if current user is the owner of the post
+    const { data: { user } } = await supabase.auth.getUser();
+    const isOwner = user && user.id === post.user_id; // Assuming post has user_id
     
     // Remove any existing popups
     document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
@@ -836,12 +833,25 @@ class PostComponent extends HTMLElement {
     
     // Add option handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      console.log('Edit post', post.id);
+      window.location.href = `/edit-post.html?id=${post.id}`;
       popup.remove();
     });
     
-    popup.querySelector('.delete-option')?.addEventListener('click', () => {
-      console.log('Delete post', post.id);
+    popup.querySelector('.delete-option')?.addEventListener('click', async () => {
+      try {
+        const { error } = await supabase
+          .from('posts')
+          .delete()
+          .eq('id', post.id);
+        
+        if (error) throw error;
+        
+        // Remove the post component immediately
+        this.remove();
+      } catch (err) {
+        console.error('Error deleting post:', err);
+        alert('Failed to delete post');
+      }
       popup.remove();
     });
     
