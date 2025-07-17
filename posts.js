@@ -304,7 +304,7 @@ async toggleLike() {
         user_id: ''
       };
 
-      / Get current user ID
+      // Get current user ID
       const { data: { user } } = await supabase.auth.getUser();
       const isOwner = user?.id === post.user_id;
       // Create avatar HTML
