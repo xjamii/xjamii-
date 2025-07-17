@@ -252,101 +252,109 @@ class PostComponent extends HTMLElement {
   }
 }    
 
+async render() {
+    try {
+        const postData = this.getAttribute('post-data');
+        if (!postData) {
+            this.innerHTML = `
+                <div class="post-loading">
+                    <div class="loader"></div>
+                </div>
+            `;
+            return;
+        }
 
+        const post = JSON.parse(postData);
+        
+        // Safely extract profile data with fallbacks
+        const profile = post.profile || {
+            username: 'unknown',
+            full_name: 'Unknown User',
+            avatar_url: '',
+            is_verified: false,
+            user_id: post.user_id || 'unknown' // Fallback to post.user_id if available
+        };
+
+        // Get user ID with proper fallbacks
+        const userId = post.user_id || profile.user_id || 'unknown';
+        const profileLink = `/profile.html?id=${userId}`;
+        
+        // Avatar with better error handling
+        const avatarHtml = profile.avatar_url 
+            ? `<img src="${profile.avatar_url}" alt="${profile.full_name}" class="post-avatar" 
+               onerror="this.onerror=null; this.src='${this.getInitialsAvatar(profile.full_name)}'">`
+            : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
+
+        // Content processing with safeguards
+        const content = post.content || '';
+        const showSeeMore = content.length > 200;
+        const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
+        const processedContent = content ? this.processContent(displayedContent) : '';
+
+        this.innerHTML = `
+            <div class="post-container">
+                <div class="post">
+                    <div class="post-header">
+                        <a href="${profileLink}" class="post-avatar-link" onclick="event.stopPropagation()">
+                            ${avatarHtml}
+                        </a>
+                        <div class="post-user-info">
+                            <a href="${profileLink}" class="post-user-link" onclick="event.stopPropagation()">
+                                <div class="post-user">
+                                    ${profile.full_name || profile.username || 'User'}
+                                    ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+                                </div>
+                                <div class="post-username">@${profile.username || 'user'}</div>
+                            </a>
+                        </div>
+                        <span class="post-time">${this.formatTime(post.created_at)}</span>
+                    </div>
+                    
+                    ${content ? `
+                        <div class="post-content">
+                            ${processedContent}
+                            ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
+                        </div>
+                    ` : ''}
+                    
+                    ${this.renderMedia(post.media || [])}
+                    
+                    <div class="post-actions">
+                        <div class="post-action comment-action">
+                            <i class="far fa-comment"></i> ${post.comment_count || 0}
+                        </div>
+                        <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
+                            <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
+                        </div>
+                        <div class="post-action share-action">
+                            <i class="fas fa-arrow-up-from-bracket"></i>
+                        </div>
+                        <div class="post-action views">
+                            <i class="fas fa-eye"></i> ${post.views || 0}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.setupEventListeners(post);
+
+    } catch (error) {
+        console.error("Error rendering post:", error);
+        this.innerHTML = `
+            <div class="post-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Couldn't load this post</p>
+                <button class="retry-btn" onclick="this.closest('post-component').render()">
+                    Retry
+                </button>
+            </div>
+        `;
+    }
+}
 
     
         
- 
-
-  async render() {
-    try {
-      const postData = this.getAttribute('post-data');
-      if (!postData) {
-        this.innerHTML = `
-          <div class="post-loading">
-            <div class="loader"></div>
-          </div>
-        `;
-        return;
-      }
-
-      const post = JSON.parse(postData);
-      const profile = post.profile || {
-        username: 'unknown',
-        full_name: 'Unknown User',
-        avatar_url: '',
-        is_verified: true,
-        user_id: ''
-      };
-
-      
-      // Standardized profile link using post.user_id
-    const profileLink = `/profile.html?id=${post.user_id}`;
-    
-    // Avatar HTML (with fallback)
-    const avatarHtml = profile.avatar_url 
-      ? `<img src="${profile.avatar_url}" alt="${profile.full_name}" class="post-avatar" 
-         onerror="this.onerror=null; this.src='${this.getInitialsAvatar(profile.full_name)}'">`
-      : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
-    
-      // Check if content needs "See more"
-      const content = post.content || '';
-      const showSeeMore = content.length > 200;
-      const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
-
-      this.innerHTML = `
-      <div class="post-container">
-        <div class="post">
-          <div class="post-header">
-            <a href="${profileLink}" class="post-avatar-link" onclick="event.stopPropagation()">
-              ${avatarHtml}
-            </a>
-            <div class="post-user-info">
-              <a href="${profileLink}" class="post-user-link" onclick="event.stopPropagation()">
-                <div class="post-user">
-                  ${profile.full_name || profile.username || 'User'}
-                  ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-                </div>
-                <div class="post-username">@${profile.username || 'user'}</div>
-              </a>
-            </div>
-            <span class="post-time">${this.formatTime(post.created_at)}</span>
-          </div>
-          
-          ${post.content ? `
-            <div class="post-content">
-              ${this.processContent(post.content)}
-            </div>
-          ` : ''}
-          
-          ${this.renderMedia(post.media || [])}
-          
-          <div class="post-actions">
-            <div class="post-action comment-action">
-              <i class="far fa-comment"></i> ${post.comment_count || 0}
-            </div>
-            <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
-              <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
-            </div>
-            <div class="post-action share-action">
-              <i class="fas fa-arrow-up-from-bracket"></i>
-            </div>
-            <div class="post-action views">
-              <i class="fas fa-eye"></i> ${post.views || 0}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  
-
-      this.setupEventListeners(post);
-
-    } catch (error) {
-      console.error("Error rendering post:", error);
-      this.innerHTML = `<div class="post-error">Error loading post</div>`;
-    }
-  }
 
   renderMedia(mediaItems) {
     if (!mediaItems || !mediaItems.length) return '';
