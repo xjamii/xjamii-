@@ -411,76 +411,66 @@ class CommentPage {
   }
 
   async sendComment() {
-    const input = document.querySelector('.comment-page-input');
-    if (!input) return;
+  const input = document.querySelector('.comment-page-input');
+  if (!input) return;
 
-    const content = input.value.trim();
-    if (!content) return;
+  const content = input.value.trim();
+  if (!content) return;
 
-    const editingCommentId = input.dataset.editingCommentId;
-    input.value = '';
-    delete input.dataset.editingCommentId;
+  const editingCommentId = input.dataset.editingCommentId;
+  input.value = '';
+  delete input.dataset.editingCommentId;
 
-    try {
-      if (editingCommentId) {
-        // Update existing comment
-        const { error } = await supabase
-          .from('comments')
-          .update({ content, updated_at: new Date().toISOString() })
-          .eq('id', editingCommentId);
+  try {
+    if (editingCommentId) {
+      // ... existing edit comment code ...
+    } else {
+      // Create new comment
+      const { data: newComment, error } = await supabase
+        .from('comments')
+        .insert({
+          post_id: this.postId,
+          user_id: this.currentUser.id,
+          content
+        })
+        .select('*')
+        .single();
 
-        if (error) throw error;
+      if (error) throw error;
 
-        // Find and update the comment in the list
-        const commentIndex = this.comments.findIndex(c => c.id === editingCommentId);
-        if (commentIndex !== -1) {
-          this.comments[commentIndex].content = content;
-          this.comments[commentIndex].updated_at = new Date().toISOString();
-          this.renderComments();
-        }
+      // Add profile info to the new comment
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url, is_verified')
+        .eq('id', this.currentUser.id)
+        .single();
 
-      } else {
-        // Create new comment
-        const { data: newComment, error } = await supabase
-          .from('comments')
-          .insert({
-            post_id: this.postId,
-            user_id: this.currentUser.id,
-            content
-          })
-          .select('*')
-          .single();
+      newComment.profile = profile;
 
-        if (error) throw error;
+      // Add to beginning of comments array
+      this.comments.unshift(newComment);
+      this.renderComments();
 
-        // Add profile info to the new comment
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, username, full_name, avatar_url, is_verified')
-          .eq('id', this.currentUser.id)
-          .single();
+      // Increment comment count on the post
+      await supabase.rpc('increment_comment_count', { post_id: this.postId });
+      
+      // Bump the post timestamp (ADD THIS LINE)
+      await supabase.rpc('bump_post_timestamp', { post_id: this.postId });
 
-        newComment.profile = profile;
-
-        // Add to beginning of comments array
-        this.comments.unshift(newComment);
-        this.renderComments();
-
-        // Increment comment count on the post
-        await supabase.rpc('increment_comment_count', { post_id: this.postId });
-
-        // Scroll to top to see the new comment
-        const commentsContainer = document.querySelector('.comment-page-comments');
-        if (commentsContainer) {
-          commentsContainer.scrollTop = 0;
-        }
+      // Scroll to top to see the new comment
+      const commentsContainer = document.querySelector('.comment-page-comments');
+      if (commentsContainer) {
+        commentsContainer.scrollTop = 0;
       }
-
-    } catch (error) {
-      console.error('Error sending comment:', error);
-      alert('Failed to post comment. Please try again.');
     }
+
+  } catch (error) {
+    console.error('Error sending comment:', error);
+    alert('Failed to post comment. Please try again.');
   }
+}
+
+
 
   setupRealtimeUpdates() {
     // Unsubscribe from any existing channel
