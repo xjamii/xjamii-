@@ -1,7 +1,7 @@
 class PostComponent extends HTMLElement {
   constructor() {
     super();
-    // Keep existing properties
+    // Keep your existing properties
     this.mediaViewer = null;
     this.currentMediaIndex = 0;
     this.startY = 0;
@@ -15,15 +15,8 @@ class PostComponent extends HTMLElement {
       threshold: 0.5,
       rootMargin: '0px 0px -100px 0px'
     });
-    
-     // Add user tracking properties
-    this.currentUserId = null;
-    this.isOwner = false;
   }
 
-  
-  
-  // ... rest of the class remains the same until render()
   // Add these new methods for view tracking
   handleIntersect(entries) {
     entries.forEach(entry => {
@@ -122,9 +115,8 @@ class PostComponent extends HTMLElement {
   connectedCallback() {
     this.render();
     this.observer.observe(this); // Start intersection observer
-     // Then check ownership in background (non-blocking)
-    this.checkOwnership().catch(console.error);
   }
+
   // Add cleanup for observer
   disconnectedCallback() {
     if (this.observer) {
@@ -201,48 +193,7 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  async checkOwnership() {
-    try {
-      const postData = this.getAttribute('post-data');
-      if (!postData) return;
-      
-      const post = JSON.parse(postData);
-      
-      // Get current user if not already available
-      if (this.currentUserId === null) {
-        const { data: { user } } = await supabase.auth.getUser();
-        this.currentUserId = user?.id || null;
-      }
-      
-      // Update ownership status
-      this.isOwner = this.currentUserId === post.user_id;
-      
-      // Update the three-dot button visibility
-      this.updateMoreButtonVisibility();
-    } catch (error) {
-      console.error('Error checking ownership:', error);
-    }
-  }
-
-  updateMoreButtonVisibility() {
-    const moreBtn = this.querySelector('.post-more');
-    if (!moreBtn) return;
-    
-    // Smoothly show/hide the button
-    if (this.isOwner) {
-      moreBtn.style.display = 'flex';
-      moreBtn.style.opacity = '1';
-    } else {
-      moreBtn.style.opacity = '0';
-      // Wait for transition before hiding completely
-      setTimeout(() => {
-        if (moreBtn.isConnected) { // Check if element is still in DOM
-          moreBtn.style.display = 'none';
-        }
-      }, 300); // Match this with your CSS transition duration
-    }
-  }
-
+  
       
 async toggleLike() {
   try {
@@ -333,31 +284,30 @@ async toggleLike() {
  
 
   async render() {
-  try {
-    const postData = this.getAttribute('post-data');
-    if (!postData) {
-      this.innerHTML = `
-        <div class="post-loading">
-          <div class="loader"></div>
-        </div>
-      `;
-      return;
-    }
+    try {
+      const postData = this.getAttribute('post-data');
+      if (!postData) {
+        this.innerHTML = `
+          <div class="post-loading">
+            <div class="loader"></div>
+          </div>
+        `;
+        return;
+      }
 
-    // Wait for user check to complete (but don't block rendering)
-    await this.userCheckPromise;
-    
-    const post = JSON.parse(postData);
-    const profile = post.profile || {
-      username: 'unknown',
-      full_name: 'Unknown User',
-      avatar_url: '',
-      is_verified: false,
-      user_id: ''
-    };
+      const post = JSON.parse(postData);
+      const profile = post.profile || {
+        username: 'unknown',
+        full_name: 'Unknown User',
+        avatar_url: '',
+        is_verified: false,
+        user_id: ''
+      };
 
-    
-
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      const isOwner = user?.id === post.user_id;
+      // Create avatar HTML
       const avatarHtml = profile.avatar_url 
         ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
         : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
@@ -398,9 +348,8 @@ async toggleLike() {
                 <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-               <div class="post-more" style="display: none; opacity: 0; transition: opacity 0.3s ease">
-                <i class="fas fa-ellipsis-h"></i>
-                <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
+              ${isOwner ? '<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>' : ''}
+              <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
             </div>
           </div>
         </div>
