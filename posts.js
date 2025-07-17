@@ -351,7 +351,7 @@ async toggleLike() {
           <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
         </div>
         <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-        ${post.is_owner ? '<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>' : ''}
+        ${isOwner ? '<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>' : ''}
         <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
       </div>
     </div>
