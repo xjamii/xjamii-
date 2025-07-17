@@ -1,30 +1,27 @@
 class PostComponent extends HTMLElement {
   constructor() {
     super();
+    this.mediaViewer = null;
     this.currentMediaIndex = 0;
+    this.startY = 0;
+    this.startX = 0;
     this.isRefreshing = false;
     this.isLoadingMore = false;
     this.viewCounted = false;
-    this.isExpanded = false;
+    this.isContentExpanded = false;
+    
     this.observer = new IntersectionObserver(this.handleIntersect.bind(this), {
       threshold: 0.5,
       rootMargin: '0px 0px -100px 0px'
     });
   }
 
-  async handleIntersect(entries) {
+  handleIntersect(entries) {
     entries.forEach(entry => {
       if (entry.isIntersecting && !this.viewCounted) {
         this.recordView();
       }
     });
-  }
-
-  formatViews(count) {
-    if (count >= 1000) {
-      return `${(count / 1000).toFixed(1)}k`;
-    }
-    return count;
   }
 
   async recordView() {
@@ -33,7 +30,6 @@ class PostComponent extends HTMLElement {
     
     try {
       const post = JSON.parse(postData);
-      
       await new Promise(resolve => setTimeout(resolve, 10000));
       
       if (!this.isConnected || !this.viewCounted) {
@@ -42,6 +38,7 @@ class PostComponent extends HTMLElement {
         
         if (!error) {
           this.viewCounted = true;
+          console.log("✅ View counted for post:", post.id);
           
           const viewsEl = this.querySelector('.views');
           if (viewsEl) {
@@ -60,10 +57,10 @@ class PostComponent extends HTMLElement {
             `;
             
             const oldNumber = document.createElement('div');
-            oldNumber.textContent = this.formatViews(currentViews);
+            oldNumber.textContent = currentViews;
             
             const newNumber = document.createElement('div');
-            newNumber.textContent = this.formatViews(currentViews + 1);
+            newNumber.textContent = currentViews + 1;
             
             container.appendChild(oldNumber);
             container.appendChild(newNumber);
@@ -81,7 +78,7 @@ class PostComponent extends HTMLElement {
               if (viewsEl.isConnected) {
                 viewsEl.innerHTML = `
                   <i class="fas fa-eye"></i>
-                  <span>${this.formatViews(currentViews + 1)}</span>
+                  <span>${currentViews + 1}</span>
                 `;
               }
             }, 800);
@@ -139,6 +136,30 @@ class PostComponent extends HTMLElement {
     return content;
   }
 
+  async checkLikeStatus(postId) {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) return false;
+      
+      const { data, error } = await supabase
+        .from('likes')
+        .select('*')
+        .eq('post_id', postId)
+        .eq('profile_id', user.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking like status:', error);
+        return false;
+      }
+      
+      return !!data;
+    } catch (err) {
+      console.error('Error in checkLikeStatus:', err);
+      return false;
+    }
+  }
+
   async render() {
     try {
       const postData = this.getAttribute('post-data');
@@ -148,8 +169,8 @@ class PostComponent extends HTMLElement {
       }
 
       const post = JSON.parse(postData);
-      const { data: { user } } = await supabase.auth.getUser();
-      const isOwner = user && user.id === post.user_id;
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const isOwner = currentUser && currentUser.id === post.user_id;
       const profile = post.profile || {
         username: 'unknown',
         full_name: 'Unknown User',
@@ -163,7 +184,7 @@ class PostComponent extends HTMLElement {
         : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
 
       const content = post.content || '';
-      const showSeeMore = content.length > 200 && !this.isExpanded;
+      const showSeeMore = content.length > 200 && !this.isContentExpanded;
       const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
 
       this.innerHTML = `
@@ -186,10 +207,13 @@ class PostComponent extends HTMLElement {
               ${isOwner ? `<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
             </div>
             ${content ? `
-              <p class="post-content">
-                ${this.processContent(displayedContent)}
-                ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
-              </p>
+              <div class="post-content-container">
+                <p class="post-content">
+                  ${this.processContent(displayedContent)}
+                  ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
+                  ${!showSeeMore && content.length > 200 ? '<span class="see-less">Show less</span>' : ''}
+                </p>
+              </div>
             ` : ''}
             ${this.renderMedia(post.media || [])}
             <div class="post-actions">
@@ -198,7 +222,7 @@ class PostComponent extends HTMLElement {
                 <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-              <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViews(post.views || 0)}</div>
+              <div class="post-action views"><i class="fas fa-eye"></i> ${post.views || 0}</div>
             </div>
           </div>
         </div>
@@ -260,7 +284,6 @@ class PostComponent extends HTMLElement {
   }
 
   setupEventListeners(post) {
-    // Like action
     this.querySelector('.like-action')?.addEventListener('click', async (e) => {
       e.stopPropagation();
       const likeBtn = e.currentTarget;
@@ -284,146 +307,71 @@ class PostComponent extends HTMLElement {
       } catch (error) {
         likeBtn.classList.toggle('liked');
         icon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
-        if (countEl) {
-          let count = parseInt(countEl.textContent) || 0;
-          countEl.textContent = isLiked ? count + 1 : count - 1;
-        }
+        if (countEl) countEl.textContent = isLiked ? parseInt(countEl.textContent) + 1 : parseInt(countEl.textContent) - 1;
         console.error('Like update failed:', error);
+        alert(`Error: ${error.message}. Please try again.`);
       }
     });
 
-    // More options
     this.querySelector('.post-more')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.showMoreOptions(e, post);
     });
 
-    // Share action
     this.querySelector('.share-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.sharePost(post.id);
     });
 
-    // Comment action
     this.querySelector('.comment-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.openCommentPage(post);
     });
 
-    // See more/less functionality
+    this.querySelectorAll('.mention').forEach(mention => {
+      mention.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const username = e.target.textContent.substring(1);
+        window.location.href = `/profile.html?username=${username}`;
+      });
+    });
+
+    this.querySelectorAll('.post-media, .grid-media, .video-preview').forEach(media => {
+      media.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const mediaIndex = parseInt(media.getAttribute('data-media-index') || media.parentElement.getAttribute('data-media-index') || 0);
+        this.showMediaViewer(post.media, mediaIndex);
+      });
+    });
+
     this.querySelector('.see-more')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.isExpanded = true;
+      this.isContentExpanded = true;
       this.render();
     });
 
-    this.querySelector('.post-content')?.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && 
-          !e.target.classList.contains('url') && !e.target.classList.contains('see-more')) {
-        if (this.isExpanded) {
-          this.isExpanded = false;
+    this.querySelector('.see-less')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.isContentExpanded = false;
+      this.render();
+    });
+
+    this.querySelector('.post-content-container')?.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('mention') && 
+          !e.target.classList.contains('hashtag') && 
+          !e.target.classList.contains('url') &&
+          !e.target.classList.contains('see-more') &&
+          !e.target.classList.contains('see-less')) {
+        if (this.isContentExpanded) {
+          this.isContentExpanded = false;
           this.render();
         }
       }
     });
 
-    // Media click handlers - now using the standalone media viewer
-    this.querySelectorAll('.post-media, .grid-media, .video-preview').forEach(media => {
-      media.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const mediaIndex = parseInt(media.getAttribute('data-media-index') || 
-                           media.parentElement.getAttribute('data-media-index') || 0;
-        this.showMediaViewer(post.media, mediaIndex);
-      });
-    });
-
     if (this.previousElementSibling === null) {
       this.setupPullToRefresh();
     }
-  }
-
-  showMediaViewer(mediaItems, startIndex = 0) {
-    if (!mediaItems || !mediaItems.length) return;
-    
-    const mediaViewer = document.createElement('post-media-viewer');
-    mediaViewer.show(mediaItems, startIndex);
-    document.body.appendChild(mediaViewer);
-  }
-
-  async toggleLike(postId, isLiked) {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        alert('Please sign in to like posts');
-        return { success: false, error: 'Not authenticated' };
-      }
-
-      if (isLiked) {
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('post_id', postId)
-          .eq('profile_id', user.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('likes')
-          .insert({ post_id: postId, profile_id: user.id });
-        if (error) throw error;
-      }
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  async showMoreOptions(e, post) {
-    const { data: { user } } = await supabase.auth.getUser();
-    const isOwner = user && user.id === post.user_id;
-    
-    if (!isOwner) return;
-
-    document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
-    
-    const popup = document.createElement('div');
-    popup.className = 'more-options-popup';
-    popup.innerHTML = `
-      <div class="more-options-content">
-        <div class="more-option edit-option"><i class="fas fa-edit"></i> Edit</div>
-        <div class="more-option delete-option"><i class="fas fa-trash-alt"></i> Delete</div>
-      </div>
-    `;
-    
-    document.body.appendChild(popup);
-    
-    const rect = e.target.getBoundingClientRect();
-    popup.style.left = `${rect.left - 100}px`;
-    popup.style.top = `${rect.top - 10}px`;
-    
-    const clickHandler = (event) => {
-      if (!popup.contains(event.target)) {
-        popup.remove();
-        document.removeEventListener('click', clickHandler);
-      }
-    };
-    
-    setTimeout(() => {
-      document.addEventListener('click', clickHandler);
-    }, 0);
-    
-    popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      this.editPost(post);
-      popup.remove();
-    });
-    
-    popup.querySelector('.delete-option')?.addEventListener('click', () => {
-      if (confirm('Are you sure you want to delete this post?')) {
-        this.deletePost(post.id);
-      }
-      popup.remove();
-    });
   }
 
   async deletePost(postId) {
@@ -442,9 +390,9 @@ class PostComponent extends HTMLElement {
     }
   }
 
-  editPost(post) {
+  async editPost(post) {
     const contentEl = this.querySelector('.post-content');
-    const originalContent = post.content;
+    const originalContent = contentEl.getAttribute('data-full-content') || post.content;
     
     contentEl.innerHTML = `
       <textarea class="edit-post-textarea">${originalContent}</textarea>
@@ -473,7 +421,6 @@ class PostComponent extends HTMLElement {
           .eq('id', post.id);
         
         if (error) throw error;
-        
         post.content = newContent;
         this.setAttribute('post-data', JSON.stringify(post));
         this.render();
@@ -482,6 +429,286 @@ class PostComponent extends HTMLElement {
         alert('Failed to update post');
       }
     });
+  }
+
+  showMoreOptions(e, post) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const isOwner = user && user.id === post.user_id;
+    if (!isOwner) return;
+
+    document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
+    
+    const popup = document.createElement('div');
+    popup.className = 'more-options-popup';
+    popup.innerHTML = `
+      <div class="more-options-content">
+        <div class="more-option edit-option"><i class="fas fa-edit"></i> Edit</div>
+        <div class="more-option delete-option"><i class="fas fa-trash-alt"></i> Delete</div>
+      </div>
+    `;
+    
+    document.body.appendChild(popup);
+    const rect = e.target.getBoundingClientRect();
+    popup.style.left = `${rect.left - 100}px`;
+    popup.style.top = `${rect.top - 10}px`;
+    
+    const clickHandler = (event) => {
+      if (!popup.contains(event.target)) {
+        popup.remove();
+        document.removeEventListener('click', clickHandler);
+      }
+    };
+    
+    setTimeout(() => {
+      document.addEventListener('click', clickHandler);
+    }, 0);
+    
+    popup.querySelector('.edit-option')?.addEventListener('click', () => {
+      this.editPost(post);
+      popup.remove();
+    });
+    
+    popup.querySelector('.delete-option')?.addEventListener('click', () => {
+      if (confirm('Are you sure you want to delete this post?')) {
+        this.deletePost(post.id);
+      }
+      popup.remove();
+    });
+  }
+
+  showMediaViewer(mediaItems, startIndex = 0) {
+    if (!mediaItems || !mediaItems.length) return;
+    
+    this.mediaViewer = document.createElement('div');
+    this.mediaViewer.className = 'media-viewer-overlay';
+    this.currentMediaIndex = startIndex;
+    
+    const closeBtn = document.createElement('div');
+    closeBtn.className = 'media-viewer-close';
+    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.addEventListener('click', () => this.closeMediaViewer());
+    
+    const mediaContainer = document.createElement('div');
+    mediaContainer.className = 'media-viewer-container';
+    mediaContainer.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true });
+    mediaContainer.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+    mediaContainer.addEventListener('touchend', this.handleTouchEnd.bind(this));
+    mediaContainer.addEventListener('mousedown', this.handleMouseDown.bind(this));
+    
+    const mediaContent = document.createElement('div');
+    mediaContent.className = 'media-viewer-content';
+    
+    mediaItems.forEach((media, index) => {
+      const mediaItem = document.createElement('div');
+      mediaItem.className = `media-viewer-item ${index === startIndex ? 'active' : ''}`;
+      
+      if (media.media_type === 'video') {
+        const video = document.createElement('video');
+        video.className = 'media-viewer-video';
+        video.setAttribute('controls', '');
+        video.innerHTML = `<source src="${media.media_url}" type="video/mp4">`;
+        mediaItem.appendChild(video);
+      } else {
+        const img = document.createElement('img');
+        img.className = 'media-viewer-image';
+        img.src = media.media_url;
+        mediaItem.appendChild(img);
+      }
+      
+      mediaContent.appendChild(mediaItem);
+    });
+    
+    let prevBtn, nextBtn;
+    if (mediaItems.length > 1) {
+      prevBtn = document.createElement('div');
+      prevBtn.className = 'media-viewer-nav media-viewer-prev';
+      prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+      prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.navigateMedia(-1);
+      });
+      
+      nextBtn = document.createElement('div');
+      nextBtn.className = 'media-viewer-nav media-viewer-next';
+      nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+      nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.navigateMedia(1);
+      });
+    }
+    
+    let dotsContainer;
+    if (mediaItems.length > 1) {
+      dotsContainer = document.createElement('div');
+      dotsContainer.className = 'media-viewer-dots';
+      
+      mediaItems.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.className = `media-viewer-dot ${index === startIndex ? 'active' : ''}`;
+        dot.addEventListener('click', () => this.goToMedia(index));
+        dotsContainer.appendChild(dot);
+      });
+    }
+    
+    mediaContainer.appendChild(mediaContent);
+    if (prevBtn) mediaContainer.appendChild(prevBtn);
+    if (nextBtn) mediaContainer.appendChild(nextBtn);
+    if (dotsContainer) mediaContainer.appendChild(dotsContainer);
+    
+    this.mediaViewer.appendChild(closeBtn);
+    this.mediaViewer.appendChild(mediaContainer);
+    
+    document.body.appendChild(this.mediaViewer);
+    document.body.style.overflow = 'hidden';
+    
+    if (mediaItems[startIndex]?.media_type === 'video') {
+      setTimeout(() => {
+        const video = this.mediaViewer.querySelector('.media-viewer-item.active video');
+        if (video) video.play().catch(e => console.log('Video play error:', e));
+      }, 300);
+    }
+  }
+
+  closeMediaViewer() {
+    if (!this.mediaViewer) return;
+    
+    const videos = this.mediaViewer.querySelectorAll('video');
+    videos.forEach(video => video.pause());
+    
+    this.mediaViewer.classList.add('closing');
+    setTimeout(() => {
+      this.mediaViewer.remove();
+      this.mediaViewer = null;
+      document.body.style.overflow = '';
+    }, 300);
+  }
+
+  navigateMedia(direction) {
+    const mediaItems = this.mediaViewer.querySelectorAll('.media-viewer-item');
+    if (!mediaItems.length) return;
+    const newIndex = (this.currentMediaIndex + direction + mediaItems.length) % mediaItems.length;
+    this.goToMedia(newIndex);
+  }
+
+  goToMedia(index) {
+    const mediaItems = this.mediaViewer?.querySelectorAll('.media-viewer-item');
+    if (!mediaItems || index < 0 || index >= mediaItems.length) return;
+    
+    const currentVideo = mediaItems[this.currentMediaIndex]?.querySelector('video');
+    if (currentVideo) currentVideo.pause();
+    
+    mediaItems[this.currentMediaIndex]?.classList.remove('active');
+    mediaItems[index].classList.add('active');
+    this.currentMediaIndex = index;
+    
+    const dots = this.mediaViewer?.querySelectorAll('.media-viewer-dot');
+    if (dots) {
+      dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+    }
+    
+    const newVideo = mediaItems[index]?.querySelector('video');
+    if (newVideo) {
+      newVideo.currentTime = 0;
+      newVideo.play().catch(e => console.log('Video play error:', e));
+    }
+  }
+
+  handleTouchStart(e) {
+    if (!this.mediaViewer) return;
+    this.startY = e.touches[0].clientY;
+    this.startX = e.touches[0].clientX;
+    this.isDragging = false;
+  }
+
+  handleTouchMove(e) {
+    if (!this.mediaViewer || !this.startY) return;
+    
+    const y = e.touches[0].clientY;
+    const x = e.touches[0].clientX;
+    const dy = y - this.startY;
+    const dx = x - this.startX;
+    
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
+      e.preventDefault();
+      this.isDragging = true;
+      if (dx > 0) this.navigateMedia(-1);
+      else this.navigateMedia(1);
+      this.startX = x;
+      return;
+    }
+    
+    if (Math.abs(dy) > 30) {
+      e.preventDefault();
+      this.isDragging = true;
+      const opacity = 1 - Math.min(Math.abs(dy) / 200, 0.8);
+      const scale = 1 - Math.min(Math.abs(dy) / 1000, 0.1);
+      const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
+      mediaContainer.style.transform = `translateY(${dy}px) scale(${scale})`;
+      mediaContainer.style.opacity = opacity;
+    }
+  }
+
+  handleTouchEnd(e) {
+    if (!this.mediaViewer || !this.isDragging) return;
+    
+    const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
+    const y = e.changedTouches[0].clientY;
+    const dy = y - this.startY;
+    
+    if (Math.abs(dy) > 100) this.closeMediaViewer();
+    else {
+      mediaContainer.style.transform = '';
+      mediaContainer.style.opacity = '';
+    }
+    
+    this.startY = 0;
+    this.startX = 0;
+    this.isDragging = false;
+  }
+
+  handleMouseDown(e) {
+    if (!this.mediaViewer) return;
+    this.startY = e.clientY;
+    this.startX = e.clientX;
+    this.isDragging = false;
+    
+    const handleMouseMove = (e) => {
+      const y = e.clientY;
+      const dy = y - this.startY;
+      
+      if (Math.abs(dy) > 30) {
+        this.isDragging = true;
+        const opacity = 1 - Math.min(Math.abs(dy) / 200, 0.8);
+        const scale = 1 - Math.min(Math.abs(dy) / 1000, 0.1);
+        const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
+        mediaContainer.style.transform = `translateY(${dy}px) scale(${scale})`;
+        mediaContainer.style.opacity = opacity;
+      }
+    };
+    
+    const handleMouseUp = (e) => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      
+      if (!this.isDragging) return;
+      
+      const y = e.clientY;
+      const dy = y - this.startY;
+      
+      if (Math.abs(dy) > 100) this.closeMediaViewer();
+      else {
+        const mediaContainer = this.mediaViewer.querySelector('.media-viewer-container');
+        mediaContainer.style.transform = '';
+        mediaContainer.style.opacity = '';
+      }
+      
+      this.startY = 0;
+      this.startX = 0;
+      this.isDragging = false;
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   }
 
   openCommentPage(post) {
