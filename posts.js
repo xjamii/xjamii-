@@ -275,11 +275,8 @@ async render() {
             user_id: post.user_id || 'unknown' // Fallback to post.user_id if available
         };
 
-        // Get user ID with proper fallbacks
-        const userId = post.user_id || profile.user_id || 'unknown';
-        // In your PostComponent render()
-        const profileLink = `/profile.html?id=${user_id}`;
-        
+        const userId = post.user_id || (profile ? profile.user_id : null) || 'unknown';
+const profileLink = `/profile.html?id=${encodeURIComponent(userId)}`;
         // Avatar with better error handling
         const avatarHtml = profile.avatar_url 
             ? `<img src="${profile.avatar_url}" alt="${profile.full_name}" class="post-avatar" 
