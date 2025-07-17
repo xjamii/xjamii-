@@ -88,7 +88,7 @@ class PostComponent extends HTMLElement {
             setTimeout(() => {
               if (viewsEl.isConnected) { // Check if still in DOM
                 viewsEl.innerHTML = `
-                  <i class="fas fa-chart-bar"></i>
+                  <i class="fas fa-eye"></i>
                   <span>${currentViews + 1}</span>
                 `;
               }
