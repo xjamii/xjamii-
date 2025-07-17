@@ -26,16 +26,6 @@ class PostComponent extends HTMLElement {
     });
   }
 
-  formatViewCount(count) {
-    if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
-    }
-    if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'k';
-    }
-    return count;
-  }
-
   async recordView() {
     const postData = this.getAttribute('post-data');
     if (!postData) return;
@@ -98,7 +88,7 @@ class PostComponent extends HTMLElement {
             setTimeout(() => {
               if (viewsEl.isConnected) { // Check if still in DOM
                 viewsEl.innerHTML = `
-                   <i class="fas fa-eye"></i>
+                  <i class="fas fa-chart-bar"></i>
                   <span>${currentViews + 1}</span>
                 `;
               }
@@ -347,7 +337,7 @@ async toggleLike() {
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
               <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
-              <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
+              <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
             </div>
           </div>
         </div>
@@ -489,36 +479,18 @@ async toggleLike() {
       });
     });
 
-    // See more/less click handler
-    const contentEl = this.querySelector('.post-content');
-    if (contentEl) {
-      const fullContent = contentEl.getAttribute('data-full-content');
-      const seeMoreEl = contentEl.querySelector('.see-more');
-      
-      if (seeMoreEl) {
-        contentEl.addEventListener('click', (e) => {
-          if (e.target.classList.contains('mention') || 
-              e.target.classList.contains('hashtag') || 
-              e.target.classList.contains('url')) {
-            return;
-          }
-          
-          if (contentEl.classList.contains('expanded')) {
-            // Show less
-            contentEl.innerHTML = this.processContent(fullContent.substring(0, 200) + '...');
-            contentEl.appendChild(document.createElement('span')).className = 'see-more';
-            contentEl.classList.remove('expanded');
-          } else {
-            // Show more
-            contentEl.innerHTML = this.processContent(fullContent);
-            contentEl.appendChild(document.createElement('span')).className = 'see-less';
-            contentEl.classList.add('expanded');
-          }
-        });
-      }
-    }
+    // See more click handler
+    this.querySelector('.see-more')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openCommentPage(post);
+    });
 
-    
+    // Post content click handler (opens comment page)
+    this.querySelector('.post-content')?.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
+        this.openCommentPage(post);
+      }
+    });
 
     // Setup pull-to-refresh if this is the first post
     if (this.previousElementSibling === null) {
@@ -526,8 +498,6 @@ async toggleLike() {
     }
   }
 
-
-  
   showMediaViewer(mediaItems, startIndex = 0) {
     if (!mediaItems || !mediaItems.length) return;
     
@@ -748,8 +718,6 @@ async toggleLike() {
     this.isDragging = false;
   }
 
-      
-
   // Mouse event handlers for drag to close
   handleMouseDown(e) {
     if (!this.mediaViewer) return;
@@ -823,97 +791,41 @@ async toggleLike() {
     `;
     
     document.body.appendChild(popup);
-      
+    
+    // Position the popup
     const rect = e.target.getBoundingClientRect();
     popup.style.left = `${rect.left - 100}px`;
     popup.style.top = `${rect.top - 10}px`;
-      
+    
+    // Close when clicking outside
     const clickHandler = (event) => {
       if (!popup.contains(event.target)) {
         popup.remove();
         document.removeEventListener('click', clickHandler);
       }
     };
-      
+    
     setTimeout(() => {
       document.addEventListener('click', clickHandler);
     }, 0);
-      
+    
     // Add option handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      this.editPost(post);
+      console.log('Edit post', post.id);
       popup.remove();
     });
-      
-    popup.querySelector('.delete-option')?.addEventListener('click', async () => {
-      try {
-        const { error } = await supabase
-          .from('posts')
-          .delete()
-          .eq('id', post.id);
-          
-        if (error) throw error;
-        this.remove();
-      } catch (err) {
-        console.error('Error deleting post:', err);
-        alert('Failed to delete post');
-      }
+    
+    popup.querySelector('.delete-option')?.addEventListener('click', () => {
+      console.log('Delete post', post.id);
       popup.remove();
     });
-      
+    
     popup.querySelector('.report-option')?.addEventListener('click', () => {
       console.log('Report post', post.id);
       popup.remove();
     });
-}
-
-  async editPost(post) {
-    // Create edit UI
-    const contentEl = this.querySelector('.post-content');
-    const originalContent = contentEl.getAttribute('data-full-content') || post.content;
-    
-    contentEl.innerHTML = `
-      <textarea class="edit-post-textarea">${originalContent}</textarea>
-      <div class="edit-post-actions">
-        <button class="edit-post-cancel">Cancel</button>
-        <button class="edit-post-save">Save</button>
-      </div>
-    `;
-    
-    // Focus the textarea
-    const textarea = contentEl.querySelector('textarea');
-    textarea.focus();
-    textarea.selectionStart = textarea.value.length;
-    
-    // Event listeners
-    contentEl.querySelector('.edit-post-cancel').addEventListener('click', () => {
-      this.render(); // Re-render original content
-    });
-    
-    contentEl.querySelector('.edit-post-save').addEventListener('click', async () => {
-      const newContent = textarea.value.trim();
-      if (!newContent) return;
-      
-      try {
-        const { error } = await supabase
-          .from('posts')
-          .update({ content: newContent })
-          .eq('id', post.id);
-        
-        if (error) throw error;
-        
-        // Update post data and re-render
-        post.content = newContent;
-        this.setAttribute('post-data', JSON.stringify(post));
-        this.render();
-      } catch (error) {
-        console.error('Error updating post:', error);
-        alert('Failed to update post');
-      }
-    });
   }
 
-  
   sharePost(postId) {
     const postUrl = `${window.location.origin}/post.html?id=${postId}`;
     
