@@ -284,25 +284,30 @@ async toggleLike() {
  
 
   async render() {
-    try {
-      const postData = this.getAttribute('post-data');
-      if (!postData) {
-        this.innerHTML = `
-          <div class="post-loading">
-            <div class="loader"></div>
-          </div>
-        `;
-        return;
-      }
+  try {
+    const postData = this.getAttribute('post-data');
+    if (!postData) {
+      this.innerHTML = `
+        <div class="post-loading">
+          <div class="loader"></div>
+        </div>
+      `;
+      return;
+    }
 
-      const post = JSON.parse(postData);
-      const profile = post.profile || {
-        username: 'unknown',
-        full_name: 'Unknown User',
-        avatar_url: '',
-        is_verified: false,
-        user_id: ''
-      };
+    const post = JSON.parse(postData);
+    const { data: { user } } = await supabase.auth.getUser();
+    const isOwner = user && user.id === post.user_id;
+    
+    const profile = post.profile || {
+      username: 'unknown',
+      full_name: 'Unknown User',
+      avatar_url: '',
+      is_verified: false,
+      user_id: ''
+    };
+    
+    // ... rest of your render method
 
       
       // Create avatar HTML
