@@ -974,6 +974,103 @@ function subscribeToViewUpdates() {
     return channel;
 }
 
+  // Real-time subscription for new posts
+function subscribeToNewPosts() {
+  return supabase
+    .channel('new_posts')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'posts'
+    }, async (payload) => {
+      // Show notification alert
+      showNewPostAlert(payload.new);
+      
+      // Prepend the new post to the feed
+      const { data: fullPost, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profile:user_id (username, full_name, avatar_url, is_verified),
+          media:post_media (media_url, media_type)
+        `)
+        .eq('id', payload.new.id)
+        .single();
+      
+      if (!error && fullPost) {
+        const postsContainer = document.getElementById('posts-container');
+        const postElement = document.createElement('post-component');
+        postElement.setAttribute('post-data', JSON.stringify(fullPost));
+        postsContainer.insertBefore(postElement, postsContainer.firstChild);
+      }
+    })
+    .subscribe();
+}
+
+// Show alert for new post
+function showNewPostAlert(post) {
+  const alert = document.createElement('div');
+  alert.className = 'new-post-alert';
+  alert.innerHTML = `
+    <div class="alert-content">
+      <span>New post from @${post.username || 'user'}</span>
+      <button class="dismiss-alert">×</button>
+    </div>
+  `;
+  
+  document.body.appendChild(alert);
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    alert.classList.add('fade-out');
+    setTimeout(() => alert.remove(), 300);
+  }, 5000);
+  
+  // Manual dismiss
+  alert.querySelector('.dismiss-alert').addEventListener('click', () => {
+    alert.remove();
+  });
+}
+
+// Add this CSS
+const newPostAlertCSS = `
+.new-post-alert {
+  position: fixed;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0056b3;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+  animation: slideDown 0.3s ease-out;
+}
+
+.new-post-alert.fade-out {
+  animation: fadeOut 0.3s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from { top: -50px; opacity: 0; }
+  to { top: 130px; opacity: 1; }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(-50%) scale(0.9); }
+}
+`;
+
+const style = document.createElement('style');
+style.innerHTML = newPostAlertCSS;
+document.head.appendChild(style);
+
+// Initialize in your DOMContentLoaded:
+document.addEventListener('DOMContentLoaded', () => {
+  subscribeToNewPosts();
+});
+
 // REAL-TIME LIKE TRACKING
 function subscribeToLikeUpdates() {
     return supabase
