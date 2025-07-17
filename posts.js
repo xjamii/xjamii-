@@ -347,7 +347,7 @@ async toggleLike() {
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
               <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
-              <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
+              <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
             </div>
           </div>
         </div>
