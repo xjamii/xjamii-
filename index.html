@@ -1017,7 +1017,6 @@ function showNewPostAlert(post) {
   alert.innerHTML = `
     <div class="alert-content">
       <span>New Post</span>
-      <button class="dismiss-alert">×</button>
     </div>
   `;
   
@@ -1027,7 +1026,7 @@ function showNewPostAlert(post) {
   setTimeout(() => {
     alert.classList.add('fade-out');
     setTimeout(() => alert.remove(), 300);
-  }, 5000);
+  }, 9000);
   
   // Manual dismiss
   alert.querySelector('.dismiss-alert').addEventListener('click', () => {
