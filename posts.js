@@ -489,11 +489,34 @@ async toggleLike() {
       });
     });
 
-    // See more click handler
-    this.querySelector('.see-more')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.openCommentPage(post);
-    });
+    // See more/less click handler
+    const contentEl = this.querySelector('.post-content');
+    if (contentEl) {
+      const fullContent = contentEl.getAttribute('data-full-content');
+      const seeMoreEl = contentEl.querySelector('.see-more');
+      
+      if (seeMoreEl) {
+        contentEl.addEventListener('click', (e) => {
+          if (e.target.classList.contains('mention') || 
+              e.target.classList.contains('hashtag') || 
+              e.target.classList.contains('url')) {
+            return;
+          }
+          
+          if (contentEl.classList.contains('expanded')) {
+            // Show less
+            contentEl.innerHTML = this.processContent(fullContent.substring(0, 200) + '...');
+            contentEl.appendChild(document.createElement('span')).className = 'see-more';
+            contentEl.classList.remove('expanded');
+          } else {
+            // Show more
+            contentEl.innerHTML = this.processContent(fullContent);
+            contentEl.appendChild(document.createElement('span')).className = 'see-less';
+            contentEl.classList.add('expanded');
+          }
+        });
+      }
+    }
 
     // Post content click handler (opens comment page)
     this.querySelector('.post-content')?.addEventListener('click', (e) => {
@@ -728,34 +751,7 @@ async toggleLike() {
     this.isDragging = false;
   }
 
-      // See more/less click handler
-    const contentEl = this.querySelector('.post-content');
-    if (contentEl) {
-      const fullContent = contentEl.getAttribute('data-full-content');
-      const seeMoreEl = contentEl.querySelector('.see-more');
       
-      if (seeMoreEl) {
-        contentEl.addEventListener('click', (e) => {
-          if (e.target.classList.contains('mention') || 
-              e.target.classList.contains('hashtag') || 
-              e.target.classList.contains('url')) {
-            return;
-          }
-          
-          if (contentEl.classList.contains('expanded')) {
-            // Show less
-            contentEl.innerHTML = this.processContent(fullContent.substring(0, 200) + '...');
-            contentEl.appendChild(document.createElement('span')).className = 'see-more';
-            contentEl.classList.remove('expanded');
-          } else {
-            // Show more
-            contentEl.innerHTML = this.processContent(fullContent);
-            contentEl.appendChild(document.createElement('span')).className = 'see-less';
-            contentEl.classList.add('expanded');
-          }
-        });
-      }
-    }
 
   // Mouse event handlers for drag to close
   handleMouseDown(e) {
