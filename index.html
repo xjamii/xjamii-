@@ -908,30 +908,31 @@ window.addEventListener('message', (event) => {
 
 // LOAD POSTS with loading spinner
 // LOAD POSTS with loading spinner
+
 async function loadPosts() {
     try {
         // Show loading spinner
-        const loadingSpinner = document.createElement('div');
-        loadingSpinner.className = 'post-loading-spinner';
-        loadingSpinner.innerHTML = '<div class="spinner"></div>';
-        document.getElementById('posts-container').appendChild(loadingSpinner);
+        const postsContainer = document.getElementById('posts-container');
+        postsContainer.innerHTML = '<div class="post-loading-spinner"><div class="spinner"></div></div>';
 
+        // Get current user
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError) throw authError;
 
-        // MODIFIED QUERY WITH BUMPED_AT SORTING
+        // Get posts with profile and media data
         const { data: posts, error: postsError } = await supabase
             .from('posts')
             .select(`
                 *,
-                profile:user_id (username, full_name, avatar_url, is_verified),
-                media:post_media (media_url, media_type)
+                profile:profiles!user_id (id, username, full_name, avatar_url, is_verified),
+                media:post_media (id, media_url, media_type)
             `)
-            .order('bumped_at', { ascending: false })  // New: Sort by engagement first
-            .order('created_at', { ascending: false }); // Then by creation time
+            .order('bumped_at', { ascending: false })
+            .order('created_at', { ascending: false });
 
         if (postsError) throw postsError;
 
+        // Get user's likes
         const { data: userLikes, error: likesError } = await supabase
             .from('likes')
             .select('post_id')
@@ -939,13 +940,22 @@ async function loadPosts() {
 
         if (likesError) throw likesError;
 
+        // Process posts
         const likedPostIds = new Set(userLikes.map(like => like.post_id));
         const postsWithLikes = posts.map(post => ({
             ...post,
-            is_liked: likedPostIds.has(post.id)
+            is_liked: likedPostIds.has(post.id),
+            // Ensure profile data exists
+            profile: post.profile || {
+                id: post.user_id,
+                username: 'user',
+                full_name: 'User',
+                avatar_url: null,
+                is_verified: false
+            }
         }));
 
-        const postsContainer = document.getElementById('posts-container');
+        // Clear container and render posts
         postsContainer.innerHTML = '';
         postsWithLikes.forEach(post => {
             const postElement = document.createElement('post-component');
@@ -955,8 +965,15 @@ async function loadPosts() {
 
     } catch (error) {
         console.error("Error loading posts:", error);
+        document.getElementById('posts-container').innerHTML = `
+            <div class="post-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Failed to load posts</p>
+                <button class="retry-btn" onclick="loadPosts()">Retry</button>
+            </div>
+        `;
     }
-  }
+}
 
 // REAL-TIME VIEW TRACKING
 function subscribeToViewUpdates() {
