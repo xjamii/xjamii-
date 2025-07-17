@@ -1074,6 +1074,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
   // Add this to your main index.js or posts.js
+
+// Add this to your main index.js or posts.js
 class NewPostsCounter {
   constructor() {
     this.newPostsCount = 0;
@@ -1087,12 +1089,26 @@ class NewPostsCounter {
     this.counterElement = document.createElement('div');
     this.counterElement.className = 'home-icon-counter';
     this.counterElement.style.display = 'none';
-    
-    // Find home icon in footer
-    const homeIcon = document.querySelector('.footer-icon:first-child');
-    if (homeIcon) {
-      homeIcon.appendChild(this.counterElement);
-      homeIcon.addEventListener('click', () => this.handleHomeClick());
+
+    // Find the home icon inside .footer-icon
+    const footerIcon = document.querySelector('.footer-icon i.fa-home');
+    if (footerIcon) {
+      // Check if already wrapped in .icon-wrapper
+      let wrapper = footerIcon.parentElement;
+      if (!wrapper.classList.contains('icon-wrapper')) {
+        // Create wrapper and insert it
+        const newWrapper = document.createElement('div');
+        newWrapper.classList.add('icon-wrapper');
+        wrapper.replaceChild(newWrapper, footerIcon);
+        newWrapper.appendChild(footerIcon);
+        wrapper = newWrapper;
+      }
+
+      // Append badge to wrapper
+      wrapper.appendChild(this.counterElement);
+
+      // Add click listener
+      wrapper.addEventListener('click', () => this.handleHomeClick());
     }
   }
 
@@ -1144,12 +1160,12 @@ class NewPostsCounter {
     if (this.newPostsCount > 0) {
       // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      
+
       // Reset counter
       this.newPostsCount = 0;
       this.bumpedPosts.clear();
       this.updateCounterDisplay();
-      
+
       // Optional: Highlight new/bumped posts
       document.querySelectorAll('post-component').forEach((post, index) => {
         if (index < 5) { // Highlight first 5 posts
@@ -1163,8 +1179,11 @@ class NewPostsCounter {
 
 // Add this CSS
 const counterCSS = `
-.footer-icon:first-child {
+.icon-wrapper {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .home-icon-counter {
@@ -1174,8 +1193,8 @@ const counterCSS = `
   background-color: #ff4444;
   color: white;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1207,10 +1226,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const style = document.createElement('style');
   style.innerHTML = counterCSS;
   document.head.appendChild(style);
-  
+
   // Start the counter system
   new NewPostsCounter();
 });
+    
+
+
+
 // REAL-TIME LIKE TRACKING
 function subscribeToLikeUpdates() {
     return supabase
