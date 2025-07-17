@@ -253,69 +253,49 @@ class PostComponent extends HTMLElement {
 }    
 
 
-            
-async render() {
-  try {
-    // Debug: Log raw attribute
-    const postData = this.getAttribute('post-data');
-    console.log('Raw post-data attribute:', postData);
 
-    if (!postData) {
-      console.error('PostComponent: No post-data attribute provided');
-      this.showLoadingError('No post data provided');
-      return;
-    }
-
-    // Parse and validate post data
-    let post;
-    try {
-      post = JSON.parse(postData);
-      console.log('Parsed post data:', post);
-    } catch (e) {
-      console.error('PostComponent: Failed to parse post-data:', e);
-      this.showLoadingError('Invalid post data format');
-      return;
-    }
-
-    // Validate required fields
-    if (!post.id) {
-      console.error('PostComponent: Missing post ID in data:', post);
-      this.showLoadingError('Invalid post data structure');
-      return;
-    }
-
-    // Safely extract profile data with comprehensive fallbacks
-    const profile = post.profile || {};
-    const userId = post.user_id || profile.id || 'unknown';
     
-    if (userId === 'unknown') {
-      console.warn('PostComponent: No valid user reference found for post:', post.id);
-    }
+        
+ 
 
-    // Process content with safeguards
-    const content = post.content || '';
-    const showSeeMore = content.length > 200;
-    const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
-    const processedContent = this.processContent(displayedContent);
+  async render() {
+    try {
+      const postData = this.getAttribute('post-data');
+      if (!postData) {
+        this.innerHTML = `
+          <div class="post-loading">
+            <div class="loader"></div>
+          </div>
+        `;
+        return;
+      }
 
-    // Handle media with null checks
-    const mediaItems = post.media || [];
-    const mediaHtml = this.renderMedia(mediaItems);
+      const post = JSON.parse(postData);
+      const profile = post.profile || {
+        username: 'unknown',
+        full_name: 'Unknown User',
+        avatar_url: '',
+        is_verified: true,
+        user_id: ''
+      };
 
-    // Generate profile link
-    const profileLink = `/profile.html?id=${encodeURIComponent(userId)}`;
-
-    // Avatar with multiple fallbacks
+      
+      // Standardized profile link using post.user_id
+    const profileLink = `/profile.html?id=${post.user_id}`;
+    
+    // Avatar HTML (with fallback)
     const avatarHtml = profile.avatar_url 
-      ? `<img src="${profile.avatar_url}" 
-           alt="${profile.full_name || 'User'}" 
-           class="post-avatar"
-           onerror="this.src='data:image/svg+xml;base64,${this.getInitialsAvatar(profile.full_name)}'">`
+      ? `<img src="${profile.avatar_url}" alt="${profile.full_name}" class="post-avatar" 
+         onerror="this.onerror=null; this.src='${this.getInitialsAvatar(profile.full_name)}'">`
       : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
+    
+      // Check if content needs "See more"
+      const content = post.content || '';
+      const showSeeMore = content.length > 200;
+      const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
 
-    // Render the post HTML
-    this.innerHTML = `
-      <div class="post-container" data-post-id="${post.id}">
+      this.innerHTML = `
+      <div class="post-container">
         <div class="post">
           <div class="post-header">
             <a href="${profileLink}" class="post-avatar-link" onclick="event.stopPropagation()">
@@ -333,70 +313,40 @@ async render() {
             <span class="post-time">${this.formatTime(post.created_at)}</span>
           </div>
           
-          ${content ? `
+          ${post.content ? `
             <div class="post-content">
-              ${processedContent}
-              ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
+              ${this.processContent(post.content)}
             </div>
           ` : ''}
           
-          ${mediaHtml}
+          ${this.renderMedia(post.media || [])}
           
           <div class="post-actions">
             <div class="post-action comment-action">
-              <i class="far fa-comment"></i> 
-              <span>${post.comment_count || 0}</span>
+              <i class="far fa-comment"></i> ${post.comment_count || 0}
             </div>
             <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
-              <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> 
-              <span>${post.like_count || 0}</span>
+              <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
             </div>
             <div class="post-action share-action">
               <i class="fas fa-arrow-up-from-bracket"></i>
             </div>
             <div class="post-action views">
-              <i class="fas fa-eye"></i> 
-              <span>${post.views || 0}</span>
+              <i class="fas fa-eye"></i> ${post.views || 0}
             </div>
           </div>
         </div>
       </div>
     `;
+  
 
-    // Setup event listeners
-    this.setupEventListeners(post);
+      this.setupEventListeners(post);
 
-  } catch (error) {
-    console.error('PostComponent: Critical rendering error:', error);
-    this.showLoadingError('Failed to render post');
+    } catch (error) {
+      console.error("Error rendering post:", error);
+      this.innerHTML = `<div class="post-error">Error loading post</div>`;
+    }
   }
-}
-
-// Helper methods
-showLoadingError(message) {
-  this.innerHTML = `
-    <div class="post-error">
-      <i class="fas fa-exclamation-triangle"></i>
-      <p>${message}</p>
-      <button class="retry-btn" onclick="this.closest('post-component').render()">
-        Retry
-      </button>
-    </div>
-  `;
-}
-
-getInitialsAvatar(name) {
-  const initials = this.getInitials(name);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-    <rect width="100" height="100" fill="#ddd"/>
-    <text x="50" y="50" font-size="40" text-anchor="middle" dy=".3em" fill="#555">${initials}</text>
-  </svg>`;
-  return btoa(unescape(encodeURIComponent(svg)));
-}
-        
-
-    
-        
 
   renderMedia(mediaItems) {
     if (!mediaItems || !mediaItems.length) return '';
