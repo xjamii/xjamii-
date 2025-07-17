@@ -518,12 +518,7 @@ async toggleLike() {
       }
     }
 
-    // Post content click handler (opens comment page)
-    this.querySelector('.post-content')?.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
-        this.openCommentPage(post);
-      }
-    });
+    
 
     // Setup pull-to-refresh if this is the first post
     if (this.previousElementSibling === null) {
