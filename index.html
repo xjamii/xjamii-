@@ -907,6 +907,7 @@ window.addEventListener('message', (event) => {
 });
 
 // LOAD POSTS with loading spinner
+// LOAD POSTS with loading spinner
 async function loadPosts() {
     try {
         // Show loading spinner
@@ -918,6 +919,7 @@ async function loadPosts() {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError) throw authError;
 
+        // MODIFIED QUERY WITH BUMPED_AT SORTING
         const { data: posts, error: postsError } = await supabase
             .from('posts')
             .select(`
@@ -925,7 +927,8 @@ async function loadPosts() {
                 profile:user_id (username, full_name, avatar_url, is_verified),
                 media:post_media (media_url, media_type)
             `)
-            .order('created_at', { ascending: false });
+            .order('bumped_at', { ascending: false })  // New: Sort by engagement first
+            .order('created_at', { ascending: false }); // Then by creation time
 
         if (postsError) throw postsError;
 
@@ -953,6 +956,7 @@ async function loadPosts() {
     } catch (error) {
         console.error("Error loading posts:", error);
     }
+}
 }
 
 // REAL-TIME VIEW TRACKING
