@@ -272,7 +272,7 @@ class PostComponent extends HTMLElement {
         username: 'unknown',
         full_name: 'Unknown User',
         avatar_url: '',
-        is_verified: false,
+        is_verified: true,
         user_id: ''
       };
 
