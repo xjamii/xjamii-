@@ -1,7 +1,7 @@
 class PostComponent extends HTMLElement {
   constructor() {
     super();
-    // Keep your existing properties
+    // Keep existing properties
     this.mediaViewer = null;
     this.currentMediaIndex = 0;
     this.startY = 0;
@@ -15,8 +15,23 @@ class PostComponent extends HTMLElement {
       threshold: 0.5,
       rootMargin: '0px 0px -100px 0px'
     });
+    
+    // Add user tracking
+    this.currentUserId = null;
+    this.userCheckPromise = this.getCurrentUser();
   }
 
+  async getCurrentUser() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      this.currentUserId = user?.id || null;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      this.currentUserId = null;
+    }
+  }
+  
+  // ... rest of the class remains the same until render()
   // Add these new methods for view tracking
   handleIntersect(entries) {
     entries.forEach(entry => {
@@ -24,6 +39,16 @@ class PostComponent extends HTMLElement {
         this.recordView();
       }
     });
+  }
+
+  formatViewCount(count) {
+    if (count >= 1000000) {
+      return (count / 1000000).toFixed(1) + 'M';
+    }
+    if (count >= 1000) {
+      return (count / 1000).toFixed(1) + 'k';
+    }
+    return count;
   }
 
   async recordView() {
@@ -88,7 +113,7 @@ class PostComponent extends HTMLElement {
             setTimeout(() => {
               if (viewsEl.isConnected) { // Check if still in DOM
                 viewsEl.innerHTML = `
-                  <i class="fas fa-chart-bar"></i>
+                   <i class="fas fa-eye"></i>
                   <span>${currentViews + 1}</span>
                 `;
               }
@@ -274,28 +299,33 @@ async toggleLike() {
  
 
   async render() {
-    try {
-      const postData = this.getAttribute('post-data');
-      if (!postData) {
-        this.innerHTML = `
-          <div class="post-loading">
-            <div class="loader"></div>
-          </div>
-        `;
-        return;
-      }
+  try {
+    const postData = this.getAttribute('post-data');
+    if (!postData) {
+      this.innerHTML = `
+        <div class="post-loading">
+          <div class="loader"></div>
+        </div>
+      `;
+      return;
+    }
 
-      const post = JSON.parse(postData);
-      const profile = post.profile || {
-        username: 'unknown',
-        full_name: 'Unknown User',
-        avatar_url: '',
-        is_verified: false,
-        user_id: ''
-      };
+    // Wait for user check to complete (but don't block rendering)
+    await this.userCheckPromise;
+    
+    const post = JSON.parse(postData);
+    const profile = post.profile || {
+      username: 'unknown',
+      full_name: 'Unknown User',
+      avatar_url: '',
+      is_verified: false,
+      user_id: ''
+    };
 
-      
-      // Create avatar HTML
+    // Use stored user ID instead of checking again
+    const isOwner = this.currentUserId === post.user_id;
+    
+
       const avatarHtml = profile.avatar_url 
         ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
         : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
@@ -336,8 +366,8 @@ async toggleLike() {
                 <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
               </div>
               <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-              <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
-              <div class="post-action views"><i class="fas fa-chart-bar"></i> ${post.views || 0}</div>
+              ${isOwner ? '<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>' : ''}
+              <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
             </div>
           </div>
         </div>
@@ -479,18 +509,36 @@ async toggleLike() {
       });
     });
 
-    // See more click handler
-    this.querySelector('.see-more')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.openCommentPage(post);
-    });
-
-    // Post content click handler (opens comment page)
-    this.querySelector('.post-content')?.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
-        this.openCommentPage(post);
+    // See more/less click handler
+    const contentEl = this.querySelector('.post-content');
+    if (contentEl) {
+      const fullContent = contentEl.getAttribute('data-full-content');
+      const seeMoreEl = contentEl.querySelector('.see-more');
+      
+      if (seeMoreEl) {
+        contentEl.addEventListener('click', (e) => {
+          if (e.target.classList.contains('mention') || 
+              e.target.classList.contains('hashtag') || 
+              e.target.classList.contains('url')) {
+            return;
+          }
+          
+          if (contentEl.classList.contains('expanded')) {
+            // Show less
+            contentEl.innerHTML = this.processContent(fullContent.substring(0, 200) + '...');
+            contentEl.appendChild(document.createElement('span')).className = 'see-more';
+            contentEl.classList.remove('expanded');
+          } else {
+            // Show more
+            contentEl.innerHTML = this.processContent(fullContent);
+            contentEl.appendChild(document.createElement('span')).className = 'see-less';
+            contentEl.classList.add('expanded');
+          }
+        });
       }
-    });
+    }
+
+    
 
     // Setup pull-to-refresh if this is the first post
     if (this.previousElementSibling === null) {
@@ -498,6 +546,8 @@ async toggleLike() {
     }
   }
 
+
+  
   showMediaViewer(mediaItems, startIndex = 0) {
     if (!mediaItems || !mediaItems.length) return;
     
@@ -718,6 +768,8 @@ async toggleLike() {
     this.isDragging = false;
   }
 
+      
+
   // Mouse event handlers for drag to close
   handleMouseDown(e) {
     if (!this.mediaViewer) return;
@@ -772,13 +824,15 @@ async toggleLike() {
   }
 
   showMoreOptions(e, post) {
-    const isOwner = true; // Replace with actual owner check
-    
     // Remove any existing popups
     document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
     
     const popup = document.createElement('div');
     popup.className = 'more-options-popup';
+    
+    // Get current user ID to determine ownership
+    const isOwner = true; // Replace with actual check - you might want to pass this from render()
+    
     popup.innerHTML = `
       <div class="more-options-content">
         ${isOwner ? `
@@ -791,41 +845,97 @@ async toggleLike() {
     `;
     
     document.body.appendChild(popup);
-    
-    // Position the popup
+      
     const rect = e.target.getBoundingClientRect();
     popup.style.left = `${rect.left - 100}px`;
     popup.style.top = `${rect.top - 10}px`;
-    
-    // Close when clicking outside
+      
     const clickHandler = (event) => {
       if (!popup.contains(event.target)) {
         popup.remove();
         document.removeEventListener('click', clickHandler);
       }
     };
-    
+      
     setTimeout(() => {
       document.addEventListener('click', clickHandler);
     }, 0);
-    
+      
     // Add option handlers
     popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      console.log('Edit post', post.id);
+      this.editPost(post);
       popup.remove();
     });
-    
-    popup.querySelector('.delete-option')?.addEventListener('click', () => {
-      console.log('Delete post', post.id);
+      
+    popup.querySelector('.delete-option')?.addEventListener('click', async () => {
+      try {
+        const { error } = await supabase
+          .from('posts')
+          .delete()
+          .eq('id', post.id);
+          
+        if (error) throw error;
+        this.remove();
+      } catch (err) {
+        console.error('Error deleting post:', err);
+        alert('Failed to delete post');
+      }
       popup.remove();
     });
-    
+      
     popup.querySelector('.report-option')?.addEventListener('click', () => {
       console.log('Report post', post.id);
       popup.remove();
     });
+}
+
+  async editPost(post) {
+    // Create edit UI
+    const contentEl = this.querySelector('.post-content');
+    const originalContent = contentEl.getAttribute('data-full-content') || post.content;
+    
+    contentEl.innerHTML = `
+      <textarea class="edit-post-textarea">${originalContent}</textarea>
+      <div class="edit-post-actions">
+        <button class="edit-post-cancel">Cancel</button>
+        <button class="edit-post-save">Save</button>
+      </div>
+    `;
+    
+    // Focus the textarea
+    const textarea = contentEl.querySelector('textarea');
+    textarea.focus();
+    textarea.selectionStart = textarea.value.length;
+    
+    // Event listeners
+    contentEl.querySelector('.edit-post-cancel').addEventListener('click', () => {
+      this.render(); // Re-render original content
+    });
+    
+    contentEl.querySelector('.edit-post-save').addEventListener('click', async () => {
+      const newContent = textarea.value.trim();
+      if (!newContent) return;
+      
+      try {
+        const { error } = await supabase
+          .from('posts')
+          .update({ content: newContent })
+          .eq('id', post.id);
+        
+        if (error) throw error;
+        
+        // Update post data and re-render
+        post.content = newContent;
+        this.setAttribute('post-data', JSON.stringify(post));
+        this.render();
+      } catch (error) {
+        console.error('Error updating post:', error);
+        alert('Failed to update post');
+      }
+    });
   }
 
+  
   sharePost(postId) {
     const postUrl = `${window.location.origin}/post.html?id=${postId}`;
     
