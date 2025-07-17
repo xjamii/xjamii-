@@ -316,42 +316,42 @@ async toggleLike() {
       const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
 
       this.innerHTML = `
-        <div class="post-container">
-          <div class="post">
-            <div class="post-header">
-              <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none">
-                ${avatarHtml}
-              </a>
-              <div class="post-user-info">
-                <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" style="text-decoration: none">
-                  <div class="post-user">
-                    ${profile.full_name || profile.username}
-                    ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-                  </div>
-                  <div class="post-username" style="text-decoration: none">@${profile.username}</div>
-                </a>
-              </div>
-              <span class="post-time">${this.formatTime(post.created_at)}</span>
+  <div class="post-container">
+    <div class="post">
+      <div class="post-header">
+        <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none">
+          ${avatarHtml}
+        </a>
+        <div class="post-user-info">
+          <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" style="text-decoration: none">
+            <div class="post-user">
+              ${profile.full_name || profile.username}
+              ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
             </div>
-            ${content ? `
-              <p class="post-content" data-full-content="${content.replace(/"/g, '&quot;')}">
-                ${this.processContent(displayedContent)}
-                ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
-              </p>
-            ` : ''}
-            ${this.renderMedia(post.media || [])}
-            <div class="post-actions">
-              <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
-              <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
-                <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
-              </div>
-              <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
-              <div class="post-more"><i class="fas fa-ellipsis-h"></i></div>
-              <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
-            </div>
-          </div>
+            <div class="post-username" style="text-decoration: none">@${profile.username}</div>
+          </a>
         </div>
-      `;
+        <span class="post-time">${this.formatTime(post.created_at)}</span>
+      </div>
+      ${content ? `
+        <p class="post-content" data-full-content="${content.replace(/"/g, '&quot;')}">
+          ${this.processContent(displayedContent)}
+          ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
+        </p>
+      ` : ''}
+      ${this.renderMedia(post.media || [])}
+      <div class="post-actions">
+        <div class="post-action comment-action"><i class="far fa-comment"></i> ${post.comment_count || 0}</div>
+        <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
+          <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
+        </div>
+        <div class="post-action share-action"><i class="fas fa-arrow-up-from-bracket"></i></div>
+        ${post.is_owner ? '<div class="post-more"><i class="fas fa-ellipsis-h"></i></div>' : ''}
+        <div class="post-action views"><i class="fas fa-eye"></i> ${this.formatViewCount(post.views || 0)}</div>
+      </div>
+    </div>
+  </div>
+`;
 
       this.setupEventListeners(post);
 
@@ -451,11 +451,11 @@ async toggleLike() {
       }
     });
 
-    // More options
-    this.querySelector('.post-more')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.showMoreOptions(e, post);
-    });
+    // In setupEventListeners method, replace the existing more button listener with:
+this.querySelector('.post-more')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  this.showMoreOptions(e, post);
+});
 
     // Share action
     this.querySelector('.share-action')?.addEventListener('click', (e) => {
