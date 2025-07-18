@@ -178,7 +178,7 @@ class WorkAtEditor {
             } else {
                 this.elements.container.innerHTML = `
                     <div class="no-workat">
-                        No work information added yet
+                        
                     </div>`;
                 this.elements.section.style.display = 'block';
                 this.elements.addButton.style.display = 'flex';
