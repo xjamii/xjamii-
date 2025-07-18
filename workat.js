@@ -15,16 +15,21 @@ class WorkAtEditor {
             websiteInput: document.getElementById('workat-website'),
             container: document.getElementById('workat-container'),
             section: document.getElementById('workat-section'),
-            editButton: document.getElementById('edit-workat-btn')
+            actionsContainer: document.getElementById('workat-actions'),
+            addBtn: document.getElementById('add-workat-btn'),
+            addMoreBtn: document.getElementById('add-more-workat'),
+            editBtn: document.getElementById('edit-workat'),
+            deleteBtn: document.getElementById('delete-workat')
         };
     }
     
     initEventListeners() {
         this.elements.backButton.addEventListener('click', () => this.close());
         this.elements.saveButton.addEventListener('click', () => this.saveWorkAt());
-        if (this.elements.editButton) {
-            this.elements.editButton.addEventListener('click', () => this.open());
-        }
+        this.elements.addBtn?.addEventListener('click', () => this.open());
+        this.elements.addMoreBtn?.addEventListener('click', () => this.open());
+        this.elements.editBtn?.addEventListener('click', () => this.open());
+        this.elements.deleteBtn?.addEventListener('click', () => this.deleteWorkAt());
     }
     
     async open() {
@@ -89,6 +94,25 @@ class WorkAtEditor {
         }
     }
     
+    async deleteWorkAt() {
+        if (confirm('Are you sure you want to delete this work information?')) {
+            try {
+                const { error } = await supabase
+                    .from('work_at')
+                    .delete()
+                    .eq('id', this.workInfo.id);
+                
+                if (error) throw error;
+                
+                this.workInfo = null;
+                await this.displayWorkAt();
+            } catch (error) {
+                console.error('Error deleting work info:', error);
+                alert('Failed to delete work information');
+            }
+        }
+    }
+    
     async loadWorkAt() {
         try {
             const { data: workAt, error } = await supabase
@@ -119,40 +143,37 @@ class WorkAtEditor {
                 if (this.workInfo.website) {
                     const websiteUrl = this.workInfo.website.startsWith('http') ? 
                         this.workInfo.website : `https://${this.workInfo.website}`;
-                    html += `<a href="${websiteUrl}" target="_blank" class="website">${this.workInfo.website}</a>`;
+                    html += `<a href="${websiteUrl}" target="_blank" class="website">${websiteUrl}</a>`;
                 }
                 
                 html += `</div>`;
                 this.elements.container.innerHTML = html;
+                
+                // Show action buttons
+                this.elements.actionsContainer.style.display = 'flex';
+                // Hide add button
+                if (this.elements.addBtn) {
+                    this.elements.addBtn.style.display = 'none';
+                }
             } else {
                 this.elements.container.innerHTML = `
                     <div class="no-workat" style="text-align: center; margin: 20px 0; color: #666;">
                         No work information added yet
+                        <button class="btn small-btn" id="add-workat-btn">
+                            <i class="fas fa-plus"></i> Add Work Info
+                        </button>
                     </div>`;
-            }
-            
-            // Show edit button if this is the user's own profile
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user && user.id === profileId) {
-                if (!this.elements.editButton) {
-                    // Create edit button if it doesn't exist
-                    const editButton = document.createElement('button');
-                    editButton.id = 'edit-workat-btn';
-                    editButton.className = 'btn edit-btn';
-                    editButton.innerHTML = '<i class="fas fa-edit"></i> Edit';
-                    editButton.addEventListener('click', () => this.open());
-                    
-                    const sectionTitle = this.elements.section.querySelector('.section-title');
-                    if (sectionTitle) {
-                        sectionTitle.appendChild(editButton);
-                    }
-                    this.elements.editButton = editButton;
+                
+                // Hide action buttons
+                this.elements.actionsContainer.style.display = 'none';
+                // Re-attach event listener for add button
+                const addBtn = document.getElementById('add-workat-btn');
+                if (addBtn) {
+                    addBtn.addEventListener('click', () => this.open());
                 }
-                this.elements.editButton.style.display = 'inline-block';
-            } else if (this.elements.editButton) {
-                this.elements.editButton.style.display = 'none';
             }
             
+            // Show section
             this.elements.section.style.display = 'block';
             return true;
         } catch (error) {
