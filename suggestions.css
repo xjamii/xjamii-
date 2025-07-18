@@ -3,7 +3,7 @@
     padding: 15px;
     background: white;
     border-bottom: 1px solid #e6ecf0;
-    margin-top: 120px; /* Matches header height */
+    margin-top: 110px; /* Matches header height */
     position: relative;
     z-index: 1;
 }
@@ -61,8 +61,14 @@
     border-radius: 50%;
     object-fit: cover;
     margin: 0 auto 8px;
-    border: 2px solid #e6ecf0; /* Lighter border color */
-    transition: border-color 0.2s ease;
+    border: 2px solid #e6ecf0;
+    display: flex; /* Add this */
+    align-items: center; /* Add this */
+    justify-content: center; /* Add this */
+    background-color: #e6ecf0; /* Add light background */
+    font-weight: bold; /* Add this */
+    color: #0056b3; /* Add text color */
+    font-size: 24px; /* Adjust font size */
 }
 
 .suggestion-avatar:hover {
@@ -93,7 +99,7 @@
 }
 
 .suggestion-connect-btn {
-    background-color: #0f1419; /* Dark button color */
+    background-color: #0056b3; /* Dark button color */
     color: white;
     border: none;
     border-radius: 15px;
@@ -105,16 +111,16 @@
 }
 
 .suggestion-connect-btn:hover {
-    background-color: #1DA1F2; /* Blue on hover */
+    background-color: #0056b3; /* Blue on hover */
 }
 
 .suggestion-connect-btn.pending {
-    background-color: #e0e0e0;
+    background-color: #0056b3;
     color: #666;
 }
 
 .suggestion-connect-btn.connected {
-    background-color: #e6f0ff;
+    background-color: #0056b3;
     color: #1DA1F2;
 }
 
