@@ -538,17 +538,19 @@ body {
 
         <!-- Education Section -->
 <div class="education-section" id="education-section" style="display: none;">
-    <h2 class="section-title">
-        <i class="fas fa-graduation-cap"></i> Education
-        <button class="btn edit-btn" id="edit-education-btn" style="display: none;">
-            <i class="fas fa-edit"></i> Edit
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="fas fa-graduation-cap"></i> Education
+        </h2>
+        <button class="btn btn-small btn-add" id="add-education-btn">
+            <i class="fas fa-plus"></i>
         </button>
-    </h2>
+    </div>
+    
     <div id="education-container">
-        <div class="education-item">
-            <div class="education-details">
-                <div class="description" id="education-text">Loading education...</div>
-            </div>
+        <!-- Education items will be inserted here dynamically -->
+        <div class="no-education">
+            No education added yet
         </div>
     </div>
 </div>
@@ -567,6 +569,8 @@ body {
 
     <div class="education-content">
         <form id="education-form">
+            <input type="hidden" id="education-id">
+            
             <div class="form-group">
                 <label for="education-degree">Degree/Certificate*</label>
                 <input type="text" id="education-degree" placeholder="e.g., ATPL, B.Sc Aviation" required>
@@ -584,16 +588,20 @@ body {
                         <label for="education-start-year">Start Year</label>
                         <select id="education-start-year" required>
                             <option value="">Year</option>
-                            <!-- Years will be populated by JS -->
+                            <!-- Years will be populated by JavaScript -->
                         </select>
                     </div>
                     <div class="date-field">
                         <label for="education-end-year">End Year</label>
                         <select id="education-end-year">
                             <option value="">Year</option>
-                            <!-- Years will be populated by JS -->
+                            <!-- Years will be populated by JavaScript -->
                         </select>
                     </div>
+                </div>
+                <div class="current-education">
+                    <input type="checkbox" id="education-current">
+                    <label for="education-current">I currently study here</label>
                 </div>
             </div>
             
