@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help Center | Aviationin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      background-color: #fff;
+      min-height: 100vh;
+      touch-action: pan-y;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      tap-highlight-color: transparent;
+    }
+
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: white;
+      border-bottom: 1px solid #e6ecf0;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      z-index: 1000;
+    }
+
+    .back-btn {
+      font-size: 20px;
+      color: #0056b3;
+      margin-right: 20px;
+      cursor: pointer;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f1419;
+    }
+
+    .main-content {
+      margin-top: 60px;
+      padding: 20px;
+    }
+
+    .help-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0056b3;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .page-intro {
+      font-size: 16px;
+      color: #536471;
+      margin-bottom: 30px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .help-section {
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #0056b3;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .help-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+    }
+
+    .help-card {
+      background-color: #f7f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+
+    .help-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 86, 179, 0.1);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f1419;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-description {
+      font-size: 14px;
+      color: #536471;
+      line-height: 1.5;
+    }
+
+    .icon {
+      color: #0056b3;
+      font-size: 18px;
+      min-width: 18px;
+    }
+
+    .contact-section {
+      background-color: #f0f7ff;
+      border-radius: 10px;
+      padding: 25px;
+      margin-top: 40px;
+    }
+
+    .contact-title {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #0056b3;
+    }
+
+    .contact-options {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .contact-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .contact-icon {
+      color: #0056b3;
+      font-size: 20px;
+    }
+
+    .contact-text {
+      font-size: 15px;
+    }
+
+    .full-page-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #FFFFFF;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .spinner-container {
+      text-align: center;
+    }
+
+    .spinner {
+      width: 30px;
+      height: 30px;
+      border: 3px solid #e6f0ff;
+      border-top: 3px solid #0056b3;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .blue-line {
+      height: 3px;
+      background-color: #0056b3;
+      width: 100%;
+      margin: 15px 0;
+    }
+
+    @media (max-width: 600px) {
+      .help-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Full page loader -->
+  <div class="full-page-loader" id="full-page-loader">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="back-btn" onclick="window.location.href='index.html'">
+      <i class="fas fa-arrow-left"></i>
+    </div>
+    <div class="header-title">Help Center</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="help-container">
+      <h1 class="page-title">Aviationin Help Center</h1>
+      <p class="page-intro">
+        Find answers to common questions about using Aviationin, the professional network for aviation professionals.
+      </p>
+      <div class="blue-line"></div>
+
+      <!-- Getting Started -->
+      <div class="help-section">
+        <h2 class="section-title">
+          <i class="fas fa-rocket icon"></i> Getting Started
+        </h2>
+        <div class="help-cards">
+          <div class="help-card" onclick="window.location.href='create-account.html'">
+            <h3 class="card-title">
+              <i class="fas fa-user-plus icon"></i> Creating an Account
+            </h3>
+            <p class="card-description">
+              Learn how to set up your Aviationin profile and verify your aviation credentials.
+            </p>
+          </div>
+          
+          <div class="help-card" onclick="window.location.href='profile-setup.html'">
+            <h3 class="card-title">
+              <i class="fas fa-id-card icon"></i> Profile Setup
+            </h3>
+            <p class="card-description">
+              Complete guide to setting up your professional profile with aviation-specific fields.
+            </p>
+          </div>
+          
+          <div class="help-card" onclick="window.location.href='verification.html'">
+            <h3 class="card-title">
+              <i class="fas fa-check-circle icon"></i> Verification
+            </h3>
+            <p class="card-description">
+              How to get verified as an aviation professional on Aviationin.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Using Aviationin -->
+      <div class="help-section">
+        <h2 class="section-title">
+          <i class="fas fa-network-wired icon"></i> Using Aviationin
+        </h2>
+        <div class="help-cards">
+          <div class="help-card" onclick="window.location.href='connections.html'">
+            <h3 class="card-title">
+              <i class="fas fa-users icon"></i> Connections
+            </h3>
+            <p class="card-description">
+              How to connect with other aviation professionals and grow your network.
+            </p>
+          </div>
+          
+          <div class="help-card" onclick="window.location.href='posts.html'">
+            <h3 class="card-title">
+              <i class="fas fa-comment-alt icon"></i> Posts & Discussions
+            </h3>
+            <p class="card-description">
+              Guide to sharing content and participating in aviation discussions.
+            </p>
+          </div>
+          
+          <div class="help-card" onclick="window.location.href='messages.html'">
+            <h3 class="card-title">
+              <i class="fas fa-envelope icon"></i> Messaging
+            </h3>
+            <p class="card-description">
+              How to communicate privately with other aviation professionals.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Management -->
+      <div class="help-section">
+        <h2 class="section-title">
+          <i class="fas fa-cog icon"></i> Account Management
+        </h2>
+        <div class="help-cards">
+          <div class="help-card" onclick="window.location.href='privacy.html'">
+            <h3 class="card-title">
+              <i class="fas fa-lock icon"></i> Privacy Settings
+            </h3>
+            <p class="card-description">
+              Control who sees your aviation profile and activity.
+            </p>
+          </div>
+          
+          <div class="help-card" onclick="window.location.href='notifications.html'">
+            <h3 class="card-title">
+              <i class="fas fa-bell icon"></i> Notifications
+            </h3>
+            <p class="card-description">
+              Manage your aviation industry alerts and notifications.
+            </p>
+          </div>
+          
+          <div class="help-card" onclick="window.location.href='deactivate.html'">
+            <h3 class="card-title">
+              <i class="fas fa-user-slash icon"></i> Deactivate Account
+            </h3>
+            <p class="card-description">
+              Steps to temporarily deactivate your Aviationin account.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aviation-Specific Features -->
+      <div class="help-section">
+        <h2 class="section-title">
+          <i class="fas fa-plane icon"></i> Aviation Features
+        </h2>
+        <div class="help-cards">
+          <div class="help-card" onclick="window.location.href='logbook.html'">
+            <h3 class="card-title">
+              <i class="fas fa-book icon"></i> Digital Logbook
+            </h3>
+            <p class="card-description">
+              How to use Aviationin's integrated digital logbook feature.
+            </p>
+          </div>
+          
+          <div class="help-card" onclick="window.location.href='certifications.html'">
+            <h3 class="card-title">
+              <i class="fas fa-certificate icon"></i> Certifications
+            </h3>
+            <p class="card-description">
+              Adding and verifying your aviation certifications and ratings.
+            </p>
+          </div>
+          
+          <div class="help-card" onclick="window.location.href='job-board.html'">
+            <h3 class="card-title">
+              <i class="fas fa-briefcase icon"></i> Aviation Job Board
+            </h3>
+            <p class="card-description">
+              Finding and applying for aviation jobs through Aviationin.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-section">
+        <h3 class="contact-title">Need More Help?</h3>
+        <div class="contact-options">
+          <div class="contact-option" onclick="window.location.href='faq.html'">
+            <i class="fas fa-question-circle contact-icon"></i>
+            <span class="contact-text">Browse our Aviation FAQ</span>
+          </div>
+          <div class="contact-option" onclick="window.location.href='mailto:support@aviationin.com'">
+            <i class="fas fa-envelope contact-icon"></i>
+            <span class="contact-text">Email Aviation Support</span>
+          </div>
+          <div class="contact-option" onclick="window.location.href='report.html'">
+            <i class="fas fa-flag contact-icon"></i>
+            <span class="contact-text">Report an Aviation-Specific Issue</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="blue-line"></div>
+      <p style="text-align: center; font-size: 14px; color: #536471; margin-top: 20px;">
+        Aviationin Help Center | For aviation professionals, by aviation professionals
+      </p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Hide loader after page loads
+      setTimeout(() => {
+        document.getElementById('full-page-loader').style.display = 'none';
+      }, 500);
+    });
+  </script>
+</body>
+</html>
