@@ -1120,72 +1120,77 @@ function openExperienceEditor() {
     document.body.style.overflow = 'hidden'; // Prevent scrolling
 }        
        
+
+
 async function loadWorkAt(profile) {
     try {
         const { data: { user } } = await supabase.auth.getUser();
         const isOwner = user?.id === profileId;
 
         if (window.workAtEditor) {
-            const workAt = await window.workAtEditor.loadWorkAt();
+            const workAtItems = await window.workAtEditor.loadWorkAt();
             
-            if (workAt) {
-                elements.workatSection.style.display = 'block';
-            } else if (isOwner) {
-                elements.workatContainer.innerHTML = `
-                    <div class="no-workat" style="text-align: center; margin: 20px 0; color: #666;">
-                        No work information added yet
-                        <button class="btn" id="add-workat-btn" 
-                                style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                            <i class="fas fa-plus"></i> Add Work Info
-                        </button>
-                    </div>`;
+            if (workAtItems && workAtItems.length > 0) {
+                // Display work items if they exist
                 elements.workatSection.style.display = 'block';
                 
-                document.getElementById('add-workat-btn')?.addEventListener('click', openWorkAtEditor);
+                // Show the small + button for adding more
+                if (isOwner) {
+                    elements.addWorkAtBtn.style.display = 'flex';
+                }
+            } else if (isOwner) {
+                // Show empty state with no items for owner
+                elements.workatContainer.innerHTML = `
+                    <div class="no-workat">
+                        No work information added yet
+                    </div>`;
+                elements.workatSection.style.display = 'block';
+                elements.addWorkAtBtn.style.display = 'flex';
             } else {
+                // Hide completely for others when empty
                 elements.workatSection.style.display = 'none';
             }
         } else if (isOwner) {
+            // Fallback if editor not loaded
             elements.workatContainer.innerHTML = `
-                <div class="no-workat" style="text-align: center; margin: 20px 0; color: #666;">
+                <div class="no-workat">
                     No work information added yet
-                    <button class="btn" id="add-workat-btn" 
-                            style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                        <i class="fas fa-plus"></i> Add Work Info
-                    </button>
                 </div>`;
             elements.workatSection.style.display = 'block';
-            
-            document.getElementById('add-workat-btn')?.addEventListener('click', openWorkAtEditor);
+            elements.addWorkAtBtn.style.display = 'flex';
         } else {
             elements.workatSection.style.display = 'none';
         }
     } catch (error) {
         console.error('Error loading work info:', error);
         const { data: { user } } = await supabase.auth.getUser();
+        
         if (user?.id === profileId) {
+            // Show empty state for owner on error
             elements.workatContainer.innerHTML = `
-                <div class="no-workat" style="text-align: center; margin: 20px 0; color: #666;">
+                <div class="no-workat">
                     No work information added yet
-                    <button class="btn" id="add-workat-btn" 
-                            style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                        <i class="fas fa-plus"></i> Add Work Info
-                    </button>
                 </div>`;
             elements.workatSection.style.display = 'block';
-            
-            document.getElementById('add-workat-btn')?.addEventListener('click', openWorkAtEditor);
+            elements.addWorkAtBtn.style.display = 'flex';
         } else {
             elements.workatSection.style.display = 'none';
         }
     }
 }
 
-function openWorkAtEditor() {
+function openWorkAtEditor(workId = null) {
+    if (workId) {
+        // Open in edit mode with existing work item
+        window.workAtEditor.openForEdit(workId);
+    } else {
+        // Open in create mode for new item
+        window.workAtEditor.openForNew();
+    }
+    
     document.getElementById('workat-page').style.display = 'block';
     document.body.style.overflow = 'hidden';
 }
-
 
 async function loadSkills(profile) {
     try {
@@ -1317,32 +1322,39 @@ function openEducationEditor() {
        
 function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
+        // Hide connection-related buttons for own profile
         elements.connectBtn.style.display = 'none';
         document.querySelector('.btn-outline').style.display = 'none';
         
-        // Show edit buttons for owner
+        // Show main profile edit button
         elements.editButton.style.display = 'inline-block';
         
         // Skills edit button is handled in loadSkills
     } else {
-        // Remove edit buttons if exists
-        const existingSkillsBtn = document.getElementById('skills-edit-btn');
-        if (existingSkillsBtn) {
-            existingSkillsBtn.remove();
-        }
-        
-        const existingAddEducationBtn = document.getElementById('add-education-btn');
-        if (existingAddEducationBtn) {
-            existingAddEducationBtn.remove();
-        }
-        
-        
-        
-        const existingAddWorkAtBtn = document.getElementById('add-workat-btn');
-        if (existingAddWorkAtBtn) {
-            existingAddWorkAtBtn.remove();
-        }
-        
+        // Remove all edit/add buttons for non-owners
+        const buttonsToRemove = [
+            'skills-edit-btn',        // Skills section edit button
+            'add-education-btn',      // Education section add button
+            'edit-education-btn',     // Education section edit button
+            'add-workat-btn',         // Work At section add button
+            'edit-workat-btn'         // Work At section edit button
+        ];
+
+        buttonsToRemove.forEach(buttonId => {
+            const button = document.getElementById(buttonId);
+            if (button) button.remove();
+        });
+
+        // Also remove any dynamically created action buttons
+        document.querySelectorAll('.workat-action-btn').forEach(btn => {
+            btn.remove();
+        });
+
+        document.querySelectorAll('.experience-action-btn').forEach(btn => {
+            btn.remove();
+        });
+
+        // Check and setup connection status
         checkConnectionStatus(currentUserId, profileId);
     }
 }
