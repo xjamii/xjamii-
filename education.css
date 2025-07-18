@@ -1,252 +1,68 @@
-/* ================================= */
-/* Education Section - Main Styles */
-/* ================================= */
+/* Education Section Styles */
 .education-section {
-  padding: 20px;
-  background-color: white;
-  border-top: 1px solid #eee;
-  position: relative;
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background-color: white;
 }
 
-.education-section .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.education-section .section-title {
-  font-size: 18px;
-  margin: 0;
-  color: #0056b3;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-add {
-  background-color: #0056b3;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-add:hover {
-  background-color: #003d82;
-  transform: scale(1.1);
-}
-
-/* ================================= */
-/* Education Items - Display Styles */
-/* ================================= */
 .education-item {
-  position: relative;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 15px;
-  background-color: #f9f9f9;
-  transition: all 0.2s ease;
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
 }
 
-.education-item:hover {
-  background-color: #f0f4f8;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+.education-item h4 {
+    margin: 0 0 5px 0;
+    color: #0056b3;
+    font-size: 16px;
 }
 
-.education-degree {
-  font-weight: 600;
-  font-size: 16px;
-  color: #333;
-  margin-bottom: 5px;
-  padding-right: 50px; /* Space for action buttons */
+.education-item .institution {
+    font-weight: 600;
+    color: #333;
 }
 
-.education-institution {
-  font-weight: 500;
-  color: #0056b3;
-  margin-bottom: 5px;
+.education-item .duration {
+    color: #666;
+    font-size: 14px;
+    margin: 5px 0;
 }
 
-.education-duration {
-  color: #666;
-  font-size: 14px;
-  margin-bottom: 5px;
+.education-item .description {
+    color: #444;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
-.education-description {
-  color: #444;
-  font-size: 14px;
-  line-height: 1.5;
-  white-space: pre-line;
-}
-
-/* ================================= */
-/* Education Action Buttons */
-/* ================================= */
-.education-actions {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  display: flex;
-  gap: 8px;
-}
-
-.education-action-btn {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.education-action-btn:hover {
-  background-color: rgba(0, 86, 179, 0.1);
-  color: #0056b3;
-}
-
-.education-action-btn.delete-btn:hover {
-  background-color: rgba(255, 68, 68, 0.1);
-  color: #ff4444;
-}
-
-/* ================================= */
-/* Education Editor Modal */
-/* ================================= */
+/* Education Editor Styles */
 #education-page {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: white;
-  z-index: 1000;
-  overflow-y: auto;
-  display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: white;
+    z-index: 1000;
+    overflow-y: auto;
 }
 
 .education-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  background-color: white;
-  border-bottom: 1px solid #eee;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.education-header .header-left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.education-header .back-button {
-  background: none;
-  border: none;
-  color: #0056b3;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-.education-header .header-name {
-  font-weight: 600;
-  font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .education-content {
-  padding: 20px;
+    padding: 20px;
 }
 
-/* Form Styles */
 #education-form .form-group {
-  margin-bottom: 20px;
-}
-
-#education-form label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #444;
-}
-
-#education-form input[type="text"],
-#education-form select,
-#education-form textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.2s ease;
-}
-
-#education-form input[type="text"]:focus,
-#education-form select:focus,
-#education-form textarea:focus {
-  border-color: #0056b3;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1);
-}
-
-.duration-fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.date-field {
-  display: flex;
-  flex-direction: column;
-}
-
-/* ================================= */
-/* Empty State */
-/* ================================= */
-.no-education {
-  color: #666;
-  font-size: 14px;
-  text-align: center;
-  padding: 30px 20px;
-  font-style: italic;
-}
-
-/* ================================= */
-/* Responsive Adjustments */
-/* ================================= */
-@media (max-width: 480px) {
-  .education-item {
-    padding: 12px;
-  }
-  
-  .education-actions {
-    top: 12px;
-    right: 12px;
-    gap: 5px;
-  }
-  
-  .education-action-btn {
-    width: 22px;
-    height: 22px;
-    font-size: 12px;
-  }
-  
-  .duration-fields {
-    grid-template-columns: 1fr;
-  }
+    margin-bottom: 20px;
 }
