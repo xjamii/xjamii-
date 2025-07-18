@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Account | X-Jamii</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      background-color: #fff;
+      min-height: 100vh;
+      touch-action: pan-y;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      tap-highlight-color: transparent;
+    }
+
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: white;
+      border-bottom: 1px solid #e6ecf0;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      z-index: 1000;
+    }
+
+    .back-btn {
+      font-size: 20px;
+      color: #0056b3;
+      margin-right: 20px;
+      cursor: pointer;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f1419;
+    }
+
+    .main-content {
+      margin-top: 60px;
+      padding: 20px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #536471;
+      margin-bottom: 15px;
+    }
+
+    .account-section {
+      background-color: #f7f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #0f1419;
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 1px solid #e6ecf0;
+      background-color: white;
+      font-size: 15px;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #0056b3;
+    }
+
+    .current-email {
+      padding: 12px 15px;
+      background-color: #f0f2f5;
+      border-radius: 8px;
+      font-size: 15px;
+      color: #0f1419;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background-color: #0056b3;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #003d82;
+    }
+
+    .btn-block {
+      display: block;
+      width: 100%;
+    }
+
+    .status-message {
+      margin-top: 15px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .success {
+      background-color: #e6f7ee;
+      color: #00a854;
+      display: block;
+    }
+
+    .error {
+      background-color: #fce8e6;
+      color: #d93025;
+      display: block;
+    }
+
+    .loading-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+
+    .btn-loading .loading-spinner {
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .full-page-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #FFFFFF;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .spinner-container {
+      text-align: center;
+    }
+
+    .spinner {
+      width: 30px;
+      height: 30px;
+      border: 3px solid #e6f0ff;
+      border-top: 3px solid #0056b3;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- Full page loader -->
+  <div class="full-page-loader" id="full-page-loader">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="back-btn" onclick="window.location.href='index.html'">
+      <i class="fas fa-arrow-left"></i>
+    </div>
+    <div class="header-title">Manage Account</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Email Section -->
+    <div class="account-section">
+      <h3 class="section-title">Email Address</h3>
+      <div class="form-group">
+        <label class="form-label">Current Email</label>
+        <div class="current-email" id="current-email">Loading...</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="new-email" class="form-label">New Email</label>
+        <input type="email" id="new-email" class="form-input" placeholder="Enter new email address">
+      </div>
+      
+      <button id="update-email-btn" class="btn btn-primary btn-block">
+        Update Email
+        <div class="loading-spinner"></div>
+      </button>
+      
+      <div id="email-status" class="status-message"></div>
+    </div>
+
+    <!-- Password Section -->
+    <div class="account-section">
+      <h3 class="section-title">Change Password</h3>
+      
+      <div class="form-group">
+        <label for="current-password" class="form-label">Current Password</label>
+        <input type="password" id="current-password" class="form-input" placeholder="Enter current password">
+      </div>
+      
+      <div class="form-group">
+        <label for="new-password" class="form-label">New Password</label>
+        <input type="password" id="new-password" class="form-input" placeholder="Enter new password">
+      </div>
+      
+      <div class="form-group">
+        <label for="confirm-password" class="form-label">Confirm New Password</label>
+        <input type="password" id="confirm-password" class="form-input" placeholder="Confirm new password">
+      </div>
+      
+      <button id="update-password-btn" class="btn btn-primary btn-block">
+        Change Password
+        <div class="loading-spinner"></div>
+      </button>
+      
+      <div id="password-status" class="status-message"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Check authentication
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          window.location.href = 'login.html';
+          return;
+        }
+
+        // Display current email
+        document.getElementById('current-email').textContent = user.email;
+
+        // Set up event listeners
+        document.getElementById('update-email-btn').addEventListener('click', updateEmail);
+        document.getElementById('update-password-btn').addEventListener('click', updatePassword);
+
+      } catch (error) {
+        console.error('Initialization error:', error);
+      } finally {
+        // Hide preloader
+        document.getElementById('full-page-loader').style.display = 'none';
+      }
+    });
+
+    async function updateEmail() {
+      const btn = document.getElementById('update-email-btn');
+      const statusEl = document.getElementById('email-status');
+      const newEmail = document.getElementById('new-email').value.trim();
+
+      if (!newEmail) {
+        statusEl.textContent = 'Please enter a new email address';
+        statusEl.className = 'status-message error';
+        return;
+      }
+
+      try {
+        btn.classList.add('btn-loading');
+        statusEl.className = 'status-message';
+        
+        const { data, error } = await supabase.auth.updateUser({ email: newEmail });
+        
+        if (error) throw error;
+        
+        statusEl.textContent = 'Email update request sent. Please check your new email for confirmation.';
+        statusEl.className = 'status-message success';
+        document.getElementById('current-email').textContent = newEmail;
+        document.getElementById('new-email').value = '';
+        
+      } catch (error) {
+        console.error('Email update error:', error);
+        statusEl.textContent = error.message || 'Failed to update email. Please try again.';
+        statusEl.className = 'status-message error';
+      } finally {
+        btn.classList.remove('btn-loading');
+      }
+    }
+
+    async function updatePassword() {
+      const btn = document.getElementById('update-password-btn');
+      const statusEl = document.getElementById('password-status');
+      const currentPassword = document.getElementById('current-password').value.trim();
+      const newPassword = document.getElementById('new-password').value.trim();
+      const confirmPassword = document.getElementById('confirm-password').value.trim();
+
+      // Validation
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        statusEl.textContent = 'Please fill in all password fields';
+        statusEl.className = 'status-message error';
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        statusEl.textContent = 'New passwords do not match';
+        statusEl.className = 'status-message error';
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        statusEl.textContent = 'Password must be at least 6 characters';
+        statusEl.className = 'status-message error';
+        return;
+      }
+
+      try {
+        btn.classList.add('btn-loading');
+        statusEl.className = 'status-message';
+        
+        // First reauthenticate with current password
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: currentPassword
+        });
+        
+        if (signInError) throw signInError;
+        
+        // Then update password
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+        
+        if (updateError) throw updateError;
+        
+        statusEl.textContent = 'Password updated successfully!';
+        statusEl.className = 'status-message success';
+        
+        // Clear password fields
+        document.getElementById('current-password').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        
+      } catch (error) {
+        console.error('Password update error:', error);
+        statusEl.textContent = error.message || 'Failed to update password. Please try again.';
+        statusEl.className = 'status-message error';
+        
+        if (error.message.includes('Invalid login credentials')) {
+          statusEl.textContent = 'Current password is incorrect';
+        }
+      } finally {
+        btn.classList.remove('btn-loading');
+      }
+    }
+  </script>
+</body>
+</html>
