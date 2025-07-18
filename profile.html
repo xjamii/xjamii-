@@ -863,7 +863,8 @@ body {
   }
 
   // Load profile data
-  async function loadProfile() {
+  
+      async function loadProfile() {
     try {
       elements.fullPageLoader.style.display = 'flex';
       elements.errorMessage.style.display = 'none';
@@ -900,6 +901,9 @@ body {
       // Load skills
       await loadSkills(profile);
       
+      // Load education
+      await loadEducation(profile);
+      
       // Set up profile actions
       setupProfileActions(user.id === profileId, user.id, profileId);
       
@@ -912,7 +916,7 @@ body {
     } finally {
       elements.fullPageLoader.style.display = 'none';
     }
-  }
+}
 
   function updateProfileUI(profile, user) {
     elements.profileName.textContent = profile.full_name || 'Profile';
@@ -1106,19 +1110,108 @@ function openSkillsEditor() {
     document.body.style.overflow = 'hidden'; // Prevent scrolling
 }
 
-// Updated setupProfileActions function (simplified for skills)
+       
+async function loadEducation(profile) {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const isOwner = user?.id === profileId;
+
+        if (window.educationEditor) {
+            const educations = await window.educationEditor.loadEducations();
+            
+            if (educations && educations.length > 0) {
+                elements.educationContainer.innerHTML = educations.map(edu => `
+                    <div class="education-item">
+                        <div class="education-details">
+                            <div class="description">${edu.degree} at ${edu.institution} (${edu.start_year} - ${edu.end_year || 'Present'})</div>
+                        </div>
+                    </div>
+                `).join('');
+                elements.educationSection.style.display = 'block';
+            } else if (isOwner) {
+                elements.educationContainer.innerHTML = `
+                    <div class="no-education" style="text-align: center; margin: 20px 0; color: #666;">
+                        No education added yet
+                        <button class="btn" id="add-education-btn" 
+                                style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
+                            <i class="fas fa-plus"></i> Add Education
+                        </button>
+                    </div>`;
+                elements.educationSection.style.display = 'block';
+                
+                // Add click handler for the button
+                document.getElementById('add-education-btn').addEventListener('click', openEducationEditor);
+            } else {
+                elements.educationSection.style.display = 'none';
+            }
+        } else {
+            // Fallback if editor not loaded
+            if (isOwner) {
+                elements.educationContainer.innerHTML = `
+                    <div class="no-education" style="text-align: center; margin: 20px 0; color: #666;">
+                        No education added yet
+                        <button class="btn" id="add-education-btn" 
+                                style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
+                            <i class="fas fa-plus"></i> Add Education
+                        </button>
+                    </div>`;
+                elements.educationSection.style.display = 'block';
+                
+                // Add click handler for the button
+                document.getElementById('add-education-btn').addEventListener('click', openEducationEditor);
+            } else {
+                elements.educationSection.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading education:', error);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id === profileId) {
+            elements.educationContainer.innerHTML = `
+                <div class="no-education" style="text-align: center; margin: 20px 0; color: #666;">
+                    No education added yet
+                    <button class="btn" id="add-education-btn" 
+                            style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
+                        <i class="fas fa-plus"></i> Add Education
+                    </button>
+                </div>`;
+            elements.educationSection.style.display = 'block';
+            
+            // Add click handler for the button
+            document.getElementById('add-education-btn').addEventListener('click', openEducationEditor);
+        } else {
+            elements.educationSection.style.display = 'none';
+        }
+    }
+}
+
+// Function to open education editor
+function openEducationEditor() {
+    document.getElementById('education-page').style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Prevent scrolling
+}
+       
 function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
         elements.connectBtn.style.display = 'none';
         document.querySelector('.btn-outline').style.display = 'none';
         
-        // Skills edit button is now handled in loadSkills
+        // Show edit buttons for owner
+        elements.editButton.style.display = 'inline-block';
+        
+        // Skills edit button is handled in loadSkills
     } else {
-        // Remove skills edit button if exists
+        // Remove edit buttons if exists
         const existingEditBtn = document.getElementById('skills-edit-btn');
         if (existingEditBtn) {
             existingEditBtn.remove();
         }
+        
+        const existingAddEducationBtn = document.getElementById('add-education-btn');
+        if (existingAddEducationBtn) {
+            existingAddEducationBtn.remove();
+        }
+        
         checkConnectionStatus(currentUserId, profileId);
     }
 }
