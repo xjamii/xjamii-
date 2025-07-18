@@ -902,7 +902,7 @@ body {
     }
   }
 
-  // Update the loadExperiences function
+  
 async function loadExperiences(profile) {
     try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -912,7 +912,6 @@ async function loadExperiences(profile) {
             const experiences = await window.experienceEditor.loadExperiences();
             
             if (experiences && experiences.length > 0) {
-                // Show experiences to everyone if they exist
                 elements.experienceContainer.innerHTML = experiences.map(exp => `
                     <div class="experience-item">
                         <div class="experience-details">
@@ -922,22 +921,22 @@ async function loadExperiences(profile) {
                 `).join('');
                 elements.experienceSection.style.display = 'block';
             } else if (isOwner) {
-                // Show "No experience" message only to owner
                 elements.experienceContainer.innerHTML = `
                     <div class="no-experience" style="text-align: center; margin: 20px 0; color: #666;">
                         No experience added yet
-                        <button class="btn" onclick="openExperienceEditor()" 
+                        <button class="btn" id="add-experience-btn" 
                                 style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
                             <i class="fas fa-plus"></i> Add Experience
                         </button>
                     </div>`;
                 elements.experienceSection.style.display = 'block';
+                
+                // Add click handler for the button
+                document.getElementById('add-experience-btn').addEventListener('click', openExperienceEditor);
             } else {
-                // Hide completely for others when no experience
                 elements.experienceSection.style.display = 'none';
             }
         } else if (profile.experience) {
-            // Fallback for old profile format
             elements.experienceContainer.innerHTML = `
                 <div class="experience-item">
                     <div class="experience-details">
@@ -946,49 +945,51 @@ async function loadExperiences(profile) {
                 </div>`;
             elements.experienceSection.style.display = 'block';
         } else if (isOwner) {
-            // Show "No experience" message only to owner
             elements.experienceContainer.innerHTML = `
                 <div class="no-experience" style="text-align: center; margin: 20px 0; color: #666;">
                     No experience added yet
-                    <button class="btn" onclick="openExperienceEditor()" 
+                    <button class="btn" id="add-experience-btn" 
                             style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
                         <i class="fas fa-plus"></i> Add Experience
                     </button>
                 </div>`;
             elements.experienceSection.style.display = 'block';
+            
+            // Add click handler for the button
+            document.getElementById('add-experience-btn').addEventListener('click', openExperienceEditor);
         } else {
-            // Hide completely for others when no experience
             elements.experienceSection.style.display = 'none';
         }
     } catch (error) {
         console.error('Error loading experiences:', error);
-        // Default to showing for owner, hiding for others on error
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.id === profileId) {
             elements.experienceContainer.innerHTML = `
                 <div class="no-experience" style="text-align: center; margin: 20px 0; color: #666;">
                     No experience added yet
-                    <button class="btn" onclick="openExperienceEditor()" 
+                    <button class="btn" id="add-experience-btn" 
                             style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
                         <i class="fas fa-plus"></i> Add Experience
                     </button>
                 </div>`;
             elements.experienceSection.style.display = 'block';
+            
+            // Add click handler for the button
+            document.getElementById('add-experience-btn').addEventListener('click', openExperienceEditor);
         } else {
             elements.experienceSection.style.display = 'none';
         }
     }
 }
 
-// Add this new function to handle opening the experience editor
+// Function to open experience editor
 function openExperienceEditor() {
-    // Implement your experience editor opening logic here
-    console.log("Opening experience editor");
-    // Example: window.location.href = 'edit-experience.html';
-    // Or if using a modal: showExperienceModal();
-}
+    document.getElementById('experience-page').style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Prevent scrolling
+}        
 
-// Updated loadSkills function
+
+
 async function loadSkills(profile) {
     try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -1003,25 +1004,24 @@ async function loadSkills(profile) {
                 .map(skill => `<div class="skill-badge">${skill}</div>`)
                 .join('');
         } else {
-            // Default "Aviation Professional" badge if no skills
             elements.skillsContainer.innerHTML = '<div class="skill-badge">Aviation Professional</div>';
         }
 
-        // Always show skills section
         elements.skillsSection.style.display = 'block';
 
-        // Add edit button for owner if not already present
         if (isOwner && !document.getElementById('skills-edit-btn')) {
             const editBtn = document.createElement('button');
             editBtn.id = 'skills-edit-btn';
             editBtn.className = 'btn';
             editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Skills';
-            editBtn.onclick = openSkillsEditor;
             editBtn.style.marginTop = '10px';
             editBtn.style.display = 'block';
             editBtn.style.marginLeft = 'auto';
             editBtn.style.marginRight = 'auto';
             elements.skillsSection.appendChild(editBtn);
+            
+            // Add click handler for the button
+            editBtn.addEventListener('click', openSkillsEditor);
         }
 
     } catch (error) {
@@ -1031,12 +1031,10 @@ async function loadSkills(profile) {
     }
 }
 
-// Add this function to handle opening skills editor
+// Function to open skills editor
 function openSkillsEditor() {
-    // Implement your skills editor opening logic here
-    console.log("Opening skills editor");
-    // Example: window.location.href = 'edit-skills.html';
-    // Or if using a modal: showSkillsModal();
+    document.getElementById('skills-page').style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Prevent scrolling
 }
 
 // Updated setupProfileActions function (simplified for skills)
