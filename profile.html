@@ -883,70 +883,24 @@ function openWorkAtEditor(workId = null) {
 }
        
 function setupProfileActions(isOwnProfile, currentUserId, profileId) {
-    try {
-        console.log("Setting up profile actions...", {isOwnProfile, currentUserId, profileId});
-
-        // Clear any existing click handlers
-        if (elements.connectBtn) elements.connectBtn.onclick = null;
-        if (elements.editButton) elements.editButton.onclick = null;
-
-        // Get workat elements
-        const addWorkAtBtn = document.getElementById('add-workat-btn');
-        const workatSection = document.getElementById('workat-section');
-
-        if (isOwnProfile) {
-            console.log("User is viewing their own profile");
-            
-            // Hide Connect and Message buttons for owner
-            if (elements.connectBtn) elements.connectBtn.style.display = 'none';
-            if (document.querySelector('.btn-outline')) document.querySelector('.btn-outline').style.display = 'none';
-            
-            // Show edit button for owner
-            if (elements.editButton) {
-                elements.editButton.style.display = 'flex';
-                elements.editButton.onclick = openEditProfile;
-            }
-
-            // Handle workat section for owner
-            if (addWorkAtBtn) {
-                addWorkAtBtn.style.display = 'flex';
-                addWorkAtBtn.onclick = () => openWorkAtEditor();
-            }
-            
-            // Ensure workat section is visible for owner
-            if (workatSection) workatSection.style.display = 'block';
-
-        } else {
-            console.log("User is viewing someone else's profile");
-            
-            // Hide Edit button for non-owners
-            if (elements.editButton) elements.editButton.style.display = 'none';
-            
-            // Hide workat add button for non-owners
-            if (addWorkAtBtn) addWorkAtBtn.style.display = 'none';
-            
-            // Show Connect button for non-owners and check connection status
-            if (elements.connectBtn) {
-                elements.connectBtn.style.display = 'inline-block';
-                checkConnectionStatus(currentUserId, profileId);
-            }
-            
-            // Hide message button initially for non-owners
-            if (document.querySelector('.btn-outline')) document.querySelector('.btn-outline').style.display = 'none';
-            
-            // Handle workat section visibility based on content
-            if (workatSection) {
-                const hasWorkAtItems = document.querySelectorAll('#workat-container .workat-item').length > 0;
-                workatSection.style.display = hasWorkAtItems ? 'block' : 'none';
-            }
-        }
-
-        console.log("Profile actions setup complete");
-    } catch (error) {
-        console.error("Error in setupProfileActions:", error);
+    if (isOwnProfile) {
+        // Hide connect and message buttons for owner
+        elements.connectBtn.style.display = 'none';
+        document.querySelector('.btn-outline').style.display = 'none';
+        
+        // Show edit button for owner
+        elements.editButton.style.display = 'block';
+        elements.editButton.onclick = openEditProfile;
+    } else {
+        // Hide edit button for others
+        elements.editButton.style.display = 'none';
+        
+        // Show connect button and check connection status
+        checkConnectionStatus(currentUserId, profileId);
     }
 }
-  
+            // Hide workat add button for non-owners
+            
   async function loadUserPosts(userId) {
     try {
       elements.postsLoadingSpinner.style.display = 'flex';
