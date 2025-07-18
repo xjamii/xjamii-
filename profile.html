@@ -1324,19 +1324,26 @@ function openEducationEditor(educationId = null) {
        
 function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
+        // Hide connection-related buttons for own profile
         elements.connectBtn.style.display = 'none';
         document.querySelector('.btn-outline').style.display = 'none';
         
-        // Show edit buttons for owner
+        // Show main profile edit button
         elements.editButton.style.display = 'inline-block';
+        
+        // Show add buttons for all sections
+        if (elements.addEducationBtn) elements.addEducationBtn.style.display = 'flex';
+        if (elements.addWorkAtBtn) elements.addWorkAtBtn.style.display = 'flex';
+        
     } else {
-        // Remove all action buttons for non-owners
+        // Remove all edit/add buttons for non-owners
         const buttonsToRemove = [
-            'skills-edit-btn',
-            'add-education-btn',
-            'edit-education-btn', 
-            'add-workat-btn',
-            'edit-workat-btn'
+            'skills-edit-btn',        // Skills section
+            'add-education-btn',      // Education add
+            'edit-education-btn',     // Education edit
+            'add-workat-btn',         // Work At add
+            'edit-workat-btn',        // Work At edit
+            'add-experience-btn'      // Experience add
         ];
 
         buttonsToRemove.forEach(buttonId => {
@@ -1344,27 +1351,26 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
             if (button) button.remove();
         });
 
-        // Remove inline action buttons
-        document.querySelectorAll('.education-action-btn').forEach(btn => {
-            btn.remove();
-        });
+        // Remove all inline action buttons from items
+        const actionButtonsToRemove = [
+            '.workat-action-btn',     // Work At item actions
+            '.education-action-btn',  // Education item actions
+            '.experience-action-btn', // Experience item actions
+            '.skill-action-btn'       // Skill item actions
+        ];
 
-        document.querySelectorAll('.workat-action-btn').forEach(btn => {
-            btn.remove();
-        });
-
-        
-        // Also remove any dynamically created action buttons
-        document.querySelectorAll('.workat-action-btn').forEach(btn => {
-            btn.remove();
-        });
-
-        document.querySelectorAll('.experience-action-btn').forEach(btn => {
-            btn.remove();
+        actionButtonsToRemove.forEach(selector => {
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.remove();
+            });
         });
 
         // Check and setup connection status
         checkConnectionStatus(currentUserId, profileId);
+        
+        // Hide all add buttons (in case they weren't removed)
+        if (elements.addEducationBtn) elements.addEducationBtn.style.display = 'none';
+        if (elements.addWorkAtBtn) elements.addWorkAtBtn.style.display = 'none';
     }
 }
    
