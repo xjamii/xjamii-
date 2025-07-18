@@ -110,39 +110,40 @@ class SkillsEditor {
     }
     
     async open() {
-        // Show preloader
-        
-        
-        try {
-            // Load current skills from profile
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('skills')
-                .eq('id', profileId)
-                .single();
-            
-            if (!error && profile && profile.skills) {
-                this.selectedSkills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
-            } else {
-                // If no skills, set default "Aviation Professional" skill
-                this.selectedSkills = ['Aviation Professional'];
-            }
-            
-            this.elements.page.style.display = 'block';
-            this.updateSelectedSkillsDisplay();
-            this.populateSkillsGrid();
-        } catch (error) {
-            console.error('Error loading skills:', error);
-            showError('Failed to load skills');
-        } finally {
-            // Hide preloader when done
-            this.elements.preloader.style.display = 'none';
-        }
-    }
+    // Show preloader
+    this.elements.preloader.style.display = 'flex';
+    this.elements.page.style.display = 'block';  // Show the page immediately
     
-    close() {
-        this.elements.page.style.display = 'none';
+    try {
+        // Load current skills from profile
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('skills')
+            .eq('id', profileId)
+            .single();
+        
+        if (!error && profile && profile.skills) {
+            this.selectedSkills = profile.skills.split(',').map(s => s.trim()).filter(s => s);
+        } else {
+            // If no skills, set default "Aviation Professional" skill
+            this.selectedSkills = ['Aviation Professional'];
+        }
+        
+        this.updateSelectedSkillsDisplay();
+        this.populateSkillsGrid();
+    } catch (error) {
+        console.error('Error loading skills:', error);
+        showError('Failed to load skills');
+    } finally {
+        // Always hide preloader when done (whether success or error)
+        this.elements.preloader.style.display = 'none';
     }
+}
+
+    close() {
+    this.elements.page.style.display = 'none';
+    this.elements.preloader.style.display = 'none'; // Ensure preloader is hidden
+}
     
     async saveSkills() {
         try {
