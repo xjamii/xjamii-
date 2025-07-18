@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aviationin Profile</title>
     <link rel="stylesheet" href="posts.css">
-    <link rel="stylesheet" href="experience.css">
     <link rel="stylesheet" href="edit.css">
-    <link rel="stylesheet" href="education.css">
-     <link rel="stylesheet" href="skills.css">
     <link rel="stylesheet" href="workat.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -205,53 +202,6 @@ body {
 .btn:hover {
     opacity: 0.9;
     transform: translateY(-2px);
-}
-
-/* Experience Section */
-.experience-section, .skills-section {
-    padding: 20px;
-    border-top: 1px solid #eee;
-}
-
-.section-title {
-    font-size: 18px;
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #0056b3;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.experience-item {
-    margin-bottom: 15px;
-}
-
-.experience-details {
-    margin-left: 10px;
-}
-
-.experience-details .description {
-    color: #444;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-/* Skills Section */
-.skills-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.skill-badge {
-    background-color: #0056b3;
-    color: #FFFFFF;
-    padding: 6px 12px;
-    border-radius: 15px;
-    font-size: 15px; /* Increased from 13px */
-    font-weight: 500;
-    margin-top: 10px; /* Added to move it slightly down */
 }
 
 /* Responsive Adjustments */
@@ -533,102 +483,6 @@ body {
 </div>
         
 
-    
-
-
-        <!-- Education Section -->
-<div class="education-section" id="education-section" style="display: none;">
-    <h2 class="section-title">
-        <i class="fas fa-graduation-cap"></i> Education
-        <button class="btn edit-btn" id="edit-education-btn" style="display: none;">
-            <i class="fas fa-edit"></i> Edit
-        </button>
-    </h2>
-    <div id="education-container">
-        <div class="education-item">
-            <div class="education-details">
-                <div class="description" id="education-text">Loading education...</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Education Editor Page -->
-<div id="education-page" style="display: none;">
-    <div class="education-header">
-        <div class="header-left">
-            <button class="back-button" id="back-from-education">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="header-name">Edit Education</div>
-        </div>
-        <button class="btn btn-save" id="save-education">Save</button>
-    </div>
-
-    <div class="education-content">
-        <form id="education-form">
-            <div class="form-group">
-                <label for="education-degree">Degree/Certificate*</label>
-                <input type="text" id="education-degree" placeholder="e.g., ATPL, B.Sc Aviation" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="education-institution">Institution*</label>
-                <input type="text" id="education-institution" placeholder="e.g., CAE Academy, Embry-Riddle" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Duration*</label>
-                <div class="duration-fields">
-                    <div class="date-field">
-                        <label for="education-start-year">Start Year</label>
-                        <select id="education-start-year" required>
-                            <option value="">Year</option>
-                            <!-- Years will be populated by JS -->
-                        </select>
-                    </div>
-                    <div class="date-field">
-                        <label for="education-end-year">End Year</label>
-                        <select id="education-end-year">
-                            <option value="">Year</option>
-                            <!-- Years will be populated by JS -->
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="education-description">Description</label>
-                <textarea id="education-description" placeholder="Additional details about your education"></textarea>
-            </div>
-        </form>
-    </div>
-</div>
-        <!-- Experience Section -->
-<div class="experience-section" id="experience-section" style="display: none;">
-    <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-briefcase"></i> Professional Experience</h2>
-        
-    </div>
-    <div id="experience-container">
-        <div class="experience-item">
-            <div class="experience-details">
-                <div class="description" id="experience-text">Loading experience...</div>
-            </div>
-        </div>
-    </div>
-</div>
-        
-        <!-- Skills Section -->
-<div class="skills-section" id="skills-section" style="display: none;">
-    <h2 class="section-title">
-        <i class="fas fa-star"></i> Skills & Endorsements
-    </h2>
-    <div class="skills-list" id="skills-container">
-        <div class="skill-badge">Loading skills...</div>
-    </div>
-</div>
-
        <div class="grid-posts-header">
   <div class="grid-icon">
     <span></span><span></span><span></span>
@@ -736,119 +590,7 @@ body {
     </div>
 </div>
 
-    <!-- Experience Editor Page -->
-<div id="experience-page" style="display: none;">
-    <div class="experience-header">
-        <div class="header-left">
-            <button class="back-button" id="back-from-experience">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="header-name">Edit Experience</div>
-        </div>
-        <button class="btn btn-save" id="save-experience">Save</button>
-    </div>
-
-    <div class="experience-content">
-        <div class="preloader" id="experience-preloader">
-            <div class="spinner"></div>
-        </div>
-
-        <div class="form-section">
-            <div class="form-group">
-                <label for="experience-position">Position*</label>
-                <input type="text" id="experience-position" placeholder="e.g., Captain, First Officer" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="experience-company">Company*</label>
-                <input type="text" id="experience-company" placeholder="e.g., Emirates, Delta Airlines" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Duration*</label>
-                <div class="duration-fields">
-                    <div class="date-field">
-                        <label for="experience-start-month">Start Month</label>
-                        <select id="experience-start-month" required>
-                            <option value="">Month</option>
-                            <!-- Months will be populated by JS -->
-                        </select>
-                    </div>
-                    <div class="date-field">
-                        <label for="experience-start-year">Start Year</label>
-                        <select id="experience-start-year" required>
-                            <option value="">Year</option>
-                            <!-- Years will be populated by JS -->
-                        </select>
-                    </div>
-                    <div class="date-field">
-                        <label for="experience-end-month">End Month</label>
-                        <select id="experience-end-month">
-                            <option value="">Month</option>
-                            <!-- Months will be populated by JS -->
-                        </select>
-                    </div>
-                    <div class="date-field">
-                        <label for="experience-end-year">End Year</label>
-                        <select id="experience-end-year">
-                            <option value="">Year</option>
-                            <!-- Years will be populated by JS -->
-                        </select>
-                    </div>
-                </div>
-                <div class="current-role">
-                    <input type="checkbox" id="experience-current">
-                    <label for="experience-current">I currently work here</label>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="experience-description">Description</label>
-                <textarea id="experience-description" placeholder="Describe your responsibilities and achievements"></textarea>
-            </div>
-            
-            <button class="btn btn-delete" id="delete-experience" style="display: none;">
-                <i class="fas fa-trash"></i> Delete Experience
-            </button>
-        </div>
-    </div>
-</div>
-
-
-
-        <!-- Skills Editor Page -->
-<div id="skills-page" style="display: none;">
-    <div class="skills-header">
-        <div class="header-left">
-            <button class="back-button" id="back-from-skills">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="header-name">Edit Skills</div>
-        </div>
-        <button class="btn btn-save" id="save-skills">Save</button>
-    </div>
-
-    <div class="skills-content">
-        <div class="preloader" id="skills-preloader">
-            <div class="spinner"></div>
-        </div>
-
-        <div class="form-section">
-            <div class="selected-skills">
-                <p>Selected Skills: <span id="selected-count">0</span>/10</p>
-                <div class="skills-chips" id="skills-chips"></div>
-            </div>
-            
-            <div class="skills-search">
-                <input type="text" id="skills-search" placeholder="Search skills...">
-            </div>
-            
-            <div class="skills-grid" id="skills-grid">
-                <!-- Skills will be populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-</div>
+    
    <script>
   // Initialize Supabase
   const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
@@ -863,8 +605,6 @@ body {
   const elements = {
     errorMessage: document.getElementById('error-message'),
     profileInfo: document.getElementById('profile-info'),
-    experienceSection: document.getElementById('experience-section'),
-    skillsSection: document.getElementById('skills-section'),
     profileName: document.getElementById('profile-name'),
     fullName: document.getElementById('full-name'),
     username: document.getElementById('username'),
@@ -873,8 +613,6 @@ body {
     categoryBadge: document.getElementById('category-badge'),
     profileAvatar: document.getElementById('profile-avatar'),
     coverPhoto: document.getElementById('cover-photo'),
-    experienceContainer: document.getElementById('experience-container'),
-    skillsContainer: document.getElementById('skills-container'),
     verifiedBadge: document.getElementById('verified-badge'),
     connectionsCount: document.getElementById('connections-count'),
     connectBtn: document.getElementById('connect-btn'),
@@ -884,8 +622,6 @@ body {
     noPostsMessage: document.getElementById('no-posts-message'),
     userPostsSection: document.getElementById('user-posts-section'),
     fullPageLoader: document.getElementById('full-page-loader'),
-    educationSection: document.getElementById('education-section'),
-    educationContainer: document.getElementById('education-container'),
     workatSection: document.getElementById('workat-section'),
     workatContainer: document.getElementById('workat-container')
 };
@@ -951,14 +687,6 @@ body {
       // Load connections count
       await loadConnectionsCount(profileId);
       
-      // Load experiences
-      await loadExperiences(profile);
-      
-      // Load skills
-      await loadSkills(profile);
-      
-      // Load education
-      await loadEducation(profile);
 
         // Load work at information
         await loadWorkAt(profile);
@@ -1034,93 +762,6 @@ body {
     }
   }
 
-  
-async function loadExperiences(profile) {
-    try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const isOwner = user?.id === profileId;
-
-        if (window.experienceEditor) {
-            const experiences = await window.experienceEditor.loadExperiences();
-            
-            if (experiences && experiences.length > 0) {
-                elements.experienceContainer.innerHTML = experiences.map(exp => `
-                    <div class="experience-item">
-                        <div class="experience-details">
-                            <div class="description">${exp.position} at ${exp.company}</div>
-                        </div>
-                    </div>
-                `).join('');
-                elements.experienceSection.style.display = 'block';
-            } else if (isOwner) {
-                elements.experienceContainer.innerHTML = `
-                    <div class="no-experience" style="text-align: center; margin: 20px 0; color: #666;">
-                        No experience added yet
-                        <button class="btn" id="add-experience-btn" 
-                                style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                            <i class="fas fa-plus"></i> Add Experience
-                        </button>
-                    </div>`;
-                elements.experienceSection.style.display = 'block';
-                
-                // Add click handler for the button
-                document.getElementById('add-experience-btn').addEventListener('click', openExperienceEditor);
-            } else {
-                elements.experienceSection.style.display = 'none';
-            }
-        } else if (profile.experience) {
-            elements.experienceContainer.innerHTML = `
-                <div class="experience-item">
-                    <div class="experience-details">
-                        <div class="description">${profile.experience}</div>
-                    </div>
-                </div>`;
-            elements.experienceSection.style.display = 'block';
-        } else if (isOwner) {
-            elements.experienceContainer.innerHTML = `
-                <div class="no-experience" style="text-align: center; margin: 20px 0; color: #666;">
-                    No experience added yet
-                    <button class="btn" id="add-experience-btn" 
-                            style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                        <i class="fas fa-plus"></i> Add Experience
-                    </button>
-                </div>`;
-            elements.experienceSection.style.display = 'block';
-            
-            // Add click handler for the button
-            document.getElementById('add-experience-btn').addEventListener('click', openExperienceEditor);
-        } else {
-            elements.experienceSection.style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Error loading experiences:', error);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id === profileId) {
-            elements.experienceContainer.innerHTML = `
-                <div class="no-experience" style="text-align: center; margin: 20px 0; color: #666;">
-                    No experience added yet
-                    <button class="btn" id="add-experience-btn" 
-                            style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                        <i class="fas fa-plus"></i> Add Experience
-                    </button>
-                </div>`;
-            elements.experienceSection.style.display = 'block';
-            
-            // Add click handler for the button
-            document.getElementById('add-experience-btn').addEventListener('click', openExperienceEditor);
-        } else {
-            elements.experienceSection.style.display = 'none';
-        }
-    }
-}
-
-// Function to open experience editor
-function openExperienceEditor() {
-    document.getElementById('experience-page').style.display = 'block';
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
-}        
-       
-
 
 async function loadWorkAt(profile) {
     try {
@@ -1192,133 +833,6 @@ function openWorkAtEditor(workId = null) {
     document.body.style.overflow = 'hidden';
 }
 
-async function loadSkills(profile) {
-    try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const isOwner = user?.id === profileId;
-
-        if (window.skillsEditor) {
-            await window.skillsEditor.loadSkills();
-        } else if (profile.skills) {
-            const skillsArray = profile.skills.split(',').map(skill => skill.trim());
-            elements.skillsContainer.innerHTML = skillsArray
-                .filter(skill => skill.length > 0)
-                .map(skill => `<div class="skill-badge">${skill}</div>`)
-                .join('');
-        } else {
-            elements.skillsContainer.innerHTML = '<div class="skill-badge">Aviation Professional</div>';
-        }
-
-        elements.skillsSection.style.display = 'block';
-
-        if (isOwner && !document.getElementById('skills-edit-btn')) {
-            const editBtn = document.createElement('button');
-            editBtn.id = 'skills-edit-btn';
-            editBtn.className = 'btn';
-            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Skills';
-            editBtn.style.marginTop = '10px';
-            editBtn.style.display = 'block';
-            editBtn.style.marginLeft = 'auto';
-            editBtn.style.marginRight = 'auto';
-            elements.skillsSection.appendChild(editBtn);
-            
-            // Add click handler for the button
-            editBtn.addEventListener('click', openSkillsEditor);
-        }
-
-    } catch (error) {
-        console.error('Error loading skills:', error);
-        elements.skillsContainer.innerHTML = '<div class="skill-badge">Aviation Professional</div>';
-        elements.skillsSection.style.display = 'block';
-    }
-}
-
-// Function to open skills editor
-function openSkillsEditor() {
-    document.getElementById('skills-page').style.display = 'block';
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
-}
-
-       
-async function loadEducation(profile) {
-    try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const isOwner = user?.id === profileId;
-
-        if (window.educationEditor) {
-            const educations = await window.educationEditor.loadEducations();
-            
-            if (educations && educations.length > 0) {
-                elements.educationContainer.innerHTML = educations.map(edu => `
-                    <div class="education-item">
-                        <div class="education-details">
-                            <div class="description">${edu.degree} at ${edu.institution} (${edu.start_year} - ${edu.end_year || 'Present'})</div>
-                        </div>
-                    </div>
-                `).join('');
-                elements.educationSection.style.display = 'block';
-            } else if (isOwner) {
-                elements.educationContainer.innerHTML = `
-                    <div class="no-education" style="text-align: center; margin: 20px 0; color: #666;">
-                        No education added yet
-                        <button class="btn" id="add-education-btn" 
-                                style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                            <i class="fas fa-plus"></i> Add Education
-                        </button>
-                    </div>`;
-                elements.educationSection.style.display = 'block';
-                
-                // Add click handler for the button
-                document.getElementById('add-education-btn').addEventListener('click', openEducationEditor);
-            } else {
-                elements.educationSection.style.display = 'none';
-            }
-        } else {
-            // Fallback if editor not loaded
-            if (isOwner) {
-                elements.educationContainer.innerHTML = `
-                    <div class="no-education" style="text-align: center; margin: 20px 0; color: #666;">
-                        No education added yet
-                        <button class="btn" id="add-education-btn" 
-                                style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                            <i class="fas fa-plus"></i> Add Education
-                        </button>
-                    </div>`;
-                elements.educationSection.style.display = 'block';
-                
-                // Add click handler for the button
-                document.getElementById('add-education-btn').addEventListener('click', openEducationEditor);
-            } else {
-                elements.educationSection.style.display = 'none';
-            }
-        }
-    } catch (error) {
-        console.error('Error loading education:', error);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id === profileId) {
-            elements.educationContainer.innerHTML = `
-                <div class="no-education" style="text-align: center; margin: 20px 0; color: #666;">
-                    No education added yet
-                    <button class="btn" id="add-education-btn" 
-                            style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                        <i class="fas fa-plus"></i> Add Education
-                    </button>
-                </div>`;
-            elements.educationSection.style.display = 'block';
-            
-            // Add click handler for the button
-            document.getElementById('add-education-btn').addEventListener('click', openEducationEditor);
-        } else {
-            elements.educationSection.style.display = 'none';
-        }
-    }
-}
-
-// Function to open education editor
-function openEducationEditor() {
-    document.getElementById('education-page').style.display = 'block';
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
-}
        
 function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
@@ -1330,16 +844,7 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
         
         // Skills edit button is handled in loadSkills
     } else {
-        // Remove edit buttons if exists
-        const existingSkillsBtn = document.getElementById('skills-edit-btn');
-        if (existingSkillsBtn) {
-            existingSkillsBtn.remove();
-        }
-        
-        const existingAddEducationBtn = document.getElementById('add-education-btn');
-        if (existingAddEducationBtn) {
-            existingAddEducationBtn.remove();
-        }
+      
         
         const existingWorkAtBtn = document.getElementById('edit-workat-btn');
         if (existingWorkAtBtn) {
@@ -1600,10 +1105,10 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
             
         
         <script src="posts.js"></script>
-        <script src="education.js"></script>
+       
       <script src="post-comments.js"></script>
-      <script src="skills.js"></script>
-      <script src="experience.js"></script>
+      
+      
     <script src="edit.js"></script>
         <script src="workat.js"></script>
 </body>
