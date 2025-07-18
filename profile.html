@@ -988,22 +988,12 @@ function openExperienceEditor() {
     // Or if using a modal: showExperienceModal();
 }
 
-// Update the setupProfileActions function (unchanged from previous)
-function setupProfileActions(isOwnProfile, currentUserId, profileId) {
-    if (isOwnProfile) {
-        elements.connectBtn.style.display = 'none';
-        elements.editButton.style.display = 'block';
-        elements.editButton.onclick = openEditProfile;
-        document.querySelector('.btn-outline').style.display = 'none';
-    } else {
-        elements.editButton.style.display = 'none';
-        checkConnectionStatus(currentUserId, profileId);
-    }
-}
-
-// Keep the loadSkills function exactly as before
+// Updated loadSkills function
 async function loadSkills(profile) {
     try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const isOwner = user?.id === profileId;
+
         if (window.skillsEditor) {
             await window.skillsEditor.loadSkills();
         } else if (profile.skills) {
@@ -1013,9 +1003,27 @@ async function loadSkills(profile) {
                 .map(skill => `<div class="skill-badge">${skill}</div>`)
                 .join('');
         } else {
+            // Default "Aviation Professional" badge if no skills
             elements.skillsContainer.innerHTML = '<div class="skill-badge">Aviation Professional</div>';
         }
+
+        // Always show skills section
         elements.skillsSection.style.display = 'block';
+
+        // Add edit button for owner if not already present
+        if (isOwner && !document.getElementById('skills-edit-btn')) {
+            const editBtn = document.createElement('button');
+            editBtn.id = 'skills-edit-btn';
+            editBtn.className = 'btn';
+            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Skills';
+            editBtn.onclick = openSkillsEditor;
+            editBtn.style.marginTop = '10px';
+            editBtn.style.display = 'block';
+            editBtn.style.marginLeft = 'auto';
+            editBtn.style.marginRight = 'auto';
+            elements.skillsSection.appendChild(editBtn);
+        }
+
     } catch (error) {
         console.error('Error loading skills:', error);
         elements.skillsContainer.innerHTML = '<div class="skill-badge">Aviation Professional</div>';
@@ -1023,6 +1031,30 @@ async function loadSkills(profile) {
     }
 }
 
+// Add this function to handle opening skills editor
+function openSkillsEditor() {
+    // Implement your skills editor opening logic here
+    console.log("Opening skills editor");
+    // Example: window.location.href = 'edit-skills.html';
+    // Or if using a modal: showSkillsModal();
+}
+
+// Updated setupProfileActions function (simplified for skills)
+function setupProfileActions(isOwnProfile, currentUserId, profileId) {
+    if (isOwnProfile) {
+        elements.connectBtn.style.display = 'none';
+        document.querySelector('.btn-outline').style.display = 'none';
+        
+        // Skills edit button is now handled in loadSkills
+    } else {
+        // Remove skills edit button if exists
+        const existingEditBtn = document.getElementById('skills-edit-btn');
+        if (existingEditBtn) {
+            existingEditBtn.remove();
+        }
+        checkConnectionStatus(currentUserId, profileId);
+    }
+}
 
    
 
