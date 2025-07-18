@@ -902,50 +902,94 @@ body {
     }
   }
 
-  async function loadExperiences(profile) {
+  // Update the loadExperiences function
+async function loadExperiences(profile) {
     try {
-      if (window.experienceEditor) {
-        await window.experienceEditor.loadExperiences();
-      } else if (profile.experience) {
-        elements.experienceContainer.innerHTML = `
-          <div class="experience-item">
-            <div class="experience-details">
-              <div class="description">${profile.experience}</div>
-            </div>
-          </div>`;
-      }
-    } catch (error) {
-      console.error('Error loading experiences:', error);
-    }
-  }
+        const { data: { user } } = await supabase.auth.getUser();
+        const isOwner = user?.id === profileId;
 
-  async function loadSkills(profile) {
-    try {
-      if (window.skillsEditor) {
-        await window.skillsEditor.loadSkills();
-      } else if (profile.skills) {
-        const skillsArray = profile.skills.split(',').map(skill => skill.trim());
-        elements.skillsContainer.innerHTML = skillsArray
-          .filter(skill => skill.length > 0)
-          .map(skill => `<div class="skill-badge">${skill}</div>`)
-          .join('');
-      }
+        if (window.experienceEditor) {
+            const experiences = await window.experienceEditor.loadExperiences();
+            
+            // Show section to owner always, to others only if there are experiences
+            if (isOwner || (experiences && experiences.length > 0)) {
+                elements.experienceSection.style.display = 'block';
+            } else {
+                elements.experienceSection.style.display = 'none';
+            }
+        } else if (profile.experience) {
+            elements.experienceContainer.innerHTML = `
+                <div class="experience-item">
+                    <div class="experience-details">
+                        <div class="description">${profile.experience}</div>
+                    </div>
+                </div>`;
+            
+            // Show section if owner or if experience exists
+            if (isOwner || profile.experience.trim() !== '') {
+                elements.experienceSection.style.display = 'block';
+            } else {
+                elements.experienceSection.style.display = 'none';
+            }
+        } else {
+            // Hide section if no experience and not owner
+            elements.experienceSection.style.display = isOwner ? 'block' : 'none';
+        }
     } catch (error) {
-      console.error('Error loading skills:', error);
+        console.error('Error loading experiences:', error);
+        // Default to showing for owner, hiding for others on error
+        const { data: { user } } = await supabase.auth.getUser();
+        elements.experienceSection.style.display = user?.id === profileId ? 'block' : 'none';
     }
-  }
+}
 
-  function setupProfileActions(isOwnProfile, currentUserId, profileId) {
+// Update the setupProfileActions function
+function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
-      elements.connectBtn.style.display = 'none';
-      elements.editButton.style.display = 'block';
-      elements.editButton.onclick = openEditProfile;
-      document.querySelector('.btn-outline').style.display = 'none';
+        elements.connectBtn.style.display = 'none';
+        elements.editButton.style.display = 'block'; // Show edit button for owner
+        elements.editButton.onclick = openEditProfile;
+        document.querySelector('.btn-outline').style.display = 'none';
+        
+        // Ensure experience section is visible to owner
+        elements.experienceSection.style.display = 'block';
     } else {
-      elements.editButton.style.display = 'none';
-      checkConnectionStatus(currentUserId, profileId);
+        elements.editButton.style.display = 'none'; // Hide edit button for others
+        checkConnectionStatus(currentUserId, profileId);
+        
+        // Experience section visibility for others is handled in loadExperiences
     }
-  }
+}
+
+    
+// Update the loadSkills function (keep edit button logic in setupProfileActions)
+async function loadSkills(profile) {
+    try {
+        if (window.skillsEditor) {
+            await window.skillsEditor.loadSkills();
+        } else if (profile.skills) {
+            const skillsArray = profile.skills.split(',').map(skill => skill.trim());
+            elements.skillsContainer.innerHTML = skillsArray
+                .filter(skill => skill.length > 0)
+                .map(skill => `<div class="skill-badge">${skill}</div>`)
+                .join('');
+        } else {
+            // Default "Aviation Professional" badge if no skills
+            elements.skillsContainer.innerHTML = '<div class="skill-badge">Aviation Professional</div>';
+        }
+        
+        // Skills section should always be visible
+        elements.skillsSection.style.display = 'block';
+    } catch (error) {
+        console.error('Error loading skills:', error);
+        // Show default badge on error
+        elements.skillsContainer.innerHTML = '<div class="skill-badge">Aviation Professional</div>';
+        elements.skillsSection.style.display = 'block';
+    }
+}
+   
+
+  
 
   async function loadUserPosts(userId) {
     try {
