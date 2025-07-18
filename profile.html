@@ -487,36 +487,23 @@ body {
         </div>
 
         
-
 <!-- Work At Section -->
 <div class="workat-section" id="workat-section" style="display: none;">
     <div class="section-header">
         <h2 class="section-title">
             <i class="fas fa-briefcase"></i> Work At
         </h2>
-        <div class="section-actions" id="workat-actions" style="display: none;">
-            <button class="icon-btn" id="add-more-workat" title="Add more">
-                <i class="fas fa-plus-circle"></i>
-            </button>
-            <button class="icon-btn" id="edit-workat" title="Edit">
-                <i class="fas fa-pencil-alt"></i>
-            </button>
-            <button class="icon-btn" id="delete-workat" title="Delete">
-                <i class="fas fa-trash-alt"></i>
-            </button>
-        </div>
+        <button class="btn btn-small btn-add" id="add-workat-btn">
+            <i class="fas fa-plus"></i>
+        </button>
     </div>
+    
     <div id="workat-container">
-        <div class="no-workat" style="text-align: center; margin: 20px 0; color: #666;">
-            No work information added yet
-            <button class="btn small-btn" id="add-workat-btn">
-                <i class="fas fa-plus"></i> Add Work Info
-            </button>
-        </div>
+        <!-- Work items will be added here dynamically -->
     </div>
 </div>
 
-<!-- Work At Editor Modal -->
+<!-- Work At Editor Page -->
 <div id="workat-page" style="display: none;">
     <div class="workat-header">
         <div class="header-left">
@@ -530,6 +517,8 @@ body {
 
     <div class="workat-content">
         <form id="workat-form">
+            <input type="hidden" id="workat-id">
+            
             <div class="form-group">
                 <label for="workat-company">Company*</label>
                 <input type="text" id="workat-company" placeholder="e.g., Emirates, Delta Airlines" required>
@@ -542,6 +531,10 @@ body {
         </form>
     </div>
 </div>
+        
+
+    
+
 
         <!-- Education Section -->
 <div class="education-section" id="education-section" style="display: none;">
