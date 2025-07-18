@@ -20,11 +20,6 @@
       touch-action: pan-y;
     }
 
-    * {
-      -webkit-tap-highlight-color: transparent;
-      tap-highlight-color: transparent;
-    }
-
     .header {
       position: fixed;
       top: 0;
@@ -92,7 +87,7 @@
       color: #d93025;
     }
 
-    .form-input {
+    .form-input, .form-select, .form-textarea {
       width: 100%;
       padding: 12px 15px;
       border-radius: 8px;
@@ -100,42 +95,16 @@
       background-color: white;
       font-size: 15px;
       transition: border-color 0.2s;
-    }
-
-    .form-input:focus {
-      outline: none;
-      border-color: #0056b3;
     }
 
     .form-textarea {
-      width: 100%;
-      padding: 12px 15px;
-      border-radius: 8px;
-      border: 1px solid #e6ecf0;
-      background-color: white;
-      font-size: 15px;
       min-height: 150px;
       resize: vertical;
-      transition: border-color 0.2s;
     }
 
-    .form-textarea:focus {
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
       outline: none;
       border-color: #0056b3;
-    }
-
-    .form-select {
-      width: 100%;
-      padding: 12px 15px;
-      border-radius: 8px;
-      border: 1px solid #e6ecf0;
-      background-color: white;
-      font-size: 15px;
-      transition: border-color 0.2s;
-    }
-
-    .file-upload {
-      display: none;
     }
 
     .file-upload-label {
@@ -248,10 +217,6 @@
       z-index: 9999;
     }
 
-    .spinner-container {
-      text-align: center;
-    }
-
     .spinner {
       width: 30px;
       height: 30px;
@@ -259,16 +224,49 @@
       border-top: 3px solid #0056b3;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin: 0 auto;
+    }
+
+    .screenshot-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .screenshot-thumbnail {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #e6ecf0;
+    }
+
+    .remove-screenshot {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #d93025;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .screenshot-container {
+      position: relative;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
   <!-- Full page loader -->
   <div class="full-page-loader" id="full-page-loader">
-    <div class="spinner-container">
-      <div class="spinner"></div>
-    </div>
+    <div class="spinner"></div>
   </div>
 
   <!-- Header -->
@@ -297,13 +295,17 @@
             <option value="harassment">Harassment or Abuse</option>
             <option value="spam">Spam or Scam</option>
             <option value="privacy">Privacy Concern</option>
+            <option value="account">Account Issue</option>
+            <option value="suggestion">Feature Suggestion</option>
             <option value="other">Other</option>
           </select>
         </div>
 
         <div class="form-group">
           <label for="report-description" class="form-label required">Description</label>
-          <textarea id="report-description" class="form-textarea" placeholder="Please describe the issue in detail" required></textarea>
+          <textarea id="report-description" class="form-textarea" 
+                    placeholder="Please describe the issue in detail. Include steps to reproduce if it's a bug." 
+                    required></textarea>
         </div>
 
         <div class="form-group">
@@ -312,17 +314,17 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Screenshots (Optional)</label>
+          <label class="form-label">Screenshots (Optional, max 3)</label>
           <input type="file" id="screenshot-upload" class="file-upload" accept="image/*" multiple>
           <label for="screenshot-upload" class="file-upload-label">
             <div class="file-upload-icon">
               <i class="fas fa-camera"></i>
             </div>
             <div class="file-upload-text">Click to upload screenshots</div>
-            <div class="file-name" id="screenshot-names"></div>
           </label>
+          <div id="screenshot-preview" class="screenshot-preview"></div>
           <p style="font-size: 12px; color: #536471; margin-top: 8px;">
-            Accepted formats: JPG, PNG (Max 5MB each)
+            Accepted formats: JPG, PNG (Max 5MB each, 3 files max)
           </p>
         </div>
 
@@ -342,6 +344,10 @@
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+    // Store uploaded files
+    let uploadedFiles = [];
+    let screenshotPreviews = [];
+
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         // Show preloader
@@ -356,119 +362,183 @@
 
       } catch (error) {
         console.error('Initialization error:', error);
-        document.getElementById('status-message').textContent = 'Error loading report form. Please try again.';
-        document.getElementById('status-message').className = 'status-message error';
+        showStatusMessage('Error loading report form. Please try again.', 'error');
       } finally {
         // Hide preloader
         document.getElementById('full-page-loader').style.display = 'none';
       }
 
-      // Setup screenshot upload display
-      document.getElementById('screenshot-upload').addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        const fileNameElement = document.getElementById('screenshot-names');
-        
-        if (files.length > 0) {
-          fileNameElement.textContent = `${files.length} file(s) selected`;
-          fileNameElement.style.display = 'block';
-        } else {
-          fileNameElement.style.display = 'none';
-        }
-      });
-
+      // Setup screenshot upload
+      setupFileUpload();
+      
       // Form submission
-      document.getElementById('report-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const btn = document.getElementById('submit-btn');
-        const statusEl = document.getElementById('status-message');
-        const reportType = document.getElementById('report-type').value;
-        const description = document.getElementById('report-description').value.trim();
-        const url = document.getElementById('report-url').value.trim();
-        const fileInput = document.getElementById('screenshot-upload');
-        const files = Array.from(fileInput.files);
-
-        // Validation
-        if (!reportType) {
-          statusEl.textContent = 'Please select an issue type';
-          statusEl.className = 'status-message error';
-          return;
-        }
-
-        if (!description) {
-          statusEl.textContent = 'Please describe the issue';
-          statusEl.className = 'status-message error';
-          return;
-        }
-
-        // Check file sizes (5MB max each)
-        if (files.some(file => file.size > 5 * 1024 * 1024)) {
-          statusEl.textContent = 'Each file must be less than 5MB';
-          statusEl.className = 'status-message error';
-          return;
-        }
-
-        try {
-          btn.classList.add('btn-loading');
-          statusEl.className = 'status-message';
-
-          // Get current user
-          const { data: { user }, error: userError } = await supabase.auth.getUser();
-          if (userError) throw userError;
-
-          // Upload screenshots if any
-          let screenshotUrls = [];
-          
-          if (files.length > 0) {
-            const uploadPromises = files.map(async (file, index) => {
-              const fileExt = file.name.split('.').pop();
-              const fileName = `${user.id}-${Date.now()}-${index}.${fileExt}`;
-              const filePath = `report-screenshots/${fileName}`;
-
-              const { data: uploadData, error: uploadError } = await supabase.storage
-                .from('report-screenshots')
-                .upload(filePath, file);
-
-              if (uploadError) throw uploadError;
-
-              const { data: urlData } = supabase.storage
-                .from('report-screenshots')
-                .getPublicUrl(filePath);
-
-              return urlData.publicUrl;
-            });
-
-            screenshotUrls = await Promise.all(uploadPromises);
-          }
-
-          // Create report
-          const { data, error: insertError } = await supabase
-            .from('reports')
-            .insert([{
-              reporter_id: user.id,
-              reason: `${reportType}: ${description}`,
-              status: 'pending',
-              screenshot_urls: screenshotUrls.length > 0 ? screenshotUrls : null,
-              reported_url: url || null
-            }]);
-
-          if (insertError) throw insertError;
-
-          // Success
-          statusEl.textContent = 'Report submitted successfully! Thank you for helping improve X-Jamii.';
-          statusEl.className = 'status-message success';
-          document.getElementById('report-form').reset();
-          document.getElementById('screenshot-names').style.display = 'none';
-
-        } catch (error) {
-          console.error('Submission error:', error);
-          statusEl.textContent = error.message || 'Failed to submit report. Please try again.';
-          statusEl.className = 'status-message error';
-        } finally {
-          btn.classList.remove('btn-loading');
-        }
-      });
+      document.getElementById('report-form').addEventListener('submit', handleFormSubmit);
     });
+
+    function setupFileUpload() {
+      const fileInput = document.getElementById('screenshot-upload');
+      const previewContainer = document.getElementById('screenshot-preview');
+
+      fileInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        
+        // Validate files
+        if (files.length > 3) {
+          showStatusMessage('Maximum 3 screenshots allowed', 'error');
+          fileInput.value = '';
+          return;
+        }
+
+        for (const file of files) {
+          if (file.size > 5 * 1024 * 1024) {
+            showStatusMessage('Each file must be less than 5MB', 'error');
+            fileInput.value = '';
+            return;
+          }
+          if (!['image/jpeg', 'image/png'].includes(file.type)) {
+            showStatusMessage('Only JPG and PNG files are allowed', 'error');
+            fileInput.value = '';
+            return;
+          }
+        }
+
+        // Clear previous previews
+        previewContainer.innerHTML = '';
+        uploadedFiles = [];
+        screenshotPreviews = [];
+
+        // Create previews
+        files.forEach((file, index) => {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const container = document.createElement('div');
+            container.className = 'screenshot-container';
+            
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'screenshot-thumbnail';
+            
+            const removeBtn = document.createElement('div');
+            removeBtn.className = 'remove-screenshot';
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = () => removeScreenshot(index);
+            
+            container.appendChild(img);
+            container.appendChild(removeBtn);
+            previewContainer.appendChild(container);
+            
+            screenshotPreviews.push({
+              element: container,
+              file: file
+            });
+          };
+          reader.readAsDataURL(file);
+          uploadedFiles.push(file);
+        });
+      });
+    }
+
+    function removeScreenshot(index) {
+      screenshotPreviews[index].element.remove();
+      screenshotPreviews.splice(index, 1);
+      uploadedFiles.splice(index, 1);
+      
+      // Update the file input
+      const dataTransfer = new DataTransfer();
+      uploadedFiles.forEach(file => dataTransfer.items.add(file));
+      document.getElementById('screenshot-upload').files = dataTransfer.files;
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      const btn = document.getElementById('submit-btn');
+      const reportType = document.getElementById('report-type').value;
+      const description = document.getElementById('report-description').value.trim();
+      const url = document.getElementById('report-url').value.trim();
+
+      // Validation
+      if (!reportType) {
+        showStatusMessage('Please select an issue type', 'error');
+        return;
+      }
+
+      if (!description) {
+        showStatusMessage('Please describe the issue', 'error');
+        return;
+      }
+
+      try {
+        btn.classList.add('btn-loading');
+        clearStatusMessage();
+
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
+        // Upload screenshots if any
+        let screenshotUrls = [];
+        
+        if (uploadedFiles.length > 0) {
+          const uploadPromises = uploadedFiles.map(async (file, index) => {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}-${Date.now()}-${index}.${fileExt}`;
+            const filePath = `report-screenshots/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+              .from('report-screenshots')
+              .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: urlData } = supabase.storage
+              .from('report-screenshots')
+              .getPublicUrl(filePath);
+
+            return urlData.publicUrl;
+          });
+
+          screenshotUrls = await Promise.all(uploadPromises);
+        }
+
+        // Create report in the new user_reports table
+        const { error: insertError } = await supabase
+          .from('user_reports')
+          .insert([{
+            reporter_id: user.id,
+            report_type: reportType,
+            description: description,
+            reported_url: url || null,
+            screenshot_urls: screenshotUrls.length > 0 ? screenshotUrls : null,
+            status: 'pending'
+          }]);
+
+        if (insertError) throw insertError;
+
+        // Success
+        showStatusMessage('Report submitted successfully! Thank you for helping improve X-Jamii.', 'success');
+        document.getElementById('report-form').reset();
+        document.getElementById('screenshot-preview').innerHTML = '';
+        uploadedFiles = [];
+        screenshotPreviews = [];
+
+      } catch (error) {
+        console.error('Submission error:', error);
+        showStatusMessage(error.message || 'Failed to submit report. Please try again.', 'error');
+      } finally {
+        btn.classList.remove('btn-loading');
+      }
+    }
+
+    function showStatusMessage(message, type) {
+      const statusEl = document.getElementById('status-message');
+      statusEl.textContent = message;
+      statusEl.className = `status-message ${type}`;
+    }
+
+    function clearStatusMessage() {
+      document.getElementById('status-message').className = 'status-message';
+    }
   </script>
 </body>
 </html>
