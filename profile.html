@@ -7,9 +7,7 @@
     <link rel="stylesheet" href="posts.css">
     <link rel="stylesheet" href="experience.css">
     <link rel="stylesheet" href="edit.css">
-    <link rel="stylesheet" href="education.css">
      <link rel="stylesheet" href="skills.css">
-    <link rel="stylesheet" href="workat.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -85,7 +83,7 @@ body {
 }
 
 .cover-photo {
-    height: 150px;
+    height: 300px;
     background-color: #0056b3;
     background-size: cover;
     background-position: center;
@@ -486,52 +484,30 @@ body {
             </div>
         </div>
 
-        
-<!-- Work At Section -->
-<div class="workat-section" id="workat-section" style="display: none;">
+        <!-- Experience Section -->
+<div class="experience-section" id="experience-section" style="display: none;">
     <div class="section-header">
-        <h2 class="section-title">
-            <i class="fas fa-briefcase"></i> Work At
-        </h2>
-        <button class="btn btn-small btn-add" id="add-workat-btn">
-            <i class="fas fa-plus"></i>
-        </button>
+        <h2 class="section-title"><i class="fas fa-briefcase"></i> Professional Experience</h2>
+        
     </div>
-    
-    <div id="workat-container">
-        <!-- Work items will be added here dynamically -->
-    </div>
-</div>
-
-<!-- Work At Editor Page -->
-<div id="workat-page" style="display: none;">
-    <div class="workat-header">
-        <div class="header-left">
-            <button class="back-button" id="back-from-workat">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="header-name">Edit Work Information</div>
+    <div id="experience-container">
+        <div class="experience-item">
+            <div class="experience-details">
+                <div class="description" id="experience-text">Loading experience...</div>
+            </div>
         </div>
-        <button class="btn btn-save" id="save-workat">Save</button>
-    </div>
-
-    <div class="workat-content">
-        <form id="workat-form">
-            <input type="hidden" id="workat-id">
-            
-            <div class="form-group">
-                <label for="workat-company">Company*</label>
-                <input type="text" id="workat-company" placeholder="e.g., Emirates, Delta Airlines" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="workat-website">Website</label>
-                <input type="url" id="workat-website" placeholder="https://company.com">
-            </div>
-        </form>
     </div>
 </div>
         
+        <!-- Skills Section -->
+<div class="skills-section" id="skills-section" style="display: none;">
+    <h2 class="section-title">
+        <i class="fas fa-star"></i> Skills & Endorsements
+    </h2>
+    <div class="skills-list" id="skills-container">
+        <div class="skill-badge">Loading skills...</div>
+    </div>
+</div>
 
        <div class="grid-posts-header">
   <div class="grid-icon">
@@ -557,6 +533,8 @@ body {
         No posts yet
     </div>
 </div>
+        <!-- User posts will be loaded here -->
+    
     
     <!-- Edit Profile Modal -->
 <div id="edit-profile-page" style="display: none;">
@@ -638,6 +616,119 @@ body {
     </div>
 </div>
 
+    <!-- Experience Editor Page -->
+<div id="experience-page" style="display: none;">
+    <div class="experience-header">
+        <div class="header-left">
+            <button class="back-button" id="back-from-experience">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-name">Edit Experience</div>
+        </div>
+        <button class="btn btn-save" id="save-experience">Save</button>
+    </div>
+
+    <div class="experience-content">
+        <div class="preloader" id="experience-preloader">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-group">
+                <label for="experience-position">Position*</label>
+                <input type="text" id="experience-position" placeholder="e.g., Captain, First Officer" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="experience-company">Company*</label>
+                <input type="text" id="experience-company" placeholder="e.g., Emirates, Delta Airlines" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Duration*</label>
+                <div class="duration-fields">
+                    <div class="date-field">
+                        <label for="experience-start-month">Start Month</label>
+                        <select id="experience-start-month" required>
+                            <option value="">Month</option>
+                            <!-- Months will be populated by JS -->
+                        </select>
+                    </div>
+                    <div class="date-field">
+                        <label for="experience-start-year">Start Year</label>
+                        <select id="experience-start-year" required>
+                            <option value="">Year</option>
+                            <!-- Years will be populated by JS -->
+                        </select>
+                    </div>
+                    <div class="date-field">
+                        <label for="experience-end-month">End Month</label>
+                        <select id="experience-end-month">
+                            <option value="">Month</option>
+                            <!-- Months will be populated by JS -->
+                        </select>
+                    </div>
+                    <div class="date-field">
+                        <label for="experience-end-year">End Year</label>
+                        <select id="experience-end-year">
+                            <option value="">Year</option>
+                            <!-- Years will be populated by JS -->
+                        </select>
+                    </div>
+                </div>
+                <div class="current-role">
+                    <input type="checkbox" id="experience-current">
+                    <label for="experience-current">I currently work here</label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="experience-description">Description</label>
+                <textarea id="experience-description" placeholder="Describe your responsibilities and achievements"></textarea>
+            </div>
+            
+            <button class="btn btn-delete" id="delete-experience" style="display: none;">
+                <i class="fas fa-trash"></i> Delete Experience
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+        <!-- Skills Editor Page -->
+<div id="skills-page" style="display: none;">
+    <div class="skills-header">
+        <div class="header-left">
+            <button class="back-button" id="back-from-skills">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-name">Edit Skills</div>
+        </div>
+        <button class="btn btn-save" id="save-skills">Save</button>
+    </div>
+
+    <div class="skills-content">
+        <div class="preloader" id="skills-preloader">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="form-section">
+            <div class="selected-skills">
+                <p>Selected Skills: <span id="selected-count">0</span>/10</p>
+                <div class="skills-chips" id="skills-chips"></div>
+            </div>
+            
+            <div class="skills-search">
+                <input type="text" id="skills-search" placeholder="Search skills...">
+            </div>
+            
+            <div class="skills-grid" id="skills-grid">
+                <!-- Skills will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
    <script>
   // Initialize Supabase
   const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
@@ -652,6 +743,8 @@ body {
   const elements = {
     errorMessage: document.getElementById('error-message'),
     profileInfo: document.getElementById('profile-info'),
+    experienceSection: document.getElementById('experience-section'),
+    skillsSection: document.getElementById('skills-section'),
     profileName: document.getElementById('profile-name'),
     fullName: document.getElementById('full-name'),
     username: document.getElementById('username'),
@@ -660,23 +753,18 @@ body {
     categoryBadge: document.getElementById('category-badge'),
     profileAvatar: document.getElementById('profile-avatar'),
     coverPhoto: document.getElementById('cover-photo'),
+    experienceContainer: document.getElementById('experience-container'),
+    skillsContainer: document.getElementById('skills-container'),
     verifiedBadge: document.getElementById('verified-badge'),
     connectionsCount: document.getElementById('connections-count'),
     connectBtn: document.getElementById('connect-btn'),
     editButton: document.getElementById('edit-button'),
     userPostsContainer: document.getElementById('user-posts-container'),
-    professionalPostsContainer: document.getElementById('professional-posts-container'),
     postsLoadingSpinner: document.getElementById('posts-loading-spinner'),
-    professionalPostsLoadingSpinner: document.getElementById('professional-posts-loading-spinner'),
     noPostsMessage: document.getElementById('no-posts-message'),
-    noProfessionalPostsMessage: document.getElementById('no-professional-posts-message'),
     userPostsSection: document.getElementById('user-posts-section'),
-    professionalPostsSection: document.getElementById('professional-posts-section'),
-    fullPageLoader: document.getElementById('full-page-loader'),
-    workatSection: document.getElementById('workat-section'),
-    workatContainer: document.getElementById('workat-container')
-};
-
+    fullPageLoader: document.getElementById('full-page-loader')
+  };
 
   // Main initialization function
   async function initializeApp() {
@@ -706,8 +794,7 @@ body {
   }
 
   // Load profile data
-  
-      async function loadProfile() {
+  async function loadProfile() {
     try {
       elements.fullPageLoader.style.display = 'flex';
       elements.errorMessage.style.display = 'none';
@@ -738,15 +825,17 @@ body {
       // Load connections count
       await loadConnectionsCount(profileId);
       
-      // Load work at information
-      await loadWorkAt(profile);
+      // Load experiences
+      await loadExperiences(profile);
+      
+      // Load skills
+      await loadSkills(profile);
       
       // Set up profile actions
       setupProfileActions(user.id === profileId, user.id, profileId);
       
       // Load user posts
       await loadUserPosts(profileId);
-      await loadProfessionalPosts(profileId);
 
     } catch (error) {
       console.error('Profile load error:', error);
@@ -754,7 +843,7 @@ body {
     } finally {
       elements.fullPageLoader.style.display = 'none';
     }
-}
+  }
 
   function updateProfileUI(profile, user) {
     elements.profileName.textContent = profile.full_name || 'Profile';
@@ -794,6 +883,8 @@ body {
     
     // Show profile sections
     elements.profileInfo.style.display = 'block';
+    elements.experienceSection.style.display = 'block';
+    elements.skillsSection.style.display = 'block';
   }
 
   async function loadConnectionsCount(profileId) {
@@ -811,97 +902,51 @@ body {
     }
   }
 
-  
-async function loadWorkAt(profile) {
+  async function loadExperiences(profile) {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const isOwner = user?.id === profileId;
-
-        if (window.workAtEditor) {
-            const workAtItems = await window.workAtEditor.loadWorkAt();
-            
-            if (workAtItems && workAtItems.length > 0) {
-                // Display work items if they exist
-                elements.workatSection.style.display = 'block';
-                
-                // Show the small + button for adding more
-                if (isOwner) {
-                    elements.addWorkAtBtn.style.display = 'flex';
-                }
-            } else if (isOwner) {
-                // Show empty state with no items for owner
-                elements.workatContainer.innerHTML = `
-                    <div class="no-workat">
-                        No work information added yet
-                    </div>`;
-                elements.workatSection.style.display = 'block';
-                elements.addWorkAtBtn.style.display = 'flex';
-            } else {
-                // Hide completely for others when empty
-                elements.workatSection.style.display = 'none';
-            }
-        } else if (isOwner) {
-            // Fallback if editor not loaded
-            elements.workatContainer.innerHTML = `
-                <div class="no-workat">
-                    No work information added yet
-                </div>`;
-            elements.workatSection.style.display = 'block';
-            elements.addWorkAtBtn.style.display = 'flex';
-        } else {
-            elements.workatSection.style.display = 'none';
-        }
+      if (window.experienceEditor) {
+        await window.experienceEditor.loadExperiences();
+      } else if (profile.experience) {
+        elements.experienceContainer.innerHTML = `
+          <div class="experience-item">
+            <div class="experience-details">
+              <div class="description">${profile.experience}</div>
+            </div>
+          </div>`;
+      }
     } catch (error) {
-        console.error('Error loading work info:', error);
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user?.id === profileId) {
-            // Show empty state for owner on error
-            elements.workatContainer.innerHTML = `
-                <div class="no-workat">
-                    No work information added yet
-                </div>`;
-            elements.workatSection.style.display = 'block';
-            elements.addWorkAtBtn.style.display = 'flex';
-        } else {
-            elements.workatSection.style.display = 'none';
-        }
+      console.error('Error loading experiences:', error);
     }
-}
+  }
 
-function openWorkAtEditor(workId = null) {
-    if (workId) {
-        // Open in edit mode with existing work item
-        window.workAtEditor.openForEdit(workId);
-    } else {
-        // Open in create mode for new item
-        window.workAtEditor.openForNew();
+  async function loadSkills(profile) {
+    try {
+      if (window.skillsEditor) {
+        await window.skillsEditor.loadSkills();
+      } else if (profile.skills) {
+        const skillsArray = profile.skills.split(',').map(skill => skill.trim());
+        elements.skillsContainer.innerHTML = skillsArray
+          .filter(skill => skill.length > 0)
+          .map(skill => `<div class="skill-badge">${skill}</div>`)
+          .join('');
+      }
+    } catch (error) {
+      console.error('Error loading skills:', error);
     }
-    
-    document.getElementById('workat-page').style.display = 'block';
-    document.body.style.overflow = 'hidden';
-}
-       
-function setupProfileActions(isOwnProfile, currentUserId, profileId) {
+  }
+
+  function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
-        // Hide Connect button for owner
-        elements.connectBtn.style.display = 'none';
-        document.querySelector('.btn-outline').style.display = 'none';
-        
-        // Show edit buttons for owner
-        elements.editButton.style.display = 'inline-block';
+      elements.connectBtn.style.display = 'none';
+      elements.editButton.style.display = 'block';
+      elements.editButton.onclick = openEditProfile;
+      document.querySelector('.btn-outline').style.display = 'none';
     } else {
-        // Hide Edit button for non-owners
-        elements.editButton.style.display = 'none';
-        
-        // Show Connect button and check connection status
-        elements.connectBtn.style.display = 'inline-block';
-        checkConnectionStatus(currentUserId, profileId);
+      elements.editButton.style.display = 'none';
+      checkConnectionStatus(currentUserId, profileId);
     }
-}
-   
+  }
 
-  
   async function loadUserPosts(userId) {
     try {
       elements.postsLoadingSpinner.style.display = 'flex';
@@ -957,11 +1002,6 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
       elements.postsLoadingSpinner.style.display = 'none';
     }
   }
-
-
-  
-
-  
 
   // Connection management functions
   async function checkConnectionStatus(currentUserId, profileId) {
@@ -1149,11 +1189,10 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
             
         
         <script src="posts.js"></script>
-        <script src="education.js"></script>
+        <script src="post-media.js"></script>
       <script src="post-comments.js"></script>
       <script src="skills.js"></script>
       <script src="experience.js"></script>
     <script src="edit.js"></script>
-        <script src="workat.js"></script>
 </body>
 </html>
