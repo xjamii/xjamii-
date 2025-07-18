@@ -1,62 +1,204 @@
+/* ============================================= */
 /* Work At Section Styles */
+/* ============================================= */
+
 .workat-section {
-    padding: 20px;
-    border-top: 1px solid #eee;
-    background-color: white;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+  border-top: 1px solid #eee;
 }
 
+/* Header Styles */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 18px;
+  color: #0056b3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title i {
+  font-size: 16px;
+}
+
+/* Action Buttons */
+.section-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background-color: rgba(0, 86, 179, 0.1);
+}
+
+.icon-btn:hover {
+  background-color: rgba(0, 86, 179, 0.2);
+  color: #0056b3;
+  transform: scale(1.1);
+}
+
+/* Content Container */
+#workat-container {
+  min-height: 60px;
+}
+
+/* Empty State */
+.no-workat {
+  text-align: center;
+  padding: 20px 0;
+  color: #666;
+}
+
+/* Add Button */
+.small-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 15px;
+  background-color: #0056b3;
+  color: white;
+  border: none;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.small-btn:hover {
+  background-color: #004494;
+  transform: translateY(-1px);
+}
+
+/* Work Item Styles */
 .workat-item {
-    margin-bottom: 15px;
-    padding: 15px;
-    border-radius: 8px;
-    background-color: #f9f9f9;
+  position: relative;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  margin-bottom: 10px;
+  transition: all 0.2s;
 }
 
-.workat-item .company {
-    font-weight: 600;
-    color: #333;
-    font-size: 16px;
-    margin-bottom: 5px;
+.workat-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.workat-item .website {
-    color: #0056b3;
-    text-decoration: none;
-    font-size: 14px;
+.company {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 5px;
 }
 
-.workat-item .website:hover {
-    text-decoration: underline;
+.website {
+  color: #0056b3;
+  text-decoration: none;
+  font-size: 14px;
+  display: inline-block;
+  margin-top: 5px;
 }
 
-/* Work At Editor Styles */
+.website:hover {
+  text-decoration: underline;
+}
+
+/* Editor Modal Styles */
 #workat-page {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: white;
-    z-index: 1000;
-    overflow-y: auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 1000;
+  overflow-y: auto;
+  display: none;
 }
 
 .workat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    background-color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    position: sticky;
-    top: 0;
-    z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .workat-content {
-    padding: 20px;
+  padding: 20px;
 }
 
+/* Form Styles */
 #workat-form .form-group {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+#workat-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #444;
+}
+
+#workat-form input[type="text"],
+#workat-form input[type="url"],
+#workat-form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+#workat-form input[type="text"]:focus,
+#workat-form input[type="url"]:focus {
+  border-color: #0056b3;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.2);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+  .workat-section {
+    padding: 15px;
+  }
+  
+  .section-title {
+    font-size: 16px;
+  }
+  
+  .icon-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  
+  .workat-item {
+    padding: 12px;
+  }
 }
