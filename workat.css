@@ -1,0 +1,62 @@
+/* Work At Section Styles */
+.workat-section {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background-color: white;
+}
+
+.workat-item {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.workat-item .company {
+    font-weight: 600;
+    color: #333;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.workat-item .website {
+    color: #0056b3;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.workat-item .website:hover {
+    text-decoration: underline;
+}
+
+/* Work At Editor Styles */
+#workat-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: white;
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.workat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.workat-content {
+    padding: 20px;
+}
+
+#workat-form .form-group {
+    margin-bottom: 20px;
+}
