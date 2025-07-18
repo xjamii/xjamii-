@@ -883,42 +883,69 @@ function openWorkAtEditor(workId = null) {
 }
        
 function setupProfileActions(isOwnProfile, currentUserId, profileId) {
-    // Clear any existing click handlers
-    elements.connectBtn.onclick = null;
-    elements.editButton.onclick = null;
-    
-    if (isOwnProfile) {
-        // Hide Connect and Message buttons for owner
-        elements.connectBtn.style.display = 'none';
-        document.querySelector('.btn-outline').style.display = 'none';
-        
-        // Show edit button for owner
-        elements.editButton.style.display = 'flex';
-        elements.editButton.onclick = openEditProfile;
-        
-        // Show workat add button for owner if workat section exists
+    try {
+        console.log("Setting up profile actions...", {isOwnProfile, currentUserId, profileId});
+
+        // Clear any existing click handlers
+        if (elements.connectBtn) elements.connectBtn.onclick = null;
+        if (elements.editButton) elements.editButton.onclick = null;
+
+        // Get workat elements
         const addWorkAtBtn = document.getElementById('add-workat-btn');
-        if (addWorkAtBtn) {
-            addWorkAtBtn.style.display = 'flex';
-            addWorkAtBtn.onclick = () => openWorkAtEditor();
+        const workatSection = document.getElementById('workat-section');
+
+        if (isOwnProfile) {
+            console.log("User is viewing their own profile");
+            
+            // Hide Connect and Message buttons for owner
+            if (elements.connectBtn) elements.connectBtn.style.display = 'none';
+            if (document.querySelector('.btn-outline')) document.querySelector('.btn-outline').style.display = 'none';
+            
+            // Show edit button for owner
+            if (elements.editButton) {
+                elements.editButton.style.display = 'flex';
+                elements.editButton.onclick = openEditProfile;
+            }
+
+            // Handle workat section for owner
+            if (addWorkAtBtn) {
+                addWorkAtBtn.style.display = 'flex';
+                addWorkAtBtn.onclick = () => openWorkAtEditor();
+            }
+            
+            // Ensure workat section is visible for owner
+            if (workatSection) workatSection.style.display = 'block';
+
+        } else {
+            console.log("User is viewing someone else's profile");
+            
+            // Hide Edit button for non-owners
+            if (elements.editButton) elements.editButton.style.display = 'none';
+            
+            // Hide workat add button for non-owners
+            if (addWorkAtBtn) addWorkAtBtn.style.display = 'none';
+            
+            // Show Connect button for non-owners and check connection status
+            if (elements.connectBtn) {
+                elements.connectBtn.style.display = 'inline-block';
+                checkConnectionStatus(currentUserId, profileId);
+            }
+            
+            // Hide message button initially for non-owners
+            if (document.querySelector('.btn-outline')) document.querySelector('.btn-outline').style.display = 'none';
+            
+            // Handle workat section visibility based on content
+            if (workatSection) {
+                const hasWorkAtItems = document.querySelectorAll('#workat-container .workat-item').length > 0;
+                workatSection.style.display = hasWorkAtItems ? 'block' : 'none';
+            }
         }
-    } else {
-        // Hide Edit button for non-owners
-        elements.editButton.style.display = 'none';
-        
-        // Hide workat add button for non-owners if it exists
-        const addWorkAtBtn = document.getElementById('add-workat-btn');
-        if (addWorkAtBtn) {
-            addWorkAtBtn.style.display = 'none';
-        }
-        
-        // Show Connect button for non-owners and check connection status
-        elements.connectBtn.style.display = 'inline-block';
-        document.querySelector('.btn-outline').style.display = 'none';
-        checkConnectionStatus(currentUserId, profileId);
+
+        console.log("Profile actions setup complete");
+    } catch (error) {
+        console.error("Error in setupProfileActions:", error);
     }
 }
-
   
   async function loadUserPosts(userId) {
     try {
