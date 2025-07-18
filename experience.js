@@ -79,7 +79,7 @@ class ExperienceEditor {
     async open(experienceId = null) {
         this.currentExperienceId = experienceId;
         this.elements.page.style.display = 'block';
-        this.elements.preloader.style.display = 'flex';
+        
         
         try {
             if (experienceId) {
