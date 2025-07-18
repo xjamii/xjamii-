@@ -1,0 +1,68 @@
+/* Education Section Styles */
+.education-section {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background-color: white;
+}
+
+.education-item {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.education-item h4 {
+    margin: 0 0 5px 0;
+    color: #0056b3;
+    font-size: 16px;
+}
+
+.education-item .institution {
+    font-weight: 600;
+    color: #333;
+}
+
+.education-item .duration {
+    color: #666;
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.education-item .description {
+    color: #444;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Education Editor Styles */
+#education-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: white;
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.education-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.education-content {
+    padding: 20px;
+}
+
+#education-form .form-group {
+    margin-bottom: 20px;
+}
