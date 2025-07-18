@@ -169,86 +169,90 @@ class CommentComponent extends HTMLElement {
     this.render();
   }
 
-  render() {
-    if (!this.commentData) return;
+  
+    
 
-    const profile = this.commentData.profile || {
-      username: 'unknown',
-      full_name: 'Unknown User',
-      avatar_url: '',
-      is_verified: false,
-      user_id: ''
-    };
+    render() {
+  if (!this.commentData) return;
 
-    const showSeeMore = this.commentData.content.length > 200 && !this.isExpanded;
-    const displayedContent = showSeeMore 
-      ? this.commentData.content.substring(0, 200) + '...' 
-      : this.commentData.content;
+  const profile = this.commentData.profile || {
+    username: 'unknown',
+    full_name: 'Unknown User',
+    avatar_url: '',
+    is_verified: false,
+    user_id: ''
+  };
 
-    // Create avatar HTML
-    const avatarHtml = profile.avatar_url 
-      ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
-      : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
+  const showSeeMore = this.commentData.content.length > 200 && !this.isExpanded;
+  const displayedContent = showSeeMore 
+    ? this.commentData.content.substring(0, 200) + '...' 
+    : this.commentData.content;
 
-    this.innerHTML = `
-      <div class="comment-container">
-        <div class="comment-header">
-          <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" style="text-decoration: none">
-            ${avatarHtml}
+  // Create avatar HTML - now with click handler that stops propagation
+  const avatarHtml = profile.avatar_url 
+    ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
+    : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
+
+  this.innerHTML = `
+    <div class="comment-container">
+      <div class="comment-header">
+        <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" onclick="event.stopPropagation()">
+          ${avatarHtml}
+        </a>
+        <div class="comment-user-info">
+          <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" onclick="event.stopPropagation()">
+            <div class="post-user">
+              ${profile.full_name || profile.username}
+              ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+            </div>
+            <div class="post-username" style="text-decoration: none">@${profile.username}</div>
           </a>
-          <div class="comment-user-info">
-            <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" style="text-decoration: none">
-              <div class="post-user">
-                ${profile.full_name || profile.username}
-                ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-              </div>
-              <div class="post-username" style="text-decoration: none">@${profile.username}</div>
-            </a>
-          </div>
-          <span class="post-time">${this.formatTime(this.commentData.created_at)}</span>
         </div>
-        <div class="comment-content">
-          ${this.processContent(displayedContent)}
-          ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
-        </div>
-        <div class="comment-actions">
-          <div class="comment-action reply-action">
-            <i class="far fa-comment-dots"></i> Reply
-          </div>
-          ${this.isOwner ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
-        </div>
+        <span class="post-time">${this.formatTime(this.commentData.created_at)}</span>
       </div>
-    `;
+      <div class="comment-content">
+        ${this.processContent(displayedContent)}
+        ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
+      </div>
+      <div class="comment-actions">
+        <div class="comment-action reply-action">
+          <i class="far fa-comment-dots"></i> Reply
+        </div>
+        ${this.isOwner ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
+      </div>
+    </div>
+  `;
 
-    this.querySelector('.reply-action')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.replyToComment();
-    });
+  // Rest of your event listeners remain exactly the same
+  this.querySelector('.reply-action')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    this.replyToComment();
+  });
 
-    this.querySelector('.comment-more')?.addEventListener('click', (e) => {
-      this.showMoreOptions(e);
-    });
+  this.querySelector('.comment-more')?.addEventListener('click', (e) => {
+    this.showMoreOptions(e);
+  });
 
-    this.querySelector('.comment-content')?.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url') && !e.target.classList.contains('see-more')) {
-        this.toggleExpand();
-      }
-    });
-
-    this.querySelector('.see-more')?.addEventListener('click', (e) => {
-      e.stopPropagation();
+  this.querySelector('.comment-content')?.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url') && !e.target.classList.contains('see-more')) {
       this.toggleExpand();
-    });
+    }
+  });
 
-    // Make mentions clickable
-    this.querySelectorAll('.mention').forEach(mention => {
-      mention.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const username = e.target.textContent.substring(1);
-        window.location.href = `/profile.html?username=${username}`;
-      });
+  this.querySelector('.see-more')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    this.toggleExpand();
+  });
+
+  // Make mentions clickable
+  this.querySelectorAll('.mention').forEach(mention => {
+    mention.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const username = e.target.textContent.substring(1);
+      window.location.href = `/profile.html?username=${username}`;
     });
-  }
+  });
+}
 
   replyToComment() {
     const commentPage = document.querySelector('.comment-page-overlay');
