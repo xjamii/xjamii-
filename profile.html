@@ -896,7 +896,6 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
    
 
   
-
   async function loadUserPosts(userId) {
     try {
       elements.postsLoadingSpinner.style.display = 'flex';
@@ -911,7 +910,6 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
           media:post_media (media_url, media_type)
         `)
         .eq('user_id', userId)
-        .eq('is_professional', false) // Only personal posts
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -954,62 +952,10 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     }
   }
 
-  async function loadProfessionalPosts(userId) {
-    try {
-      elements.professionalPostsLoadingSpinner.style.display = 'flex';
-      elements.professionalPostsContainer.innerHTML = '';
-      elements.noProfessionalPostsMessage.style.display = 'none';
 
-      const { data: posts, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profile:user_id (username, full_name, avatar_url, is_verified),
-          media:post_media (media_url, media_type)
-        `)
-        .eq('user_id', userId)
-        .eq('is_professional', true) // Only professional posts
-        .order('created_at', { ascending: false });
+  
 
-      if (error) throw error;
-
-      if (!posts || posts.length === 0) {
-        elements.noProfessionalPostsMessage.style.display = 'block';
-        return;
-      }
-
-      // Check liked posts if user is logged in
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userLikes } = await supabase
-          .from('likes')
-          .select('post_id')
-          .eq('profile_id', user.id);
-
-        if (userLikes) {
-          const likedPostIds = new Set(userLikes.map(like => like.post_id));
-          posts.forEach(post => {
-            post.is_liked = likedPostIds.has(post.id);
-          });
-        }
-      }
-
-      // Render posts
-      posts.forEach(post => {
-        const postElement = document.createElement('post-component');
-        postElement.setAttribute('post-data', JSON.stringify(post));
-        elements.professionalPostsContainer.appendChild(postElement);
-      });
-
-      elements.professionalPostsSection.style.display = 'block';
-    } catch (error) {
-      console.error('Error loading professional posts:', error);
-      elements.noProfessionalPostsMessage.textContent = 'Error loading professional posts';
-      elements.noProfessionalPostsMessage.style.display = 'block';
-    } finally {
-      elements.professionalPostsLoadingSpinner.style.display = 'none';
-    }
-  }
+  
 
   // Connection management functions
   async function checkConnectionStatus(currentUserId, profileId) {
