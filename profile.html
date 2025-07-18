@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aviationin Profile</title>
     <link rel="stylesheet" href="posts.css">
+    <link rel="stylesheet" href="experience.css">
     <link rel="stylesheet" href="edit.css">
+    <link rel="stylesheet" href="education.css">
+     <link rel="stylesheet" href="skills.css">
     <link rel="stylesheet" href="workat.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -202,6 +205,53 @@ body {
 .btn:hover {
     opacity: 0.9;
     transform: translateY(-2px);
+}
+
+/* Experience Section */
+.experience-section, .skills-section {
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
+
+.section-title {
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #0056b3;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.experience-item {
+    margin-bottom: 15px;
+}
+
+.experience-details {
+    margin-left: 10px;
+}
+
+.experience-details .description {
+    color: #444;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* Skills Section */
+.skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.skill-badge {
+    background-color: #0056b3;
+    color: #FFFFFF;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 15px; /* Increased from 13px */
+    font-weight: 500;
+    margin-top: 10px; /* Added to move it slightly down */
 }
 
 /* Responsive Adjustments */
@@ -489,26 +539,43 @@ body {
     <span></span><span></span><span></span>
     <span></span><span></span><span></span>
   </div>
-  <h3>POSTS</h3>
+  <h3>PERSONAL POSTS</h3>
   <div class="blue-line"></div>
-           
 </div>
-    <div class="user-posts-section" id="user-posts-section">
-    <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-thumbtack"></i> Updates</h2>
-    </div>
+
+<div class="user-posts-section" id="user-posts-section">
     <div class="posts-container" id="user-posts-container">
-        <!-- Posts will be loaded here -->
+        <!-- Personal posts will be loaded here -->
     </div>
     <div class="post-loading-spinner" id="posts-loading-spinner" style="display: none;">
         <div class="spinner"></div>
     </div>
     <div class="no-posts" id="no-posts-message" style="display: none;">
-        No posts yet
+        No personal posts yet
     </div>
 </div>
-        <!-- User posts will be loaded here -->
-    
+
+<div class="grid-posts-header">
+  <div class="grid-icon">
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
+  <h3>PROFESSIONAL POSTS</h3>
+  <div class="blue-line"></div>
+</div>
+
+<div class="user-posts-section" id="professional-posts-section">
+    <div class="posts-container" id="professional-posts-container">
+        <!-- Professional posts will be loaded here -->
+    </div>
+    <div class="post-loading-spinner" id="professional-posts-loading-spinner" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+    <div class="no-posts" id="no-professional-posts-message" style="display: none;">
+        No professional posts yet
+    </div>
+</div>
     
     <!-- Edit Profile Modal -->
 <div id="edit-profile-page" style="display: none;">
@@ -590,7 +657,6 @@ body {
     </div>
 </div>
 
-    
    <script>
   // Initialize Supabase
   const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
@@ -618,9 +684,13 @@ body {
     connectBtn: document.getElementById('connect-btn'),
     editButton: document.getElementById('edit-button'),
     userPostsContainer: document.getElementById('user-posts-container'),
+    professionalPostsContainer: document.getElementById('professional-posts-container'),
     postsLoadingSpinner: document.getElementById('posts-loading-spinner'),
+    professionalPostsLoadingSpinner: document.getElementById('professional-posts-loading-spinner'),
     noPostsMessage: document.getElementById('no-posts-message'),
+    noProfessionalPostsMessage: document.getElementById('no-professional-posts-message'),
     userPostsSection: document.getElementById('user-posts-section'),
+    professionalPostsSection: document.getElementById('professional-posts-section'),
     fullPageLoader: document.getElementById('full-page-loader'),
     workatSection: document.getElementById('workat-section'),
     workatContainer: document.getElementById('workat-container')
@@ -687,15 +757,15 @@ body {
       // Load connections count
       await loadConnectionsCount(profileId);
       
-
-        // Load work at information
-        await loadWorkAt(profile);
+      // Load work at information
+      await loadWorkAt(profile);
       
       // Set up profile actions
       setupProfileActions(user.id === profileId, user.id, profileId);
       
       // Load user posts
       await loadUserPosts(profileId);
+      await loadProfessionalPosts(profileId);
 
     } catch (error) {
       console.error('Profile load error:', error);
@@ -743,8 +813,6 @@ body {
     
     // Show profile sections
     elements.profileInfo.style.display = 'block';
-    elements.experienceSection.style.display = 'block';
-    elements.skillsSection.style.display = 'block';
   }
 
   async function loadConnectionsCount(profileId) {
@@ -762,7 +830,7 @@ body {
     }
   }
 
-
+  
 async function loadWorkAt(profile) {
     try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -832,7 +900,6 @@ function openWorkAtEditor(workId = null) {
     document.getElementById('workat-page').style.display = 'block';
     document.body.style.overflow = 'hidden';
 }
-
        
 function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
@@ -841,21 +908,7 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
         
         // Show edit buttons for owner
         elements.editButton.style.display = 'inline-block';
-        
-        // Skills edit button is handled in loadSkills
     } else {
-      
-        
-        const existingWorkAtBtn = document.getElementById('edit-workat-btn');
-        if (existingWorkAtBtn) {
-            existingWorkAtBtn.remove();
-        }
-        
-        const existingAddWorkAtBtn = document.getElementById('add-workat-btn');
-        if (existingAddWorkAtBtn) {
-            existingAddWorkAtBtn.remove();
-        }
-        
         checkConnectionStatus(currentUserId, profileId);
     }
 }
@@ -877,6 +930,7 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
           media:post_media (media_url, media_type)
         `)
         .eq('user_id', userId)
+        .eq('is_professional', false) // Only personal posts
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -916,6 +970,63 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
       elements.noPostsMessage.style.display = 'block';
     } finally {
       elements.postsLoadingSpinner.style.display = 'none';
+    }
+  }
+
+  async function loadProfessionalPosts(userId) {
+    try {
+      elements.professionalPostsLoadingSpinner.style.display = 'flex';
+      elements.professionalPostsContainer.innerHTML = '';
+      elements.noProfessionalPostsMessage.style.display = 'none';
+
+      const { data: posts, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profile:user_id (username, full_name, avatar_url, is_verified),
+          media:post_media (media_url, media_type)
+        `)
+        .eq('user_id', userId)
+        .eq('is_professional', true) // Only professional posts
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (!posts || posts.length === 0) {
+        elements.noProfessionalPostsMessage.style.display = 'block';
+        return;
+      }
+
+      // Check liked posts if user is logged in
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userLikes } = await supabase
+          .from('likes')
+          .select('post_id')
+          .eq('profile_id', user.id);
+
+        if (userLikes) {
+          const likedPostIds = new Set(userLikes.map(like => like.post_id));
+          posts.forEach(post => {
+            post.is_liked = likedPostIds.has(post.id);
+          });
+        }
+      }
+
+      // Render posts
+      posts.forEach(post => {
+        const postElement = document.createElement('post-component');
+        postElement.setAttribute('post-data', JSON.stringify(post));
+        elements.professionalPostsContainer.appendChild(postElement);
+      });
+
+      elements.professionalPostsSection.style.display = 'block';
+    } catch (error) {
+      console.error('Error loading professional posts:', error);
+      elements.noProfessionalPostsMessage.textContent = 'Error loading professional posts';
+      elements.noProfessionalPostsMessage.style.display = 'block';
+    } finally {
+      elements.professionalPostsLoadingSpinner.style.display = 'none';
     }
   }
 
@@ -1105,10 +1216,10 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
             
         
         <script src="posts.js"></script>
-       
+        <script src="education.js"></script>
       <script src="post-comments.js"></script>
-      
-      
+      <script src="skills.js"></script>
+      <script src="experience.js"></script>
     <script src="edit.js"></script>
         <script src="workat.js"></script>
 </body>
