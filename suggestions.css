@@ -1,7 +1,11 @@
+/* Professional Suggestions Section */
 .suggestions-container {
     padding: 15px;
     background: white;
     border-bottom: 1px solid #e6ecf0;
+    margin-top: 120px; /* Matches header height */
+    position: relative;
+    z-index: 1;
 }
 
 .suggestions-header {
@@ -9,18 +13,26 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
+    position: sticky;
+    top: 120px; /* Matches header height */
+    background: white;
+    z-index: 2;
+    padding-top: 10px;
+    padding-bottom: 5px;
 }
 
 .suggestions-header h3 {
     font-size: 16px;
     font-weight: 600;
-    color: #333;
+    color: #0f1419; /* Dark text color */
+    margin: 0;
 }
 
 .suggestions-header .see-all {
     font-size: 14px;
-    color: #0056b3;
+    color: #1DA1F2; /* Twitter blue color */
     text-decoration: none;
+    font-weight: 500;
 }
 
 .suggestions-scroller {
@@ -29,6 +41,7 @@
     gap: 15px;
     padding-bottom: 5px;
     scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
 }
 
 .suggestions-scroller::-webkit-scrollbar {
@@ -39,6 +52,7 @@
     flex: 0 0 auto;
     width: 100px;
     text-align: center;
+    position: relative;
 }
 
 .suggestion-avatar {
@@ -47,8 +61,12 @@
     border-radius: 50%;
     object-fit: cover;
     margin: 0 auto 8px;
-    border: 2px solid #0056b3;
-    padding: 2px;
+    border: 2px solid #e6ecf0; /* Lighter border color */
+    transition: border-color 0.2s ease;
+}
+
+.suggestion-avatar:hover {
+    border-color: #1DA1F2; /* Blue border on hover */
 }
 
 .suggestion-name {
@@ -58,14 +76,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 2px;
+    color: #0f1419; /* Dark text color to match search page */
 }
 
 .suggestion-username {
     font-size: 11px;
-    color: #657786;
+    color: #536471; /* Gray color to match search page */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-bottom: 5px;
 }
 
 .suggestion-connect {
@@ -73,7 +93,7 @@
 }
 
 .suggestion-connect-btn {
-    background-color: #0056b3;
+    background-color: #0f1419; /* Dark button color */
     color: white;
     border: none;
     border-radius: 15px;
@@ -81,6 +101,11 @@
     font-size: 12px;
     cursor: pointer;
     width: 100%;
+    transition: all 0.2s ease;
+}
+
+.suggestion-connect-btn:hover {
+    background-color: #1DA1F2; /* Blue on hover */
 }
 
 .suggestion-connect-btn.pending {
@@ -90,11 +115,33 @@
 
 .suggestion-connect-btn.connected {
     background-color: #e6f0ff;
-    color: #0056b3;
+    color: #1DA1F2;
 }
 
 .verified-badge {
-    color: #0056b3;
+    color: #1DA1F2; /* Twitter blue color */
     font-size: 12px;
     margin-left: 2px;
+}
+
+/* Loading states */
+.loading-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(29, 161, 242, 0.2);
+    border-top-color: #1DA1F2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+.no-suggestions, .error-message {
+    text-align: center;
+    color: #536471;
+    padding: 20px 0;
+    font-size: 14px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
