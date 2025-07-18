@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aviationin Profile</title>
     <link rel="stylesheet" href="posts.css">
-    <link rel="stylesheet" href="experience.css">
     <link rel="stylesheet" href="edit.css">
-     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -207,103 +203,6 @@ body {
     transform: translateY(-2px);
 }
 
-/* Experience Section */
-.experience-section, .skills-section {
-    padding: 20px;
-    border-top: 1px solid #eee;
-}
-
-.section-title {
-    font-size: 18px;
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #0056b3;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.experience-item {
-    margin-bottom: 15px;
-}
-
-.experience-details {
-    margin-left: 10px;
-}
-
-.experience-details .description {
-    color: #444;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-/* Skills Section */
-.skills-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.skill-badge {
-    background-color: #0056b3;
-    color: #FFFFFF;
-    padding: 6px 12px;
-    border-radius: 15px;
-    font-size: 15px; /* Increased from 13px */
-    font-weight: 500;
-    margin-top: 10px; /* Added to move it slightly down */
-}
-
-/* Responsive Adjustments */
-@media (max-width: 480px) {
-    .profile-info {
-        padding: 15px;
-    }
-    
-    .bio {
-        max-width: 95%;
-    }
-    
-    .action-buttons {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .btn {
-        width: 100%;
-        max-width: 200px;
-    }
-}
-
-.grid-posts-header {
-  text-align: center;
-  padding: 25px 0;
-}
-
-.grid-icon {
-  display: grid;
-  grid-template-columns: repeat(3, 6px);
-  grid-gap: 3px;
-  margin: 0 auto 8px;
-  width: fit-content;
-}
-
-.grid-icon span {
-  display: block;
-  width: 6px;
-  height: 6px;
-  background: #0056b3;
-}
-
-.grid-posts-header h3 {
-  margin: 8px 0 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #0056b3;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
 /* Full Page Loader */
 .full-page-loader {
     position: fixed;
@@ -486,23 +385,6 @@ body {
             </div>
         </div>
 
-        <!-- Experience Section -->
-<div class="experience-section" id="experience-section" style="display: none;">
-    <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-briefcase"></i> Professional Experience</h2>
-        
-    </div>
-    <div id="experience-container">
-        <div class="experience-item">
-            <div class="experience-details">
-                <div class="description" id="experience-text">Loading experience...</div>
-            </div>
-        </div>
-    </div>
-</div>
-        
-
-
        <div class="grid-posts-header">
   <div class="grid-icon">
     <span></span><span></span><span></span>
@@ -610,87 +492,6 @@ body {
     </div>
 </div>
 
-    <!-- Experience Editor Page -->
-<div id="experience-page" style="display: none;">
-    <div class="experience-header">
-        <div class="header-left">
-            <button class="back-button" id="back-from-experience">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="header-name">Edit Experience</div>
-        </div>
-        <button class="btn btn-save" id="save-experience">Save</button>
-    </div>
-
-    <div class="experience-content">
-        <div class="preloader" id="experience-preloader">
-            <div class="spinner"></div>
-        </div>
-
-        <div class="form-section">
-            <div class="form-group">
-                <label for="experience-position">Position*</label>
-                <input type="text" id="experience-position" placeholder="e.g., Captain, First Officer" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="experience-company">Company*</label>
-                <input type="text" id="experience-company" placeholder="e.g., Emirates, Delta Airlines" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Duration*</label>
-                <div class="duration-fields">
-                    <div class="date-field">
-                        <label for="experience-start-month">Start Month</label>
-                        <select id="experience-start-month" required>
-                            <option value="">Month</option>
-                            <!-- Months will be populated by JS -->
-                        </select>
-                    </div>
-                    <div class="date-field">
-                        <label for="experience-start-year">Start Year</label>
-                        <select id="experience-start-year" required>
-                            <option value="">Year</option>
-                            <!-- Years will be populated by JS -->
-                        </select>
-                    </div>
-                    <div class="date-field">
-                        <label for="experience-end-month">End Month</label>
-                        <select id="experience-end-month">
-                            <option value="">Month</option>
-                            <!-- Months will be populated by JS -->
-                        </select>
-                    </div>
-                    <div class="date-field">
-                        <label for="experience-end-year">End Year</label>
-                        <select id="experience-end-year">
-                            <option value="">Year</option>
-                            <!-- Years will be populated by JS -->
-                        </select>
-                    </div>
-                </div>
-                <div class="current-role">
-                    <input type="checkbox" id="experience-current">
-                    <label for="experience-current">I currently work here</label>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="experience-description">Description</label>
-                <textarea id="experience-description" placeholder="Describe your responsibilities and achievements"></textarea>
-            </div>
-            
-            <button class="btn btn-delete" id="delete-experience" style="display: none;">
-                <i class="fas fa-trash"></i> Delete Experience
-            </button>
-        </div>
-    </div>
-</div>
-
-
-
-
    <script>
   // Initialize Supabase
   const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
@@ -705,8 +506,6 @@ body {
   const elements = {
     errorMessage: document.getElementById('error-message'),
     profileInfo: document.getElementById('profile-info'),
-    experienceSection: document.getElementById('experience-section'),
-    skillsSection: document.getElementById('skills-section'),
     profileName: document.getElementById('profile-name'),
     fullName: document.getElementById('full-name'),
     username: document.getElementById('username'),
@@ -715,8 +514,6 @@ body {
     categoryBadge: document.getElementById('category-badge'),
     profileAvatar: document.getElementById('profile-avatar'),
     coverPhoto: document.getElementById('cover-photo'),
-    experienceContainer: document.getElementById('experience-container'),
-    skillsContainer: document.getElementById('skills-container'),
     verifiedBadge: document.getElementById('verified-badge'),
     connectionsCount: document.getElementById('connections-count'),
     connectBtn: document.getElementById('connect-btn'),
@@ -787,12 +584,6 @@ body {
       // Load connections count
       await loadConnectionsCount(profileId);
       
-      // Load experiences
-      await loadExperiences(profile);
-      
-      // Load skills
-      await loadSkills(profile);
-      
       // Set up profile actions
       setupProfileActions(user.id === profileId, user.id, profileId);
       
@@ -845,8 +636,6 @@ body {
     
     // Show profile sections
     elements.profileInfo.style.display = 'block';
-    elements.experienceSection.style.display = 'block';
-    elements.skillsSection.style.display = 'block';
   }
 
   async function loadConnectionsCount(profileId) {
@@ -863,25 +652,6 @@ body {
       console.error('Error loading connections count:', error);
     }
   }
-
-  async function loadExperiences(profile) {
-    try {
-      if (window.experienceEditor) {
-        await window.experienceEditor.loadExperiences();
-      } else if (profile.experience) {
-        elements.experienceContainer.innerHTML = `
-          <div class="experience-item">
-            <div class="experience-details">
-              <div class="description">${profile.experience}</div>
-            </div>
-          </div>`;
-      }
-    } catch (error) {
-      console.error('Error loading experiences:', error);
-    }
-  }
-
-  
 
   function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
@@ -1139,8 +909,6 @@ body {
         <script src="posts.js"></script>
         <script src="post-media.js"></script>
       <script src="post-comments.js"></script>
-      <script src="skills.js"></script>
-      <script src="experience.js"></script>
     <script src="edit.js"></script>
 </body>
 </html>
