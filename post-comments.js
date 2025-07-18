@@ -53,19 +53,20 @@ class CommentComponent extends HTMLElement {
   }
 
   processContent(content) {
-    if (!content) return '';
-    
-    // Process mentions (@username)
-    content = content.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
-    
-    // Process hashtags (#tag)
-    content = content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
-    
-    // Process URLs
-    content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" class="url" target="_blank">$1</a>');
-    
-    return content;
-  }
+  if (!content) return '';
+  
+  // Process hashtags (#tag)
+  content = content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+  
+  // Process URLs - matches http://, https://, and optionally www.
+  content = content.replace(/(https?:\/\/[^\s]+|www\.[^\s]+)/g, (url) => {
+    // Add http:// if it starts with www.
+    let href = url.startsWith('www.') ? `http://${url}` : url;
+    return `<a href="${href}" class="url" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
+  
+  return content;
+}
 
   async deleteComment() {
     try {
@@ -170,8 +171,6 @@ class CommentComponent extends HTMLElement {
   }
 
   
-    
-
     render() {
   if (!this.commentData) return;
 
@@ -188,7 +187,7 @@ class CommentComponent extends HTMLElement {
     ? this.commentData.content.substring(0, 200) + '...' 
     : this.commentData.content;
 
-  // Create avatar HTML - now with click handler that stops propagation
+  // Create avatar HTML
   const avatarHtml = profile.avatar_url 
     ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
     : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
@@ -223,7 +222,7 @@ class CommentComponent extends HTMLElement {
     </div>
   `;
 
-  // Rest of your event listeners remain exactly the same
+  // Add event listeners
   this.querySelector('.reply-action')?.addEventListener('click', (e) => {
     e.stopPropagation();
     this.replyToComment();
@@ -234,7 +233,9 @@ class CommentComponent extends HTMLElement {
   });
 
   this.querySelector('.comment-content')?.addEventListener('click', (e) => {
-    if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url') && !e.target.classList.contains('see-more')) {
+    if (!e.target.classList.contains('hashtag') && 
+        !e.target.classList.contains('url') && 
+        !e.target.classList.contains('see-more')) {
       this.toggleExpand();
     }
   });
@@ -244,15 +245,18 @@ class CommentComponent extends HTMLElement {
     this.toggleExpand();
   });
 
-  // Make mentions clickable
-  this.querySelectorAll('.mention').forEach(mention => {
-    mention.addEventListener('click', (e) => {
+  // Make hashtags clickable (optional - remove if not needed)
+  this.querySelectorAll('.hashtag').forEach(hashtag => {
+    hashtag.addEventListener('click', (e) => {
       e.stopPropagation();
-      const username = e.target.textContent.substring(1);
-      window.location.href = `/profile.html?username=${username}`;
+      const tag = e.target.textContent.substring(1);
+      window.location.href = `/search.html?q=%23${tag}`;
     });
   });
 }
+
+    
+        
 
   replyToComment() {
     const commentPage = document.querySelector('.comment-page-overlay');
