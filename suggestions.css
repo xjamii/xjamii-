@@ -151,3 +151,12 @@
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* Ensure main header stays fixed */
+.top-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
