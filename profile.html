@@ -884,18 +884,12 @@ function openWorkAtEditor(workId = null) {
        
 function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
-        // Hide connect and message buttons for owner
         elements.connectBtn.style.display = 'none';
         document.querySelector('.btn-outline').style.display = 'none';
         
-        // Show edit button for owner
-        elements.editButton.style.display = 'block';
-        elements.editButton.onclick = openEditProfile;
+        // Show edit buttons for owner
+        elements.editButton.style.display = 'inline-block';
     } else {
-        // Hide edit button for others
-        elements.editButton.style.display = 'none';
-        
-        // Show connect button and check connection status
         checkConnectionStatus(currentUserId, profileId);
     }
 }
