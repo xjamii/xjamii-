@@ -842,3 +842,10 @@ like-button {
     animation: spin 1s linear infinite;
     margin: 0 auto;
 }
+
+/* Add this to your existing CSS */
+.posts-container {
+    margin-top: -120px; /* This will pull the posts up by 120px */
+    
+    /* Ensure it stays below any sticky headers */
+}
