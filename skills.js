@@ -111,7 +111,7 @@ class SkillsEditor {
     
     async open() {
         // Show preloader
-        this.elements.preloader.style.display = 'flex';
+        
         
         try {
             // Load current skills from profile
