@@ -53,20 +53,19 @@ class CommentComponent extends HTMLElement {
   }
 
   processContent(content) {
-  if (!content) return '';
-  
-  // Process hashtags (#tag)
-  content = content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
-  
-  // Process URLs - matches http://, https://, and optionally www.
-  content = content.replace(/(https?:\/\/[^\s]+|www\.[^\s]+)/g, (url) => {
-    // Add http:// if it starts with www.
-    let href = url.startsWith('www.') ? `http://${url}` : url;
-    return `<a href="${href}" class="url" target="_blank" rel="noopener noreferrer">${url}</a>`;
-  });
-  
-  return content;
-}
+    if (!content) return '';
+    
+    // Process mentions (@username)
+    content = content.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+    
+    // Process hashtags (#tag)
+    content = content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+    
+    // Process URLs
+    content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" class="url" target="_blank">$1</a>');
+    
+    return content;
+  }
 
   async deleteComment() {
     try {
@@ -170,93 +169,84 @@ class CommentComponent extends HTMLElement {
     this.render();
   }
 
-  
-    render() {
-  if (!this.commentData) return;
+  render() {
+    if (!this.commentData) return;
 
-  const profile = this.commentData.profile || {
-    username: 'unknown',
-    full_name: 'Unknown User',
-    avatar_url: '',
-    is_verified: false,
-    user_id: ''
-  };
+    const profile = this.commentData.profile || {
+      username: 'unknown',
+      full_name: 'Unknown User',
+      avatar_url: '',
+      is_verified: false,
+      user_id: ''
+    };
 
-  const showSeeMore = this.commentData.content.length > 200 && !this.isExpanded;
-  const displayedContent = showSeeMore 
-    ? this.commentData.content.substring(0, 200) + '...' 
-    : this.commentData.content;
+    const showSeeMore = this.commentData.content.length > 200 && !this.isExpanded;
+    const displayedContent = showSeeMore 
+      ? this.commentData.content.substring(0, 200) + '...' 
+      : this.commentData.content;
 
-  // Create avatar HTML
-  const avatarHtml = profile.avatar_url 
-    ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
-    : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
+    const avatarHtml = profile.avatar_url 
+      ? `<img src="${profile.avatar_url}" class="post-avatar" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'50\\'><rect width=\\'50\\' height=\\'50\\' fill=\\'%230056b3\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'20\\' fill=\\'white\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${this.getInitials(profile.full_name)}</text></svg>'">`
+      : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
 
-  this.innerHTML = `
-    <div class="comment-container">
-      <div class="comment-header">
-        <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" onclick="event.stopPropagation()">
-          ${avatarHtml}
-        </a>
-        <div class="comment-user-info">
-          <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" onclick="event.stopPropagation()">
-            <div class="post-user">
-              ${profile.full_name || profile.username}
-              ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-            </div>
-            <div class="post-username" style="text-decoration: none">@${profile.username}</div>
+    this.innerHTML = `
+      <div class="comment-container">
+        <div class="comment-header">
+          <a href="/profile.html?user_id=${profile.user_id}" class="post-avatar-link" onclick="event.stopPropagation()">
+            ${avatarHtml}
           </a>
+          <div class="comment-user-info">
+            <a href="/profile.html?user_id=${profile.user_id}" class="post-user-link" onclick="event.stopPropagation()">
+              <div class="post-user">
+                ${profile.full_name || profile.username}
+                ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+              </div>
+              <div class="post-username" style="text-decoration: none">@${profile.username}</div>
+            </a>
+          </div>
+          <span class="post-time">${this.formatTime(this.commentData.created_at)}</span>
         </div>
-        <span class="post-time">${this.formatTime(this.commentData.created_at)}</span>
-      </div>
-      <div class="comment-content">
-        ${this.processContent(displayedContent)}
-        ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
-      </div>
-      <div class="comment-actions">
-        <div class="comment-action reply-action">
-          <i class="far fa-comment-dots"></i> Reply
+        <div class="comment-content">
+          ${this.processContent(displayedContent)}
+          ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
         </div>
-        ${this.isOwner ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
+        <div class="comment-actions">
+          <div class="comment-action reply-action">
+            <i class="far fa-comment-dots"></i> Reply
+          </div>
+          ${this.isOwner ? `<div class="comment-more"><i class="fas fa-ellipsis-h"></i></div>` : ''}
+        </div>
       </div>
-    </div>
-  `;
+    `;
 
-  // Add event listeners
-  this.querySelector('.reply-action')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    this.replyToComment();
-  });
-
-  this.querySelector('.comment-more')?.addEventListener('click', (e) => {
-    this.showMoreOptions(e);
-  });
-
-  this.querySelector('.comment-content')?.addEventListener('click', (e) => {
-    if (!e.target.classList.contains('hashtag') && 
-        !e.target.classList.contains('url') && 
-        !e.target.classList.contains('see-more')) {
-      this.toggleExpand();
-    }
-  });
-
-  this.querySelector('.see-more')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    this.toggleExpand();
-  });
-
-  // Make hashtags clickable (optional - remove if not needed)
-  this.querySelectorAll('.hashtag').forEach(hashtag => {
-    hashtag.addEventListener('click', (e) => {
+    this.querySelector('.reply-action')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      const tag = e.target.textContent.substring(1);
-      window.location.href = `/search.html?q=%23${tag}`;
+      this.replyToComment();
     });
-  });
-}
 
-    
-        
+    this.querySelector('.comment-more')?.addEventListener('click', (e) => {
+      this.showMoreOptions(e);
+    });
+
+    this.querySelector('.comment-content')?.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url') && !e.target.classList.contains('see-more')) {
+        this.toggleExpand();
+      }
+    });
+
+    this.querySelector('.see-more')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleExpand();
+    });
+
+    this.querySelectorAll('.mention').forEach(mention => {
+      mention.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const username = e.target.textContent.substring(1);
+        window.location.href = `/profile.html?username=${username}`;
+      });
+    });
+  }
 
   replyToComment() {
     const commentPage = document.querySelector('.comment-page-overlay');
@@ -419,66 +409,64 @@ class CommentPage {
   }
 
   async sendComment() {
-  const input = document.querySelector('.comment-page-input');
-  if (!input) return;
+    const input = document.querySelector('.comment-page-input');
+    if (!input) return;
 
-  const content = input.value.trim();
-  if (!content) return;
+    const content = input.value.trim();
+    if (!content) return;
 
-  const editingCommentId = input.dataset.editingCommentId;
-  input.value = '';
-  delete input.dataset.editingCommentId;
+    const editingCommentId = input.dataset.editingCommentId;
+    input.value = '';
+    delete input.dataset.editingCommentId;
 
-  try {
-    if (editingCommentId) {
-      // ... existing edit comment code ...
-    } else {
-      // Create new comment
-      const { data: newComment, error } = await supabase
-        .from('comments')
-        .insert({
-          post_id: this.postId,
-          user_id: this.currentUser.id,
-          content
-        })
-        .select('*')
-        .single();
+    try {
+      if (editingCommentId) {
+        // ... existing edit comment code ...
+      } else {
+        // Create new comment
+        const { data: newComment, error } = await supabase
+          .from('comments')
+          .insert({
+            post_id: this.postId,
+            user_id: this.currentUser.id,
+            content
+          })
+          .select('*')
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      // Add profile info to the new comment
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, avatar_url, is_verified')
-        .eq('id', this.currentUser.id)
-        .single();
+        // Add profile info to the new comment
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url, is_verified')
+          .eq('id', this.currentUser.id)
+          .single();
 
-      newComment.profile = profile;
+        newComment.profile = profile;
 
-      // Add to beginning of comments array
-      this.comments.unshift(newComment);
-      this.renderComments();
+        // Add to beginning of comments array
+        this.comments.unshift(newComment);
+        this.renderComments();
 
-      // Increment comment count on the post
-      await supabase.rpc('increment_comment_count', { post_id: this.postId });
-      
-      // Bump the post timestamp (ADD THIS LINE)
-      await supabase.rpc('bump_post_timestamp', { post_id: this.postId });
+        // Increment comment count on the post
+        await supabase.rpc('increment_comment_count', { post_id: this.postId });
+        
+        // Bump the post timestamp
+        await supabase.rpc('bump_post_timestamp', { post_id: this.postId });
 
-      // Scroll to top to see the new comment
-      const commentsContainer = document.querySelector('.comment-page-comments');
-      if (commentsContainer) {
-        commentsContainer.scrollTop = 0;
+        // Scroll to top to see the new comment
+        const commentsContainer = document.querySelector('.comment-page-comments');
+        if (commentsContainer) {
+          commentsContainer.scrollTop = 0;
+        }
       }
+
+    } catch (error) {
+      console.error('Error sending comment:', error);
+      alert('Failed to post comment. Please try again.');
     }
-
-  } catch (error) {
-    console.error('Error sending comment:', error);
-    alert('Failed to post comment. Please try again.');
   }
-}
-
-
 
   setupRealtimeUpdates() {
     // Unsubscribe from any existing channel
