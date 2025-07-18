@@ -484,6 +484,74 @@ body {
             </div>
         </div>
 
+        <!-- Education Section -->
+<div class="education-section" id="education-section" style="display: none;">
+    <h2 class="section-title">
+        <i class="fas fa-graduation-cap"></i> Education
+        <button class="btn edit-btn" id="edit-education-btn" style="display: none;">
+            <i class="fas fa-edit"></i> Edit
+        </button>
+    </h2>
+    <div id="education-container">
+        <div class="education-item">
+            <div class="education-details">
+                <div class="description" id="education-text">Loading education...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Education Editor Page -->
+<div id="education-page" style="display: none;">
+    <div class="education-header">
+        <div class="header-left">
+            <button class="back-button" id="back-from-education">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-name">Edit Education</div>
+        </div>
+        <button class="btn btn-save" id="save-education">Save</button>
+    </div>
+
+    <div class="education-content">
+        <form id="education-form">
+            <div class="form-group">
+                <label for="education-degree">Degree/Certificate*</label>
+                <input type="text" id="education-degree" placeholder="e.g., ATPL, B.Sc Aviation" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="education-institution">Institution*</label>
+                <input type="text" id="education-institution" placeholder="e.g., CAE Academy, Embry-Riddle" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Duration*</label>
+                <div class="duration-fields">
+                    <div class="date-field">
+                        <label for="education-start-year">Start Year</label>
+                        <select id="education-start-year" required>
+                            <option value="">Year</option>
+                            <!-- Years will be populated by JS -->
+                        </select>
+                    </div>
+                    <div class="date-field">
+                        <label for="education-end-year">End Year</label>
+                        <select id="education-end-year">
+                            <option value="">Year</option>
+                            <!-- Years will be populated by JS -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="education-description">Description</label>
+                <textarea id="education-description" placeholder="Additional details about your education"></textarea>
+            </div>
+        </form>
+    </div>
+</div>
         <!-- Experience Section -->
 <div class="experience-section" id="experience-section" style="display: none;">
     <div class="section-header">
