@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Standards | Aviationin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      background-color: #fff;
+      min-height: 100vh;
+      touch-action: pan-y;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      tap-highlight-color: transparent;
+    }
+
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: white;
+      border-bottom: 1px solid #e6ecf0;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      z-index: 1000;
+    }
+
+    .back-btn {
+      font-size: 20px;
+      color: #0056b3;
+      margin-right: 20px;
+      cursor: pointer;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f1419;
+    }
+
+    .main-content {
+      margin-top: 60px;
+      padding: 20px;
+    }
+
+    .standards-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0056b3;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .page-intro {
+      font-size: 16px;
+      color: #536471;
+      margin-bottom: 30px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .standards-section {
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #0056b3;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-content {
+      background-color: #f7f9fa;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .standard-item {
+      margin-bottom: 20px;
+    }
+
+    .standard-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f1419;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .standard-description {
+      font-size: 14px;
+      color: #536471;
+      line-height: 1.6;
+      margin-left: 26px;
+    }
+
+    .icon {
+      color: #0056b3;
+      font-size: 18px;
+      min-width: 18px;
+    }
+
+    .full-page-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #FFFFFF;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .spinner-container {
+      text-align: center;
+    }
+
+    .spinner {
+      width: 30px;
+      height: 30px;
+      border: 3px solid #e6f0ff;
+      border-top: 3px solid #0056b3;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .blue-line {
+      height: 3px;
+      background-color: #0056b3;
+      width: 100%;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Full page loader -->
+  <div class="full-page-loader" id="full-page-loader">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="back-btn" onclick="window.location.href='index.html'">
+      <i class="fas fa-arrow-left"></i>
+    </div>
+    <div class="header-title">Community Standards</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="standards-container">
+      <h1 class="page-title">X-Jamii Community Standards</h1>
+      <p class="page-intro">
+        Our standards outline what is and isn't allowed on Aviationin. They're designed to ensure all members 
+        can participate freely and safely in our aviation community.
+      </p>
+      <div class="blue-line"></div>
+
+      <!-- Safety Standards -->
+      <div class="standards-section">
+        <h2 class="section-title">
+          <i class="fas fa-shield-alt icon"></i> Safety
+        </h2>
+        <div class="section-content">
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-ban icon"></i> No Threats or Violence
+            </h3>
+            <p class="standard-description">
+              We do not allow content that threatens, incites, or promotes violence against individuals 
+              or groups. This includes threats related to aviation safety or operations.
+            </p>
+          </div>
+          
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-user-shield icon"></i> Personal Safety
+            </h3>
+            <p class="standard-description">
+              Do not post content that reveals private personal information (doxing) or coordinates 
+              harassment. Aviation professionals' sensitive information must be protected.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Authenticity Standards -->
+      <div class="standards-section">
+        <h2 class="section-title">
+          <i class="fas fa-check-circle icon"></i> Authenticity
+        </h2>
+        <div class="section-content">
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-user-edit icon"></i> Authentic Identity
+            </h3>
+            <p class="standard-description">
+              Members must represent themselves truthfully. Impersonation of aviation professionals, 
+              airlines, or aviation organizations is strictly prohibited.
+            </p>
+          </div>
+          
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-exclamation-triangle icon"></i> No Misinformation
+            </h3>
+            <p class="standard-description">
+              Do not share false or misleading information about aviation safety, procedures, 
+              or operations that could endanger others.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Professional Conduct -->
+      <div class="standards-section">
+        <h2 class="section-title">
+          <i class="fas fa-briefcase icon"></i> Professional Conduct
+        </h2>
+        <div class="section-content">
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-comment-slash icon"></i> Respectful Communication
+            </h3>
+            <p class="standard-description">
+              Maintain professional discourse. Harassment, bullying, hate speech, or discriminatory 
+              language based on race, ethnicity, gender, or other protected characteristics is not tolerated.
+            </p>
+          </div>
+          
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-lock icon"></i> Confidential Information
+            </h3>
+            <p class="standard-description">
+              Do not share confidential aviation procedures, security protocols, or proprietary 
+              airline information that could compromise safety or operations.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Standards -->
+      <div class="standards-section">
+        <h2 class="section-title">
+          <i class="fas fa-photo-video icon"></i> Content Guidelines
+        </h2>
+        <div class="section-content">
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-child icon"></i> Adult Content
+            </h3>
+            <p class="standard-description">
+              X-Jamii is a professional network. Nudity, pornography, and sexually explicit content 
+              are not permitted.
+            </p>
+          </div>
+          
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-gavel icon"></i> Illegal Activities
+            </h3>
+            <p class="standard-description">
+              Content promoting illegal activities, including unauthorized drone operations, 
+              aviation violations, or other unlawful behavior is prohibited.
+            </p>
+          </div>
+          
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-chart-line icon"></i> Commercial Content
+            </h3>
+            <p class="standard-description">
+              Unsolicited advertising, spam, or repetitive promotional content is not allowed 
+              unless in designated commercial areas.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enforcement -->
+      <div class="standards-section">
+        <h2 class="section-title">
+          <i class="fas fa-balance-scale icon"></i> Enforcement
+        </h2>
+        <div class="section-content">
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-flag icon"></i> Reporting
+            </h3>
+            <p class="standard-description">
+              Members can report violations through our reporting system. All reports are reviewed 
+              by our moderation team.
+            </p>
+          </div>
+          
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-user-slash icon"></i> Consequences
+            </h3>
+            <p class="standard-description">
+              Violations may result in content removal, temporary suspension, or permanent banning 
+              from X-Jamii, depending on severity and context.
+            </p>
+          </div>
+          
+          <div class="standard-item">
+            <h3 class="standard-title">
+              <i class="fas fa-undo icon"></i> Appeals
+            </h3>
+            <p class="standard-description">
+              Members may appeal enforcement actions if they believe a mistake was made. Contact 
+              our support team with relevant details.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="blue-line"></div>
+      <p style="text-align: center; font-size: 14px; color: #536471; margin-top: 20px;">
+        Last updated: July 2025 | Aviationin reserves the right to update these standards as needed.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Hide loader after page loads
+      setTimeout(() => {
+        document.getElementById('full-page-loader').style.display = 'none';
+      }, 500);
+    });
+  </script>
+</body>
+</html>
