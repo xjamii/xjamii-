@@ -911,58 +911,97 @@ async function loadExperiences(profile) {
         if (window.experienceEditor) {
             const experiences = await window.experienceEditor.loadExperiences();
             
-            // Show section to owner always, to others only if there are experiences
-            if (isOwner || (experiences && experiences.length > 0)) {
+            if (experiences && experiences.length > 0) {
+                // Show experiences to everyone if they exist
+                elements.experienceContainer.innerHTML = experiences.map(exp => `
+                    <div class="experience-item">
+                        <div class="experience-details">
+                            <div class="description">${exp.position} at ${exp.company}</div>
+                        </div>
+                    </div>
+                `).join('');
+                elements.experienceSection.style.display = 'block';
+            } else if (isOwner) {
+                // Show "No experience" message only to owner
+                elements.experienceContainer.innerHTML = `
+                    <div class="no-experience" style="text-align: center; margin: 20px 0; color: #666;">
+                        No experience added yet
+                        <button class="btn" onclick="openExperienceEditor()" 
+                                style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
+                            <i class="fas fa-plus"></i> Add Experience
+                        </button>
+                    </div>`;
                 elements.experienceSection.style.display = 'block';
             } else {
+                // Hide completely for others when no experience
                 elements.experienceSection.style.display = 'none';
             }
         } else if (profile.experience) {
+            // Fallback for old profile format
             elements.experienceContainer.innerHTML = `
                 <div class="experience-item">
                     <div class="experience-details">
                         <div class="description">${profile.experience}</div>
                     </div>
                 </div>`;
-            
-            // Show section if owner or if experience exists
-            if (isOwner || profile.experience.trim() !== '') {
-                elements.experienceSection.style.display = 'block';
-            } else {
-                elements.experienceSection.style.display = 'none';
-            }
+            elements.experienceSection.style.display = 'block';
+        } else if (isOwner) {
+            // Show "No experience" message only to owner
+            elements.experienceContainer.innerHTML = `
+                <div class="no-experience" style="text-align: center; margin: 20px 0; color: #666;">
+                    No experience added yet
+                    <button class="btn" onclick="openExperienceEditor()" 
+                            style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
+                        <i class="fas fa-plus"></i> Add Experience
+                    </button>
+                </div>`;
+            elements.experienceSection.style.display = 'block';
         } else {
-            // Hide section if no experience and not owner
-            elements.experienceSection.style.display = isOwner ? 'block' : 'none';
+            // Hide completely for others when no experience
+            elements.experienceSection.style.display = 'none';
         }
     } catch (error) {
         console.error('Error loading experiences:', error);
         // Default to showing for owner, hiding for others on error
         const { data: { user } } = await supabase.auth.getUser();
-        elements.experienceSection.style.display = user?.id === profileId ? 'block' : 'none';
+        if (user?.id === profileId) {
+            elements.experienceContainer.innerHTML = `
+                <div class="no-experience" style="text-align: center; margin: 20px 0; color: #666;">
+                    No experience added yet
+                    <button class="btn" onclick="openExperienceEditor()" 
+                            style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
+                        <i class="fas fa-plus"></i> Add Experience
+                    </button>
+                </div>`;
+            elements.experienceSection.style.display = 'block';
+        } else {
+            elements.experienceSection.style.display = 'none';
+        }
     }
 }
 
-// Update the setupProfileActions function
+// Add this new function to handle opening the experience editor
+function openExperienceEditor() {
+    // Implement your experience editor opening logic here
+    console.log("Opening experience editor");
+    // Example: window.location.href = 'edit-experience.html';
+    // Or if using a modal: showExperienceModal();
+}
+
+// Update the setupProfileActions function (unchanged from previous)
 function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
         elements.connectBtn.style.display = 'none';
-        elements.editButton.style.display = 'block'; // Show edit button for owner
+        elements.editButton.style.display = 'block';
         elements.editButton.onclick = openEditProfile;
         document.querySelector('.btn-outline').style.display = 'none';
-        
-        // Ensure experience section is visible to owner
-        elements.experienceSection.style.display = 'block';
     } else {
-        elements.editButton.style.display = 'none'; // Hide edit button for others
+        elements.editButton.style.display = 'none';
         checkConnectionStatus(currentUserId, profileId);
-        
-        // Experience section visibility for others is handled in loadExperiences
     }
 }
 
-    
-// Update the loadSkills function (keep edit button logic in setupProfileActions)
+// Keep the loadSkills function exactly as before
 async function loadSkills(profile) {
     try {
         if (window.skillsEditor) {
@@ -974,19 +1013,17 @@ async function loadSkills(profile) {
                 .map(skill => `<div class="skill-badge">${skill}</div>`)
                 .join('');
         } else {
-            // Default "Aviation Professional" badge if no skills
             elements.skillsContainer.innerHTML = '<div class="skill-badge">Aviation Professional</div>';
         }
-        
-        // Skills section should always be visible
         elements.skillsSection.style.display = 'block';
     } catch (error) {
         console.error('Error loading skills:', error);
-        // Show default badge on error
         elements.skillsContainer.innerHTML = '<div class="skill-badge">Aviation Professional</div>';
         elements.skillsSection.style.display = 'block';
     }
 }
+
+
    
 
   
