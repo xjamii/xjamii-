@@ -1240,104 +1240,95 @@ function openSkillsEditor() {
 }
 
        
-async function loadEducation(profile) {
+
+
+
+sync function loadEducation(profile) {
     try {
         const { data: { user } } = await supabase.auth.getUser();
         const isOwner = user?.id === profileId;
 
         if (window.educationEditor) {
-            const educations = await window.educationEditor.loadEducations();
+            const educationItems = await window.educationEditor.loadEducations();
             
-            if (educations && educations.length > 0) {
-                elements.educationContainer.innerHTML = educations.map(edu => `
-                    <div class="education-item">
-                        <div class="education-details">
-                            <div class="description">${edu.degree} at ${edu.institution} (${edu.start_year} - ${edu.end_year || 'Present'})</div>
-                        </div>
-                    </div>
-                `).join('');
+            if (educationItems && educationItems.length > 0) {
+                // Display education items if they exist
                 elements.educationSection.style.display = 'block';
+                
+                // Show the small + button for adding more
+                if (isOwner) {
+                    elements.addEducationBtn.style.display = 'flex';
+                }
             } else if (isOwner) {
+                // Show empty state with no items for owner
                 elements.educationContainer.innerHTML = `
-                    <div class="no-education" style="text-align: center; margin: 20px 0; color: #666;">
+                    <div class="no-education">
                         No education added yet
-                        <button class="btn" id="add-education-btn" 
-                                style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                            <i class="fas fa-plus"></i> Add Education
-                        </button>
                     </div>`;
                 elements.educationSection.style.display = 'block';
-                
-                // Add click handler for the button
-                document.getElementById('add-education-btn').addEventListener('click', openEducationEditor);
+                elements.addEducationBtn.style.display = 'flex';
             } else {
+                // Hide completely for others when empty
                 elements.educationSection.style.display = 'none';
             }
-        } else {
+        } else if (isOwner) {
             // Fallback if editor not loaded
-            if (isOwner) {
-                elements.educationContainer.innerHTML = `
-                    <div class="no-education" style="text-align: center; margin: 20px 0; color: #666;">
-                        No education added yet
-                        <button class="btn" id="add-education-btn" 
-                                style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                            <i class="fas fa-plus"></i> Add Education
-                        </button>
-                    </div>`;
-                elements.educationSection.style.display = 'block';
-                
-                // Add click handler for the button
-                document.getElementById('add-education-btn').addEventListener('click', openEducationEditor);
-            } else {
-                elements.educationSection.style.display = 'none';
-            }
+            elements.educationContainer.innerHTML = `
+                <div class="no-education">
+                    No education added yet
+                </div>`;
+            elements.educationSection.style.display = 'block';
+            elements.addEducationBtn.style.display = 'flex';
+        } else {
+            elements.educationSection.style.display = 'none';
         }
     } catch (error) {
         console.error('Error loading education:', error);
         const { data: { user } } = await supabase.auth.getUser();
+        
         if (user?.id === profileId) {
+            // Show empty state for owner on error
             elements.educationContainer.innerHTML = `
-                <div class="no-education" style="text-align: center; margin: 20px 0; color: #666;">
+                <div class="no-education">
                     No education added yet
-                    <button class="btn" id="add-education-btn" 
-                            style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">
-                        <i class="fas fa-plus"></i> Add Education
-                    </button>
                 </div>`;
             elements.educationSection.style.display = 'block';
-            
-            // Add click handler for the button
-            document.getElementById('add-education-btn').addEventListener('click', openEducationEditor);
+            elements.addEducationBtn.style.display = 'flex';
         } else {
             elements.educationSection.style.display = 'none';
         }
     }
 }
 
-// Function to open education editor
-function openEducationEditor() {
+function openEducationEditor(educationId = null) {
+    if (educationId) {
+        // Open in edit mode with existing education item
+        window.educationEditor.openForEdit(educationId);
+    } else {
+        // Open in create mode for new item
+        window.educationEditor.openForNew();
+    }
+    
     document.getElementById('education-page').style.display = 'block';
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
+    document.body.style.overflow = 'hidden';
 }
+
        
-function setupProfileActions(isOwnProfile, currentUserId, profileId) {
+nction setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
-        // Hide connection-related buttons for own profile
         elements.connectBtn.style.display = 'none';
         document.querySelector('.btn-outline').style.display = 'none';
         
-        // Show main profile edit button
+        // Show edit buttons for owner
         elements.editButton.style.display = 'inline-block';
-        
-        // Skills edit button is handled in loadSkills
     } else {
-        // Remove all edit/add buttons for non-owners
+        // Remove all action buttons for non-owners
         const buttonsToRemove = [
-            'skills-edit-btn',        // Skills section edit button
-            'add-education-btn',      // Education section add button
-            'edit-education-btn',     // Education section edit button
-            'add-workat-btn',         // Work At section add button
-            'edit-workat-btn'         // Work At section edit button
+            'skills-edit-btn',
+            'add-education-btn',
+            'edit-education-btn', 
+            'add-workat-btn',
+            'edit-workat-btn'
         ];
 
         buttonsToRemove.forEach(buttonId => {
@@ -1345,6 +1336,16 @@ function setupProfileActions(isOwnProfile, currentUserId, profileId) {
             if (button) button.remove();
         });
 
+        // Remove inline action buttons
+        document.querySelectorAll('.education-action-btn').forEach(btn => {
+            btn.remove();
+        });
+
+        document.querySelectorAll('.workat-action-btn').forEach(btn => {
+            btn.remove();
+        });
+
+        
         // Also remove any dynamically created action buttons
         document.querySelectorAll('.workat-action-btn').forEach(btn => {
             btn.remove();
