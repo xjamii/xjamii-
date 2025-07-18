@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manage Account | Aviationin</title>
+  <title>Manage Account | X-Jamii</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -235,6 +235,11 @@
         <input type="email" id="new-email" class="form-input" placeholder="Enter new email address">
       </div>
       
+      <div class="form-group">
+        <label for="email-password" class="form-label">Confirm Your Password</label>
+        <input type="password" id="email-password" class="form-input" placeholder="Enter your password">
+      </div>
+      
       <button id="update-email-btn" class="btn btn-primary btn-block">
         Update Email
         <div class="loading-spinner"></div>
@@ -274,12 +279,22 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       try {
+        // Show preloader
+        document.getElementById('full-page-loader').style.display = 'flex';
+        
         // Check authentication
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) {
           window.location.href = 'login.html';
           return;
         }
+
+        // Log user info to console for debugging
+        console.log('User logged in:', {
+          email: user.email,
+          id: user.id,
+          last_sign_in: user.last_sign_in_at
+        });
 
         // Display current email
         document.getElementById('current-email').textContent = user.email;
@@ -290,6 +305,8 @@
 
       } catch (error) {
         console.error('Initialization error:', error);
+        // Redirect to login if there's any error
+        window.location.href = 'login.html';
       } finally {
         // Hide preloader
         document.getElementById('full-page-loader').style.display = 'none';
@@ -300,9 +317,16 @@
       const btn = document.getElementById('update-email-btn');
       const statusEl = document.getElementById('email-status');
       const newEmail = document.getElementById('new-email').value.trim();
+      const password = document.getElementById('email-password').value.trim();
 
       if (!newEmail) {
         statusEl.textContent = 'Please enter a new email address';
+        statusEl.className = 'status-message error';
+        return;
+      }
+
+      if (!password) {
+        statusEl.textContent = 'Please enter your password to confirm';
         statusEl.className = 'status-message error';
         return;
       }
@@ -311,19 +335,38 @@
         btn.classList.add('btn-loading');
         statusEl.className = 'status-message';
         
-        const { data, error } = await supabase.auth.updateUser({ email: newEmail });
+        // First reauthenticate with current password
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
         
-        if (error) throw error;
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: password
+        });
+        
+        if (signInError) throw signInError;
+        
+        // Then update email
+        const { error: updateError } = await supabase.auth.updateUser({ 
+          email: newEmail 
+        });
+        
+        if (updateError) throw updateError;
         
         statusEl.textContent = 'Email update request sent. Please check your new email for confirmation.';
         statusEl.className = 'status-message success';
         document.getElementById('current-email').textContent = newEmail;
         document.getElementById('new-email').value = '';
+        document.getElementById('email-password').value = '';
         
       } catch (error) {
         console.error('Email update error:', error);
         statusEl.textContent = error.message || 'Failed to update email. Please try again.';
         statusEl.className = 'status-message error';
+        
+        if (error.message.includes('Invalid login credentials')) {
+          statusEl.textContent = 'Password is incorrect';
+        }
       } finally {
         btn.classList.remove('btn-loading');
       }
