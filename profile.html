@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="posts.css">
     <link rel="stylesheet" href="experience.css">
     <link rel="stylesheet" href="edit.css">
-     <link rel="stylesheet" href="skills.css">
+     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -690,39 +690,7 @@ body {
 
 
 
-        <!-- Skills Editor Page -->
-<div id="skills-page" style="display: none;">
-    <div class="skills-header">
-        <div class="header-left">
-            <button class="back-button" id="back-from-skills">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="header-name">Edit Skills</div>
-        </div>
-        <button class="btn btn-save" id="save-skills">Save</button>
-    </div>
 
-    <div class="skills-content">
-        <div class="preloader" id="skills-preloader">
-            <div class="spinner"></div>
-        </div>
-
-        <div class="form-section">
-            <div class="selected-skills">
-                <p>Selected Skills: <span id="selected-count">0</span>/10</p>
-                <div class="skills-chips" id="skills-chips"></div>
-            </div>
-            
-            <div class="skills-search">
-                <input type="text" id="skills-search" placeholder="Search skills...">
-            </div>
-            
-            <div class="skills-grid" id="skills-grid">
-                <!-- Skills will be populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-</div>
    <script>
   // Initialize Supabase
   const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
@@ -913,21 +881,7 @@ body {
     }
   }
 
-  async function loadSkills(profile) {
-    try {
-      if (window.skillsEditor) {
-        await window.skillsEditor.loadSkills();
-      } else if (profile.skills) {
-        const skillsArray = profile.skills.split(',').map(skill => skill.trim());
-        elements.skillsContainer.innerHTML = skillsArray
-          .filter(skill => skill.length > 0)
-          .map(skill => `<div class="skill-badge">${skill}</div>`)
-          .join('');
-      }
-    } catch (error) {
-      console.error('Error loading skills:', error);
-    }
-  }
+  
 
   function setupProfileActions(isOwnProfile, currentUserId, profileId) {
     if (isOwnProfile) {
