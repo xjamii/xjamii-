@@ -619,16 +619,6 @@
       .comment-page-overlay ~ .spinner {
   display: none !important;
 }
-
-      .refresh-spinner {
-    width: 30px;
-    height: 30px;
-    border: 3px solid rgba(0, 176, 255, 0.2);
-    border-top-color: #00B0FF;
-    border-radius: 50%;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
     </style>
 </head>
 <body>
@@ -695,9 +685,9 @@
         <span id="notificationBadge">3</span>
     </div>
 </div>
-        <div class="footer-icon" id="homeIcon" onclick="showFeed()">
-    <i class="fas fa-home"></i>
-</div>
+        <div class="footer-icon" onclick="window.location.href='profile.html'">
+            <i class="fas fa-user"></i>
+        </div>
     </footer>
 
     <!-- Menu Page -->
@@ -1311,42 +1301,6 @@ if (!customElements.get('post-component')) {
 }
 
 </script>
-
-  <script>
-    // Home icon click handler
-document.getElementById('homeIcon').addEventListener('click', async function(e) {
-    // Check if we're already on the home feed
-    if (document.querySelector('.main-content').style.display === 'block') {
-        // Scroll to top smoothly
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-        
-        // Show refresh spinner
-        const refreshSpinner = document.querySelector('.refresh-spinner');
-        refreshSpinner.style.opacity = '1';
-        refreshSpinner.style.animation = 'spin 0.6s linear infinite';
-        
-        try {
-            // Reload both sections
-            await Promise.all([
-                loadPosts(), 
-                loadSuggestions() // Make sure you have this function in suggestions.js
-            ]);
-        } catch (error) {
-            console.error('Error refreshing:', error);
-        } finally {
-            // Hide spinner after 1 second (even if there was an error)
-            setTimeout(() => {
-                refreshSpinner.style.opacity = '0';
-                refreshSpinner.style.animation = 'none';
-            }, 1000);
-        }
-    }
-});
-  </script>
-  
 <script src="suggestions.js"></script>
    <script src="posts.js"></script>
   
