@@ -254,47 +254,46 @@ class PostComponent extends HTMLElement {
 
 
 
-    
-        
- 
-
   async render() {
-    try {
-      const postData = this.getAttribute('post-data');
-      if (!postData) {
-        this.innerHTML = `
-          <div class="post-loading">
-            <div class="loader"></div>
-          </div>
-        `;
-        return;
-      }
+  try {
+    const postData = this.getAttribute('post-data');
+    if (!postData) {
+      this.innerHTML = `
+        <div class="post-loading">
+          <div class="loader"></div>
+        </div>
+      `;
+      return;
+    }
 
-      const post = JSON.parse(postData);
-      const profile = post.profile || {
-        username: 'unknown',
-        full_name: 'Unknown User',
-        avatar_url: '',
-        is_verified: true,
-        user_id: ''
-      };
-
-      
-      // Standardized profile link using post.user_id
-    const profileLink = `/profile.html?id=${post.user_id}`;
+    const post = JSON.parse(postData);
     
-    // Avatar HTML (with fallback)
+    // Robust profile data handling with fallbacks
+    const profile = {
+      id: post.user_id || post.profile?.id || '',
+      username: post.profile?.username || 'unknown',
+      full_name: post.profile?.full_name || 'Unknown User',
+      avatar_url: post.profile?.avatar_url || '',
+      is_verified: post.profile?.is_verified || false
+    };
+
+    // Safe profile link generation
+    const profileLink = profile.id 
+      ? `/profile.html?id=${profile.id}`
+      : '#';
+
+    // Avatar with multiple fallback layers
     const avatarHtml = profile.avatar_url 
       ? `<img src="${profile.avatar_url}" alt="${profile.full_name}" class="post-avatar" 
-         onerror="this.onerror=null; this.src='${this.getInitialsAvatar(profile.full_name)}'">`
+         onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'post-avatar initials\\'>${this.getInitials(profile.full_name)}</div>'">`
       : `<div class="post-avatar initials">${this.getInitials(profile.full_name)}</div>`;
-    
-      // Check if content needs "See more"
-      const content = post.content || '';
-      const showSeeMore = content.length > 200;
-      const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
 
-      this.innerHTML = `
+    // Content handling with "See more" functionality
+    const content = post.content || '';
+    const showSeeMore = content.length > 200;
+    const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
+
+    this.innerHTML = `
       <div class="post-container">
         <div class="post">
           <div class="post-header">
@@ -304,18 +303,19 @@ class PostComponent extends HTMLElement {
             <div class="post-user-info">
               <a href="${profileLink}" class="post-user-link" onclick="event.stopPropagation()">
                 <div class="post-user">
-                  ${profile.full_name || profile.username || 'User'}
+                  ${profile.full_name}
                   ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
                 </div>
-                <div class="post-username">@${profile.username || 'user'}</div>
+                <div class="post-username">@${profile.username}</div>
               </a>
             </div>
             <span class="post-time">${this.formatTime(post.created_at)}</span>
           </div>
           
-          ${post.content ? `
+          ${content ? `
             <div class="post-content">
-              ${this.processContent(post.content)}
+              ${this.processContent(displayedContent)}
+              ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
             </div>
           ` : ''}
           
@@ -323,30 +323,44 @@ class PostComponent extends HTMLElement {
           
           <div class="post-actions">
             <div class="post-action comment-action">
-              <i class="far fa-comment"></i> ${post.comment_count || 0}
+              <i class="far fa-comment"></i>
+              <span>${post.comment_count || 0}</span>
             </div>
             <div class="post-action like-action ${post.is_liked ? 'liked' : ''}">
-              <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i> ${post.like_count || 0}
+              <i class="${post.is_liked ? 'fas' : 'far'} fa-heart"></i>
+              <span class="like-text">${post.like_count || 0}</span>
             </div>
             <div class="post-action share-action">
               <i class="fas fa-arrow-up-from-bracket"></i>
             </div>
             <div class="post-action views">
-              <i class="fas fa-eye"></i> ${post.views || 0}
+              <i class="fas fa-eye"></i>
+              <span>${post.views || 0}</span>
             </div>
           </div>
         </div>
       </div>
     `;
-  
 
-      this.setupEventListeners(post);
+    this.setupEventListeners(post);
 
-    } catch (error) {
-      console.error("Error rendering post:", error);
-      this.innerHTML = `<div class="post-error">Error loading post</div>`;
-    }
+  } catch (error) {
+    console.error("Error rendering post:", error);
+    this.innerHTML = `
+      <div class="post-error">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>Error loading post</span>
+        ${post?.id ? `<small>Post ID: ${post.id}</small>` : ''}
+      </div>
+    `;
   }
+}  
+        
+ 
+
+
+
+      
 
   renderMedia(mediaItems) {
     if (!mediaItems || !mediaItems.length) return '';
