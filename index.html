@@ -832,51 +832,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// Modify the existing showFeed function to include the refresh behavior
+// Replace your existing showFeed function with this:
 function showFeed() {
-    // Scroll to top smoothly
+    // 1. Scroll to top immediately
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    // Show the main content and header
+    // 2. Show loading spinners
+    const postsContainer = document.getElementById('posts-container');
+    postsContainer.innerHTML = '<div class="post-loading-spinner"><div class="spinner"></div></div>';
+    
+    const suggestionsContainer = document.getElementById('suggestions-scroller');
+    if (suggestionsContainer) {
+        suggestionsContainer.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+    }
+    
+    // 3. Refresh content after a small delay (for better UX)
+    setTimeout(async () => {
+        try {
+            await Promise.all([
+                loadPosts(),
+                typeof loadSuggestions === 'function' ? loadSuggestions() : Promise.resolve()
+            ]);
+        } catch (error) {
+            console.error('Error refreshing content:', error);
+        }
+    }, 300);
+    
+    // Maintain existing UI state
     document.getElementById('profileSection').style.display = 'none';
     document.querySelector('.main-content').style.display = 'block';
     document.querySelector('.top-header').style.display = 'flex';
     document.title = 'Aviationin';
     updateActiveNavIcon('home');
-    
-    // Trigger reload of suggestions and posts
-    refreshContent();
 }
-
-// Add this new function to handle the refresh
-async function refreshContent() {
-    try {
-        // Show loading spinners
-        const postsContainer = document.getElementById('posts-container');
-        postsContainer.innerHTML = '<div class="post-loading-spinner"><div class="spinner"></div></div>';
-        
-        const suggestionsContainer = document.getElementById('suggestions-scroller');
-        if (suggestionsContainer) {
-            suggestionsContainer.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
-        }
-        
-        // Reload both sections
-        await loadPosts();
-        if (typeof loadSuggestions === 'function') {
-            await loadSuggestions();
-        }
-    } catch (error) {
-        console.error('Error refreshing content:', error);
-    }
-}
-
-// Make sure the home icon click handler is properly set
-document.addEventListener('DOMContentLoaded', () => {
-    const homeIcon = document.querySelector('.footer-icon i.fa-home');
-    if (homeIcon) {
-        homeIcon.closest('.footer-icon').onclick = showFeed;
-    }
-});
 
 async function showProfile() {
     document.querySelector('.main-content').style.display = 'none';
