@@ -160,3 +160,37 @@
     right: 0;
     z-index: 1000;
 }
+
+
+.suggestion-name-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.suggestion-name-text {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 3px; /* Control name width here */
+    font-size: 12px;
+    font-weight: 600;
+    color: #0f1419;
+}
+
+
+/* Username is now totally independent */
+.suggestion-username-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    color: #536471;
+    max-width: 5px; /* Control username width separately here */
+    margin: 0 auto;
+}
