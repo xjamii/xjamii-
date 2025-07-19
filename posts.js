@@ -318,7 +318,7 @@ class PostComponent extends HTMLElement {
           
           
       
-// In the render method, modify the content section:
+
 ${content ? `
   <div class="post-content ${showSeeMore ? 'collapsed' : 'expanded'}" 
        data-full-content="${encodeURIComponent(content)}">
