@@ -282,8 +282,6 @@ class PostComponent extends HTMLElement {
       ? `/profile.html?id=${profile.id}`
       : '#';
 
-    const { data: { user } } = await supabase.auth.getUser();
-    const isOwner = user?.id === post.user_id;
 
     // Avatar with multiple fallback layers
     const avatarHtml = profile.avatar_url 
@@ -295,6 +293,9 @@ class PostComponent extends HTMLElement {
     const content = post.content || '';
     const showSeeMore = content.length > 200;
     const displayedContent = showSeeMore ? content.substring(0, 200) + '...' : content;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const isOwner = user?.id === post.user_id;
 
     this.innerHTML = `
       <div class="post-container">
