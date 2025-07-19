@@ -23,14 +23,14 @@ async function loadSuggestions() {
     const scroller = document.getElementById('suggestions-scroller');
     if (!scroller) return;
 
-    const section = scroller.parentElement; // Assumes scroller is wrapped in the suggestions section
+    const section = document.querySelector('.suggestions-container'); // Target the entire suggestions block
 
     try {
-        // Show loading state
+        // Show loading spinner
         scroller.innerHTML = '<div class="loading-spinner"></div>';
-        section.style.display = ''; // Make sure the section is shown while loading
+        section.style.display = ''; // Ensure it's visible during loading
 
-        // Get suggested profiles
+        // Fetch suggested profiles
         const { data: profiles, error } = await supabase.rpc('get_suggested_profiles', {
             current_user_id: currentUserId,
             limit_count: 15
@@ -38,15 +38,14 @@ async function loadSuggestions() {
 
         if (error) throw error;
 
+        // No suggestions: hide the entire container
         if (!profiles || profiles.length === 0) {
-            section.style.display = 'none'; // Hide the entire suggestions section
+            section.style.display = 'none';
             return;
         }
 
-        // Clear existing suggestions
+        // Clear loading and show suggestions
         scroller.innerHTML = '';
-
-        // Add each profile to the scroller
         profiles.forEach(profile => {
             const profileElement = createSuggestionElement(profile);
             scroller.appendChild(profileElement);
@@ -162,7 +161,7 @@ async function handleConnection(userId, button) {
             currentUserId = user.id;
         }
 
-        // Check existing connection
+        // Check for existing connection
         const { data: connection, error: connectionError } = await supabase
             .from('connections')
             .select('id, sender_id, status')
@@ -171,7 +170,6 @@ async function handleConnection(userId, button) {
 
         if (connectionError && connectionError.code !== 'PGRST116') throw connectionError;
 
-        // Handle different connection states
         if (connection) {
             if (connection.status === 'pending') {
                 if (connection.sender_id === currentUserId) {
@@ -227,7 +225,7 @@ function setupConnectionUpdates() {
     return channel;
 }
 
-// Refresh suggestions periodically (every 5 minutes)
+// Refresh suggestions every 5 minutes
 setInterval(() => {
     if (currentUserId) {
         loadSuggestions();
