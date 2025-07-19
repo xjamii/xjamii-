@@ -316,12 +316,13 @@ class PostComponent extends HTMLElement {
             <span class="post-time">${this.formatTime(post.created_at)}</span>
           </div>
           
+          :
           ${content ? `
-            <div class="post-content">
-              ${this.processContent(displayedContent)}
-              ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
-            </div>
-          ` : ''}
+          <div class="post-content" data-full-content="${this.processContent(content)}">
+             ${this.processContent(displayedContent)}
+             ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
+          </div>
+            ` : ''}
           
           ${this.renderMedia(post.media || [])}
           
@@ -499,18 +500,25 @@ class PostComponent extends HTMLElement {
       });
     });
 
-    // See more click handler
-    this.querySelector('.see-more')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.openCommentPage(post);
-    });
+    // Replace the "See more" click handler in setupEventListeners() with:
+this.querySelector('.see-more')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const contentEl = this.querySelector('.post-content');
+  if (contentEl) {
+    const fullContent = contentEl.getAttribute('data-full-content');
+    contentEl.innerHTML = fullContent;
+  }
+});
 
-    // Post content click handler (opens comment page)
-    this.querySelector('.post-content')?.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
-        this.openCommentPage(post);
-      }
-    });
+// Also update the post content click handler to prevent opening comment page when clicking "See more":
+this.querySelector('.post-content')?.addEventListener('click', (e) => {
+  if (!e.target.classList.contains('mention') && 
+      !e.target.classList.contains('hashtag') && 
+      !e.target.classList.contains('url') &&
+      !e.target.classList.contains('see-more')) {
+    this.openCommentPage(post);
+  }
+});
 
     // Setup pull-to-refresh if this is the first post
     if (this.previousElementSibling === null) {
