@@ -283,6 +283,7 @@ class PostComponent extends HTMLElement {
       ? `/profile.html?id=${profile.id}`
       : '#';
 
+    const isOwner = post.current_user_id === post.user_id;
 
     // Avatar with multiple fallback layers
     const avatarHtml = profile.avatar_url 
@@ -336,6 +337,11 @@ class PostComponent extends HTMLElement {
             <div class="post-action share-action">
               <i class="fas fa-arrow-up-from-bracket"></i>
             </div>
+            ${isOwner ? `
+             <div class="post-options">
+              <i class="fas fa-ellipsis-h post-options-icon" title="Post options"></i>
+            </div>
+             ` : ''}
             <div class="post-action views">
               <i class="fas fa-eye"></i>
               <span>${post.views || 0}</span>
