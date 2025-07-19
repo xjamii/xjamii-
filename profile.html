@@ -850,11 +850,17 @@ async function loadProfile() {
 
   async function loadUserPosts(userId) {
     try {
+        // Show loading spinner
         elements.postsLoadingSpinner.style.display = 'flex';
         elements.userPostsContainer.innerHTML = '';
         elements.noPostsMessage.style.display = 'none';
 
-        const { data: posts, error } = await supabase
+        // Get logged-in user to fetch their liked posts
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+
+        // Fetch posts for given userId with profile and media info
+        const { data: posts, error: postsError } = await supabase
             .from('posts')
             .select(`
                 *,
@@ -864,52 +870,51 @@ async function loadProfile() {
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (postsError) throw postsError;
 
         if (!posts || posts.length === 0) {
             elements.noPostsMessage.style.display = 'block';
+            elements.postsLoadingSpinner.style.display = 'none';
             return;
         }
 
-        // Check liked posts if user is logged in
-        const { data: { user } } = await supabase.auth.getUser();
+        // Fetch likes of logged-in user to mark liked posts
+        let likedPostIds = new Set();
         if (user) {
-            const { data: userLikes } = await supabase
+            const { data: userLikes, error: likesError } = await supabase
                 .from('likes')
                 .select('post_id')
                 .eq('profile_id', user.id);
-
+            if (likesError) throw likesError;
             if (userLikes) {
-                const likedPostIds = new Set(userLikes.map(like => like.post_id));
-                posts.forEach(post => {
-                    post.is_liked = likedPostIds.has(post.id);
-                });
+                likedPostIds = new Set(userLikes.map(like => like.post_id));
             }
         }
 
-        // Render posts with verification support
+        // Clear container and render posts with like & verified info
+        elements.userPostsContainer.innerHTML = '';
         posts.forEach(post => {
-            const postElement = document.createElement('post-component');
-            
-            // Ensure post.profile exists and has is_verified property
-            if (post.profile) {
-                post.profile.is_verified = post.profile.is_verified || false;
-            } else {
+            post.is_liked = likedPostIds.has(post.id);
+            if (!post.profile) {
                 post.profile = {
-                    is_verified: false,
                     username: 'unknown',
                     full_name: 'Unknown User',
-                    avatar_url: null
+                    avatar_url: null,
+                    is_verified: false
                 };
+            } else {
+                // Ensure is_verified is boolean
+                post.profile.is_verified = Boolean(post.profile.is_verified);
             }
-            
+
+            const postElement = document.createElement('post-component');
             postElement.setAttribute('post-data', JSON.stringify(post));
             elements.userPostsContainer.appendChild(postElement);
         });
 
         elements.userPostsSection.style.display = 'block';
     } catch (error) {
-        console.error('Error loading posts:', error);
+        console.error('Error loading user posts:', error);
         elements.noPostsMessage.textContent = 'Error loading posts';
         elements.noPostsMessage.style.display = 'block';
     } finally {
