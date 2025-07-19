@@ -849,3 +849,204 @@ like-button {
     
     /* Ensure it stays below any sticky headers */
 }
+
+/* Post Options Popup Styles */
+.post-options-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.post-options-popup.visible {
+  opacity: 1;
+}
+
+.post-options-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.post-options-container {
+  background-color: white;
+  border-radius: 16px 16px 0 0;
+  padding: 16px;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  z-index: 1;
+}
+
+.dark-mode .post-options-container {
+  background-color: #000;
+  border-top: 1px solid #333;
+}
+
+.post-options-container.visible {
+  transform: translateY(0);
+}
+
+.post-option {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.dark-mode .post-option {
+  border-bottom-color: #333;
+}
+
+.post-option:last-child {
+  border-bottom: none;
+}
+
+.post-option i {
+  margin-right: 12px;
+  width: 24px;
+  text-align: center;
+}
+
+.delete-option {
+  color: #ff4444;
+}
+
+.cancel-option {
+  font-weight: bold;
+  justify-content: center;
+  margin-top: 8px;
+  border-radius: 8px;
+  background-color: #f0f2f5;
+}
+
+.dark-mode .cancel-option {
+  background-color: #333;
+}
+
+/* Edit Post Styles */
+.edit-post-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.edit-post-container {
+  background-color: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dark-mode .edit-post-container {
+  background-color: #000;
+  border: 1px solid #333;
+}
+
+.edit-post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.edit-post-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.close-edit-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #657786;
+}
+
+.edit-post-textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  resize: vertical;
+  margin-bottom: 16px;
+}
+
+.dark-mode .edit-post-textarea {
+  background-color: #111;
+  border-color: #333;
+  color: white;
+}
+
+.edit-post-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.edit-post-actions button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancel-edit-btn {
+  background: none;
+  border: 1px solid #ddd;
+}
+
+.dark-mode .cancel-edit-btn {
+  border-color: #333;
+}
+
+.save-edit-btn {
+  background-color: #0056b3;
+  color: white;
+  border: none;
+}
+
+/* Toast notifications */
+.post-deleted-toast,
+.post-updated-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 14px;
+  z-index: 3000;
+  animation: fadeInOut 2s ease;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
