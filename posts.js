@@ -265,9 +265,7 @@ class PostComponent extends HTMLElement {
       `;
       return;
     }
-     const { data: { user } } = await supabase.auth.getUser();
-    const isOwner = user?.id === post.user_id;
-
+     
 
     const post = JSON.parse(postData);
     
