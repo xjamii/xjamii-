@@ -959,7 +959,7 @@ like-button {
 }
 
 .dark-mode .edit-post-container {
-  background-color: #000;
+  background-color: #0056b3;
   border: 1px solid #333;
 }
 
@@ -973,6 +973,7 @@ like-button {
 .edit-post-header h3 {
   font-size: 20px;
   font-weight: 600;
+  color: #0056b3;
 }
 
 .close-edit-btn {
@@ -980,7 +981,7 @@ like-button {
   border: none;
   font-size: 20px;
   cursor: pointer;
-  color: #657786;
+  color: #0056b3;
 }
 
 .edit-post-textarea {
