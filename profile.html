@@ -814,12 +814,12 @@ async function loadProfile() {
     elements.coverPhoto.style.backgroundImage = profile.cover_photo_url ? 
       `url('${profile.cover_photo_url}')` : 'none';
     
-    // Show verified badge
-    elements.verifiedBadge.style.display = 'inline-block';
+    // Show verified badge only if user is verified
+    elements.verifiedBadge.style.display = profile.is_verified ? 'inline-block' : 'none';
     
     // Show profile sections
     elements.profileInfo.style.display = 'block';
-  }
+}
 
   async function loadConnectionsCount(profileId) {
     try {
@@ -850,59 +850,72 @@ async function loadProfile() {
 
   async function loadUserPosts(userId) {
     try {
-      elements.postsLoadingSpinner.style.display = 'flex';
-      elements.userPostsContainer.innerHTML = '';
-      elements.noPostsMessage.style.display = 'none';
+        elements.postsLoadingSpinner.style.display = 'flex';
+        elements.userPostsContainer.innerHTML = '';
+        elements.noPostsMessage.style.display = 'none';
 
-      const { data: posts, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profile:user_id (username, full_name, avatar_url, is_verified),
-          media:post_media (media_url, media_type)
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        const { data: posts, error } = await supabase
+            .from('posts')
+            .select(`
+                *,
+                profile:user_id (username, full_name, avatar_url, is_verified),
+                media:post_media (media_url, media_type)
+            `)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      if (!posts || posts.length === 0) {
-        elements.noPostsMessage.style.display = 'block';
-        return;
-      }
-
-      // Check liked posts if user is logged in
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userLikes } = await supabase
-          .from('likes')
-          .select('post_id')
-          .eq('profile_id', user.id);
-
-        if (userLikes) {
-          const likedPostIds = new Set(userLikes.map(like => like.post_id));
-          posts.forEach(post => {
-            post.is_liked = likedPostIds.has(post.id);
-          });
+        if (!posts || posts.length === 0) {
+            elements.noPostsMessage.style.display = 'block';
+            return;
         }
-      }
 
-      // Render posts
-      posts.forEach(post => {
-        const postElement = document.createElement('post-component');
-        postElement.setAttribute('post-data', JSON.stringify(post));
-        elements.userPostsContainer.appendChild(postElement);
-      });
+        // Check liked posts if user is logged in
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data: userLikes } = await supabase
+                .from('likes')
+                .select('post_id')
+                .eq('profile_id', user.id);
 
-      elements.userPostsSection.style.display = 'block';
+            if (userLikes) {
+                const likedPostIds = new Set(userLikes.map(like => like.post_id));
+                posts.forEach(post => {
+                    post.is_liked = likedPostIds.has(post.id);
+                });
+            }
+        }
+
+        // Render posts with verification support
+        posts.forEach(post => {
+            const postElement = document.createElement('post-component');
+            
+            // Ensure post.profile exists and has is_verified property
+            if (post.profile) {
+                post.profile.is_verified = post.profile.is_verified || false;
+            } else {
+                post.profile = {
+                    is_verified: false,
+                    username: 'unknown',
+                    full_name: 'Unknown User',
+                    avatar_url: null
+                };
+            }
+            
+            postElement.setAttribute('post-data', JSON.stringify(post));
+            elements.userPostsContainer.appendChild(postElement);
+        });
+
+        elements.userPostsSection.style.display = 'block';
     } catch (error) {
-      console.error('Error loading posts:', error);
-      elements.noPostsMessage.textContent = 'Error loading posts';
-      elements.noPostsMessage.style.display = 'block';
+        console.error('Error loading posts:', error);
+        elements.noPostsMessage.textContent = 'Error loading posts';
+        elements.noPostsMessage.style.display = 'block';
     } finally {
-      elements.postsLoadingSpinner.style.display = 'none';
+        elements.postsLoadingSpinner.style.display = 'none';
     }
-  }
+}
 
   // Connection management functions
   async function checkConnectionStatus(currentUserId, profileId) {
