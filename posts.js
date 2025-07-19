@@ -270,12 +270,12 @@ class PostComponent extends HTMLElement {
     
     // Robust profile data handling with fallbacks
     const profile = {
-      id: post.user_id || post.profile?.id || '',
-      username: post.profile?.username || 'unknown',
-      full_name: post.profile?.full_name || 'Unknown User',
-      avatar_url: post.profile?.avatar_url || '',
-      is_verified: post.profile?.is_verified || false
-    };
+  id: post.user_id || post.profile?.id || '',
+  username: post.profile?.username || 'unknown',
+  full_name: post.profile?.full_name || 'Unknown User',
+  avatar_url: post.profile?.avatar_url || '',
+  is_verified: post.profile?.is_verified === true || post.profile?.is_verified === 'true'
+};
 
     // Safe profile link generation
     const profileLink = profile.id 
