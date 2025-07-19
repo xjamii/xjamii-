@@ -532,7 +532,8 @@ body {
   let profileId = urlParams.get('id');
 
   // DOM Elements
-  const elements = {
+  // DOM Elements
+const elements = {
     errorMessage: document.getElementById('error-message'),
     profileInfo: document.getElementById('profile-info'),
     profileName: document.getElementById('profile-name'),
@@ -552,7 +553,8 @@ body {
     noPostsMessage: document.getElementById('no-posts-message'),
     userPostsSection: document.getElementById('user-posts-section'),
     fullPageLoader: document.getElementById('full-page-loader')
-  };
+};
+
 
   // Main initialization function
   async function initializeApp() {
@@ -581,8 +583,8 @@ body {
     });
   }
 
-  // Load profile data
-  async function loadProfile() {
+// Load profile data
+async function loadProfile() {
     try {
       elements.fullPageLoader.style.display = 'flex';
       elements.errorMessage.style.display = 'none';
@@ -625,7 +627,7 @@ body {
     } finally {
       elements.fullPageLoader.style.display = 'none';
     }
-  }
+}
 
   function updateProfileUI(profile, user) {
     elements.profileName.textContent = profile.full_name || 'Profile';
