@@ -838,7 +838,7 @@ class PostComponent extends HTMLElement {
   }
 
   sharePost(postId) {
-    const postUrl = `${window.location.origin}/post.html?id=${postId}`;
+    const postUrl = `${window.location.origin}/index.html?id=${postId}`;
     
     if (navigator.share) {
       navigator.share({
