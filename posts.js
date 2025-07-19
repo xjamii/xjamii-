@@ -282,6 +282,9 @@ class PostComponent extends HTMLElement {
       ? `/profile.html?id=${profile.id}`
       : '#';
 
+    const { data: { user } } = await supabase.auth.getUser();
+    const isOwner = user?.id === post.user_id;
+
     // Avatar with multiple fallback layers
     const avatarHtml = profile.avatar_url 
       ? `<img src="${profile.avatar_url}" alt="${profile.full_name}" class="post-avatar" 
