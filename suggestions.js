@@ -69,11 +69,13 @@ function createSuggestionElement(profile) {
             <img src="${avatarUrl}" 
                  class="suggestion-avatar" 
                  onerror="this.src='${getInitialsAvatar(profile.full_name)}'">
-            <div class="suggestion-name">
-                ${profile.full_name?.split(' ')[0] || 'User'}
-                ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
-            </div>
-            <div class="suggestion-username">@${profile.username || 'user'}</div>
+            <div class="suggestion-name-wrap">
+    <span class="suggestion-name-text">
+        ${profile.full_name?.split(' ')[0] || 'User'}
+    </span>
+    ${profile.is_verified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+</div>
+<div class="suggestion-username-text">@${profile.username || 'user'}</div>
         </a>
         ${isCurrentUser ? '' : `
             <div class="suggestion-connect">
