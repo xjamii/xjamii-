@@ -817,14 +817,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// VIEW TOGGLE FUNCTIONS
+// Modify the existing showFeed function to include the refresh behavior
 function showFeed() {
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Show the main content and header
     document.getElementById('profileSection').style.display = 'none';
     document.querySelector('.main-content').style.display = 'block';
     document.querySelector('.top-header').style.display = 'flex';
-    document.title = 'X-Jamii';
+    document.title = 'Aviationin';
     updateActiveNavIcon('home');
+    
+    // Trigger reload of suggestions and posts
+    refreshContent();
 }
+
+// Add this new function to handle the refresh
+async function refreshContent() {
+    try {
+        // Show loading spinners
+        const postsContainer = document.getElementById('posts-container');
+        postsContainer.innerHTML = '<div class="post-loading-spinner"><div class="spinner"></div></div>';
+        
+        const suggestionsContainer = document.getElementById('suggestions-scroller');
+        if (suggestionsContainer) {
+            suggestionsContainer.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+        }
+        
+        // Reload both sections
+        await loadPosts();
+        if (typeof loadSuggestions === 'function') {
+            await loadSuggestions();
+        }
+    } catch (error) {
+        console.error('Error refreshing content:', error);
+    }
+}
+
+// Make sure the home icon click handler is properly set
+document.addEventListener('DOMContentLoaded', () => {
+    const homeIcon = document.querySelector('.footer-icon i.fa-home');
+    if (homeIcon) {
+        homeIcon.closest('.footer-icon').onclick = showFeed;
+    }
+});
 
 async function showProfile() {
     document.querySelector('.main-content').style.display = 'none';
