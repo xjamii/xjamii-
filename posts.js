@@ -318,10 +318,12 @@ class PostComponent extends HTMLElement {
           
           
       
+// In the render method, modify the content section:
 ${content ? `
-  <div class="post-content">
-    ${this.processContent(displayedContent)}
-    ${showSeeMore ? `<span class="see-more" data-full-content="${encodeURIComponent(content)}">See more</span>` : ''}
+  <div class="post-content ${showSeeMore ? 'collapsed' : 'expanded'}" 
+       data-full-content="${encodeURIComponent(content)}">
+    ${this.processContent(showSeeMore ? content.substring(0, 200) + '...' : content)}
+    ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
   </div>
 ` : ''}
           
@@ -501,25 +503,27 @@ ${content ? `
       });
     });
 
-    // Replace the see-more click handler in setupEventListeners with this:
-this.querySelector('.see-more')?.addEventListener('click', (e) => {
-  e.stopPropagation();
-  const seeMoreEl = e.target;
-  const postContentEl = this.querySelector('.post-content');
-  
-  if (seeMoreEl.textContent === 'See more') {
-    // Expand to show full content
-    const fullContent = decodeURIComponent(seeMoreEl.getAttribute('data-full-content'));
-    postContentEl.innerHTML = this.processContent(fullContent);
-    seeMoreEl.textContent = 'See less';
-  } else {
-    // Collapse back to short version
-    const fullContent = decodeURIComponent(seeMoreEl.getAttribute('data-full-content'));
-    postContentEl.innerHTML = this.processContent(fullContent.substring(0, 200) + '...');
-    seeMoreEl.textContent = 'See more';
-  }
-});
+    // Replace the see-more and content click handlers with this:
+const postContentEl = this.querySelector('.post-content');
+if (postContentEl) {
+  // Handle click on the "See more" text specifically
+  this.querySelector('.see-more')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    this.toggleContent(postContentEl);
+  });
 
+  // Handle click anywhere on the post content
+  postContentEl.addEventListener('click', (e) => {
+    // Only toggle if not clicking a link/mention/hashtag
+    if (!e.target.classList.contains('mention') && 
+        !e.target.classList.contains('hashtag') && 
+        !e.target.classList.contains('url') &&
+        e.target.tagName !== 'A') {
+      e.stopPropagation();
+      this.toggleContent(postContentEl);
+    }
+  });
+}
 // Remove or comment out this line that opens comment page on content click:
 // this.querySelector('.post-content')?.addEventListener('click', (e) => {
 //   if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
@@ -533,6 +537,28 @@ this.querySelector('.see-more')?.addEventListener('click', (e) => {
     }
   }
 
+  toggleContent(postContentEl) {
+  const isCollapsed = postContentEl.classList.contains('collapsed');
+  const fullContent = decodeURIComponent(postContentEl.getAttribute('data-full-content'));
+  
+  if (isCollapsed) {
+    // Expand to show full content
+    postContentEl.innerHTML = this.processContent(fullContent);
+    postContentEl.classList.remove('collapsed');
+    postContentEl.classList.add('expanded');
+    
+    // Update "See more" if it exists
+    const seeMoreEl = postContentEl.querySelector('.see-more');
+    if (seeMoreEl) seeMoreEl.textContent = 'See less';
+  } else {
+    // Collapse back to short version
+    postContentEl.innerHTML = this.processContent(fullContent.substring(0, 200) + '...') + 
+      '<span class="see-more">See more</span>';
+    postContentEl.classList.remove('expanded');
+    postContentEl.classList.add('collapsed');
+  }
+}
+  
   showMediaViewer(mediaItems, startIndex = 0) {
     if (!mediaItems || !mediaItems.length) return;
     
