@@ -462,7 +462,7 @@ class PostComponent extends HTMLElement {
     });
 
     // More options
-    this.querySelector('.post-more')?.addEventListener('click', (e) => {
+    this.querySelector('.post-options')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.showMoreOptions(e, post);
     });
