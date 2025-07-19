@@ -312,54 +312,45 @@
     </div>
   </div>
 
-  <script>
-    // Initialize Supabase
-    const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+<script>
+  // Initialize Supabase
+  const supabaseUrl = "https://dadrhoxjhjbnhhrtkgbf.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZHJob3hqaGpibmhocnRrZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTk2NTksImV4cCI6MjA2NjE3NTY1OX0.rn2hv0sXbKJyniN3FtpNpuyTvcXP1nTLj-jpnimRMEI";
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        // Show preloader
-        document.getElementById('full-page-loader').style.display = 'flex';
-        
-        // Check authentication
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-          window.location.href = 'login.html';
-          return;
-        }
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      // Show preloader
+      document.getElementById('full-page-loader').style.display = 'flex';
 
-        // Check if user already has a pending request
-        const { data: existingRequest, error: requestError } = await supabase
-          .from('verification_requests')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'pending')
-          .maybeSingle();
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        window.location.href = 'login.html';
+        return;
+      }
 
-        if (requestError) throw requestError;
+      // Check if user already has a pending request
+      const { data: existingRequest, error: requestError } = await supabase
+        .from('verification_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+        .maybeSingle();
 
-        if (existingRequest) {
-          document.getElementById('status-message').textContent = 'You already have a pending verification request.';
-          document.getElementById('status-message').className = 'status-message';
-          document.getElementById('submit-btn').disabled = true;
-        }
+      if (requestError) throw requestError;
 
-      } catch (error) {
-        console.error('Initialization error:', error);
-        document.getElementById('status-message').textContent = 'Error loading verification form. Please try again.';
-        document.getElementById('status-message').className = 'status-message error';
-      } finally {
-        // Hide preloader
-        document.getElementById('full-page-loader').style.display = 'none';
+      if (existingRequest) {
+        document.getElementById('status-message').textContent = 'You already have a pending verification request.';
+        document.getElementById('status-message').className = 'status-message';
+        document.getElementById('submit-btn').disabled = true;
       }
 
       // Setup file upload display
-      document.getElementById('document-upload').addEventListener('change', function(e) {
+      document.getElementById('document-upload').addEventListener('change', function (e) {
         const fileName = e.target.files[0]?.name || '';
         const fileNameElement = document.getElementById('file-name');
-        
+
         if (fileName) {
           fileNameElement.textContent = fileName;
           fileNameElement.style.display = 'block';
@@ -368,10 +359,10 @@
         }
       });
 
-      // Form submission
-      document.getElementById('verification-form').addEventListener('submit', async function(e) {
+      // Handle form submission
+      document.getElementById('verification-form').addEventListener('submit', async function (e) {
         e.preventDefault();
-        
+
         const btn = document.getElementById('submit-btn');
         const statusEl = document.getElementById('status-message');
         const fullName = document.getElementById('full-name').value.trim();
@@ -379,26 +370,22 @@
         const fileInput = document.getElementById('document-upload');
         const file = fileInput.files[0];
 
-        // Validation
+        // Validate form
         if (!fullName) {
           statusEl.textContent = 'Please enter your full name';
           statusEl.className = 'status-message error';
           return;
         }
-
         if (!documentType) {
           statusEl.textContent = 'Please select a document type';
           statusEl.className = 'status-message error';
           return;
         }
-
         if (!file) {
           statusEl.textContent = 'Please upload a document';
           statusEl.className = 'status-message error';
           return;
         }
-
-        // Check file size (5MB max)
         if (file.size > 5 * 1024 * 1024) {
           statusEl.textContent = 'File size must be less than 5MB';
           statusEl.className = 'status-message error';
@@ -409,14 +396,15 @@
           btn.classList.add('btn-loading');
           statusEl.className = 'status-message';
 
-          // Get current user
           const { data: { user }, error: userError } = await supabase.auth.getUser();
           if (userError) throw userError;
 
-          // Upload document to storage
+          // Upload file to user-specific folder to satisfy RLS
           const fileExt = file.name.split('.').pop();
-          const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-          const filePath = `verification-documents/${fileName}`;
+          const fileName = `${Date.now()}.${fileExt}`;
+          const filePath = `${user.id}/${fileName}`;
+
+          console.log("Uploading file to:", filePath);
 
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('verification-documents')
@@ -429,7 +417,7 @@
             .from('verification-documents')
             .getPublicUrl(filePath);
 
-          // Create verification request
+          // Create the verification request
           const { data, error: insertError } = await supabase
             .from('verification_requests')
             .insert([{
@@ -442,12 +430,12 @@
 
           if (insertError) throw insertError;
 
-          // Success
+          // Show success
           statusEl.textContent = 'Verification request submitted successfully! We will review your request shortly.';
           statusEl.className = 'status-message success';
           document.getElementById('verification-form').reset();
           document.getElementById('file-name').style.display = 'none';
-          document.getElementById('submit-btn').disabled = true;
+          btn.disabled = true;
 
         } catch (error) {
           console.error('Submission error:', error);
@@ -457,7 +445,19 @@
           btn.classList.remove('btn-loading');
         }
       });
-    });
-  </script>
+
+    } catch (error) {
+      console.error('Initialization error:', error);
+      document.getElementById('status-message').textContent = 'Error loading verification form. Please try again.';
+      document.getElementById('status-message').className = 'status-message error';
+    } finally {
+      // Hide preloader
+      document.getElementById('full-page-loader').style.display = 'none';
+    }
+  });
+</script>
+
+
+        
 </body>
 </html>
