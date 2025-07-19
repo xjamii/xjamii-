@@ -316,13 +316,14 @@ class PostComponent extends HTMLElement {
             <span class="post-time">${this.formatTime(post.created_at)}</span>
           </div>
           
-          :
-          ${content ? `
-          <div class="post-content" data-full-content="${this.processContent(content)}">
-             ${this.processContent(displayedContent)}
-             ${showSeeMore ? '<span class="see-more">See more</span>' : ''}
-          </div>
-            ` : ''}
+          
+      
+${content ? `
+  <div class="post-content">
+    ${this.processContent(displayedContent)}
+    ${showSeeMore ? `<span class="see-more" data-full-content="${encodeURIComponent(content)}">See more</span>` : ''}
+  </div>
+` : ''}
           
           ${this.renderMedia(post.media || [])}
           
@@ -500,25 +501,31 @@ class PostComponent extends HTMLElement {
       });
     });
 
-    // Replace the "See more" click handler in setupEventListeners() with:
+    // Replace the see-more click handler in setupEventListeners with this:
 this.querySelector('.see-more')?.addEventListener('click', (e) => {
   e.stopPropagation();
-  const contentEl = this.querySelector('.post-content');
-  if (contentEl) {
-    const fullContent = contentEl.getAttribute('data-full-content');
-    contentEl.innerHTML = fullContent;
+  const seeMoreEl = e.target;
+  const postContentEl = this.querySelector('.post-content');
+  
+  if (seeMoreEl.textContent === 'See more') {
+    // Expand to show full content
+    const fullContent = decodeURIComponent(seeMoreEl.getAttribute('data-full-content'));
+    postContentEl.innerHTML = this.processContent(fullContent);
+    seeMoreEl.textContent = 'See less';
+  } else {
+    // Collapse back to short version
+    const fullContent = decodeURIComponent(seeMoreEl.getAttribute('data-full-content'));
+    postContentEl.innerHTML = this.processContent(fullContent.substring(0, 200) + '...');
+    seeMoreEl.textContent = 'See more';
   }
 });
 
-// Also update the post content click handler to prevent opening comment page when clicking "See more":
-this.querySelector('.post-content')?.addEventListener('click', (e) => {
-  if (!e.target.classList.contains('mention') && 
-      !e.target.classList.contains('hashtag') && 
-      !e.target.classList.contains('url') &&
-      !e.target.classList.contains('see-more')) {
-    this.openCommentPage(post);
-  }
-});
+// Remove or comment out this line that opens comment page on content click:
+// this.querySelector('.post-content')?.addEventListener('click', (e) => {
+//   if (!e.target.classList.contains('mention') && !e.target.classList.contains('hashtag') && !e.target.classList.contains('url')) {
+//     this.openCommentPage(post);
+//   }
+// });
 
     // Setup pull-to-refresh if this is the first post
     if (this.previousElementSibling === null) {
