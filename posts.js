@@ -790,61 +790,217 @@ class PostComponent extends HTMLElement {
     // This will now be handled by the standalone CommentPage class
     window.openCommentPage(post.id);
   }
+// In the PostComponent class, replace the showMoreOptions method with this:
 
-  showMoreOptions(e, post) {
-    const isOwner = true; // Replace with actual owner check
-    
-    // Remove any existing popups
-    document.querySelectorAll('.more-options-popup').forEach(el => el.remove());
-    
-    const popup = document.createElement('div');
-    popup.className = 'more-options-popup';
-    popup.innerHTML = `
-      <div class="more-options-content">
-        ${isOwner ? `
-          <div class="more-option edit-option"><i class="fas fa-edit"></i> Edit</div>
-          <div class="more-option delete-option"><i class="fas fa-trash-alt"></i> Delete</div>
-        ` : `
-          <div class="more-option report-option"><i class="fas fa-flag"></i> Report</div>
-        `}
+showMoreOptions(e, post) {
+  e.stopPropagation();
+  
+  // Remove any existing popups
+  document.querySelectorAll('.post-options-popup').forEach(el => el.remove());
+  
+  // Create the popup container
+  const popup = document.createElement('div');
+  popup.className = 'post-options-popup';
+  
+  // Create the overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'post-options-overlay';
+  overlay.addEventListener('click', () => this.closeOptionsPopup(popup));
+  
+  // Create the options container
+  const optionsContainer = document.createElement('div');
+  optionsContainer.className = 'post-options-container';
+  
+  // Add options based on ownership
+  const isOwner = post.current_user_id === post.user_id;
+  
+  if (isOwner) {
+    optionsContainer.innerHTML = `
+      <div class="post-option edit-option">
+        <i class="fas fa-edit"></i>
+        <span>Edit Post</span>
+      </div>
+      <div class="post-option delete-option">
+        <i class="fas fa-trash-alt"></i>
+        <span>Delete Post</span>
+      </div>
+      <div class="post-option cancel-option">
+        <span>Cancel</span>
       </div>
     `;
-    
-    document.body.appendChild(popup);
-    
-    // Position the popup
-    const rect = e.target.getBoundingClientRect();
-    popup.style.left = `${rect.left - 100}px`;
-    popup.style.top = `${rect.top - 10}px`;
-    
-    // Close when clicking outside
-    const clickHandler = (event) => {
-      if (!popup.contains(event.target)) {
-        popup.remove();
-        document.removeEventListener('click', clickHandler);
-      }
-    };
-    
-    setTimeout(() => {
-      document.addEventListener('click', clickHandler);
-    }, 0);
-    
-    // Add option handlers
-    popup.querySelector('.edit-option')?.addEventListener('click', () => {
-      console.log('Edit post', post.id);
-      popup.remove();
+  } else {
+    optionsContainer.innerHTML = `
+      <div class="post-option report-option">
+        <i class="fas fa-flag"></i>
+        <span>Report Post</span>
+      </div>
+      <div class="post-option cancel-option">
+        <span>Cancel</span>
+      </div>
+    `;
+  }
+  
+  // Assemble the popup
+  popup.appendChild(overlay);
+  popup.appendChild(optionsContainer);
+  document.body.appendChild(popup);
+  
+  // Animate in
+  setTimeout(() => {
+    popup.classList.add('visible');
+    optionsContainer.classList.add('visible');
+  }, 10);
+  
+  // Add event listeners
+  optionsContainer.querySelector('.cancel-option')?.addEventListener('click', () => {
+    this.closeOptionsPopup(popup);
+  });
+  
+  if (isOwner) {
+    optionsContainer.querySelector('.delete-option')?.addEventListener('click', async () => {
+      await this.deletePost(post.id);
+      this.closeOptionsPopup(popup);
     });
     
-    popup.querySelector('.delete-option')?.addEventListener('click', () => {
-      console.log('Delete post', post.id);
-      popup.remove();
+    optionsContainer.querySelector('.edit-option')?.addEventListener('click', () => {
+      this.openEditPost(post);
+      this.closeOptionsPopup(popup);
     });
-    
-    popup.querySelector('.report-option')?.addEventListener('click', () => {
-      console.log('Report post', post.id);
-      popup.remove();
+  } else {
+    optionsContainer.querySelector('.report-option')?.addEventListener('click', () => {
+      this.reportPost(post.id);
+      this.closeOptionsPopup(popup);
     });
   }
+}
+
+closeOptionsPopup(popup) {
+  if (!popup) return;
+  
+  const optionsContainer = popup.querySelector('.post-options-container');
+  optionsContainer.classList.remove('visible');
+  
+  setTimeout(() => {
+    popup.remove();
+  }, 300);
+}
+
+async deletePost(postId) {
+  try {
+    const { error } = await supabase
+      .from('posts')
+      .delete()
+      .eq('id', postId);
+    
+    if (error) throw error;
+    
+    // Remove the post component from DOM
+    this.remove();
+    
+    // Optional: Show a confirmation
+    const toast = document.createElement('div');
+    toast.className = 'post-deleted-toast';
+    toast.textContent = 'Post deleted';
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.remove(), 2000);
+    
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    alert('Failed to delete post. Please try again.');
+  }
+}
+
+openEditPost(post) {
+  // Create edit overlay
+  const editOverlay = document.createElement('div');
+  editOverlay.className = 'edit-post-overlay';
+  
+  // Create edit container
+  const editContainer = document.createElement('div');
+  editContainer.className = 'edit-post-container';
+  
+  // Add content
+  editContainer.innerHTML = `
+    <div class="edit-post-header">
+      <h3>Edit Post</h3>
+      <button class="close-edit-btn"><i class="fas fa-times"></i></button>
+    </div>
+    <textarea class="edit-post-textarea">${post.content || ''}</textarea>
+    <div class="edit-post-actions">
+      <button class="cancel-edit-btn">Cancel</button>
+      <button class="save-edit-btn">Save Changes</button>
+    </div>
+  `;
+  
+  // Add to DOM
+  editOverlay.appendChild(editContainer);
+  document.body.appendChild(editOverlay);
+  
+  // Focus textarea
+  setTimeout(() => {
+    editContainer.querySelector('.edit-post-textarea').focus();
+  }, 100);
+  
+  // Event listeners
+  editContainer.querySelector('.close-edit-btn').addEventListener('click', () => {
+    editOverlay.remove();
+  });
+  
+  editContainer.querySelector('.cancel-edit-btn').addEventListener('click', () => {
+    editOverlay.remove();
+  });
+  
+  editContainer.querySelector('.save-edit-btn').addEventListener('click', async () => {
+    const newContent = editContainer.querySelector('.edit-post-textarea').value;
+    await this.updatePostContent(post.id, newContent);
+    editOverlay.remove();
+  });
+}
+
+async updatePostContent(postId, newContent) {
+  try {
+    const { error } = await supabase
+      .from('posts')
+      .update({ content: newContent })
+      .eq('id', postId);
+    
+    if (error) throw error;
+    
+    // Update the post content in the component
+    const contentEl = this.querySelector('.post-content');
+    if (contentEl) {
+      const processedContent = this.processContent(newContent);
+      const showSeeMore = newContent.length > 200;
+      const displayedContent = showSeeMore ? 
+        processedContent.substring(0, 200) + '...' : 
+        processedContent;
+      
+      contentEl.innerHTML = displayedContent;
+      if (showSeeMore) {
+        contentEl.innerHTML += '<span class="see-more">See more</span>';
+      }
+    }
+    
+    // Show confirmation
+    const toast = document.createElement('div');
+    toast.className = 'post-updated-toast';
+    toast.textContent = 'Post updated';
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.remove(), 2000);
+    
+  } catch (error) {
+    console.error('Error updating post:', error);
+    alert('Failed to update post. Please try again.');
+  }
+}
+
+reportPost(postId) {
+  // Implement your report functionality here
+  console.log('Reporting post:', postId);
+  alert('Report functionality will be implemented here');
+}
 
   sharePost(postId) {
     const postUrl = `${window.location.origin}/index.html?id=${postId}`;
