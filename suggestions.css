@@ -176,7 +176,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 3px; /* Control name width here */
+    max-width: 15px; /* Control name width here */
     font-size: 12px;
     font-weight: 600;
     color: #0f1419;
@@ -191,6 +191,6 @@
     text-overflow: ellipsis;
     font-size: 11px;
     color: #536471;
-    max-width: 5px; /* Control username width separately here */
+    max-width: 20px; /* Control username width separately here */
     margin: 0 auto;
 }
